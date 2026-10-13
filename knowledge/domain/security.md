@@ -63,7 +63,7 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 | 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 해당 기능 없음 |
 | 규칙·DTO·Controller·Service·Writer·Repository·필터 | 해당 기능 패키지 예정 | 미구현 |
 | SQL·마이그레이션·실제 HTTP/DB 테스트 | 후속 단계 예정 | 미구현 |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·본인 설명 확인 대기; 실행 미검증 |
+| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 

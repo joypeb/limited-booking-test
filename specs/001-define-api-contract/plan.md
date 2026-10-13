@@ -79,6 +79,6 @@ knowledge/domain/resource.md   # 이름 길이·대상 규칙의 설계 지식
 
 ## 0단계 수행 상태 (2026-10-13)
 
-기존 절은 계획 작성 당시의 기록이다. `$speckit-implement`에서 docs/openapi.yaml 초안·docs/decisions.md·docs/test-evidence.md와 reservation/security/ratelimit 지식 문서를 작성했다. 이름 공백 범위는 Java strip으로 확정해 문서 계약 인수를 마쳤고 T025 본인 설명은 대기 중이며 원 계획 0단계 전체 완료를 뜻하지 않는다. 상세 상태는 [tasks.md](tasks.md)·[증거](../../docs/test-evidence.md)를 따른다. 추가 브랜치 생성·develop 병합·외부 push는 수행하지 않았다.
+기존 절은 계획 작성 당시의 기록이다. `$speckit-implement`에서 docs/openapi.yaml 초안·docs/decisions.md·docs/test-evidence.md와 reservation/security/ratelimit 지식 문서를 작성했다. 이름 공백 범위는 Java strip으로 확정해 문서 계약 인수를 마쳤고 T025는 질의·보완 설명 뒤 사용자의 명시적 확인 지시로 완료해 원 계획0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 실시하지 않았다. 상세 상태는 [tasks.md](tasks.md)·[증거](../../docs/test-evidence.md)를 따른다. 추가 브랜치 생성·develop 병합·외부 push는 수행하지 않았다.
 
 공백 범위 추가 답변: Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 앞뒤 공백을 제거한다. 일반 공백·탭·줄바꿈은 제거하고 내부 공백은 유지한다. U+00A0(NBSP)·U+2007·U+202F는 제거하지 않고 코드 포인트 길이에 포함한다. 제거 후 길이 1~100이며 빈 문자열은 400이다. [문서 사례 W01~W07](../../docs/test-evidence.md)에 기대 결과를 반영했고 런타임 실행은 미검증이다.
