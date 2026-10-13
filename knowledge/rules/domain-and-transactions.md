@@ -4,7 +4,7 @@
 
 ## 입력과 불변식
 
-- 대상 이름은 앞뒤 공백 제거 후 1~100자, 최초 수량은 정수 0~1,000이다. 수량 0인 대상도 생성할 수 있고 최초 `available = capacity`다.
+- 대상 이름은 앞뒤 공백 제거 후 유니코드 코드 포인트 기준 1~100자(`😀`는 1자), 최초 수량은 정수 0~1,000이다. 수량 0인 대상도 생성할 수 있고 최초 `available = capacity`다.
 - 예약 요청당 항상 1개다. `quantity`·`userId`를 입력받지 않고 사용자 UUID는 인증 결과에서 얻는다.
 - 상태 전이는 `CONFIRMED → CANCELLED`만 허용한다. 재활성화와 예약 행 삭제를 하지 않는다.
 - 대상별 `0 ≤ available ≤ capacity`, `available + CONFIRMED 예약 수 = capacity`를 유지한다.
