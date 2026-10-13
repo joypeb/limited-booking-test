@@ -43,4 +43,4 @@
 
 계획서의 Maven·`reservation-backend/`·`com.example.reservation`은 제안된 구성이다. 현재 Gradle·경로·패키지를 유지하고, 테스트 실행 계약은 해당 단계에서 Gradle 태스크로 구현·기록한다. 아직 없는 명령을 실행 안내에 확정값으로 싣지 않는다.
 
-`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. OpenAPI 이름 공백 문자 범위 확인과 본인 설명 확인은 대기 중이며 0단계 전체 완료가 아니다. 버전·성능 기록 `docs/versions.md`·`docs/performance.md`는 후속 환경·부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
+`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명 확인은 대기 중이며 0단계 전체 완료가 아니다. 버전·성능 기록 `docs/versions.md`·`docs/performance.md`는 후속 환경·부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.

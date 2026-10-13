@@ -5,7 +5,7 @@
 - 도메인·예정 패키지: resource / `com.limitedbooking.backend.resource`.
 - 작성·확인일: 2026-10-13.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2·4·5절, [도메인 규칙](../rules/domain-and-transactions.md), [API 규칙](../rules/api-and-security.md), [0단계 명세](../../specs/001-define-api-contract/spec.md).
-- 설계 상태: 기존 정책과 사용자 A 답변으로 이름 길이 코드 포인트 기준 확정.
+- 설계 상태: 사용자 A 답변으로 코드 포인트 길이, 2026-10-13 추가 답변으로 Java strip 기준 확정.
 - 구현 상태: 대상 기능·SQL·테스트 미구현. 실행 검증 미실행.
 
 ## 2. 목적·책임·경계
@@ -17,12 +17,14 @@ ADMIN이 예약 대상·최초 수량을 생성하고 인증 사용자가 단건
 | 필드 | 의미·타입 | 제약·불변 여부 | 근거 |
 | --- | --- | --- | --- |
 | id | UUID 대상 식별자 | 불변·PK 설계 | 계획서 5.1 |
-| name | 문자열 이름 | 앞뒤 공백 제거 후 코드 포인트 1~100개, 😀는 1자 | 계획서 2·사용자 A |
+| name | 문자열 이름 | Java `String.strip()`으로 앞뒤 공백 제거 후 코드 포인트 1~100개, 😀는 1자 | 계획서 2·사용자 A |
 | capacity | 최초 수량 정수 | 0~1000, 불변 | 계획서 2 |
 | available | 남은 수량 정수 | 최초 capacity, 0~capacity | 계획서 2·5 |
 | created_at | 생성 UTC 시각 | timestamptz 설계, ResourceView에는 미포함 | 계획서 4·5 |
 
 스키마는 설계 상태다. name varchar(100) NOT NULL, capacity·available 정수 NOT NULL과 범위 CHECK를 예정한다. 대상 삭제·수량 변경은 제공하지 않는다.
+
+Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 앞뒤 공백을 제거한다. 일반 공백·탭·줄바꿈은 제거하고 내부 공백은 유지한다. U+00A0(NBSP)·U+2007·U+202F는 제거하지 않고 코드 포인트 길이에 포함한다. 제거 후 길이 1~100이며 빈 문자열은 400이다. NBSP만 1개인 이름은 길이1로 허용한다.
 
 ## 4. 불변식과 상태 전이
 
@@ -41,7 +43,7 @@ ADMIN이 예약 대상·최초 수량을 생성하고 인증 사용자가 단건
 | POST /api/resources | ADMIN, name·capacity, JSON | 201 ResourceView·Location | 400·401·403·413·415·503 | 대상 생성 |
 | GET /api/resources/{id} | 인증 사용자, UUID | 200 ResourceView | 400·401·404·503 | 없음 |
 
-ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. [OpenAPI 초안](../../docs/openapi.yaml)을 작성했다. [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)와 대조하며 공백 문자 범위 최종 확정은 대기 중이다.
+ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. [OpenAPI 초안](../../docs/openapi.yaml)을 작성했다. [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)와 대조하며 Java strip 정책까지 반영해 문서 계약 인수를 마쳤다. 실제 HTTP·스키마 자동 검증은 후속 미실행이다.
 
 ## 6. 멱등성·트랜잭션·경쟁·장애
 
@@ -54,6 +56,7 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | resource-003 | 😀 100개·101개, 앞뒤 공백+100개 | 201·400·201, 저장 이름은 공백 제거 | 문서 기대값, Unit·HTTP 후속 미실행 |
 | resource-001 | capacity 0·1000·-1·1001 | 경계 허용·범위 밖 400 | 후속 미실행 |
 | resource-002 | 예약·재요청·취소·중복 취소 | 합계 capacity 유지 | 후속 DB·경쟁 미실행 |
+| resource-003 | 탭·줄바꿈 제거, NBSP 유지·NBSP만1개 | 이름 정규화·길이 정책대로 허용/거부 | [W01~W07 문서 사례](../../docs/test-evidence.md), 실행 미검증 |
 | 권한 | USER 생성·미인증 조회 | 403·401 | 후속 HTTP 미실행 |
 
 기능 실행 증거는 없다. [문서 검토 증거](../../docs/test-evidence.md)에 수동 기대값 대조와 실제 문서 검사 결과를 기록한다.
@@ -64,7 +67,8 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | --- | --- | --- |
 | 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 대상 기능 없음 |
 | 대상 규칙·DTO·Controller·Service·Repository | resource 패키지 예정 | 미구현 |
-| SQL·Flyway·대상 테스트·최종 OpenAPI | 후속 단계 예정 | 미구현 |
+| SQL·Flyway·대상 테스트 | 후속 단계 예정 | 미구현 |
+| 고정 OpenAPI 초안 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨, 자동 검증 미실행 |
 
 이름 길이 단위의 명확화는 계획서·도메인 규칙·명세·계약 설계에 반영했다. 구현 이후에는 순수 규칙·DTO·OpenAPI·Unit·HTTP 기대값을 함께 검토한다. JDBC 등 선택 이유는 [결정 기록](../../docs/decisions.md)에 작성했다.
 
@@ -74,6 +78,6 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | --- | --- | --- |
 | 이름 길이 실행 검증 미실행 | 코드 포인트와 실제 거부 결과 | 규칙·HTTP 구현 단계에서 경계 시험 |
 | API·DB 기능 미구현 | 실제 계약 준수 확인 불가 | 0단계 문서 확정 뒤 도구 준비 |
-| 공백 문자 범위 미확정 | 이름 전처리의 정확한 허용값 | 사용자 답변 후 계약·사례 동기화 |
+| strip 실제 실행 미검증 | 탭·줄바꿈·NBSP·코드 포인트 경계의 실제 결과 | 후속 순수 규칙·HTTP 테스트 |
 
-이름 길이 코드 포인트 정책은 확정됐으며 제거할 공백 문자 범위는 추가 확인 중이다. 이 문서는 업무 규칙을 바꾸거나 코드 실행 완료를 주장하지 않는다.
+이름 길이 코드 포인트·공백 strip 정책은 사용자 답변으로 확정됐다. 이 문서는 업무 규칙을 바꾸거나 코드 실행 완료를 주장하지 않는다.

@@ -241,7 +241,7 @@ components:
       properties:
         name:
           type: string
-          description: 앞뒤 공백 제거 후 유니코드 코드 포인트 1~100개, 😀는 1자. 원문 maxLength 100으로 공백 포함 유효 입력을 거부하지 않는다. 제거할 공백 문자 범위는 사용자 확인 대기이며 해당 부분 최종 확정 전이다.
+          description: Java String.strip()으로 앞뒤 공백 제거 후 유니코드 코드 포인트 1~100개, 😀는 1자. 원문 maxLength 100으로 공백 포함 유효 입력을 거부하지 않는다. Character.isWhitespace(int) 기준이다. 일반 공백·탭·줄바꿈은 제거하며 내부 공백과 U+00A0(NBSP)·U+2007·U+202F는 유지·길이에 포함한다. 제거 후 빈 문자열은 400, NBSP만 1개인 입력은 길이1로 허용한다. 사용자 답변으로 확정된 정책이며 실제 HTTP 실행 검증은 미실행이다.
           example: '  예약 대상  '
         capacity:
           type: integer

@@ -24,7 +24,7 @@
 
 **목표**: 계약 작업 전에 관련 도메인의 정책·근거·미구현 상태를 기록한다. T002 이후 진행하며 T007까지 완료한 뒤 스토리 작업을 시작한다.
 
-- [X] T003 `knowledge/domain/resource.md`를 계획서·명세와 대조해 대상 책임·입력·수량 불변식·권한·미구현 상태를 유지한다. 이름의 “앞뒤 공백 제거 후 코드 포인트 1~100개, `😀` 1개는 1자”, capacity의 “0~1,000, 생성 후 변경하지 않음”, available의 “최초 capacity, 0~capacity”, 대상 id의 “불변, 조회 응답 필수” 제약을 확인한다.
+- [X] T003 `knowledge/domain/resource.md`를 계획서·명세와 대조해 대상 책임·입력·수량 불변식·권한·미구현 상태를 유지한다. 이름의 “Java `String.strip()`으로 앞뒤 공백 제거 후 코드 포인트 1~100개, `😀` 1개는 1자”, capacity의 “0~1,000, 생성 후 변경하지 않음”, available의 “최초 capacity, 0~capacity”, 대상 id의 “불변, 조회 응답 필수” 제약을 확인한다.
 - [X] T004 [P] `knowledge/domain/_template.md`의 9개 절로 `knowledge/domain/reservation.md`를 작성한다. 생성·조회·취소 책임, 사용자·키당 최대 1개, 실패 키 비보존·성공 키 지속 보존, CONFIRMED→CANCELLED, resource→reservation 잠금·롤백, 최초 생성 응답과 현재 상태 차이, 검증 사례를 기록하고 구현·SQL·실행 증거는 미구현/미실행으로 표시한다.
 - [X] T005 [P] `knowledge/domain/_template.md`의 9개 절로 `knowledge/domain/security.md`를 작성한다. 로컬 Basic·고정 사용자·인증 UUID 출처, ADMIN 대상 생성, 타인 예약은 관리자도 404, 세션 없음·비밀번호 환경 변수·BCrypt·localhost 비브라우저 전제, 필터 오류·본문 제한 순서를 설계로 기록한다. 독립 업무 상태·멱등 키가 없는 항목은 이유를 적는다.
 - [X] T006 [P] `knowledge/domain/_template.md`의 9개 절로 `knowledge/domain/ratelimit.md`를 작성한다. 인증된 생성·취소 합산 20회/60초 고정 창, 재요청·입력 오류 포함, TTL 비연장, `reservation:write-limit:{userId}`, 429·Retry-After·Redis 503·업무 무변경, 조회/대상 생성의 비의존성과 미구현 상태를 기록한다.
@@ -50,13 +50,13 @@
 **독립 검증**: `docs/openapi.yaml`과 원 계획 4절을 대조하고 각 API 정상 1개·비정상 2개 이상 총 15개 이상의 사례에 권한·입력·응답·업무 무변경/변경을 명시한다. US1 표가 없어도 독립 사례를 판정할 수 있어야 한다.
 
 - [X] T012 [US2] `docs/openapi.yaml`을 OpenAPI 3.0.3으로 생성해 localhost 서버, HTTP Basic security scheme과 전역 인증, 정확한 다섯 path·메서드·UUID 필수 path parameter를 선언한다. 대상 생성 ADMIN, 예약 조회·취소 소유자이며 타인 예약은 관리자도 404라는 권한을 description으로 명시한다. 코드·환경·의존성은 추가하지 않는다.
-- [ ] T013 [US2] `docs/openapi.yaml`에 CreateResourceRequest·CreateReservationRequest의 required와 `additionalProperties: false`를 선언한다. name의 “앞뒤 공백 제거 후 코드 포인트 1~100개, `😀` 1개는 1자”, capacity의 “0~1,000, 생성 후 변경하지 않음”을 적용한다. 이름은 전처리 후 길이라는 description·공백 포함 100자 사례를 사용해 원문 maxLength 100으로 유효 입력을 거부하지 않는다. 예약은 필수 resourceId string/uuid만 받고 userId·quantity를 금지한다.
+- [X] T013 [US2] `docs/openapi.yaml`에 CreateResourceRequest·CreateReservationRequest의 required와 `additionalProperties: false`를 선언한다. name의 “Java `String.strip()`으로 앞뒤 공백 제거 후 코드 포인트 1~100개, `😀` 1개는 1자”, capacity의 “0~1,000, 생성 후 변경하지 않음”을 적용한다. 이름은 전처리 후 길이라는 description·공백 포함 100자 사례를 사용해 원문 maxLength 100으로 유효 입력을 거부하지 않는다. 예약은 필수 resourceId string/uuid만 받고 userId·quantity를 금지한다.
 - [X] T014 [US2] `docs/openapi.yaml`에 ResourceView·CreatedReservationView·ReservationView의 필수 필드를 정확히 선언한다. 대상 id·name·capacity·available과 생성 예약 id·resourceId·status·createdAt, 현재 예약의 추가 cancelledAt를 유지한다. available은 “최초 capacity, 0~capacity”, 대상 createdAt는 “저장 설계 필드, ResourceView 응답에는 포함하지 않음”이다. UUID·UTC date-time·마이크로초 설명, 생성 status enum [CONFIRMED], 현재 status enum [CONFIRMED,CANCELLED], cancelledAt 필수+string/date-time/nullable true와 상태별 null 규칙을 선언한다.
 - [X] T015 [US2] `docs/openapi.yaml`의 다섯 작업에 requestBody·성공 201/200·application/json 응답·Location을 연결한다. 예약 생성 Idempotency-Key를 필수, `^[A-Za-z0-9_-]{1,64}$`, 길이 1~64로 선언하고 변환 없음·사용자별 키 범위·대상 UUID 값 비교·취소 후 최초 응답 재현을 명시한다. Idempotent-Replayed는 최초 false·재요청 true이며 같은 id/resourceId/createdAt/status CONFIRMED·Location을 재현한다.
 - [X] T016 [US2] `docs/openapi.yaml`에 application/problem+json의 type·title·status·detail·instance·code 필수 필드와 400 INVALID_REQUEST, 401 UNAUTHENTICATED, 403 FORBIDDEN, 404 NOT_FOUND, 409 SOLD_OUT/IDEMPOTENCY_CONFLICT, 413 PAYLOAD_TOO_LARGE, 415 UNSUPPORTED_MEDIA_TYPE, 429 RATE_LIMITED, 503 DEPENDENCY_UNAVAILABLE를 각 작업에 맞게 연결한다. 401 WWW-Authenticate·429 Retry-After를 선언하며 미분류 내부 결함 500은 설명으로 남기고 임의 code나 409/503 분류를 추가하지 않는다.
 - [X] T017 [US2] `docs/openapi.yaml`에 실제 본문 8192바이트 상한·초과 413·길이 헤더 없는/chunked 요청, 두 생성의 application/json 전용·415, 취소 본문 없음·상한 이하 비어 있지 않은 본문 400, 중복 키·잘못된 JSON/UUID·capacity 문자열/소수 400을 설명한다. 크기 제한→인증→예약 쓰기 제한→입력 검증→서비스, 합산 20회/60초·TTL 비연장·Redis 503·업무 무변경·조회/대상 생성 비의존성, Retry-After 최소 1초 올림을 명시한다. 선언만으로 실행 검증하지 않았음을 적는다.
 - [X] T018 [US2] `docs/test-evidence.md`에 다섯 API의 정상 1개·비정상 2개 이상을 사례 ID와 초기 사용자·대상·수량·키·요청·성공/오류 코드·헤더·본문 필드·최종 상태로 구체화한다. 기존 US1 절을 보존하고, 추가로 😀 100개/101개·앞뒤 공백+100자·본문 8192/8193·401/429/503·타인(관리자 포함) 접근·중복 JSON 키를 명시한다. 후속 HTTP 기대값과 현재 수동 대조를 구분한다.
-- [ ] T019 [US2] `docs/openapi.yaml`의 다섯 작업·스키마·필수 헤더·오류와 T018 사례를 원 계획 4절·`specs/001-define-api-contract/contracts/api-contract.md`와 전수 대조하고 `docs/test-evidence.md`에 사례 수·누락/모순 건수·검토 결과를 기록한다. 최소 15개 충족·미정 결과 0건이어야 하며 자동 YAML/OpenAPI validator와 실제 HTTP 검증은 1단계 이후 미실행으로 남긴다.
+- [X] T019 [US2] `docs/openapi.yaml`의 다섯 작업·스키마·필수 헤더·오류와 T018 사례를 원 계획 4절·`specs/001-define-api-contract/contracts/api-contract.md`와 전수 대조하고 `docs/test-evidence.md`에 사례 수·누락/모순 건수·검토 결과를 기록한다. 최소 15개 충족·미정 결과 0건이어야 하며 자동 YAML/OpenAPI validator와 실제 HTTP 검증은 1단계 이후 미실행으로 남긴다.
 
 **완료 확인**: 계약 초안과 사례에서 누락·모순 0건. 스키마로 표현하지 못하는 정규화·중복 JSON 키·바이트 제한·권한·경쟁은 description과 후속 검증 항목으로 명시돼 있다.
 
@@ -68,7 +68,7 @@
 - [X] T020 [P] [US3] `docs/decisions.md`를 생성해 JDBC·NamedParameterJdbcTemplate 선택을 3~5줄로 기록한다. 명시적 SQL·조건부 갱신·트랜잭션 경계를 이해하는 목적, JPA/ORM·JdbcClient 대안, 기존 Java/Gradle/패키지 유지와 미구현 상태를 포함한다. T007 후 OpenAPI 또는 US1 사례 작성과 병렬 가능하다.
 - [X] T021 [US3] `docs/decisions.md`에 성공한 예약 행에 키를 보관하는 결정을 3~5줄로 기록한다. 사용자별 키 유일성·실패 키 비보존·취소 후 성공 키 유지·최초 응답 재구성 이유와 별도 키 테이블·TTL 대안을 포함하고 아직 없는 저장/응답 코드를 검증됐다고 표현하지 않는다.
 - [X] T022 [US3] `docs/decisions.md`에 Redis를 예약 쓰기 요청 진입 제한에 사용하는 결정을 3~5줄로 기록한다. PostgreSQL 수량 원본·인증 뒤 제한·장애 시 503의 영향, 메모리/DB 카운터와 Redis 수량/분산 락 대안, 조회·대상 생성 비의존성·미실행 상태를 포함한다.
-- [ ] T023 [US3] `docs/decisions.md`의 세 기록을 `specs/001-define-api-contract/research.md`와 대조해 각각 3~5줄·이유·대안·영향을 확인하고 `docs/test-evidence.md`에 결과를 기록한다. 실패 키 재사용과 취소 후 최초 응답 재현 설명이 기록과 모순되지 않는지 확인한다. 공유 증거 파일 편집은 T019 뒤 진행한다.
+- [X] T023 [US3] `docs/decisions.md`의 세 기록을 `specs/001-define-api-contract/research.md`와 대조해 각각 3~5줄·이유·대안·영향을 확인하고 `docs/test-evidence.md`에 결과를 기록한다. 실패 키 재사용과 취소 후 최초 응답 재현 설명이 기록과 모순되지 않는지 확인한다. 공유 증거 파일 편집은 T019 뒤 진행한다.
 
 **완료 확인**: 세 결정의 문서 검토가 통과하고, 기술 선택 이유와 업무 규칙을 구분한다. 사용자의 설명 능력은 대리 작성만으로 통과 처리하지 않는다.
 
@@ -76,7 +76,7 @@
 
 **목표**: 산출물의 동기화·실제 검증 증거·본인 설명 여부를 확인한다. US1~US3의 문서 검토 이후 진행한다.
 
-- [ ] T024 `knowledge/README.md`와 관련 도메인 문서에 실제 생성된 `docs/openapi.yaml`·`docs/decisions.md`·`docs/test-evidence.md` 링크를 연결하고 작성 예정/실제 문서 상태를 갱신한다. `specs/001-define-api-contract/spec.md`·`plan.md`·`contracts/api-contract.md`와 정책을 대조하되 설계 문서의 작성 당시 기록은 유지하고 코드·SQL·실행 검증 미완료를 지우지 않는다.
+- [X] T024 `knowledge/README.md`와 관련 도메인 문서에 실제 생성된 `docs/openapi.yaml`·`docs/decisions.md`·`docs/test-evidence.md` 링크를 연결하고 작성 예정/실제 문서 상태를 갱신한다. `specs/001-define-api-contract/spec.md`·`plan.md`·`contracts/api-contract.md`와 정책을 대조하되 설계 문서의 작성 당시 기록은 유지하고 코드·SQL·실행 검증 미완료를 지우지 않는다.
 - [ ] T025 `docs/test-evidence.md`의 사례·결정 기록을 준비한 뒤 사용자에게 키 재사용·실패 키·다른 키 추가 예약·취소 후 재시도 및 세 선택 이유를 자기 말로 설명하도록 확인한다. 실제 설명에서 수량·상태·키에 모순이 없으면 그 결과를 기록한다. 답변이 없거나 설명을 확인하지 못하면 이 작업은 미완료로 유지하고 본인 설명 미검증을 명시하며 독립 문서 검사는 계속한다.
 - [X] T026 `specs/001-define-api-contract/quickstart.md`의 현재 문서 검사와 후속 산출물 존재 확인 명령을 실행하고 새 도메인/최종 문서의 상대 링크·공백·필수 계약 항목도 검사해 `docs/test-evidence.md`에 실제 명령·종료 코드·문서/사례 수·환경·미검증 범위를 기록한다. `specs/001-define-api-contract/checklists/requirements.md`는 요구사항 품질로 재평가하며 실행 완료 표식으로 바꾸지 않는다.
 - [X] T027 `한정 수량 예약 백엔드 로컬 개발 계획.md`의 0단계 항목을 증거와 대조해 실제 충족한 것만 표시하고 `docs/test-evidence.md`에 변경 이유·검증 결과·남은 범위·읽을 문서·다음 한 작업을 기록한다. T025 미완료이면 설명 체크와 0단계 전체 완료는 표시하지 않는다. 문서 검사 통과 후 목적별 로컬 커밋을 작성하고 실제 수행 결과·남은 변경을 확인한다. 다음 작업은 1단계 최소 테스트 도구 준비이며 API/DB/Redis/자동 계약 검증/외부 CI는 완료했다고 쓰지 않는다.
@@ -138,4 +138,4 @@ flowchart TD
 
 ## 집계와 주의사항
 
-총 27개: 준비 2, 기반 5, US1 4, US2 8, US3 4, 전체 검토 4. `[P]` 4개(T004·T005·T006·T020). 생성 당시 모든 작업은 미완료였다. 2026-10-13 문서 수행 후 22개 완료, T013·T019·T023·T024·T025는 사용자 정책 답변/본인 설명 및 선행 인수 조건 대기로 미완료다. T027 완료는 부분 수행 기록의 완료이며 0단계 전체 완료가 아니다. [실제 증거](../../docs/test-evidence.md)를 따른다.
+총 27개: 준비 2, 기반 5, US1 4, US2 8, US3 4, 전체 검토 4. `[P]` 4개(T004·T005·T006·T020). 생성 당시 모든 작업은 미완료였다. 2026-10-13 최초 문서 수행은 22개 완료였다. 이후 사용자의 Java strip 정책 답변을 반영해 T013·T019·T023·T024를 완료했다. 현재 26개 완료, T025 본인 설명 확인만 미완료다. T027 완료는 부분 수행 기록의 완료이며 0단계 전체 완료가 아니다. [실제 증거](../../docs/test-evidence.md)를 따른다.

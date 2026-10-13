@@ -10,10 +10,12 @@
 
 ## 2. 이름 길이
 
-- **결정**: 사용자 A 답변에 따라 앞뒤 공백 제거 후 코드 포인트 1~100개로 계산한다. `😀` 100개는 허용하고 101개는 거부한다.
+- **결정**: 사용자 A 답변에 따라 Java `String.strip()`으로 앞뒤 공백 제거 후 코드 포인트 1~100개로 계산한다. `😀` 100개는 허용하고 101개는 거부한다.
 - **이유**: UTF-16 저장 단위나 화면의 글자 묶음 수와 구분한다. 원문에 공백이 더해져도 정규화 후 100자면 허용돼야 한다.
 - **대안**: UTF-16 길이·화면 글자 수·요청 원문 100자 상한은 선택한 정책과 다르다.
 - **설계 영향**: 요청 name에 원문 `maxLength: 100`을 단순 적용하지 않는다. 전처리 후 길이를 description과 사례로 고정하고 응답 name에는 1~100 길이를 선언한다. 스키마는 문자열 전처리를 수행하지 않는다. [JSON Schema 길이](https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.6)
+
+- **추가 확정 (2026-10-13)**: Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 앞뒤 공백을 제거한다. 일반 공백·탭·줄바꿈은 제거하고 내부 공백은 유지한다. U+00A0(NBSP)·U+2007·U+202F는 제거하지 않고 코드 포인트 길이에 포함한다. 제거 후 길이 1~100이며 빈 문자열은 400이다. Java의 표준 기준으로 범위를 고정하며 trim이나 별도의 Unicode White_Space 필터로 대체하지 않는다. [String.strip 공식 문서](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html#strip()), [Character.isWhitespace 공식 문서](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Character.html#isWhitespace(int)). 공식 동작 확인과 이 기기의 실행 검증은 구분한다.
 
 ## 3. null과 미정의 필드
 

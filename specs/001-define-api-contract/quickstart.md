@@ -111,8 +111,10 @@ evidence = Path('docs/test-evidence.md').read_text()
 assert len(re.findall(r'^\| F\d{2} \|', evidence, re.M)) == 19
 assert len(re.findall(r'^\| C\d{2} \|', evidence, re.M)) == 5
 assert len(re.findall(r'^\| R\d{2} \|', evidence, re.M)) == 41
-print(f'문서 {len(files)}개 링크·형식, 도메인4개, API5개 필수 표식, 사례65행 존재 검사 통과')
+assert len(re.findall(r'^\| W\d{2} \|', evidence, re.M)) == 7
+assert 'String.strip()' in contract and 'U+00A0' in contract
+print(f'문서 {len(files)}개 링크·형식, 도메인4개, API5개 필수 표식, 사례72행 존재 검사 통과')
 PYCODE
 ```
 
-출력의 사례 65행은 F19+C5+R41의 문서 행 수이며 앱 테스트 수가 아니다. 필수 표식 존재 검사로 계약의 의미나 YAML 문법을 자동 검증했다고 표현하지 않는다. 위 검사에 이어 `git diff --check`와 최종 산출물 3개의 `test -s`를 각각 실행하고 종료 코드를 기록한다.
+출력의 사례 72행은 F19+C5+R41+W7의 문서 행 수이며 앱 테스트 수가 아니다. 필수 표식 존재 검사로 계약의 의미나 YAML 문법을 자동 검증했다고 표현하지 않는다. 위 검사에 이어 `git diff --check`와 최종 산출물 3개의 `test -s`를 각각 실행하고 종료 코드를 기록한다.

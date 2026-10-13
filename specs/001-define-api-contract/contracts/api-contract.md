@@ -26,12 +26,14 @@ Location은 생성된 단건 조회 경로를 가리킨다. 타인 예약 조회
 
 | 스키마 | 필수 필드·제약 |
 | --- | --- |
-| CreateResourceRequest | name: string, 앞뒤 공백 제거 후 코드 포인트 1~100개; capacity: integer, 0~1000; additionalProperties: false |
+| CreateResourceRequest | name: string, Java `String.strip()`으로 앞뒤 공백 제거 후 코드 포인트 1~100개; capacity: integer, 0~1000; additionalProperties: false |
 | CreateReservationRequest | resourceId: string/uuid; additionalProperties: false |
 | ResourceView | id: string/uuid, name: string 길이 1~100, capacity: integer 0~1000, available: integer 0~1000; available≤capacity는 설명·사례로 검토 |
 | CreatedReservationView | id·resourceId: string/uuid, status enum [CONFIRMED], createdAt: string/date-time |
 | ReservationView | id·resourceId: string/uuid, status enum [CONFIRMED,CANCELLED], createdAt: string/date-time, cancelledAt: string/date-time/nullable true |
 | ProblemDetail | type·title·detail·instance: string, status: integer, code: 아래 정의한 코드; 각 필드 존재를 선언 |
+
+Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 앞뒤 공백을 제거한다. 일반 공백·탭·줄바꿈은 제거하고 내부 공백은 유지한다. U+00A0(NBSP)·U+2007·U+202F는 제거하지 않고 코드 포인트 길이에 포함한다. 제거 후 길이 1~100이며 빈 문자열은 400이다. NBSP만 1개인 입력도 길이1로 허용하며 W01~W07의 문서 기대값을 따른다.
 
 name은 정규화 후 길이이므로 요청 원문에 maxLength 100을 적용해 유효한 앞뒤 공백 입력을 거부하지 않는다. description과 경계 사례에 규칙을 기록한다. cancelledAt는 필드 자체가 필수이며 CONFIRMED이면 null, CANCELLED이면 시각이다. 3.0.3에서는 type 배열이나 type null로 표현하지 않는다.
 
