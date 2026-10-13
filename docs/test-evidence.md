@@ -363,3 +363,18 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 이전 성공 XML이 있는 상태에 Test 입력을 빈 경로로 바꾼 init-script 실행: 종료1, 현재 실행 결과 없음 게이트로 차단. init-script는 시연 명령에서만 사용하며 정상 설정에는 적용하지 않는다.
 - 원복 verify 종료0: Unit3/IT4·실패skip0. 지정 `test integrationTest --tests '*ToolchainSmokeIT'` 종료0: Unit3/지정IT3. 마지막 skip/빈 입력 시연 원복 후 test 종료0: Unit3·실패skip0. 고의 변경 잔존 없음.
 - T014~T021 완료. Spring 없는 프로브는 도구 확인용이며 실제 업무 불변식·SQL 경쟁 테스트는 아직 미구현이다.
+
+### US3 속성·변이
+
+- QuickTheories0.26/validator core2.46.1 고정 의존성과 PIT Gradle1.19.0/engine1.22.1/Jupiter plugin1.2.3을 취득했다. 심화 지원 클래스 포함 compileTestJava/processTestResources 종료0. test classpath에서 계약 원본을 직접 복사하고 수작업 사본을 만들지 않았다.
+- 첫 Property 정상 실행 종료1: 중복 제거로 실제 assertion61회여서 최소100 조건이 실패했다. 도구 Core bytecode의 visitedValues/생성 루프 확인 후 생성 예산1000으로 조정했다. 최소100 기대값은 유지했다.
+- 수정 propertyTest 종료0: JUnit3건(경계0/100 각1, 속성1), 속성 실제 assertion101회, seed20261013, 실패skip0.
+- 프로브의 `value>50 ? 0 : value` 고의 결함: propertyTest 종료1, 경계100 및 속성 실패. 최초 반례100 → 중간59/58/57/56/54/53 → 최소51. QT_SEED=20261013을 Test JVM에 전달한 재현 실행도 종료1·동일51과 반례 경로. 원복 propertyTest 종료0·3건·실제101회.
+- mutationSmoke 종료0: PIT generated1/killed1/survived0/NO_COVERAGE0/invalid0. XML/HTML 보고서 확인. PIT examined1은 도구 내부 수이며 JUnit Unit3건과 구분한다. pure 프로브에서만 확인했고 Spring·SQL·권한·업무 규칙 변이를 검증한 것이 아니다.
+
+### US3 계약 검증
+
+- contractTest --rerun-tasks 종료0: Contract3건·실패skip0. loopback 동적 HTTP 서버의 GET /toolchain/probe 실제 method/path/headers/status/body를 전달해 정상200/UUID 응답 허용, 같은200/{}의 필수id 누락은 validator가 ERROR로 거부했다. 음성 사례는 예상 거부 assertion의 성공이며 태스크 실패와 구분한다.
+- 기존 docs/openapi.yaml 원본의 OpenAPI3.0.3 parse/resolve 성공. 업무 API를 기동·검증한 근거는 아니다.
+- 정상 fixture의 UUID를 not-a-uuid로 고의 변경: 종료1·Contract3 중 정상 응답1실패. 원복 contractTest 종료0·3건 실패skip0. 계약 리소스의 수작업 중복 사본과 제품 API 음성 옵션 없음.
+- T023~T032 완료. 각 후보의 최소 실행을 확인했으며 업무 동작 호환성은 미검증이다.

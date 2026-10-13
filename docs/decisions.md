@@ -28,3 +28,7 @@
 현재 Gradle9.7.1/Boot4.1.1/Java25 골격을 유지한다. 문서 루트는 기존 프로젝트 루트 docs/다. 새 업무 도메인을 추가하지 않고, 프로브와 시험 migration은 도구 확인에만 사용한다. 후보의 설치·취득을 연동 호환성 확인으로 표현하지 않는다.
 
 Compose와 Testcontainers는 `postgres:18.6-bookworm`, `redis:8.10.2-trixie`의 위 취득 digest를 함께 사용한다. arm64 실제 컨테이너 내부 버전 출력에 성공했다. 태그가 바뀌더라도 같은 식별값을 실행하도록 digest까지 고정한다.
+
+QuickTheories0.26의 Core bytecode에서 examples 루프의 생성과 visitedValues 중복 제거를 확인했다. withExamples(100)은 실제 assertion61회여서 최소100회 조건에 실패했다. 기대값을 낮추지 않고 생성 예산을1000으로 늘리고 실제 assertion 횟수≥100을 계속 검사한다. seed와 실제 횟수를 기록한다.
+
+심화 후보는 첫 조합 그대로 최소 사례를 통과했다: QuickTheories0.26, validator core2.46.1, PIT Gradle1.19.0/engine1.22.1/Jupiter1.2.3. Java/JUnit 임의 하향 없이 실행했으며 core validator는 JDK HTTP fixture와 독립 어댑터를 사용한다. 업무 OpenAPI 읽기와 실제 업무 응답 준수를 구분한다.

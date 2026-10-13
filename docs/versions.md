@@ -28,3 +28,7 @@ Docker 이미지 digest와 실제 해석 의존성은 해당 검증 후 추가�
 실제 Gradle dependencyInsight(종료0): Jupiter6.0.3, Testcontainers2.0.5, Flyway12.4.0, PostgreSQL JDBC42.7.13. Boot BOM 관리 버전 override 없음. 연동 테스트는 아직 미검증이다.
 
 Jupiter6.0.3/Testcontainers2.0.5/Flyway12.4.0/JDBC42.7.13 및 고정 PG18.6/Redis8.10.2 조합: Unit3·일반IT4 최소 사례 실행 확인. 업무 API·경쟁 정합성 호환성은 검증하지 않았다.
+
+심화 실제 조합(해당 최소 범위만 확인): QuickTheories0.26·Jupiter6.0.3/Java25 정상101회·seed 축소재현 확인. PIT Gradle1.19.0/engine1.22.1/Jupiter지원1.2.3: 순수 프로브 변이1개 생성·탐지. validator core2.46.1은 취득·컴파일 확인, 실제 HTTP는 진행 중.
+
+validator core2.46.1: 실제 HTTP Contract3건 정상/필수id 누락/업무 OpenAPI parse/ref 및 정상 UUID 고의 훼손 탐지·원복 실행 확인. Spring adapter 대신 core를 사용했으며 업무 HTTP 준수는 미검증이다.

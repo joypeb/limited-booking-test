@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'info.solidsoft.pitest' version '1.19.0'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -33,6 +34,8 @@ dependencies {
     testImplementation 'org.testcontainers:testcontainers-postgresql'
     testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.quicktheories:quicktheories:0.26'
+    testImplementation 'com.atlassian.oai:swagger-request-validator-core:2.46.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -124,4 +127,43 @@ tasks.withType(JavaExec).configureEach {
 tasks.register('verify') {
     group = 'verification'
     dependsOn tasks.test, tasks.integrationTest
+}
+
+pitest {
+    pitestVersion = '1.22.1'
+    junit5PluginVersion = '1.2.3'
+    targetClasses = ['com.limitedbooking.backend.common.ToolchainProbe']
+    targetTests = ['com.limitedbooking.backend.common.ToolchainSmokeTest']
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    threads = 1
+}
+
+tasks.named('processTestResources') {
+    from('../specs/002-setup-test-toolchain/contracts/toolchain-smoke.openapi.yaml')
+    from('../docs/openapi.yaml') { rename { 'business.openapi.yaml' } }
+}
+
+tasks.named('pitest') {
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst { delete layout.buildDirectory.dir('reports/pitest') }
+}
+tasks.register('mutationSmoke') {
+    group = 'verification'
+    dependsOn tasks.pitest
+    doLast {
+        def xml = layout.buildDirectory.file('reports/pitest/mutations.xml').get().asFile
+        def html = layout.buildDirectory.file('reports/pitest/index.html').get().asFile
+        if (!xml.isFile() || !html.isFile()) throw new GradleException('PIT XML/HTML 보고서 없음')
+        def mutations = new groovy.xml.XmlSlurper().parse(xml).mutation
+        int generated = mutations.size()
+        int killed = mutations.findAll { it.@status.text() == 'KILLED' }.size()
+        def invalid = mutations.findAll { !(it.@status.text() in ['KILLED', 'SURVIVED']) }
+        int survived = mutations.findAll { it.@status.text() == 'SURVIVED' }.size()
+        logger.lifecycle("PIT generated=${generated}, killed=${killed}, survived=${survived}, invalid=${invalid.size()}")
+        if (generated < 1 || killed < 1 || !invalid.isEmpty()) {
+            throw new GradleException('PIT 생성/탐지0 또는 NO_COVERAGE/도구 오류')
+        }
+    }
 }
