@@ -117,4 +117,4 @@ Unit·일반 IT·Contract·Property 각 그룹의 실행수≥1·실패0·skip0�
 
 [복구 계약](contracts/validation-contract.md#중단실패-후-정리와-재개)을 적용한다. 격리 시험 migration 실패는 실행 담당자가 오류·metadata·컨테이너 식별값을 남기고 지원 코드/담당자가 이번 시험 자원만 정리한 후 원인 수정·새 DB로 재검증한다. 개발 표식 중단은 새 연결에서 같은 UUID·기대값과 commit 여부를 확인하고, 준비가 확인된 표식으로 전체 보존 시험을 다시 수행한다. 조회 불가·값 불일치·잔존 자원 정리 미확인은 성공으로 기록하지 않는다. schema/개발 DB 초기화·named volume 삭제·무조건 재실행은 복구 절차가 아니다.
 
-실제 현재 수: Unit3, 일반IT4, Contract3, Property3(내부101회), deepTest13. PIT생성1·탐지1·생존0. QuickTheories는 중복을 제거하므로 생성 예산1000과 실제101회를 구분하며 실제 최소100회 조건을 검사한다. 프로브 후속 대체와 미검증 범위는 README/계획의 실제 구현 결과를 참고한다.
+실제 현재 수: Unit3, 일반IT5, Contract3, Property3(내부101회), deepTest14. PIT생성1·탐지1·생존0. QuickTheories는 중복을 제거하므로 생성 예산1000과 실제101회를 구분하며 실제 최소100회 조건을 검사한다. 프로브 후속 대체와 미검증 범위는 README/계획의 실제 구현 결과를 참고한다.

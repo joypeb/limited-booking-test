@@ -117,6 +117,6 @@ CHK022의 실패·중단 복구 계약은 [실행 계약](contracts/validation-c
 
 ## 실제 구현 결과
 
-1단계 최소 검증은 Unit3/일반IT4/Contract3/Property3(내부101회), PIT1생성1탐지·NO_COVERAGE0이다. PostgreSQL 표식73 보존 및 실패 migration 후 새 격리 DB 재개를 확인했다. QuickTheories0.26의 중복 제거 때문에 생성 예산100→1000을 조정했고 실제100회 하한은 유지했다. tag+digest를 사용하는 공식 PostgreSQL에 Testcontainers compatibility를 명시했다. Spring context 종료 뒤 의존 컨테이너를 정리한다.
+1단계 최소 검증은 Unit3/일반IT5/Contract3/Property3(내부101회), PIT1생성1탐지·NO_COVERAGE0이다. PostgreSQL 표식73 보존 및 실패 migration 후 새 격리 DB 재개를 확인했다. QuickTheories0.26의 중복 제거 때문에 생성 예산100→1000을 조정했고 실제100회 하한은 유지했다. tag+digest를 사용하는 공식 PostgreSQL에 Testcontainers compatibility를 명시했다. Spring context 종료 뒤 의존 컨테이너를 정리한다.
 
 프로브는 main/common에 있으나 Bean/API/업무 capacity 규칙이 아니다. 3단계 순수 ResourceRules/IdempotencyKey/CancellationDecision을 작성할 때 해당 실제 사례와 PIT 대상으로 대체한다. 시험 migration은 2단계 업무 migration으로, 시험 HTTP fixture는 실제 업무 계약 사례로 점진 대체한다. toolchain 계정은 4단계 업무 UUID 인증 전에 교체한다. Gradle10/configuration cache·업무 경쟁·부하·외부 CI는 미검증이다.

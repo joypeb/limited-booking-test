@@ -429,3 +429,16 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 원계획3·6·7절과 README/knowledge/계획/실행 계약을 실제 Gradle·경로·수·조합으로 맞췄다. 업무2·4·5절은 HEAD 원본과 바이트 동일임을 확인했다. 원계획의 저장소 밖 참고 문서2건은 존재하지 않는 로컬 링크 대신 원래 파일명을 보존한 참고 표기로 바꿨다.
 - 고의 결함·skip·임시 태그 설정은 모두 원복했고 .env는 ignored이다. toolchain 체크리스트를 implement에서 수정하지 않았다. 외부 hooks 설정은 없으므로 before/after hook은 해당 없음.
 - 최종 코드 검증은 원복 deepTest13건·실패skip0 및 별도 PIT1생성1탐지다. 이후 변경은 문서 동기화·인수 기록이며 추가 업무 동작 변경은 없다. 최종 브랜치 리뷰를 별도 시행한다.
+
+- 최종 환경 재조회: Docker Compose v5.6.0. 착수 CLI 출력v5.1.0과 구분해 versions에 기록했다. 최종 docker ps의 실행 컨테이너0, PostgreSQL named volume은 보존. 최종 XML은 Unit3/일반IT4/Contract3/Property3·실패skip0, PIT read 변이1개 KILLED.
+
+### 2026-10-14 최종 독립 리뷰와 보완
+
+- 읽기 전용 독립 리뷰: range71b677c..ab6a2c1 및 미커밋 버전 기록. 첫 시도는 사용량 제한으로 실패해 리뷰 결과가 없었고, 사용자 “이어서 해줘” 지시 후 같은 리뷰를 재개했다. Critical0, Important1(앱 IT HttpClient.close의 종료 상한 누락), Minor1(버전 문서 준비/완료 상태 혼재).
+- Important는 종료10초 계약 누락으로 판단해 보완했다. 실제 동적 HTTP 서버가200 헤더/첫 바이트를 보내고 본문을 끝내지 않는 회귀 사례 HttpClientCleanupIT를 먼저 작성했다. 기존 close 동작의 지정 실행 종료1, 1건 assertion의 Future TimeoutException(12초 관찰 상한)을 확인했다. 컴파일 실패나 Docker 미준비가 아니다. 실패 후에도 본문/클라이언트/서버/실행기 정리를 완료했다.
+- HttpClientTestSupport.close를 shutdownNow→awaitTermination(10초)로 바꾸고 앱 IT의 finally에 적용했다. 지정 회귀 IT 실행 종료0·1건 실패skip0. 이후 ./gradlew deepTest 종료0: Unit3·일반IT5·Contract3·Property3, 총14·실패skip0. 미종료 응답 cleanup 회귀도 포함한다. PIT 대상 main/Unit은 변경하지 않았으므로 기존 생성1·탐지1 근거를 유지하며 다시 실행하지 않았다.
+- 버전 문서는 미완료 준비 표현을 현재 확인 표로 정리했다. 이 문서 수정은 리뷰 결과 도착 전 진행 중이던 최종 기록 정리이며 별도 prose 테스트 대신 내용·링크·diff 검사로 확인한다. 남은 Minor 없음.
+- 제외 범위 판단: 업무 API/UUID 인증/수량·SQL 경쟁/Redis 제한/부하/외부 CI는1단계 범위 밖으로 그대로 미구현/미검증이다. 종료10초 초과 분기 자체와 개발 commit 응답 유실 주입은 여전히 미실시로 표시한다. 실제 미종료 HTTP 응답의 bounded cleanup은 이번 보완에서 실행 확인했다.
+- 최초 여덟 조합 표의 일반IT4/총13은2026-10-13 당시 근거다. 현재 모든 일반IT 포함 명령은 새 회귀1건을 포함해 일반IT5, deepTest14다. 이름 지정 ToolchainSmokeIT3 및 Unit/Contract/Property 각3은 유지된다.
+- 기존 작업 공간/chore 브랜치에서 순차 실행했고 Spec Kit T번호를 ledger에 직접 추적했다. 자동 brief 추출 스크립트는 Task N 제목만 지원해 사용하지 않았다. 병행 checkout 충돌/수동 추적 누락 가능성은 실제 git 상태·체크42개·실행 근거 대조로 관리했다.
+- T042의 지시에 따라 작업 브랜치와 로컬 커밋을 유지한다. develop/main 병합·push·PR·태그는 하지 않는다. 후속 통합은 별도 작업이다.

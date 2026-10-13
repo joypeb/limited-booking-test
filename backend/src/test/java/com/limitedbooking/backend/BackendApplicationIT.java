@@ -1,6 +1,7 @@
 package com.limitedbooking.backend;
 
 import com.limitedbooking.backend.support.ContainerTestSupport;
+import com.limitedbooking.backend.support.HttpClientTestSupport;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
@@ -44,12 +45,13 @@ class BackendApplicationIT {
         @Override public void afterTestClass(TestContext testContext) { resources.close(); }
     }
     @Test void contextLoadsAndHealthRespondsOverHttp() throws Exception {
-        try (var client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build()) {
+        var client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
             var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/actuator/health"))
                     .timeout(Duration.ofSeconds(10)).GET().build();
             var response=client.send(request,HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("\"status\":\"UP\"").doesNotContain("components");
-        }
+        } finally { HttpClientTestSupport.close(client); }
     }
 }
