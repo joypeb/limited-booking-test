@@ -316,3 +316,16 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 미검증: Java/API/HTTP·DB/Redis·YAML/OpenAPI validator·Property/PIT/k6·외부CI. 새 기능·환경 구현이나 실행 테스트는 이번 작업에서 수행하지 않았다.
 
 검증: quickstart의 Python 검사2개 종료0(설계문서7개·전체문서23개·사례72행), 작업27/27 표식 집계 종료0, `git diff --check` 종료0. 앱 테스트는 미실행이다. after_implement 확장 훅 파일은 없어 실행 대상이 없다.
+
+## 1단계 환경·테스트 도구 착수 (2026-10-13)
+
+- 적용: knowledge/README.md, rules 전체, security 도메인, 원계획 7절 1단계 및 명세/실행 계약. 업무 API·SQL은 이번 검증 범위 밖이다.
+- 저장소 최상위 `/Users/joypeb/Desktop/projects/limited-booking`, 착수 HEAD `71b677c`. develop과 문서 브랜치 HEAD 동일. 기존 변경은 미추적 specs/002-setup-test-toolchain/뿐이며 보존했다.
+- `git switch -c chore/setup-test-toolchain develop`: 종료0, 실제 브랜치 생성. 별도 저장소·Maven·패키지 교체 없음.
+- 체크리스트 게이트: requirements 16/16, toolchain 30/30, 미체크0. CHK022 검토 완료를 포함한다. 이 표시는 요구사항 품질 검토이며 구현 완료가 아니다. implement에서는 체크리스트를 수정하지 않는다.
+- `backend/`의 `./gradlew --version`: 종료0, Gradle9.7.1·Corretto25.0.4 확인.
+- 기존 골격 기준 `./gradlew test --rerun-tasks`: 종료0, contextLoads 1건·실패0·오류0·skip0. 새 분류 및 DB/Redis 검증의 증거가 아니다.
+- `docker info`: sandbox 안에서는 socket 접근 거절; 승인된 로컬 실행에서는 daemon 미기동 확인. `open -a Docker` 종료0 후 데몬29.2.1/arm64/메모리8,216,915,968 bytes 확인(종료0).
+- `brew install k6`: 종료0, 누락된 k6만 설치. `k6 version`: 종료0, 2.3.0. 부하 실행은 후속 단계다.
+- 두 고정 이미지 docker pull: 각각 종료0. 이미지 버전·digest 및 실제 연동 결과는 versions 기록에 연결한다.
+- T001~T003 준비 완료. T004 환경 취득 확인 진행 중. 기능·Compose 기동·데이터 보존·새 도구 조합은 아직 미검증이다.

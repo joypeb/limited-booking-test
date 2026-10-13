@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: 도구 연동 확인 전용 계약
+  version: 0.0.1
+  description: 테스트 서버 전용이며 업무 API 계약이 아니다.
+paths:
+  /toolchain/probe:
+    get:
+      operationId: readToolchainProbe
+      responses:
+        '200':
+          description: 식별자를 포함한 시험 응답
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
