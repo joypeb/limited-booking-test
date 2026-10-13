@@ -42,3 +42,7 @@ QuickTheories0.26의 Core bytecode에서 examples 루프의 생성과 visitedVal
 - T042의 병합/push 금지 범위에 따라 chore 브랜치와 로컬 커밋을 유지한다. 비용: develop 통합은 별도 작업이다.
 
 독립 리뷰의 종료 상한 누락은 commit be96d7c에서 실제 HTTP 회귀 실패→수정 통과 및 deepTest14건 실패skip0으로 보완했다. 버전 문서의 과거/현재 상태 혼재도 최종 기록 정리에서 해결했다. 미해결 리뷰 Minor는 없다.
+
+## PR 적대적 리뷰의 전체 HTTP 요청 deadline (2026-10-14)
+
+Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대기를 제한하지 못함을 실제 재현했다. 연결/헤더 timeout을 유지하면서 sendAsync 응답 Future.get(10초)로 전체 본문 완료를 제한하고 timeout·중단 시 원래 Future를 취소한다. 앱 IT와 계약 fixture는 같은 지원 경로를 사용한다. 회귀 실패→수정 통과·최종15건 및 리뷰 PASS를 확인했다. 업무 HTTP 오류/timeout 정책의 구현은 후속 범위다.

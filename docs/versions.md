@@ -28,7 +28,7 @@ Compose와 Testcontainers는 다음 취득 digest를 함께 고정한다. `docke
 - PostgreSQL18.6: `postgres@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c`
 - Redis8.10.2: `redis@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6`
 
-실행 조합은 Unit3, 일반IT5, Contract3, Property3(내부assertion101회), 지정IT3이다. verifyContract는 Property를, verifyProperty는 Contract를 제외하며 deepTest는 총14건이다. 여덟 조합은 모두 종료0·실패skip0이고 별도 PIT는 생성1·탐지1·생존0·NO_COVERAGE0이다. 현재 결과/XML 게이트와 고의 실패·원복까지 확인했다.
+실행 조합은 Unit3, 일반IT6, Contract3, Property3(내부assertion101회), 지정IT3이다. verifyContract는 Property를, verifyProperty는 Contract를 제외하며 deepTest는 총15건이다. 최초 여덟 조합의 실행 근거는 당시 일반IT4/총13이다. 회귀 보완 후 현재 deepTest15건을 종료0·실패skip0으로 확인했고, PR 전 별도 PIT는 생성1·탐지1·생존0·NO_COVERAGE0이다. 현재 결과/XML 게이트와 고의 실패·원복까지 확인했다.
 
 Property 생성 예산1000과 실제assertion101회를 구분한다. 고의 n>50 결함은 최초100에서51까지 축소되고 seed20261013으로 재현됐다. 계약 검증기 core는 JDK HTTP fixture의 실제 요청·응답을 검사하며 Spring adapter는 사용하지 않는다. 고정 업무 OpenAPI 읽기 성공은 업무 HTTP 준수 증거가 아니다.
 

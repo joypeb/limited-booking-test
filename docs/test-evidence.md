@@ -444,3 +444,15 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - T042의 지시에 따라 작업 브랜치와 로컬 커밋을 유지한다. develop/main 병합·push·PR·태그는 하지 않는다. 후속 통합은 별도 작업이다.
 
 - 최종 코드 대상 commit: `be96d7c` (앱 IT 종료 상한·회귀 보완 포함). 기본 범위 baseline71b677c에서6개 목적별 로컬 커밋으로 진행했다. 수정 뒤 재리뷰 대신 실제 회귀 RED→GREEN/전체14통과로 보완을 판정했다. 현재 작업 브랜치는 chore/setup-test-toolchain이며 기록 정리 커밋 후 git status를 재확인한다.
+
+### 2026-10-14 GitHub PR 준비·적대적 코드리뷰
+
+- 사용자 지시로 현재 chore/setup-test-toolchain을 origin에 push했다. 원격에는 main만 있었고 로컬 develop과 원격main의 기준71b677c가 같음을 확인해 PR 대상 origin/develop을 생성했다. 이전 “외부 작업 없음”은 그 이전 작업 범위의 이력이며 이번 push/PR는 별도 명시 지시에 따른다.
+- PR 대상 diff의 적대적 독립 리뷰(71b677c..41c7847): Critical0·Important1·Minor0. Important는 헤더/첫 바이트 이후 본문 정체가 HttpRequest.timeout(10초)만으로 제한되지 않는 문제다. 리뷰어가 Corretto25에서12,009ms 후 Future pending을 실제 확인했다. 앞선 수렴 검토는 이 실패 경로를 놓쳤다.
+- 수정 전 회귀: 실제 서버가200·첫 바이트를 flush한 뒤 본문을 끝내지 않는 HttpClientCleanupIT.responseBodyStallFailsWithinWholeRequestDeadline를 작성했다. 지정 실행 종료1·1건 assertion 실패:12초 caller Future TimeoutException을 받았고 기대한 요청 HttpTimeoutException이 발생하지 않았다. 실패 후 정리 완료. 컴파일/환경 오류가 아니다.
+- 공통 HttpClientTestSupport.send를 sendAsync + Future.get(10초)로 변경했다. 전체 본문 완료를 제한하고 Timeout/Interrupted에서 pending.cancel(true), 실행 실패는 원인을 전달한다. BackendApplicationIT와 ToolchainHttpFixture 모두 사용한다. 클라이언트 종료10초 상한은 유지한다.
+- 수정 후 지정 회귀 종료0·1건 실패skip0. ./gradlew deepTest 종료0: Unit3·일반IT6·Contract3·Property3, 총15·실패skip0. 본문 정체의 요청 timeout과 취소 후 정리를 실제 확인했다.
+- PR 준비 시 ./gradlew deepTest mutationSmoke도 종료0(수정 전14건, PIT 생성1·탐지1·생존0·NO_COVERAGE0). 이후 변경은 테스트 HTTP 지원/IT만이며 main/PIT 대상 Unit·빌드 의존성은 변경하지 않아 PIT를 재실행하지 않았다. 수정 후15건 결과와 구분한다.
+- 전체 업무 API·schema·UUID 인증·예약 경쟁·Redis 제한·부하·외부 CI는 후속 범위다. Docker startup/cleanup timeout의 모든 장애 분기와 개발 commit 응답 유실은 미검증이다. 임의 -x/init script로 검증을 고의 제거하는 사용자 우회는 정상 실행 계약 범위 밖이다.
+
+- 같은 적대적 리뷰어의 수정 재평가 PASS: 본문 완료 Future의10초 제한·Timeout/Interrupted 취소·두 호출 경로 적용·실제 회귀와 전체15건 로그를 읽기 전용으로 확인했다. 미해결 Critical/Important0, Minor0. 이 판정 후 수정·기록을 커밋하고 원격 반영한 뒤 develop 대상 PR을 게시한다.

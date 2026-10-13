@@ -41,6 +41,6 @@
 
 2026-10-13 1단계 수행 후 애플리케이션은 backend/, 기본 패키지는 com.limitedbooking.backend이며 Java25·Boot4.1.1·Gradle9.7.1을 유지했다. MVC·Security·JDBC·Redis·Flyway·Actuator 및 검증 의존성을 추가했다. [실행 안내](../README.md), [버전](../docs/versions.md), [실행 증거](../docs/test-evidence.md)에 실제 상태를 연결한다.
 
-Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. Unit3·일반IT5·Contract3·Property3(내부101회), PIT 생성1·탐지1이다. 프로브는 도구 확인용이며 후속 ResourceRules/IdempotencyKey/CancellationDecision으로 대체할 예정이다. 업무 API·SQL·인증 UUID·요청 제한·경쟁 검증은 아직 미구현이다. 업무 스키마는 2단계에서 만들며 시험 migration은 test resources에만 있다.
+Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. Unit3·일반IT6·Contract3·Property3(내부101회), PIT 생성1·탐지1이다. 프로브는 도구 확인용이며 후속 ResourceRules/IdempotencyKey/CancellationDecision으로 대체할 예정이다. 업무 API·SQL·인증 UUID·요청 제한·경쟁 검증은 아직 미구현이다. 업무 스키마는 2단계에서 만들며 시험 migration은 test resources에만 있다.
 
 `knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 미실시다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.

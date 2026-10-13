@@ -29,7 +29,7 @@ public final class ToolchainHttpFixture implements AutoCloseable {
     public Exchange get() throws Exception {
         var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+server.getAddress().getPort()+"/toolchain/probe"))
                 .timeout(Duration.ofSeconds(10)).header("Accept","application/json").GET().build();
-        return new Exchange(request,client.send(request,HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)));
+        return new Exchange(request,HttpClientTestSupport.send(client,request));
     }
     @Override public void close() throws Exception {
         server.stop(0);client.shutdownNow();executor.shutdownNow();

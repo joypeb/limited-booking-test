@@ -49,7 +49,7 @@ class BackendApplicationIT {
         try {
             var request=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/actuator/health"))
                     .timeout(Duration.ofSeconds(10)).GET().build();
-            var response=client.send(request,HttpResponse.BodyHandlers.ofString());
+            var response=HttpClientTestSupport.send(client,request);
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("\"status\":\"UP\"").doesNotContain("components");
         } finally { HttpClientTestSupport.close(client); }

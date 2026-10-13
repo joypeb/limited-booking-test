@@ -63,12 +63,12 @@ backend/에서 실행한다. Java25와 실행 가능한 Docker가 필요하며 �
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
 | `./gradlew test` | Spring 없는 Unit3 |
-| `./gradlew verify` | Unit3+일반IT5 |
+| `./gradlew verify` | Unit3+일반IT6 |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
 | `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit3+지정IT3 |
-| `./gradlew verifyContract` | Unit3+일반IT5+Contract3; Property 제외 |
-| `./gradlew verifyProperty` | Unit3+일반IT5+Property3; Contract 제외 |
-| `./gradlew deepTest` | 네 그룹 총14 |
+| `./gradlew verifyContract` | Unit3+일반IT6+Contract3; Property 제외 |
+| `./gradlew verifyProperty` | Unit3+일반IT6+Property3; Contract 제외 |
+| `./gradlew deepTest` | 네 그룹 총15 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
@@ -85,4 +85,6 @@ Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 �
 
 도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 SQL·권한·경쟁·멱등성·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
 
-최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합 일반IT4/총13과2026-10-14 보완 후 일반IT5/총14를 구분한다.
+최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합은 일반IT4/총13이며, 이후 종료 회귀로14건, PR 적대적 리뷰의 본문 정체 회귀로15건이 됐다.
+
+앱 IT와 계약 fixture의 문자열 응답 요청은 공통 지원 코드의 sendAsync→Future.get(10초)로 본문 완료까지 기다린다. timeout/중단은 요청 Future를 취소하고 finally에서 클라이언트 등 소유 자원을 정리한다. HttpRequest.timeout만으로는 응답 헤더 이후 본문 정체를 제한하지 못함을 실제 회귀로 확인했다.
