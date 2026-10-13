@@ -4,3 +4,13 @@
 .env.*
 !.env.example
 .DS_Store
+
+# Java 산출물과 문서 작업 임시 파일
+*.class
+*.jar
+!**/gradle/wrapper/gradle-wrapper.jar
+*.log
+*.tmp
+*.swp
+Thumbs.db
+.superpowers/

@@ -70,3 +70,49 @@ OpenAPI YAML 파싱·자동 스키마 검증 명령은 아직 채택하지 않�
 후속 작업의 `docs/test-evidence.md`에 날짜·실제 브랜치/커밋·문서 검사 명령·종료 코드·사례 수·수량표 검토 결과·본인 설명 여부·미실행 범위를 적는다. 앱 테스트 수는 문서 검사와 구분한다. API·DB·Redis·OpenAPI 자동 검증·CI는 실행 전 미검증이다.
 
 이번 계획의 완성과 원 계획 0단계의 완료는 별개다. 위 문서 산출물·사례·본인 설명이 실제 확인된 뒤에만 0단계 완료를 표시한다. 다음 명령은 `$speckit-tasks`다.
+
+## 작성된 문서의 내용·링크·공백 검사
+
+0단계 산출물 작성 후 아래 명령을 저장소 루트에서 실행한다. 표준 라이브러리로 파일·링크·필수 표식만 검사한다. YAML 파싱·OpenAPI validator·실제 HTTP 검증이 아니다. 공백 정책 확인 또는 T025 설명이 미완료라면 이 명령의 성공으로 전체 0단계를 완료 처리하지 않는다.
+
+```sh
+python3 - <<'PYCODE'
+from pathlib import Path
+import re
+files = list(Path('specs/001-define-api-contract').rglob('*.md'))
+files += [Path('knowledge/README.md')]
+files += list(Path('knowledge/rules').glob('*.md'))
+files += [f for f in Path('knowledge/domain').glob('*.md') if f.name != '_template.md']
+files += list(Path('docs').glob('*.md'))
+for file in files:
+    text = file.read_text(encoding='utf-8')
+    prose = re.sub(r'```[^\n]*\n.*?```', '', text, flags=re.S)
+    for target in re.findall(r'\]\(([^\n]+?)\)', prose):
+        target = target.strip('<>')
+        if not target.startswith(('http://', 'https://')):
+            assert (file.parent / target.split('#', 1)[0]).exists(), (file, target)
+    for line in text.splitlines():
+        assert not line.rstrip(' ').endswith('\t'), file
+        assert not re.search(r'[^ ] {1}$| {3,}$', line), (file, line)
+for domain in ('resource', 'reservation', 'security', 'ratelimit'):
+    text = Path(f'knowledge/domain/{domain}.md').read_text()
+    assert len(re.findall(r'^## [1-9]\.', text, re.M)) == 9, domain
+contract = Path('docs/openapi.yaml').read_text()
+assert contract.startswith('openapi: 3.0.3\n')
+assert len(re.findall(r'^      operationId:', contract, re.M)) == 5
+for token in ('basicAuth', 'additionalProperties: false', 'Idempotency-Key',
+              'Location:', 'Idempotent-Replayed:', 'Retry-After:',
+              'WWW-Authenticate:', 'nullable: true', '8192', '415', '413'):
+    assert token in contract, token
+refs = re.findall(r"\$ref: '#/components/(\w+)/(\w+)'", contract)
+for section, name in refs:
+    assert re.search(r'^    ' + re.escape(name) + r':$', contract, re.M), (section, name)
+evidence = Path('docs/test-evidence.md').read_text()
+assert len(re.findall(r'^\| F\d{2} \|', evidence, re.M)) == 19
+assert len(re.findall(r'^\| C\d{2} \|', evidence, re.M)) == 5
+assert len(re.findall(r'^\| R\d{2} \|', evidence, re.M)) == 41
+print(f'문서 {len(files)}개 링크·형식, 도메인4개, API5개 필수 표식, 사례65행 존재 검사 통과')
+PYCODE
+```
+
+출력의 사례 65행은 F19+C5+R41의 문서 행 수이며 앱 테스트 수가 아니다. 필수 표식 존재 검사로 계약의 의미나 YAML 문법을 자동 검증했다고 표현하지 않는다. 위 검사에 이어 `git diff --check`와 최종 산출물 3개의 `test -s`를 각각 실행하고 종료 코드를 기록한다.

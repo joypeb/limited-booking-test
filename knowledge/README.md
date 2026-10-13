@@ -29,7 +29,10 @@
 
 - [_template.md](domain/_template.md): 새 도메인 문서의 공통 형식. 템플릿 자체는 특정 도메인의 확정 계약이 아니다.
 - [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 설계 지식이며 구현·실행 검증은 미완료다.
-- reservation·security·ratelimit의 개별 도메인 문서는 아직 없다. 해당 도메인의 개발을 시작할 때 템플릿으로 작성하고 이 목록에 등록한다.
+- [reservation.md](domain/reservation.md): 예약·멱등 재현·취소·트랜잭션·경쟁의 설계 지식.
+- [security.md](domain/security.md): 로컬 인증·권한·소유권·본문 필터의 설계 지식.
+- [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
+- 위 기능은 미구현이며 실제 HTTP·DB·Redis 검증은 미실행이다.
 - 첫 버전의 업무 도메인은 예약 대상(`resource`)과 예약(`reservation`)이다. `security`·`ratelimit`은 이를 지원하는 기능이며, 필요할 때 같은 형식으로 책임과 계약을 문서화한다. `common`을 독립 업무 도메인으로 가정하지 않는다.
 - 파일 이름은 `<domain-name>.md`를 사용한다. 근거·경계·기대 결과를 먼저 적고, 코드·SQL·테스트·명령은 실제 존재 여부를 확인해 연결한다.
 - 템플릿의 모든 절을 유지한다. 해당 없는 항목은 이유를 적고, 미확정 사항은 질문과 영향 범위를 적는다. 다른 도메인과 공유하는 규칙은 관련 문서로 연결한다.
@@ -40,4 +43,4 @@
 
 계획서의 Maven·`reservation-backend/`·`com.example.reservation`은 제안된 구성이다. 현재 Gradle·경로·패키지를 유지하고, 테스트 실행 계약은 해당 단계에서 Gradle 태스크로 구현·기록한다. 아직 없는 명령을 실행 안내에 확정값으로 싣지 않는다.
 
-`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 버전·결정·실행 증거·성능 기록은 향후 프로젝트 루트 `docs/`의 `versions.md`, `decisions.md`, `test-evidence.md`, `performance.md`에 작성하고 OpenAPI는 `docs/openapi.yaml`로 관리한다. 이들은 현재 생성된 결과물이 아니라 개발 단계에서 작성할 기록 위치다.
+`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. OpenAPI 이름 공백 문자 범위 확인과 본인 설명 확인은 대기 중이며 0단계 전체 완료가 아니다. 버전·성능 기록 `docs/versions.md`·`docs/performance.md`는 후속 환경·부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.

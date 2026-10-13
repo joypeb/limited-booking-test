@@ -41,7 +41,7 @@ ADMIN이 예약 대상·최초 수량을 생성하고 인증 사용자가 단건
 | POST /api/resources | ADMIN, name·capacity, JSON | 201 ResourceView·Location | 400·401·403·413·415·503 | 대상 생성 |
 | GET /api/resources/{id} | 인증 사용자, UUID | 200 ResourceView | 400·401·404·503 | 없음 |
 
-ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. 최종 OpenAPI는 아직 없고 [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)가 있다.
+ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. [OpenAPI 초안](../../docs/openapi.yaml)을 작성했다. [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)와 대조하며 공백 문자 범위 최종 확정은 대기 중이다.
 
 ## 6. 멱등성·트랜잭션·경쟁·장애
 
@@ -56,7 +56,7 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | resource-002 | 예약·재요청·취소·중복 취소 | 합계 capacity 유지 | 후속 DB·경쟁 미실행 |
 | 권한 | USER 생성·미인증 조회 | 403·401 | 후속 HTTP 미실행 |
 
-실제 실행 증거는 없다. 후속 문서 검토·테스트 증거는 프로젝트 루트 `docs/test-evidence.md`에 기록할 예정이다.
+기능 실행 증거는 없다. [문서 검토 증거](../../docs/test-evidence.md)에 수동 기대값 대조와 실제 문서 검사 결과를 기록한다.
 
 ## 8. 구현 연결과 변경 영향
 
@@ -66,13 +66,14 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | 대상 규칙·DTO·Controller·Service·Repository | resource 패키지 예정 | 미구현 |
 | SQL·Flyway·대상 테스트·최종 OpenAPI | 후속 단계 예정 | 미구현 |
 
-이름 길이 단위의 명확화는 계획서·도메인 규칙·명세·계약 설계에 반영했다. 구현 이후에는 순수 규칙·DTO·OpenAPI·Unit·HTTP 기대값을 함께 검토한다. JDBC 등 선택 이유의 최종 기록은 `docs/decisions.md`에 작성 예정이다.
+이름 길이 단위의 명확화는 계획서·도메인 규칙·명세·계약 설계에 반영했다. 구현 이후에는 순수 규칙·DTO·OpenAPI·Unit·HTTP 기대값을 함께 검토한다. JDBC 등 선택 이유는 [결정 기록](../../docs/decisions.md)에 작성했다.
 
 ## 9. 미확정·미검증 사항과 다음 작업
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
 | 이름 길이 실행 검증 미실행 | 코드 포인트와 실제 거부 결과 | 규칙·HTTP 구현 단계에서 경계 시험 |
-| OpenAPI·API·DB 기능 미구현 | 실제 계약 준수 확인 불가 | 먼저 0단계 계약 문서 작성 |
+| API·DB 기능 미구현 | 실제 계약 준수 확인 불가 | 0단계 문서 확정 뒤 도구 준비 |
+| 공백 문자 범위 미확정 | 이름 전처리의 정확한 허용값 | 사용자 답변 후 계약·사례 동기화 |
 
-이번 0단계 계획을 막는 미확정 도메인 정책은 없다. 이 문서는 업무 규칙을 바꾸거나 코드 실행 완료를 주장하지 않는다.
+이름 길이 코드 포인트 정책은 확정됐으며 제거할 공백 문자 범위는 추가 확인 중이다. 이 문서는 업무 규칙을 바꾸거나 코드 실행 완료를 주장하지 않는다.

@@ -1,0 +1,584 @@
+openapi: 3.0.3
+info:
+  title: 한정 수량 예약 API
+  version: 0.1.0
+  description: |
+    localhost CLI/API 클라이언트용 고정 계약 초안. 0단계 문서 작성이며 실제 HTTP/DB/Redis 검증은 미실행이다.
+    모든 요청의 실제 본문 상한은 8192바이트다. Content-Length 유무와 chunked 여부와 무관하게
+    실제 읽기 바이트를 제한하며 초과는 인증 전 413 PAYLOAD_TOO_LARGE로 거부한다.
+    상한 이하 요청은 인증 → 예약 생성/취소 요청 제한 → 입력 검증 → 서비스 순서다.
+    생성 API는 application/json만 허용한다. 미지원 Content-Type은 415다.
+    미정의 필드·중복 JSON 키·잘못된 JSON/UUID·capacity 문자열/소수 입력은 400이다.
+    임의 X-User-Id와 입력 userId를 신뢰하지 않는다. 인증 UUID만 사용한다.
+    인증된 예약 생성·취소는 합산 사용자당 20회/60초, 최초 요청부터 고정 창이다.
+    재요청·잘못된 입력도 포함하며 TTL을 요청마다 연장하지 않는다.
+    Redis 제한 초과는 429, Redis 장애는 쓰기 503이고 DB 무변경이다.
+    조회·대상 생성/조회는 Redis에 의존하지 않으며 DB 실패로 제한 카운터를 되돌리지 않는다.
+    같은 사용자·키의 성공 행은 대상을 가로질러 유일하며 TTL 삭제 없이 보존한다.
+    실패 생성 요청의 키는 보존하지 않는다. UUID 값으로 대상 동일성을 비교한다.
+    같은 키·대상은 취소 후에도 최초 201·Location·JSON 필드 값을 재현한다.
+    JSON 필드 순서·공백의 같은 바이트는 보장하지 않는다.
+    본문 바이트·JSON 원문 중복·입력 정규화·필터 순서·소유권·경쟁은 스키마만으로 증명하지 않는다.
+servers:
+  - url: http://127.0.0.1:8080
+security:
+  - basicAuth: []
+tags:
+  - name: resource
+    description: 예약 대상 생성과 단건 조회
+  - name: reservation
+    description: 예약 생성과 소유자 조회·취소
+paths:
+  /api/resources:
+    post:
+      operationId: createResource
+      tags: [resource]
+      summary: "ADMIN만 예약 대상을 생성한다. capacity=0도 허용하고 최초 available=capacity다."
+      description: "ADMIN만 예약 대상을 생성한다. capacity=0도 허용하고 최초 available=capacity다."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResourceRequest'
+      responses:
+        '201':
+          description: 성공
+          headers:
+            Location:
+              description: "생성된 단건 조회 경로 /api/resources/{id}"
+              schema:
+                type: string
+              example: "/api/resources/10000000-0000-0000-0000-000000000001"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceView'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        default:
+          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+  /api/resources/{id}:
+    get:
+      operationId: getResource
+      tags: [resource]
+      summary: "인증 사용자가 현재 예약 대상을 조회한다. Redis에 의존하지 않는다."
+      description: "인증 사용자가 현재 예약 대상을 조회한다. Redis에 의존하지 않는다."
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceView'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        default:
+          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+  /api/reservations:
+    post:
+      operationId: createReservation
+      tags: [reservation]
+      summary: "인증 사용자가 수량 1개를 예약한다. userId·quantity는 입력받지 않는다. 같은 사용자·키·다른 대상은 409 IDEMPOTENCY_CONFLICT다. 취소 후 같은 생성 요청은 최초 CONFIRMED를 재현하며 현재 CANCELLED는 GET으로 확인한다. 재요청도 인증·제한·Redis 장애로 401/429/503이 될 수 있다."
+      description: "인증 사용자가 수량 1개를 예약한다. userId·quantity는 입력받지 않는다. 같은 사용자·키·다른 대상은 409 IDEMPOTENCY_CONFLICT다. 취소 후 같은 생성 요청은 최초 CONFIRMED를 재현하며 현재 CANCELLED는 GET으로 확인한다. 재요청도 인증·제한·Redis 장애로 401/429/503이 될 수 있다."
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '201':
+          description: 생성 성공 또는 최초 생성 결과 재현
+          headers:
+            Location:
+              description: "생성된 단건 조회 경로 /api/reservations/{id}; 재요청은 최초 값을 재현한다."
+              schema:
+                type: string
+              example: "/api/reservations/20000000-0000-0000-0000-000000000001"
+            Idempotent-Replayed:
+              description: 성공 응답에 필수. 최초 false, 같은 사용자·키·대상 재요청 true.
+              schema:
+                type: boolean
+              example: false
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedReservationView'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ReservationConflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        default:
+          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+  /api/reservations/{id}:
+    get:
+      operationId: getReservation
+      tags: [reservation]
+      summary: "소유자만 현재 예약 상태를 조회한다. 타인 예약은 관리자에게도 없는 예약과 동일한 404다. Redis에 의존하지 않는다."
+      description: "소유자만 현재 예약 상태를 조회한다. 타인 예약은 관리자에게도 없는 예약과 동일한 404다. Redis에 의존하지 않는다."
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationView'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        default:
+          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+  /api/reservations/{id}/cancel:
+    post:
+      operationId: cancelReservation
+      tags: [reservation]
+      summary: "소유자만 예약을 취소한다. 타인 예약은 관리자에게도 404다. 본문은 0바이트여야 하며 8192바이트 이하라도 비어 있지 않으면 400이다. 중복 취소는 200과 기존 CANCELLED·취소 시각을 반환하고 복구는 최대 1회다."
+      description: "소유자만 예약을 취소한다. 타인 예약은 관리자에게도 404다. 본문은 0바이트여야 하며 8192바이트 이하라도 비어 있지 않으면 400이다. 중복 취소는 200과 기존 CANCELLED·취소 시각을 반환하고 복구는 최대 1회다."
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationView'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          $ref: '#/components/responses/DependencyUnavailable'
+        default:
+          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: 로컬 고정 UUID의 ADMIN·USER_A·USER_B. 비밀번호는 환경 변수·BCrypt, 세션 없음. CSRF 비활성화는 localhost 비브라우저 전제이며 CORS 전체 허용은 하지 않는다.
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ReservationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: 인증 사용자 UUID와 키 전체가 범위다. 앞뒤 공백 제거·대소문자 변환 없이 검증하며 대상 UUID 값으로 요청을 비교한다. 실패 키는 미보존, 성공 키는 취소 후에도 보존한다.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: '^[A-Za-z0-9_-]{1,64}$'
+      example: request_1
+  schemas:
+    CreateResourceRequest:
+      type: object
+      additionalProperties: false
+      required: [name, capacity]
+      properties:
+        name:
+          type: string
+          description: 앞뒤 공백 제거 후 유니코드 코드 포인트 1~100개, 😀는 1자. 원문 maxLength 100으로 공백 포함 유효 입력을 거부하지 않는다. 제거할 공백 문자 범위는 사용자 확인 대기이며 해당 부분 최종 확정 전이다.
+          example: '  예약 대상  '
+        capacity:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: 최초 수량. 문자열·소수 JSON 토큰은 400이며 생성 후 변경하지 않는다.
+    CreateReservationRequest:
+      type: object
+      additionalProperties: false
+      required: [resourceId]
+      properties:
+        resourceId:
+          type: string
+          format: uuid
+          description: 대상 UUID. userId·quantity를 추가하면 400이다.
+    ResourceView:
+      type: object
+      additionalProperties: false
+      required: [id, name, capacity, available]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 정규화된 이름, 유니코드 코드 포인트 길이.
+        capacity:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        available:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: 최초 capacity. 항상 available≤capacity, available+CONFIRMED 수=capacity. 대상 생성 시각은 응답에 포함하지 않는다.
+    CreatedReservationView:
+      type: object
+      additionalProperties: false
+      required: [id, resourceId, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        resourceId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [CONFIRMED]
+          description: 취소 후 생성 재요청도 최초 CONFIRMED를 반환한다.
+        createdAt:
+          type: string
+          format: date-time
+          description: UTC ISO-8601, 저장된 마이크로초 정밀도 값을 사용. 최초·재요청 동일.
+          example: '2026-10-13T00:00:00.123456Z'
+    ReservationView:
+      type: object
+      additionalProperties: false
+      required: [id, resourceId, status, createdAt, cancelledAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        resourceId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [CONFIRMED, CANCELLED]
+        createdAt:
+          type: string
+          format: date-time
+          description: UTC, 저장된 마이크로초 정밀도 값·불변.
+          example: '2026-10-13T00:00:00.123456Z'
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 필드 존재는 필수. CONFIRMED는 null, CANCELLED는 저장된 UTC 마이크로초 취소 시각. 중복 취소는 동일 시각.
+          example: null
+    ProblemDetail:
+      type: object
+      required: [type, title, status, detail, instance, code]
+      properties:
+        type:
+          type: string
+          description: 문제 유형 식별자. 예시는 원 계획 4.2절을 따른다.
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+          description: SQL·스택 트레이스·비밀번호를 노출하지 않는다.
+        instance:
+          type: string
+          description: 요청 경로.
+        code:
+          type: string
+          enum: [INVALID_REQUEST, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, SOLD_OUT, IDEMPOTENCY_CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, RATE_LIMITED, DEPENDENCY_UNAVAILABLE]
+  responses:
+    InvalidRequest:
+      description: "입력·JSON·키·UUID 또는 취소 본문 오류"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [400]
+                  code:
+                    type: string
+                    enum: [INVALID_REQUEST]
+          examples:
+            INVALID_REQUEST:
+              value:
+                type: "urn:reservation:error:invalid-request"
+                title: "입력·JSON·키·UUID 또는 취소 본문 오류"
+                status: 400
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: INVALID_REQUEST
+    Unauthenticated:
+      description: "인증 실패"
+      headers:
+        WWW-Authenticate:
+          description: 401 응답에 필수인 Basic 인증 challenge.
+          schema:
+            type: string
+          example: Basic realm="reservation-local"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [401]
+                  code:
+                    type: string
+                    enum: [UNAUTHENTICATED]
+          examples:
+            UNAUTHENTICATED:
+              value:
+                type: "urn:reservation:error:unauthenticated"
+                title: "인증 실패"
+                status: 401
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: UNAUTHENTICATED
+    Forbidden:
+      description: "ADMIN 권한 없음"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [403]
+                  code:
+                    type: string
+                    enum: [FORBIDDEN]
+          examples:
+            FORBIDDEN:
+              value:
+                type: "urn:reservation:error:forbidden"
+                title: "ADMIN 권한 없음"
+                status: 403
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/resources
+                code: FORBIDDEN
+    NotFound:
+      description: "대상/예약 없음 또는 소유자 아님; 관리자도 동일"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [404]
+                  code:
+                    type: string
+                    enum: [NOT_FOUND]
+          examples:
+            NOT_FOUND:
+              value:
+                type: "urn:reservation:error:not-found"
+                title: "대상/예약 없음 또는 소유자 아님; 관리자도 동일"
+                status: 404
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: NOT_FOUND
+    ReservationConflict:
+      description: "성공 키 없는 대상 품절 SOLD_OUT 또는 성공한 같은 사용자·키의 다른 대상 IDEMPOTENCY_CONFLICT"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [409]
+                  code:
+                    type: string
+                    enum: [SOLD_OUT, IDEMPOTENCY_CONFLICT]
+          examples:
+            SOLD_OUT:
+              value:
+                type: "urn:reservation:error:sold-out"
+                title: "예약 가능한 수량이 없습니다"
+                status: 409
+                detail: "대상은 현재 품절입니다."
+                instance: /api/reservations
+                code: SOLD_OUT
+            IDEMPOTENCY_CONFLICT:
+              value:
+                type: "urn:reservation:error:idempotency-conflict"
+                title: "같은 키로 다른 대상을 요청했습니다"
+                status: 409
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: IDEMPOTENCY_CONFLICT
+    PayloadTooLarge:
+      description: "실제 본문 8192바이트 초과; 인증보다 먼저 거부"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [413]
+                  code:
+                    type: string
+                    enum: [PAYLOAD_TOO_LARGE]
+          examples:
+            PAYLOAD_TOO_LARGE:
+              value:
+                type: "urn:reservation:error:payload-too-large"
+                title: "실제 본문 8192바이트 초과; 인증보다 먼저 거부"
+                status: 413
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: PAYLOAD_TOO_LARGE
+    UnsupportedMediaType:
+      description: "생성 API의 미지원 Content-Type"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [415]
+                  code:
+                    type: string
+                    enum: [UNSUPPORTED_MEDIA_TYPE]
+          examples:
+            UNSUPPORTED_MEDIA_TYPE:
+              value:
+                type: "urn:reservation:error:unsupported-media-type"
+                title: "생성 API의 미지원 Content-Type"
+                status: 415
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: UNSUPPORTED_MEDIA_TYPE
+    RateLimited:
+      description: "예약 생성·취소 합산 제한 초과; DB 무변경"
+      headers:
+        Retry-After:
+          description: 429 응답에 필수. 정수 초 max(1,ceil(PTTL/1000)), 창을 연장하지 않는다.
+          schema:
+            type: integer
+            minimum: 1
+          example: 60
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [429]
+                  code:
+                    type: string
+                    enum: [RATE_LIMITED]
+          examples:
+            RATE_LIMITED:
+              value:
+                type: "urn:reservation:error:rate-limited"
+                title: "예약 생성·취소 합산 제한 초과; DB 무변경"
+                status: 429
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: RATE_LIMITED
+    DependencyUnavailable:
+      description: "DB 장애·timeout 또는 예약 쓰기의 Redis 장애; 실패 트랜잭션 전체 롤백"
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetail'
+              - type: object
+                properties:
+                  status:
+                    type: integer
+                    enum: [503]
+                  code:
+                    type: string
+                    enum: [DEPENDENCY_UNAVAILABLE]
+          examples:
+            DEPENDENCY_UNAVAILABLE:
+              value:
+                type: "urn:reservation:error:dependency-unavailable"
+                title: "DB 장애·timeout 또는 예약 쓰기의 Redis 장애; 실패 트랜잭션 전체 롤백"
+                status: 503
+                detail: "요청을 처리할 수 없습니다."
+                instance: /api/reservations
+                code: DEPENDENCY_UNAVAILABLE

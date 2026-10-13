@@ -76,3 +76,7 @@ knowledge/domain/resource.md   # 이름 길이·대상 규칙의 설계 지식
 6. 0단계 산출물과 설명 기준이 충족된 이후에만 원 계획 0단계 완료를 기록한다. 자동 계약 검증은 1단계의 도구 준비 뒤 실행한다.
 
 이 순서는 실행 계획이며 task ID·완료 체크박스를 대신하지 않는다. 다음 명령은 `$speckit-tasks`다.
+
+## 0단계 수행 상태 (2026-10-13)
+
+기존 절은 계획 작성 당시의 기록이다. `$speckit-implement`에서 docs/openapi.yaml 초안·docs/decisions.md·docs/test-evidence.md와 reservation/security/ratelimit 지식 문서를 작성했다. 이름의 공백 제거 문자 범위 확인과 T025 본인 설명은 대기 중이며 원 계획 0단계 전체 완료를 뜻하지 않는다. 상세 상태는 [tasks.md](tasks.md)·[증거](../../docs/test-evidence.md)를 따른다. 추가 브랜치 생성·develop 병합·외부 push는 수행하지 않았다.
