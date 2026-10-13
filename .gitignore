@@ -1,0 +1,6 @@
+# 개인 IDE 설정과 로컬 비밀정보
+.idea/
+.env
+.env.*
+!.env.example
+.DS_Store
