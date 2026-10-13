@@ -329,3 +329,16 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - `brew install k6`: 종료0, 누락된 k6만 설치. `k6 version`: 종료0, 2.3.0. 부하 실행은 후속 단계다.
 - 두 고정 이미지 docker pull: 각각 종료0. 이미지 버전·digest 및 실제 연동 결과는 versions 기록에 연결한다.
 - T001~T003 준비 완료. T004 환경 취득 확인 진행 중. 기능·Compose 기동·데이터 보존·새 도구 조합은 아직 미검증이다.
+
+### US1 로컬 기동·보존
+
+- dependencyInsight의 Testcontainers/Jupiter/Flyway/PostgreSQL 각각 종료0, versions에 해석값 기록. Gradle tasks --all에서 네 분류 태스크를 확인했다. 아직 사례 0건인 태스크를 성공으로 실행하지 않았다.
+- Compose 비밀값 누락 config --quiet 종료1(필수 변수 누락). 이번 로컬 시험용 비밀값은 무작위 생성·0600 .env에만 저장했고 git check-ignore로 제외 확인. 기존 .env 없음 확인 후 생성했다.
+- compose up -d --wait --wait-timeout120 종료0, 두 서비스 healthy. local bootRun 기동1.865초, health HTTP200/UP(연결3초/요청10초). 첫 sandbox curl은 접속 제한으로 종료7; 승인된 localhost 요청은 성공했다.
+- redis stop 후 health HTTP503/DOWN 확인, redis up --wait 종료0으로 복구. 업무 API 장애 계약의 검증은 아니다.
+- SIGINT로 이번 앱 PID 종료: Tomcat graceful shutdown complete/Hikari 종료 확인. Java130을 Gradle이 종료1로 전달한다. 이는 정상 인터럽트 종료 기록이며 테스트 성공으로 계산하지 않는다.
+- TOOLCHAIN_SMOKE_PASSWORD 누락 local bootRun 종료1. 정상 비밀값 복구 후 UTC 설정 재검증 진행.
+- 보존 표식 UUID `fca1c9f8-a068-49d7-b5fc-d433bbab3a0d`, 기대73. reservation_local 확인 후 명시 BEGIN/DDL/INSERT/COMMIT, 새 연결 UUID/73 조회. down(볼륨 유지)→up --wait120 각각 종료0, 새 컨테이너의 새 연결에서 동일 UUID/73 확인. 이번 표식만 성공 후 정리한다. 기존 개발 데이터·schema/volume 삭제 없음.
+- 복구/정리 책임은 실행 담당자. 중단·commit 유실은 상태 조회 후 재개하도록 README에 안내했다. 실제 응답 유실 주입은 미실시이며 이를 실행 검증으로 주장하지 않는다.
+
+- UTC 재기동1.535초 및 Z 로그 확인, 복구 health200/UP. 이번 표식만 DELETE1(종료0). T005~T012 실행 준비·US1 검증 완료, Unit/IT·심화는 후속이다.

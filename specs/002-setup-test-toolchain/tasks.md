@@ -30,9 +30,9 @@
 **목적**: 모든 스토리에 필요한 빌드 의존성과 검증 설정을 준비한다. 이 단계만으로 어떤 테스트 범위도 성공으로 표시하지 않는다.
 
 - [X] T004 JDK 배포판·패치, 실제 Wrapper, Docker·Compose·k6 존재/버전, CPU와 Docker 메모리를 확인하고 부족한 도구만 준비해 `docs/versions.md`에 기록한다. 조사 후보 이미지의 exact tag·아키텍처·취득 digest를 확인하고 Compose/Testcontainers 공통 식별값을 `docs/decisions.md`에 정한다. 설치·문서 조사·실행 확인을 구분한다. (선행: T003)
-- [ ] T005 `backend/build.gradle`에 계획의 MVC·Validation·Security·JDBC·Redis·Flyway·Actuator, PostgreSQL driver·Flyway PostgreSQL 모듈과 필요한 테스트 starter·Testcontainers 2 좌표를 추가한다. Java 25·Boot 4.1.1·Wrapper 9.7.1을 유지하고 BOM 관리 버전은 override하지 않는다. 실제 dependencyInsight 결과를 `docs/versions.md`에 기록하며 취득 실패는 원인별로 분리한다. (선행: T003·T004)
-- [ ] T006 `backend/build.gradle`에 `test`, `integrationTest`, `contractTest`, `propertyTest`의 이름·태그·classpath·보고서 분리 설정을 작성하고 `backend/src/test/resources/junit-platform.properties`에 클래스 순차 실행을 설정한다. fork1·UTF-8/UTC, contract/property 포함·제외는 `specs/002-setup-test-toolchain/contracts/validation-contract.md`를 따른다. 아직 사례가 없는 범위를 성공 처리하지 않는다. (선행: T005)
-- [ ] T007 기존 `backend/src/test/java/com/limitedbooking/backend/BackendApplicationTests.java`의 Spring 기동 검사 의도를 보존해 `backend/src/test/java/com/limitedbooking/backend/BackendApplicationIT.java`로 분류를 이동한다. 동적 실제 컨테이너 연결은 US2에서 보완하며 순수 Unit에 Spring 기동이 섞이지 않게 한다. (선행: T006)
+- [X] T005 `backend/build.gradle`에 계획의 MVC·Validation·Security·JDBC·Redis·Flyway·Actuator, PostgreSQL driver·Flyway PostgreSQL 모듈과 필요한 테스트 starter·Testcontainers 2 좌표를 추가한다. Java 25·Boot 4.1.1·Wrapper 9.7.1을 유지하고 BOM 관리 버전은 override하지 않는다. 실제 dependencyInsight 결과를 `docs/versions.md`에 기록하며 취득 실패는 원인별로 분리한다. (선행: T003·T004)
+- [X] T006 `backend/build.gradle`에 `test`, `integrationTest`, `contractTest`, `propertyTest`의 이름·태그·classpath·보고서 분리 설정을 작성하고 `backend/src/test/resources/junit-platform.properties`에 클래스 순차 실행을 설정한다. fork1·UTF-8/UTC, contract/property 포함·제외는 `specs/002-setup-test-toolchain/contracts/validation-contract.md`를 따른다. 아직 사례가 없는 범위를 성공 처리하지 않는다. (선행: T005)
+- [X] T007 기존 `backend/src/test/java/com/limitedbooking/backend/BackendApplicationTests.java`의 Spring 기동 검사 의도를 보존해 `backend/src/test/java/com/limitedbooking/backend/BackendApplicationIT.java`로 분류를 이동한다. 동적 실제 컨테이너 연결은 US2에서 보완하며 순수 Unit에 Spring 기동이 섞이지 않게 한다. (선행: T006)
 
 ## 3단계: US1 — 기존 작업 공간에서 실행 준비 상태 확인 (P1, MVP)
 
@@ -40,11 +40,11 @@
 
 **독립 인수 기준**: 앱·두 서비스의 로컬 기동과 종료, PostgreSQL 표식 저장·commit·컨테이너 재생성 후 동일 값 조회를 확인한다. Redis 키의 재시작 후 보존과 업무 예약 기능은 인수 대상이 아니다.
 
-- [ ] T008 [P] [US1] 프로젝트 루트 `compose.yaml`을 작성한다. postgres 서비스는 127.0.0.1:5432·reservation_local·named volume `/var/lib/postgresql`, redis는 127.0.0.1:6379로 구성하고 선정된 정확한 이미지를 고정한다. UTF-8/UTC·비밀값 환경 주입·healthcheck·준비 대기120초 설정을 두고 기본 종료에 볼륨 삭제를 넣지 않는다. (선행: T004)
-- [ ] T009 [P] [US1] `backend/src/main/resources/application-local.yaml`을 작성한다. 앱 127.0.0.1:8080, 로컬 DB·Redis, 환경 변수 비밀번호, health만 노출·상세 비노출, 기동 확인용 toolchain 계정을 설정한다. `backend/src/main/java/com/limitedbooking/backend/BackendApplication.java`와 기본 패키지는 유지하고 업무 UUID 인증·임시 업무 경로·전체 허용 보안 설정을 추가하지 않는다. (선행: T004)
-- [ ] T010 [P] [US1] 루트 `.env.example`에는 POSTGRES_USER·POSTGRES_PASSWORD·TOOLCHAIN_SMOKE_PASSWORD 등 실제 필요한 변수명만 제공하고 `.gitignore`와 `backend/.gitignore`에서 개인 `.env`·로그·데이터·캐시 제외를 선별한다. Compose 보간과 호스트 JVM 별도 주입을 `README.md`에 안내한다. (선행: T004)
-- [ ] T011 [US1] `README.md`의 환경 안내에 따라 Compose와 local 앱의 최소 기동·health·정상 종료를 수행하고 `docs/test-evidence.md`에 명령·종료 코드·주소·확인 상태를 남긴다. 서비스 미준비·비밀값 누락의 최소 실패도 구분하고 정상 설정으로 복구한다. Compose 준비120초·앱 준비60초·HTTP 연결3초/요청10초 상한과 초과 시 실패 종료·미검증 판정을 기록한다. (선행: T008·T009·T010)
-- [ ] T012 [US1] `README.md`에 보존 표식의 준비·조회·본인 표식만 정리하는 실제 명령을 추가한다. `toolchain_smoke` 시험 schema의 UUID·정수1행을 commit하고 기본 down(볼륨 유지)·up 후 동일 값 보존을 확인해 `docs/test-evidence.md`에 기록한다. 개발 업무 데이터는 초기화하지 않으며 Redis 영속화는 요구하지 않는다. 준비 트랜잭션 실패/commit 응답 유실/재시작 중단의 상태 대조·담당자 정리·재개 조건은 `specs/002-setup-test-toolchain/contracts/validation-contract.md`의 복구 계약대로 실제 안내와 증거에 반영한다. (선행: T011)
+- [X] T008 [P] [US1] 프로젝트 루트 `compose.yaml`을 작성한다. postgres 서비스는 127.0.0.1:5432·reservation_local·named volume `/var/lib/postgresql`, redis는 127.0.0.1:6379로 구성하고 선정된 정확한 이미지를 고정한다. UTF-8/UTC·비밀값 환경 주입·healthcheck·준비 대기120초 설정을 두고 기본 종료에 볼륨 삭제를 넣지 않는다. (선행: T004)
+- [X] T009 [P] [US1] `backend/src/main/resources/application-local.yaml`을 작성한다. 앱 127.0.0.1:8080, 로컬 DB·Redis, 환경 변수 비밀번호, health만 노출·상세 비노출, 기동 확인용 toolchain 계정을 설정한다. `backend/src/main/java/com/limitedbooking/backend/BackendApplication.java`와 기본 패키지는 유지하고 업무 UUID 인증·임시 업무 경로·전체 허용 보안 설정을 추가하지 않는다. (선행: T004)
+- [X] T010 [P] [US1] 루트 `.env.example`에는 POSTGRES_USER·POSTGRES_PASSWORD·TOOLCHAIN_SMOKE_PASSWORD 등 실제 필요한 변수명만 제공하고 `.gitignore`와 `backend/.gitignore`에서 개인 `.env`·로그·데이터·캐시 제외를 선별한다. Compose 보간과 호스트 JVM 별도 주입을 `README.md`에 안내한다. (선행: T004)
+- [X] T011 [US1] `README.md`의 환경 안내에 따라 Compose와 local 앱의 최소 기동·health·정상 종료를 수행하고 `docs/test-evidence.md`에 명령·종료 코드·주소·확인 상태를 남긴다. 서비스 미준비·비밀값 누락의 최소 실패도 구분하고 정상 설정으로 복구한다. Compose 준비120초·앱 준비60초·HTTP 연결3초/요청10초 상한과 초과 시 실패 종료·미검증 판정을 기록한다. (선행: T008·T009·T010)
+- [X] T012 [US1] `README.md`에 보존 표식의 준비·조회·본인 표식만 정리하는 실제 명령을 추가한다. `toolchain_smoke` 시험 schema의 UUID·정수1행을 commit하고 기본 down(볼륨 유지)·up 후 동일 값 보존을 확인해 `docs/test-evidence.md`에 기록한다. 개발 업무 데이터는 초기화하지 않으며 Redis 영속화는 요구하지 않는다. 준비 트랜잭션 실패/commit 응답 유실/재시작 중단의 상태 대조·담당자 정리·재개 조건은 `specs/002-setup-test-toolchain/contracts/validation-contract.md`의 복구 계약대로 실제 안내와 증거에 반영한다. (선행: T011)
 - [ ] T013 [US1] US1의 도구 목록·local 기동·실패 복구·보존 근거를 `docs/versions.md`와 `docs/test-evidence.md`에서 대조하고 환경 설정 변경만 검증 단위의 로컬 커밋으로 남긴다. 미실행 심화 도구는 미검증으로 유지한다. (선행: T012)
 
 ## 4단계: US2 — 기본 검증과 실제 저장소 연동 (P1)

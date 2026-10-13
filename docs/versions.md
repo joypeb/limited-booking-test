@@ -24,3 +24,5 @@ Docker 이미지 digest와 실제 해석 의존성은 해당 검증 후 추가�
 - PostgreSQL18.6, arm64, `postgres@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c`
 - Redis8.10.2, arm64, `redis@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6`
 - `docker image inspect`및 `docker run --rm <image> <version command>`로 실제 실행 버전을 확인했다. 연동은 미검증이다.
+
+실제 Gradle dependencyInsight(종료0): Jupiter6.0.3, Testcontainers2.0.5, Flyway12.4.0, PostgreSQL JDBC42.7.13. Boot BOM 관리 버전 override 없음. 연동 테스트는 아직 미검증이다.
