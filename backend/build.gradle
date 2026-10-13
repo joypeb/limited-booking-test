@@ -79,3 +79,49 @@ tasks.withType(JavaExec).configureEach {
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'user.timezone', 'UTC'
 }
+
+// 현재 실행 listener와 XML을 함께 검사한다. 캐시 결과를 새 실행으로 인정하지 않는다.
+['test', 'integrationTest', 'contractTest', 'propertyTest'].each { testName ->
+    def current = [started: false, result: null]
+    def testTask = tasks.named(testName, Test)
+    def gate = tasks.register("${testName}Result") {
+        group = 'verification'
+        doLast {
+            def r = current.result
+            if (!current.started || r == null) {
+                throw new GradleException("${testName}: 현재 실행 결과 없음 (NO-SOURCE/이전 보고서로 통과 불가)")
+            }
+            logger.lifecycle("${testName}: tests=${r.tests}, failed=${r.failed}, skipped=${r.skipped}")
+            if (r.tests < 1 || r.failed != 0 || r.skipped != 0) {
+                throw new GradleException("${testName}: 실행>=1, 실패0, skip0 계약 위반")
+            }
+            def xmlFiles = fileTree(testTask.get().reports.junitXml.outputLocation).matching { include 'TEST-*.xml' }.files
+            if (xmlFiles.empty) throw new GradleException("${testName}: XML 보고서 없음")
+            long xmlCount = 0
+            xmlFiles.each { f ->
+                def root = new groovy.xml.XmlSlurper().parse(f)
+                xmlCount += root.@tests.toLong()
+                if (root.@failures.toLong() != 0 || root.@errors.toLong() != 0 || root.@skipped.toLong() != 0) {
+                    throw new GradleException("${testName}: XML 실패/skip 결과")
+                }
+            }
+            if (xmlCount != r.tests) throw new GradleException("${testName}: listener/XML 실행 수 불일치")
+        }
+    }
+    testTask.configure {
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+        doFirst { current.started = true; current.result = null }
+        afterSuite { descriptor, result ->
+            if (descriptor.parent == null) {
+                current.result = [tests: result.testCount, failed: result.failedTestCount, skipped: result.skippedTestCount]
+            }
+        }
+        finalizedBy gate
+    }
+}
+
+tasks.register('verify') {
+    group = 'verification'
+    dependsOn tasks.test, tasks.integrationTest
+}

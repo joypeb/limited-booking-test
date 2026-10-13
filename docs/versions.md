@@ -26,3 +26,5 @@ Docker 이미지 digest와 실제 해석 의존성은 해당 검증 후 추가�
 - `docker image inspect`및 `docker run --rm <image> <version command>`로 실제 실행 버전을 확인했다. 연동은 미검증이다.
 
 실제 Gradle dependencyInsight(종료0): Jupiter6.0.3, Testcontainers2.0.5, Flyway12.4.0, PostgreSQL JDBC42.7.13. Boot BOM 관리 버전 override 없음. 연동 테스트는 아직 미검증이다.
+
+Jupiter6.0.3/Testcontainers2.0.5/Flyway12.4.0/JDBC42.7.13 및 고정 PG18.6/Redis8.10.2 조합: Unit3·일반IT4 최소 사례 실행 확인. 업무 API·경쟁 정합성 호환성은 검증하지 않았다.

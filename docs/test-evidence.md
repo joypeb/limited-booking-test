@@ -342,3 +342,24 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 복구/정리 책임은 실행 담당자. 중단·commit 유실은 상태 조회 후 재개하도록 README에 안내했다. 실제 응답 유실 주입은 미실시이며 이를 실행 검증으로 주장하지 않는다.
 
 - UTC 재기동1.535초 및 Z 로그 확인, 복구 health200/UP. 이번 표식만 DELETE1(종료0). T005~T012 실행 준비·US1 검증 완료, Unit/IT·심화는 후속이다.
+
+### US2 순수 프로브 TDD
+
+- 첫 파일 작성 명령의 작업 위치 오류로 파일 생성이 안 되어 NO-SOURCE 실행이 발생했다. 기능 실패 근거가 아니며 T020에서 0건 차단을 보완한다.
+- 올바른 위치에 테스트를 작성한 뒤 최소 골격에서 `./gradlew test --tests '*ToolchainSmokeTest' --rerun-tasks`: 종료1, 실행3·실패2·skip0. 입력37/100의 실제 조회0으로 assertion 실패. 컴파일 정상이며 의도한 저장 동작 실패를 확인했다.
+- 최소 저장 필드 구현 후 정상 실행 결과는 아래 후속 기록으로 연결한다.
+
+- 정상 최소 구현 후 ./gradlew test --rerun-tasks 및 지정 ToolchainSmokeTest 실행: 각각 종료0·실행3·실패0·skip0. 첫 실행은 새 실행이며 두 번째 지정 실행도 test 태스크가 실제 실행됐다.
+
+- 초기 IT 종료1: Testcontainers의 image compatibility 검사에서 tag+digest 문자열을 postgres 대체 이미지로 인식하지 못했다. DB 연결 전 준비 실패이며 기능 assertion 실패가 아니다. 이미 docker pull/inspect/컨테이너 내부 버전으로 공식 postgres digest를 확인했으므로 asCompatibleSubstituteFor("postgres")를 명시했다. 버전 하향·다른 DB·skip은 사용하지 않았다.
+
+### US2 실제 연동·발견 게이트
+
+- image 호환 선언 후 integrationTest --rerun-tasks 종료0: 일반 IT4건·실패0·skip0. 실제 PostgreSQL metadata/version1·insert/select73, Redis73, RANDOM_PORT health200/UP, 고의 migration 오류·metadata 확인·새 컨테이너/DB 재개를 확인했다.
+- 앱 context보다 컨테이너를 먼저 정리하면 Redis 재연결 경고가 발생했다. 수동 AfterEach context.close는 Spring 후처리가 닫힌 context를 재시작하려 해 IT2실패를 발생시켰다(verify 종료1, 결과 게이트도 실패). Spring DirtiesContext AFTER_CLASS 종료 후 order2999 cleanup listener로 의존 컨테이너를 정리하도록 수정했다.
+- `./gradlew verify --rerun-tasks` 수정 후 종료0: Unit3·일반IT4, 실패0·skip0, 현재 listener/XML 수 일치. 각 Test의 cache/up-to-date 재사용을 끄고 NO-SOURCE·현재 결과 없음·XML 없음/불일치를 게이트에서 거부한다. configuration cache 지원은 이번 범위 밖이며 Gradle10 API 호환성은 미검증이다.
+
+- 고의 실패(각각 원복, 종료1): Unit 기대값+1(3실패), 지정 이름 없음(0건), 전체 태그 제외(0건), 클래스 Disabled(0건), Redis 기대74(1실패). 별도 Assumptions로 실제 Unit3 중 skip1을 주입해 게이트 비성공을 확인했다.
+- 이전 성공 XML이 있는 상태에 Test 입력을 빈 경로로 바꾼 init-script 실행: 종료1, 현재 실행 결과 없음 게이트로 차단. init-script는 시연 명령에서만 사용하며 정상 설정에는 적용하지 않는다.
+- 원복 verify 종료0: Unit3/IT4·실패skip0. 지정 `test integrationTest --tests '*ToolchainSmokeIT'` 종료0: Unit3/지정IT3. 마지막 skip/빈 입력 시연 원복 후 test 종료0: Unit3·실패skip0. 고의 변경 잔존 없음.
+- T014~T021 완료. Spring 없는 프로브는 도구 확인용이며 실제 업무 불변식·SQL 경쟁 테스트는 아직 미구현이다.
