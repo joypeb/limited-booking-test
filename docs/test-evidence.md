@@ -456,3 +456,5 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 전체 업무 API·schema·UUID 인증·예약 경쟁·Redis 제한·부하·외부 CI는 후속 범위다. Docker startup/cleanup timeout의 모든 장애 분기와 개발 commit 응답 유실은 미검증이다. 임의 -x/init script로 검증을 고의 제거하는 사용자 우회는 정상 실행 계약 범위 밖이다.
 
 - 같은 적대적 리뷰어의 수정 재평가 PASS: 본문 완료 Future의10초 제한·Timeout/Interrupted 취소·두 호출 경로 적용·실제 회귀와 전체15건 로그를 읽기 전용으로 확인했다. 미해결 Critical/Important0, Minor0. 이 판정 후 수정·기록을 커밋하고 원격 반영한 뒤 develop 대상 PR을 게시한다.
+
+- GitHub 실제 게시 결과: [PR #1](https://github.com/joypeb/limited-booking-test/pull/1), base=develop, head=chore/setup-test-toolchain, OPEN·정식PR(draft 아님)·MERGEABLE. 리뷰/검증된 코드 commit6772606과 원격 head 일치 확인. GitHub statusCheckRollup은 빈 목록이므로 외부 CI 통과를 주장하지 않는다. PR 생성은 완료했고 병합은 수행하지 않았다.
