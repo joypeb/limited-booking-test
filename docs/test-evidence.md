@@ -229,3 +229,12 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 핵심 읽을 문서: [고정 계약 초안](openapi.yaml), [65행 기대값·검사 증거](test-evidence.md), [세 결정](decisions.md), [예약 지식](../knowledge/domain/reservation.md).
 - 다음 한 작업: 공백 범위 답변을 계약·계획서·지식·사례에 동기화하고 본인 설명을 확인해 남은 0단계 인수를 마친다. 완료 후 1단계 최소 테스트 도구 준비로 넘어간다.
 - 유지: feature/define-api-contract 작업 브랜치, 기존 Gradle/Java/패키지. develop병합·push·외부CI·배포 미수행.
+
+## 로컬 커밋과 최종 상태 기록
+
+- `git add -- <검토한14개명시경로>`: 최초 sandbox 실행은 index.lock 권한 오류로 종료128. 같은 명시 경로의 권한 확장 요청이 승인돼 종료0으로 스테이징했다. 파일 삭제·브랜치 이동·병합은 하지 않았다.
+- `git diff --cached --check`: 종료0. staged 통계14파일·문서 변경만 확인.
+- `git commit -F /private/tmp/limited-booking-contract-commit.txt`: 종료0, `972d6b8` (`docs(api-contract): 0단계 계약 초안과 수량 검토 사례를 작성한다`).
+- 커밋 직후 `git status --porcelain`: 종료0·출력 없음. T027의 문서 검사·충족 항목 표시·미완료 기록·목적별 로컬 커밋 수행을 확인했다. 이 결과 기록의 추가 커밋은 후속 상태 기록이며 위 계약 커밋을 수정하지 않는다.
+- T027 완료: 부분 완료 기록도 허용하는 작업 정의에 따라 완료한다. 전체 기능/0단계 완료는 아니다. 작업22/27 완료, T013·T019·T023·T024·T025 미완료.
+- after_implement 확장 훅: `.specify/extensions.yml` 없음, 실행 대상 없음.
