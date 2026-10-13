@@ -35,7 +35,7 @@ Java/Spring 개발 감각을 복구하고, AI가 작성한 코드의 정확성�
 
 - 작업 루트는 `limited-booking/`, 애플리케이션 루트는 `backend/`다.
 - 기존 골격은 Java 25, Spring Boot 4.1.1, Gradle Wrapper 9.7.1을 사용한다. 기본 패키지는 `com.limitedbooking.backend`, 진입점은 `BackendApplication`이다.
-- 현재 의존성은 기본 Boot starter와 테스트 starter다. MVC·Security·JDBC·PostgreSQL·Redis·Flyway 및 심화 테스트 기반이 이미 갖춰졌다고 가정하지 않는다.
+- 2026-10-13 1단계에서 MVC·Security·JDBC·PostgreSQL·Redis·Flyway·Actuator와 심화 도구 기반을 추가했다. 도구 프로브 최소 실행은 확인했으나 업무 API·SQL·권한·경쟁 구현이 완료됐다고 가정하지 않는다.
 - 계획서의 Maven Wrapper, `reservation-backend/`, `com.example.reservation`은 계획상의 구성이다. 존재하지 않는 `mvnw`나 Maven 프로필을 실행하지 않는다.
 - 현재 Gradle·패키지·디렉터리를 자동으로 교체하지 않는다. 빌드 도구 변경이 필요한 작업에서는 차이와 이유를 제시하고 사용자 지시에 따른다. Gradle을 유지한다면 계획서의 테스트 분류·실행 계약을 명시적인 Gradle 태스크로 구현하고 문서도 맞춘다.
 - 2026-10-13 재확인한 Git 최상위 경로는 `/Users/joypeb/Desktop/projects/limited-booking`이다. Git 작업 전 `git rev-parse --show-toplevel`을 다시 확인한다. 상위 저장소에서 `git add .`나 `git add -A`를 실행하지 않는다. 작업 위치가 바뀌면 독립 저장소 여부도 확인한다.
@@ -49,7 +49,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-`local` 프로필 설정을 구현한 뒤에는 `./gradlew bootRun --args='--spring.profiles.active=local'`을 사용한다. 일반 `test`나 `build`가 향후 모든 통합·계약·속성·변이 테스트를 포함한다고 가정하지 않는다.
+`local` 프로필 설정을 구현한 뒤에는 `./gradlew bootRun --args='--spring.profiles.active=local'`을 사용한다. 1단계에 test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke를 구현했다. 일반 test/build는 Unit만 포함하며 현재 실행 수/XML 게이트로0건·실패·skip을 거부한다. 정확한 범위·현재 조합은 README와 docs/versions.md, 실제 실행 근거는 docs/test-evidence.md를 참조한다.
 
 ## 기술과 코드 구조
 

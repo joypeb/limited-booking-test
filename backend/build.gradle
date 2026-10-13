@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'info.solidsoft.pitest' version '1.19.0'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -19,11 +20,163 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.quicktheories:quicktheories:0.26'
+    testImplementation 'com.atlassian.oai:swagger-request-validator-core:2.46.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+tasks.withType(Test).configureEach {
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    maxParallelForks = 1
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'user.timezone', 'UTC'
+    failOnNoDiscoveredTests = true
+    filter { failOnNoMatchingTests = true }
+    reports.junitXml.outputLocation = layout.buildDirectory.dir("test-results/${name}")
+    reports.html.outputLocation = layout.buildDirectory.dir("reports/tests/${name}")
+}
+
+tasks.named('test', Test) {
+    include '**/*Test.class'
+    useJUnitPlatform { excludeTags 'contract', 'property' }
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    include '**/*IT.class'
+    useJUnitPlatform { excludeTags 'contract', 'property' }
+    shouldRunAfter tasks.test
+}
+
+tasks.register('contractTest', Test) {
+    group = 'verification'
+    include '**/*IT.class'
+    useJUnitPlatform { includeTags 'contract' }
+    shouldRunAfter tasks.integrationTest
+}
+
+tasks.register('propertyTest', Test) {
+    group = 'verification'
+    include '**/*Test.class'
+    useJUnitPlatform { includeTags 'property' }
+    if (System.getenv('QT_SEED')) systemProperty 'QT_SEED', System.getenv('QT_SEED')
+    shouldRunAfter tasks.contractTest, tasks.integrationTest
+}
+
+tasks.withType(JavaExec).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'user.timezone', 'UTC'
+}
+
+// 현재 실행 listener와 XML을 함께 검사한다. 캐시 결과를 새 실행으로 인정하지 않는다.
+['test', 'integrationTest', 'contractTest', 'propertyTest'].each { testName ->
+    def current = [started: false, result: null]
+    def testTask = tasks.named(testName, Test)
+    def gate = tasks.register("${testName}Result") {
+        group = 'verification'
+        doLast {
+            def r = current.result
+            if (!current.started || r == null) {
+                throw new GradleException("${testName}: 현재 실행 결과 없음 (NO-SOURCE/이전 보고서로 통과 불가)")
+            }
+            logger.lifecycle("${testName}: tests=${r.tests}, failed=${r.failed}, skipped=${r.skipped}")
+            if (r.tests < 1 || r.failed != 0 || r.skipped != 0) {
+                throw new GradleException("${testName}: 실행>=1, 실패0, skip0 계약 위반")
+            }
+            def xmlFiles = fileTree(testTask.get().reports.junitXml.outputLocation).matching { include 'TEST-*.xml' }.files
+            if (xmlFiles.empty) throw new GradleException("${testName}: XML 보고서 없음")
+            long xmlCount = 0
+            xmlFiles.each { f ->
+                def root = new groovy.xml.XmlSlurper().parse(f)
+                xmlCount += root.@tests.toLong()
+                if (root.@failures.toLong() != 0 || root.@errors.toLong() != 0 || root.@skipped.toLong() != 0) {
+                    throw new GradleException("${testName}: XML 실패/skip 결과")
+                }
+            }
+            if (xmlCount != r.tests) throw new GradleException("${testName}: listener/XML 실행 수 불일치")
+        }
+    }
+    testTask.configure {
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+        doFirst { current.started = true; current.result = null }
+        afterSuite { descriptor, result ->
+            if (descriptor.parent == null) {
+                current.result = [tests: result.testCount, failed: result.failedTestCount, skipped: result.skippedTestCount]
+            }
+        }
+        finalizedBy gate
+    }
+}
+
+tasks.register('verify') {
+    group = 'verification'
+    dependsOn tasks.test, tasks.integrationTest
+}
+
+pitest {
+    pitestVersion = '1.22.1'
+    junit5PluginVersion = '1.2.3'
+    targetClasses = ['com.limitedbooking.backend.common.ToolchainProbe']
+    targetTests = ['com.limitedbooking.backend.common.ToolchainSmokeTest']
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    threads = 1
+}
+
+tasks.named('processTestResources') {
+    from('../specs/002-setup-test-toolchain/contracts/toolchain-smoke.openapi.yaml')
+    from('../docs/openapi.yaml') { rename { 'business.openapi.yaml' } }
+}
+
+tasks.named('pitest') {
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst { delete layout.buildDirectory.dir('reports/pitest') }
+}
+tasks.register('mutationSmoke') {
+    group = 'verification'
+    dependsOn tasks.pitest
+    doLast {
+        def xml = layout.buildDirectory.file('reports/pitest/mutations.xml').get().asFile
+        def html = layout.buildDirectory.file('reports/pitest/index.html').get().asFile
+        if (!xml.isFile() || !html.isFile()) throw new GradleException('PIT XML/HTML 보고서 없음')
+        def mutations = new groovy.xml.XmlSlurper().parse(xml).mutation
+        int generated = mutations.size()
+        int killed = mutations.findAll { it.@status.text() == 'KILLED' }.size()
+        def invalid = mutations.findAll { !(it.@status.text() in ['KILLED', 'SURVIVED']) }
+        int survived = mutations.findAll { it.@status.text() == 'SURVIVED' }.size()
+        logger.lifecycle("PIT generated=${generated}, killed=${killed}, survived=${survived}, invalid=${invalid.size()}")
+        if (generated < 1 || killed < 1 || !invalid.isEmpty()) {
+            throw new GradleException('PIT 생성/탐지0 또는 NO_COVERAGE/도구 오류')
+        }
+    }
+}
+
+tasks.register('verifyContract') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.contractTest
+}
+tasks.register('verifyProperty') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.propertyTest
+}
+tasks.register('deepTest') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.contractTest, tasks.propertyTest
 }

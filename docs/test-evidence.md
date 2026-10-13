@@ -316,3 +316,145 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 미검증: Java/API/HTTP·DB/Redis·YAML/OpenAPI validator·Property/PIT/k6·외부CI. 새 기능·환경 구현이나 실행 테스트는 이번 작업에서 수행하지 않았다.
 
 검증: quickstart의 Python 검사2개 종료0(설계문서7개·전체문서23개·사례72행), 작업27/27 표식 집계 종료0, `git diff --check` 종료0. 앱 테스트는 미실행이다. after_implement 확장 훅 파일은 없어 실행 대상이 없다.
+
+## 1단계 환경·테스트 도구 착수 (2026-10-13)
+
+- 적용: knowledge/README.md, rules 전체, security 도메인, 원계획 7절 1단계 및 명세/실행 계약. 업무 API·SQL은 이번 검증 범위 밖이다.
+- 저장소 최상위 `/Users/joypeb/Desktop/projects/limited-booking`, 착수 HEAD `71b677c`. develop과 문서 브랜치 HEAD 동일. 기존 변경은 미추적 specs/002-setup-test-toolchain/뿐이며 보존했다.
+- `git switch -c chore/setup-test-toolchain develop`: 종료0, 실제 브랜치 생성. 별도 저장소·Maven·패키지 교체 없음.
+- 체크리스트 게이트: requirements 16/16, toolchain 30/30, 미체크0. CHK022 검토 완료를 포함한다. 이 표시는 요구사항 품질 검토이며 구현 완료가 아니다. implement에서는 체크리스트를 수정하지 않는다.
+- `backend/`의 `./gradlew --version`: 종료0, Gradle9.7.1·Corretto25.0.4 확인.
+- 기존 골격 기준 `./gradlew test --rerun-tasks`: 종료0, contextLoads 1건·실패0·오류0·skip0. 새 분류 및 DB/Redis 검증의 증거가 아니다.
+- `docker info`: sandbox 안에서는 socket 접근 거절; 승인된 로컬 실행에서는 daemon 미기동 확인. `open -a Docker` 종료0 후 데몬29.2.1/arm64/메모리8,216,915,968 bytes 확인(종료0).
+- `brew install k6`: 종료0, 누락된 k6만 설치. `k6 version`: 종료0, 2.3.0. 부하 실행은 후속 단계다.
+- 두 고정 이미지 docker pull: 각각 종료0. 이미지 버전·digest 및 실제 연동 결과는 versions 기록에 연결한다.
+- T001~T003 준비 완료. T004 환경 취득 확인 진행 중. 기능·Compose 기동·데이터 보존·새 도구 조합은 아직 미검증이다.
+
+### US1 로컬 기동·보존
+
+- dependencyInsight의 Testcontainers/Jupiter/Flyway/PostgreSQL 각각 종료0, versions에 해석값 기록. Gradle tasks --all에서 네 분류 태스크를 확인했다. 아직 사례 0건인 태스크를 성공으로 실행하지 않았다.
+- Compose 비밀값 누락 config --quiet 종료1(필수 변수 누락). 이번 로컬 시험용 비밀값은 무작위 생성·0600 .env에만 저장했고 git check-ignore로 제외 확인. 기존 .env 없음 확인 후 생성했다.
+- compose up -d --wait --wait-timeout120 종료0, 두 서비스 healthy. local bootRun 기동1.865초, health HTTP200/UP(연결3초/요청10초). 첫 sandbox curl은 접속 제한으로 종료7; 승인된 localhost 요청은 성공했다.
+- redis stop 후 health HTTP503/DOWN 확인, redis up --wait 종료0으로 복구. 업무 API 장애 계약의 검증은 아니다.
+- SIGINT로 이번 앱 PID 종료: Tomcat graceful shutdown complete/Hikari 종료 확인. Java130을 Gradle이 종료1로 전달한다. 이는 정상 인터럽트 종료 기록이며 테스트 성공으로 계산하지 않는다.
+- TOOLCHAIN_SMOKE_PASSWORD 누락 local bootRun 종료1. 정상 비밀값 복구 후 UTC 설정 재검증 진행.
+- 보존 표식 UUID `fca1c9f8-a068-49d7-b5fc-d433bbab3a0d`, 기대73. reservation_local 확인 후 명시 BEGIN/DDL/INSERT/COMMIT, 새 연결 UUID/73 조회. down(볼륨 유지)→up --wait120 각각 종료0, 새 컨테이너의 새 연결에서 동일 UUID/73 확인. 이번 표식만 성공 후 정리한다. 기존 개발 데이터·schema/volume 삭제 없음.
+- 복구/정리 책임은 실행 담당자. 중단·commit 유실은 상태 조회 후 재개하도록 README에 안내했다. 실제 응답 유실 주입은 미실시이며 이를 실행 검증으로 주장하지 않는다.
+
+- UTC 재기동1.535초 및 Z 로그 확인, 복구 health200/UP. 이번 표식만 DELETE1(종료0). T005~T012 실행 준비·US1 검증 완료, Unit/IT·심화는 후속이다.
+
+### US2 순수 프로브 TDD
+
+- 첫 파일 작성 명령의 작업 위치 오류로 파일 생성이 안 되어 NO-SOURCE 실행이 발생했다. 기능 실패 근거가 아니며 T020에서 0건 차단을 보완한다.
+- 올바른 위치에 테스트를 작성한 뒤 최소 골격에서 `./gradlew test --tests '*ToolchainSmokeTest' --rerun-tasks`: 종료1, 실행3·실패2·skip0. 입력37/100의 실제 조회0으로 assertion 실패. 컴파일 정상이며 의도한 저장 동작 실패를 확인했다.
+- 최소 저장 필드 구현 후 정상 실행 결과는 아래 후속 기록으로 연결한다.
+
+- 정상 최소 구현 후 ./gradlew test --rerun-tasks 및 지정 ToolchainSmokeTest 실행: 각각 종료0·실행3·실패0·skip0. 첫 실행은 새 실행이며 두 번째 지정 실행도 test 태스크가 실제 실행됐다.
+
+- 초기 IT 종료1: Testcontainers의 image compatibility 검사에서 tag+digest 문자열을 postgres 대체 이미지로 인식하지 못했다. DB 연결 전 준비 실패이며 기능 assertion 실패가 아니다. 이미 docker pull/inspect/컨테이너 내부 버전으로 공식 postgres digest를 확인했으므로 asCompatibleSubstituteFor("postgres")를 명시했다. 버전 하향·다른 DB·skip은 사용하지 않았다.
+
+### US2 실제 연동·발견 게이트
+
+- image 호환 선언 후 integrationTest --rerun-tasks 종료0: 일반 IT4건·실패0·skip0. 실제 PostgreSQL metadata/version1·insert/select73, Redis73, RANDOM_PORT health200/UP, 고의 migration 오류·metadata 확인·새 컨테이너/DB 재개를 확인했다.
+- 앱 context보다 컨테이너를 먼저 정리하면 Redis 재연결 경고가 발생했다. 수동 AfterEach context.close는 Spring 후처리가 닫힌 context를 재시작하려 해 IT2실패를 발생시켰다(verify 종료1, 결과 게이트도 실패). Spring DirtiesContext AFTER_CLASS 종료 후 order2999 cleanup listener로 의존 컨테이너를 정리하도록 수정했다.
+- `./gradlew verify --rerun-tasks` 수정 후 종료0: Unit3·일반IT4, 실패0·skip0, 현재 listener/XML 수 일치. 각 Test의 cache/up-to-date 재사용을 끄고 NO-SOURCE·현재 결과 없음·XML 없음/불일치를 게이트에서 거부한다. configuration cache 지원은 이번 범위 밖이며 Gradle10 API 호환성은 미검증이다.
+
+- 고의 실패(각각 원복, 종료1): Unit 기대값+1(3실패), 지정 이름 없음(0건), 전체 태그 제외(0건), 클래스 Disabled(0건), Redis 기대74(1실패). 별도 Assumptions로 실제 Unit3 중 skip1을 주입해 게이트 비성공을 확인했다.
+- 이전 성공 XML이 있는 상태에 Test 입력을 빈 경로로 바꾼 init-script 실행: 종료1, 현재 실행 결과 없음 게이트로 차단. init-script는 시연 명령에서만 사용하며 정상 설정에는 적용하지 않는다.
+- 원복 verify 종료0: Unit3/IT4·실패skip0. 지정 `test integrationTest --tests '*ToolchainSmokeIT'` 종료0: Unit3/지정IT3. 마지막 skip/빈 입력 시연 원복 후 test 종료0: Unit3·실패skip0. 고의 변경 잔존 없음.
+- T014~T021 완료. Spring 없는 프로브는 도구 확인용이며 실제 업무 불변식·SQL 경쟁 테스트는 아직 미구현이다.
+
+### US3 속성·변이
+
+- QuickTheories0.26/validator core2.46.1 고정 의존성과 PIT Gradle1.19.0/engine1.22.1/Jupiter plugin1.2.3을 취득했다. 심화 지원 클래스 포함 compileTestJava/processTestResources 종료0. test classpath에서 계약 원본을 직접 복사하고 수작업 사본을 만들지 않았다.
+- 첫 Property 정상 실행 종료1: 중복 제거로 실제 assertion61회여서 최소100 조건이 실패했다. 도구 Core bytecode의 visitedValues/생성 루프 확인 후 생성 예산1000으로 조정했다. 최소100 기대값은 유지했다.
+- 수정 propertyTest 종료0: JUnit3건(경계0/100 각1, 속성1), 속성 실제 assertion101회, seed20261013, 실패skip0.
+- 프로브의 `value>50 ? 0 : value` 고의 결함: propertyTest 종료1, 경계100 및 속성 실패. 최초 반례100 → 중간59/58/57/56/54/53 → 최소51. QT_SEED=20261013을 Test JVM에 전달한 재현 실행도 종료1·동일51과 반례 경로. 원복 propertyTest 종료0·3건·실제101회.
+- mutationSmoke 종료0: PIT generated1/killed1/survived0/NO_COVERAGE0/invalid0. XML/HTML 보고서 확인. PIT examined1은 도구 내부 수이며 JUnit Unit3건과 구분한다. pure 프로브에서만 확인했고 Spring·SQL·권한·업무 규칙 변이를 검증한 것이 아니다.
+
+### US3 계약 검증
+
+- contractTest --rerun-tasks 종료0: Contract3건·실패skip0. loopback 동적 HTTP 서버의 GET /toolchain/probe 실제 method/path/headers/status/body를 전달해 정상200/UUID 응답 허용, 같은200/{}의 필수id 누락은 validator가 ERROR로 거부했다. 음성 사례는 예상 거부 assertion의 성공이며 태스크 실패와 구분한다.
+- 기존 docs/openapi.yaml 원본의 OpenAPI3.0.3 parse/resolve 성공. 업무 API를 기동·검증한 근거는 아니다.
+- 정상 fixture의 UUID를 not-a-uuid로 고의 변경: 종료1·Contract3 중 정상 응답1실패. 원복 contractTest 종료0·3건 실패skip0. 계약 리소스의 수작업 중복 사본과 제품 API 음성 옵션 없음.
+- T023~T032 완료. 각 후보의 최소 실행을 확인했으며 업무 동작 호환성은 미검증이다.
+
+### US4 실행 조합 대조
+
+최종 조합별 첫 증거 실행에 --rerun-tasks를 사용했다. Test listener 결과와 XML을 대조했으며 심화 미포함 그룹은 해당 명령에서 실행되지 않는다.
+
+| 명령 | 종료 | 실제 그룹별 JUnit 실행 수 |
+|---|---|---|
+| `./gradlew test --rerun-tasks` | 0 | test=3 |
+| `./gradlew verify --rerun-tasks` | 0 | integrationTest=4, test=3 |
+| `./gradlew test --tests *ToolchainSmokeTest --rerun-tasks` | 0 | test=3 |
+| `./gradlew test integrationTest --tests *ToolchainSmokeIT --rerun-tasks` | 0 | test=3, integrationTest=3 |
+| `./gradlew verifyContract --rerun-tasks` | 0 | test=3, integrationTest=4, contractTest=3 |
+| `./gradlew verifyProperty --rerun-tasks` | 0 | test=3, integrationTest=4, propertyTest=3 |
+| `./gradlew deepTest --rerun-tasks` | 0 | test=3, integrationTest=4, contractTest=3, propertyTest=3 |
+| `./gradlew mutationSmoke --rerun-tasks` | 0 | PIT 생성1·탐지1 |
+
+- Contract/Property 각 --tests 불일치·전체 태그 제외는0건 종료1. 각 BeforeEach assumption 중단은3건 중 skip3으로 종료1. 정상 assertion 실패 탐지는 US3의 UUID 훼손/경계 결함 근거에 연결한다. 모든 임시 변경은 finally 원복했다.
+- 원복 뒤 ./gradlew deepTest 종료0: Unit3/일반IT4/Contract3/Property3, 총13·실패0·skip0. Property101회, 필수 그룹0건0, 원복 누락0. PIT는 별도 표의 생성1·탐지1을 유지한다.
+
+### 1단계 요구사항·성공 기준 인수
+
+| 기준 | 실제 근거 | 판정 |
+|---|---|---|
+| FR-001 | 착수 root/HEAD 확인·chore 브랜치·기존 Gradle 보존 | 충족 |
+| FR-002 | JDK/Wrapper/Docker/Compose/k6/CPU/메모리·versions | 충족 |
+| FR-003 | local health200·종료·down/up 뒤 PostgreSQL 표식73 유지 | 충족 |
+| FR-004 | .env 제외·변수명만 example·loopback·UTF8/UTC | 충족 |
+| FR-005 | 순수 Unit3·지정3 실제 실행 | 충족 |
+| FR-006 | PG/Redis 실제 동적 IT·실패 migration 정리·새 DB 재개 | 충족 |
+| FR-007 | PIT 생성1·탐지1·NO_COVERAGE0·생존0 | 충족 |
+| FR-008 | 속성 실제101회·100→51·seed20261013 재실패 | 충족 |
+| FR-009 | 여덟 실행 조합·이름/태그·실제 수 표 대조 | 충족 |
+| FR-010 | 값/0건/skip/빈 입력 비성공·원인 분류 | 충족 |
+| FR-011 | Unit/IT/Contract/Property 고의 결함 원복 후 통과 | 충족 |
+| FR-012 | 실제 HTTP 정상/id누락 및 업무 OpenAPI parse/ref | 충족 |
+| FR-013 | versions·decisions·본 문서에 명령/종료/수/seed/축소/한계 기록 | 충족 |
+| FR-014 | 검증 단위 로컬 커밋·프로브 후속 대체·전체 인수 대조 | 충족 |
+| SC-001 | 환경 전체 목록 및 PostgreSQL commit/down/up/조회1회 | 충족 |
+| SC-002 | Unit3·PG/Redis 각 독립 최소1·실패skip0 | 충족 |
+| SC-003 | PIT1생성1탐지·Property탐지/축소/재현/원복 네 근거 | 충족 |
+| SC-004 | 정상200 허용·id누락 거부·기존 문서 parse/ref | 충족 |
+| SC-005 | 조합별 수/종료와 고의 실패·원복·필수0건0 | 충족 |
+| SC-006 | 재현 안내/근거/미검증을 연결·근거 없는 호환 표시0 | 충족 |
+
+**판정:** 1단계 필수 최소 검증 인수 충족. 업무 API·업무 schema·인증 UUID·SQL 경쟁·Redis 요청 제한·부하·외부 CI는 미구현/미검증이다. 다음 한 작업은 2단계 실제 schema 제약의 첫 통합 검증이다. cleanup10초 초과/앱준비60초 초과의 장애 주입은 미실시이며 정상 경로의 상한 설정과 정리 완료만 확인했다. 개발 commit 응답 유실은 복구 안내를 작성했지만 실제 유실 주입은 미실시다.
+
+### 문서 동기화와 최종 범위
+
+- 원계획3·6·7절과 README/knowledge/계획/실행 계약을 실제 Gradle·경로·수·조합으로 맞췄다. 업무2·4·5절은 HEAD 원본과 바이트 동일임을 확인했다. 원계획의 저장소 밖 참고 문서2건은 존재하지 않는 로컬 링크 대신 원래 파일명을 보존한 참고 표기로 바꿨다.
+- 고의 결함·skip·임시 태그 설정은 모두 원복했고 .env는 ignored이다. toolchain 체크리스트를 implement에서 수정하지 않았다. 외부 hooks 설정은 없으므로 before/after hook은 해당 없음.
+- 최종 코드 검증은 원복 deepTest13건·실패skip0 및 별도 PIT1생성1탐지다. 이후 변경은 문서 동기화·인수 기록이며 추가 업무 동작 변경은 없다. 최종 브랜치 리뷰를 별도 시행한다.
+
+- 최종 환경 재조회: Docker Compose v5.6.0. 착수 CLI 출력v5.1.0과 구분해 versions에 기록했다. 최종 docker ps의 실행 컨테이너0, PostgreSQL named volume은 보존. 최종 XML은 Unit3/일반IT4/Contract3/Property3·실패skip0, PIT read 변이1개 KILLED.
+
+### 2026-10-14 최종 독립 리뷰와 보완
+
+- 읽기 전용 독립 리뷰: range71b677c..ab6a2c1 및 미커밋 버전 기록. 첫 시도는 사용량 제한으로 실패해 리뷰 결과가 없었고, 사용자 “이어서 해줘” 지시 후 같은 리뷰를 재개했다. Critical0, Important1(앱 IT HttpClient.close의 종료 상한 누락), Minor1(버전 문서 준비/완료 상태 혼재).
+- Important는 종료10초 계약 누락으로 판단해 보완했다. 실제 동적 HTTP 서버가200 헤더/첫 바이트를 보내고 본문을 끝내지 않는 회귀 사례 HttpClientCleanupIT를 먼저 작성했다. 기존 close 동작의 지정 실행 종료1, 1건 assertion의 Future TimeoutException(12초 관찰 상한)을 확인했다. 컴파일 실패나 Docker 미준비가 아니다. 실패 후에도 본문/클라이언트/서버/실행기 정리를 완료했다.
+- HttpClientTestSupport.close를 shutdownNow→awaitTermination(10초)로 바꾸고 앱 IT의 finally에 적용했다. 지정 회귀 IT 실행 종료0·1건 실패skip0. 이후 ./gradlew deepTest 종료0: Unit3·일반IT5·Contract3·Property3, 총14·실패skip0. 미종료 응답 cleanup 회귀도 포함한다. PIT 대상 main/Unit은 변경하지 않았으므로 기존 생성1·탐지1 근거를 유지하며 다시 실행하지 않았다.
+- 버전 문서는 미완료 준비 표현을 현재 확인 표로 정리했다. 이 문서 수정은 리뷰 결과 도착 전 진행 중이던 최종 기록 정리이며 별도 prose 테스트 대신 내용·링크·diff 검사로 확인한다. 남은 Minor 없음.
+- 제외 범위 판단: 업무 API/UUID 인증/수량·SQL 경쟁/Redis 제한/부하/외부 CI는1단계 범위 밖으로 그대로 미구현/미검증이다. 종료10초 초과 분기 자체와 개발 commit 응답 유실 주입은 여전히 미실시로 표시한다. 실제 미종료 HTTP 응답의 bounded cleanup은 이번 보완에서 실행 확인했다.
+- 최초 여덟 조합 표의 일반IT4/총13은2026-10-13 당시 근거다. 현재 모든 일반IT 포함 명령은 새 회귀1건을 포함해 일반IT5, deepTest14다. 이름 지정 ToolchainSmokeIT3 및 Unit/Contract/Property 각3은 유지된다.
+- 기존 작업 공간/chore 브랜치에서 순차 실행했고 Spec Kit T번호를 ledger에 직접 추적했다. 자동 brief 추출 스크립트는 Task N 제목만 지원해 사용하지 않았다. 병행 checkout 충돌/수동 추적 누락 가능성은 실제 git 상태·체크42개·실행 근거 대조로 관리했다.
+- T042의 지시에 따라 작업 브랜치와 로컬 커밋을 유지한다. develop/main 병합·push·PR·태그는 하지 않는다. 후속 통합은 별도 작업이다.
+
+- 최종 코드 대상 commit: `be96d7c` (앱 IT 종료 상한·회귀 보완 포함). 기본 범위 baseline71b677c에서6개 목적별 로컬 커밋으로 진행했다. 수정 뒤 재리뷰 대신 실제 회귀 RED→GREEN/전체14통과로 보완을 판정했다. 현재 작업 브랜치는 chore/setup-test-toolchain이며 기록 정리 커밋 후 git status를 재확인한다.
+
+### 2026-10-14 GitHub PR 준비·적대적 코드리뷰
+
+- 사용자 지시로 현재 chore/setup-test-toolchain을 origin에 push했다. 원격에는 main만 있었고 로컬 develop과 원격main의 기준71b677c가 같음을 확인해 PR 대상 origin/develop을 생성했다. 이전 “외부 작업 없음”은 그 이전 작업 범위의 이력이며 이번 push/PR는 별도 명시 지시에 따른다.
+- PR 대상 diff의 적대적 독립 리뷰(71b677c..41c7847): Critical0·Important1·Minor0. Important는 헤더/첫 바이트 이후 본문 정체가 HttpRequest.timeout(10초)만으로 제한되지 않는 문제다. 리뷰어가 Corretto25에서12,009ms 후 Future pending을 실제 확인했다. 앞선 수렴 검토는 이 실패 경로를 놓쳤다.
+- 수정 전 회귀: 실제 서버가200·첫 바이트를 flush한 뒤 본문을 끝내지 않는 HttpClientCleanupIT.responseBodyStallFailsWithinWholeRequestDeadline를 작성했다. 지정 실행 종료1·1건 assertion 실패:12초 caller Future TimeoutException을 받았고 기대한 요청 HttpTimeoutException이 발생하지 않았다. 실패 후 정리 완료. 컴파일/환경 오류가 아니다.
+- 공통 HttpClientTestSupport.send를 sendAsync + Future.get(10초)로 변경했다. 전체 본문 완료를 제한하고 Timeout/Interrupted에서 pending.cancel(true), 실행 실패는 원인을 전달한다. BackendApplicationIT와 ToolchainHttpFixture 모두 사용한다. 클라이언트 종료10초 상한은 유지한다.
+- 수정 후 지정 회귀 종료0·1건 실패skip0. ./gradlew deepTest 종료0: Unit3·일반IT6·Contract3·Property3, 총15·실패skip0. 본문 정체의 요청 timeout과 취소 후 정리를 실제 확인했다.
+- PR 준비 시 ./gradlew deepTest mutationSmoke도 종료0(수정 전14건, PIT 생성1·탐지1·생존0·NO_COVERAGE0). 이후 변경은 테스트 HTTP 지원/IT만이며 main/PIT 대상 Unit·빌드 의존성은 변경하지 않아 PIT를 재실행하지 않았다. 수정 후15건 결과와 구분한다.
+- 전체 업무 API·schema·UUID 인증·예약 경쟁·Redis 제한·부하·외부 CI는 후속 범위다. Docker startup/cleanup timeout의 모든 장애 분기와 개발 commit 응답 유실은 미검증이다. 임의 -x/init script로 검증을 고의 제거하는 사용자 우회는 정상 실행 계약 범위 밖이다.
+
+- 같은 적대적 리뷰어의 수정 재평가 PASS: 본문 완료 Future의10초 제한·Timeout/Interrupted 취소·두 호출 경로 적용·실제 회귀와 전체15건 로그를 읽기 전용으로 확인했다. 미해결 Critical/Important0, Minor0. 이 판정 후 수정·기록을 커밋하고 원격 반영한 뒤 develop 대상 PR을 게시한다.
+
+- GitHub 실제 게시 결과: [PR #1](https://github.com/joypeb/limited-booking-test/pull/1), base=develop, head=chore/setup-test-toolchain, OPEN·정식PR(draft 아님)·MERGEABLE. 리뷰/검증된 코드 commit6772606과 원격 head 일치 확인. GitHub statusCheckRollup은 빈 목록이므로 외부 CI 통과를 주장하지 않는다. PR 생성은 완료했고 병합은 수행하지 않았다.

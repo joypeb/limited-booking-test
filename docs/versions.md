@@ -1,0 +1,35 @@
+# 환경과 도구 버전
+
+2026-10-13 실행, 2026-10-14 최종 기록 정리. 작업 브랜치는 `chore/setup-test-toolchain`이다. **후보 → 설치/취득됨 → 버전 확인됨 → 해당 최소 사례 실행 확인됨**을 구분하며 아래 표는 현재 확인 상태다. 업무 API·SQL·경쟁·부하 호환성은 미검증이다.
+
+| 항목 | 실제 확인 | 상태·최소 실행 범위 |
+|---|---|---|
+| CPU/OS | arm64, macOS 27.0.1 | 호스트 확인 |
+| JDK | Amazon Corretto25.0.4+7-LTS | Java·Gradle·테스트 실행 확인; preview 제외 |
+| Gradle Wrapper | 9.7.1 | 실제 --version 및 여덟 실행 조합 확인 |
+| Boot | 4.1.1 | starter 해석·local 기동·동적 컨테이너 앱 HTTP 확인 |
+| Docker | CLI/daemon29.2.1, aarch64 | Desktop 기동·데몬·이미지 내부 실행·실제 연동 확인 |
+| Docker 메모리 | 8,216,915,968 bytes (약7.65GiB) | docker info 실제값 |
+| Compose | 착수 CLI v5.1.0 → Desktop 기동 후 v5.6.0 | 최종 version 출력·up/down·PostgreSQL 보존 확인 |
+| k6 | 2.3.0, go1.27.1, darwin/arm64 | 누락 도구만 brew install 후 버전 확인; 부하 미실시 |
+| PostgreSQL | postgres:18.6-bookworm, arm64 | 내부18.6 출력·local 표식 보존·격리 IT 확인 |
+| Redis | redis:8.10.2-trixie, arm64 | 내부8.10.2 출력·local health·격리 set/get 확인 |
+| Jupiter | 6.0.3 | Boot BOM dependencyInsight·네 테스트 그룹 실행 확인 |
+| Testcontainers | 2.0.5 | Boot BOM dependencyInsight·동적 PostgreSQL/Redis 실행·정리 확인 |
+| Flyway/JDBC | 12.4.0 / PostgreSQL42.7.13 | BOM dependencyInsight·시험 migration metadata/insert/select·실패 후 새 DB 재개 확인 |
+| QuickTheories | 0.26 | Java25/Jupiter6.0.3에서 실제101회·경계값·seed 축소재현·원복 확인 |
+| 계약 검증기 | swagger-request-validator-core2.46.1 | 실제 HTTP3건 및 UUID 훼손 탐지·원복, 업무 OpenAPI parse/ref 확인 |
+| PIT | Gradle plugin1.19.0 / engine1.22.1 / Jupiter지원1.2.3 | 순수 프로브 변이1개 생성·탐지, NO_COVERAGE0 |
+
+Boot BOM 관리 버전 override 없음. 심화 도구는 research.md의 첫 후보 조합으로 최소 실행을 통과했으며 Java/JUnit을 임의 하향하지 않았다. Gradle10 및 configuration cache 호환성은 미검증이다.
+
+Compose와 Testcontainers는 다음 취득 digest를 함께 고정한다. `docker image inspect` 및 `docker run --rm <image> <version command>`는 각각 종료0이다.
+
+- PostgreSQL18.6: `postgres@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c`
+- Redis8.10.2: `redis@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6`
+
+실행 조합은 Unit3, 일반IT6, Contract3, Property3(내부assertion101회), 지정IT3이다. verifyContract는 Property를, verifyProperty는 Contract를 제외하며 deepTest는 총15건이다. 최초 여덟 조합의 실행 근거는 당시 일반IT4/총13이다. 회귀 보완 후 현재 deepTest15건을 종료0·실패skip0으로 확인했고, PR 전 별도 PIT는 생성1·탐지1·생존0·NO_COVERAGE0이다. 현재 결과/XML 게이트와 고의 실패·원복까지 확인했다.
+
+Property 생성 예산1000과 실제assertion101회를 구분한다. 고의 n>50 결함은 최초100에서51까지 축소되고 seed20261013으로 재현됐다. 계약 검증기 core는 JDK HTTP fixture의 실제 요청·응답을 검사하며 Spring adapter는 사용하지 않는다. 고정 업무 OpenAPI 읽기 성공은 업무 HTTP 준수 증거가 아니다.
+
+1단계 필수 최소 검증 인수는 충족했다. 구체적 명령·종료 코드·실패 재현·원복·미검증은 [실행 증거](test-evidence.md), 선택 이유는 [결정 기록](decisions.md)을 참조한다.
