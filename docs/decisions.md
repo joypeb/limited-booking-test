@@ -32,3 +32,13 @@ Compose와 Testcontainers는 `postgres:18.6-bookworm`, `redis:8.10.2-trixie`의 
 QuickTheories0.26의 Core bytecode에서 examples 루프의 생성과 visitedValues 중복 제거를 확인했다. withExamples(100)은 실제 assertion61회여서 최소100회 조건에 실패했다. 기대값을 낮추지 않고 생성 예산을1000으로 늘리고 실제 assertion 횟수≥100을 계속 검사한다. seed와 실제 횟수를 기록한다.
 
 심화 후보는 첫 조합 그대로 최소 사례를 통과했다: QuickTheories0.26, validator core2.46.1, PIT Gradle1.19.0/engine1.22.1/Jupiter1.2.3. Java/JUnit 임의 하향 없이 실행했으며 core validator는 JDK HTTP fixture와 독립 어댑터를 사용한다. 업무 OpenAPI 읽기와 실제 업무 응답 준수를 구분한다.
+
+## 최종 실행 판단과 남은 범위 (2026-10-14)
+
+- 사용자 지정 작업 공간과 T001 계약에 따라 현재 checkout의 chore 브랜치에서 순차 진행했다. 별도 worktree로 옮기지 않았다. 비용: 다른 작업과 병행 편집하면 충돌할 수 있어 이번 작업은 순차 실행했다.
+- 스킬 task-start는 Task N 제목만 지원하므로 Spec Kit의 T001~T042 행을 직접 읽고 ledger와 실행 근거로 추적했다. 비용: 자동 brief 대신 수동 추적이 필요하며 체크42개/실제 근거 대조로 누락을 관리했다.
+- 업무 API·UUID 인증·수량/SQL 경쟁·Redis 요청 제한·부하·외부 CI는 명시적 후속 범위다. 비용: 해당 단계 검증 전 업무 기능으로 사용할 수 없다.
+- 종료10초 초과 분기 자체와 개발 commit 응답 유실 주입은 미실시로 유지한다. 실제 미종료 HTTP 응답의 bounded cleanup은 새 회귀로 확인했다. 비용: 두 장애 분기의 추가 검증이 필요하다.
+- T042의 병합/push 금지 범위에 따라 chore 브랜치와 로컬 커밋을 유지한다. 비용: develop 통합은 별도 작업이다.
+
+독립 리뷰의 종료 상한 누락은 commit be96d7c에서 실제 HTTP 회귀 실패→수정 통과 및 deepTest14건 실패skip0으로 보완했다. 버전 문서의 과거/현재 상태 혼재도 최종 기록 정리에서 해결했다. 미해결 리뷰 Minor는 없다.

@@ -442,3 +442,5 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 최초 여덟 조합 표의 일반IT4/총13은2026-10-13 당시 근거다. 현재 모든 일반IT 포함 명령은 새 회귀1건을 포함해 일반IT5, deepTest14다. 이름 지정 ToolchainSmokeIT3 및 Unit/Contract/Property 각3은 유지된다.
 - 기존 작업 공간/chore 브랜치에서 순차 실행했고 Spec Kit T번호를 ledger에 직접 추적했다. 자동 brief 추출 스크립트는 Task N 제목만 지원해 사용하지 않았다. 병행 checkout 충돌/수동 추적 누락 가능성은 실제 git 상태·체크42개·실행 근거 대조로 관리했다.
 - T042의 지시에 따라 작업 브랜치와 로컬 커밋을 유지한다. develop/main 병합·push·PR·태그는 하지 않는다. 후속 통합은 별도 작업이다.
+
+- 최종 코드 대상 commit: `be96d7c` (앱 IT 종료 상한·회귀 보완 포함). 기본 범위 baseline71b677c에서6개 목적별 로컬 커밋으로 진행했다. 수정 뒤 재리뷰 대신 실제 회귀 RED→GREEN/전체14통과로 보완을 판정했다. 현재 작업 브랜치는 chore/setup-test-toolchain이며 기록 정리 커밋 후 git status를 재확인한다.
