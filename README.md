@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 현재 1단계 환경 검증을 진행 중이며 업무 API는 미구현이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행을 검증했다. 업무 API는 미구현이다.
 
 ## 로컬 환경
 
@@ -27,7 +27,7 @@ curl --connect-timeout 3 --max-time 10 --fail http://127.0.0.1:8080/actuator/hea
 
 ## 검증 상태
 
-실제 검증 기록은 [실행 증거](docs/test-evidence.md), 도구 조합은 [버전](docs/versions.md)에서 확인한다. 네 분류 태스크는 구성했으나 최소 사례·0건/skip 게이트 및 심화 태스크는 진행 중이다. 일반 build는 전체 심화 검증을 뜻하지 않는다.
+실제 검증 기록은 [실행 증거](docs/test-evidence.md), 도구 조합은 [버전](docs/versions.md)에서 확인한다. 네 분류 태스크와 현재 실행 결과/XML 게이트를 구성했다. 실행0건·실패·skip·누락 결과는 비성공이다. Test 결과 캐시 및 UP-TO-DATE 재사용은 끄고 실제 실행을 확인한다. 일반 build/check는 순수 Unit만 실행하며 전체 심화 검증을 뜻하지 않는다.
 
 ## PostgreSQL 보존 표식
 
@@ -55,3 +55,32 @@ SQL
 commit 전 오류는 rollback하고 연결을 닫는다. commit 응답 유실은 새 연결로 같은 UUID를 조회한다. 행이 없으면 준비 미완료, 같은 값이면 준비 commit 확인, 값 불일치나 접속/구조 불명은 인수 보류다. 재시작 중단은 동일 volume과 commit 표식을 확인한 뒤 down→up→조회 전체를 다시 수행한다. 상세 조건은 [복구 계약](specs/002-setup-test-toolchain/contracts/validation-contract.md)을 따른다.
 
 성공 후 실행 담당자는 소유가 확인된 이번 UUID의 행만 `DELETE FROM toolchain_smoke.retention_probe WHERE id='<이번 UUID>';`로 정리한다. 실패 표식은 원인 조사·증거 확보 전에 지우지 않는다. schema/DB 전체 초기화나 volume 제거는 하지 않는다.
+
+## 테스트 실행
+
+backend/에서 실행한다. Java25와 실행 가능한 Docker가 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다.
+
+| 명령 | 최소 검증 범위·현재 JUnit 수 |
+|---|---|
+| `./gradlew test` | Spring 없는 Unit3 |
+| `./gradlew verify` | Unit3+일반IT4 |
+| `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit3+지정IT3 |
+| `./gradlew verifyContract` | Unit3+일반IT4+Contract3; Property 제외 |
+| `./gradlew verifyProperty` | Unit3+일반IT4+Property3; Contract 제외 |
+| `./gradlew deepTest` | 네 그룹 총13 |
+| `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
+
+`contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
+
+```sh
+QT_SEED=20261013 ./gradlew propertyTest
+```
+
+정상 Property는 별도 경계0/100과 생성 예산1000 중 실제 assertion101회다. 실제 assertion 최소100회를 검사하며 JUnit3건과 내부 시도 수를 구분한다. 고의 n>50 결함의 100→51 축소와 동일 seed 재실패·원복 통과는 [증거](docs/test-evidence.md)에 기록했다. 결함은 현재 원복 상태다.
+
+XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/tests/<task>/`, PIT XML/HTML은 `backend/build/reports/pitest/`에 있다. 계약 fixture는 시험 전용이며 업무 OpenAPI 원본은 docs/openapi.yaml이다. 해당 문서 parse/ref 성공을 업무 HTTP 준수로 해석하지 않는다.
+
+Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
+
+도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 SQL·권한·경쟁·멱등성·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.

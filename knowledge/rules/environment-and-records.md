@@ -47,3 +47,5 @@
 ## 완료 보고
 
 변경 이유, 실제 검증 결과, 미완료·미검증 범위, 사용자가 읽을 핵심 코드·SQL·테스트 또는 문서, 다음 한 작업을 한국어로 보고한다. 문서 변경만 검증했다면 애플리케이션·DB·Redis·CI 테스트를 실행한 것처럼 보고하지 않는다.
+
+2026-10-13 1단계 환경 구성: root compose.yaml, backend/application-local.yaml, .env.example, README 및 docs/versions.md를 작성·최소 실행 확인했다. toolchain Boot 계정은 기동 확인용이며 업무 인증이 아니다. PostgreSQL18 volume 대상은 /var/lib/postgresql, 고정 digest는 Compose/Testcontainers에 공통 적용한다. 구체적 현재 값·실행 수는 docs/versions.md와 docs/test-evidence.md를 참조한다.

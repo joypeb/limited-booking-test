@@ -378,3 +378,54 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 기존 docs/openapi.yaml 원본의 OpenAPI3.0.3 parse/resolve 성공. 업무 API를 기동·검증한 근거는 아니다.
 - 정상 fixture의 UUID를 not-a-uuid로 고의 변경: 종료1·Contract3 중 정상 응답1실패. 원복 contractTest 종료0·3건 실패skip0. 계약 리소스의 수작업 중복 사본과 제품 API 음성 옵션 없음.
 - T023~T032 완료. 각 후보의 최소 실행을 확인했으며 업무 동작 호환성은 미검증이다.
+
+### US4 실행 조합 대조
+
+최종 조합별 첫 증거 실행에 --rerun-tasks를 사용했다. Test listener 결과와 XML을 대조했으며 심화 미포함 그룹은 해당 명령에서 실행되지 않는다.
+
+| 명령 | 종료 | 실제 그룹별 JUnit 실행 수 |
+|---|---|---|
+| `./gradlew test --rerun-tasks` | 0 | test=3 |
+| `./gradlew verify --rerun-tasks` | 0 | integrationTest=4, test=3 |
+| `./gradlew test --tests *ToolchainSmokeTest --rerun-tasks` | 0 | test=3 |
+| `./gradlew test integrationTest --tests *ToolchainSmokeIT --rerun-tasks` | 0 | test=3, integrationTest=3 |
+| `./gradlew verifyContract --rerun-tasks` | 0 | test=3, integrationTest=4, contractTest=3 |
+| `./gradlew verifyProperty --rerun-tasks` | 0 | test=3, integrationTest=4, propertyTest=3 |
+| `./gradlew deepTest --rerun-tasks` | 0 | test=3, integrationTest=4, contractTest=3, propertyTest=3 |
+| `./gradlew mutationSmoke --rerun-tasks` | 0 | PIT 생성1·탐지1 |
+
+- Contract/Property 각 --tests 불일치·전체 태그 제외는0건 종료1. 각 BeforeEach assumption 중단은3건 중 skip3으로 종료1. 정상 assertion 실패 탐지는 US3의 UUID 훼손/경계 결함 근거에 연결한다. 모든 임시 변경은 finally 원복했다.
+- 원복 뒤 ./gradlew deepTest 종료0: Unit3/일반IT4/Contract3/Property3, 총13·실패0·skip0. Property101회, 필수 그룹0건0, 원복 누락0. PIT는 별도 표의 생성1·탐지1을 유지한다.
+
+### 1단계 요구사항·성공 기준 인수
+
+| 기준 | 실제 근거 | 판정 |
+|---|---|---|
+| FR-001 | 착수 root/HEAD 확인·chore 브랜치·기존 Gradle 보존 | 충족 |
+| FR-002 | JDK/Wrapper/Docker/Compose/k6/CPU/메모리·versions | 충족 |
+| FR-003 | local health200·종료·down/up 뒤 PostgreSQL 표식73 유지 | 충족 |
+| FR-004 | .env 제외·변수명만 example·loopback·UTF8/UTC | 충족 |
+| FR-005 | 순수 Unit3·지정3 실제 실행 | 충족 |
+| FR-006 | PG/Redis 실제 동적 IT·실패 migration 정리·새 DB 재개 | 충족 |
+| FR-007 | PIT 생성1·탐지1·NO_COVERAGE0·생존0 | 충족 |
+| FR-008 | 속성 실제101회·100→51·seed20261013 재실패 | 충족 |
+| FR-009 | 여덟 실행 조합·이름/태그·실제 수 표 대조 | 충족 |
+| FR-010 | 값/0건/skip/빈 입력 비성공·원인 분류 | 충족 |
+| FR-011 | Unit/IT/Contract/Property 고의 결함 원복 후 통과 | 충족 |
+| FR-012 | 실제 HTTP 정상/id누락 및 업무 OpenAPI parse/ref | 충족 |
+| FR-013 | versions·decisions·본 문서에 명령/종료/수/seed/축소/한계 기록 | 충족 |
+| FR-014 | 검증 단위 로컬 커밋·프로브 후속 대체·전체 인수 대조 | 충족 |
+| SC-001 | 환경 전체 목록 및 PostgreSQL commit/down/up/조회1회 | 충족 |
+| SC-002 | Unit3·PG/Redis 각 독립 최소1·실패skip0 | 충족 |
+| SC-003 | PIT1생성1탐지·Property탐지/축소/재현/원복 네 근거 | 충족 |
+| SC-004 | 정상200 허용·id누락 거부·기존 문서 parse/ref | 충족 |
+| SC-005 | 조합별 수/종료와 고의 실패·원복·필수0건0 | 충족 |
+| SC-006 | 재현 안내/근거/미검증을 연결·근거 없는 호환 표시0 | 충족 |
+
+**판정:** 1단계 필수 최소 검증 인수 충족. 업무 API·업무 schema·인증 UUID·SQL 경쟁·Redis 요청 제한·부하·외부 CI는 미구현/미검증이다. 다음 한 작업은 2단계 실제 schema 제약의 첫 통합 검증이다. cleanup10초 초과/앱준비60초 초과의 장애 주입은 미실시이며 정상 경로의 상한 설정과 정리 완료만 확인했다. 개발 commit 응답 유실은 복구 안내를 작성했지만 실제 유실 주입은 미실시다.
+
+### 문서 동기화와 최종 범위
+
+- 원계획3·6·7절과 README/knowledge/계획/실행 계약을 실제 Gradle·경로·수·조합으로 맞췄다. 업무2·4·5절은 HEAD 원본과 바이트 동일임을 확인했다. 원계획의 저장소 밖 참고 문서2건은 존재하지 않는 로컬 링크 대신 원래 파일명을 보존한 참고 표기로 바꿨다.
+- 고의 결함·skip·임시 태그 설정은 모두 원복했고 .env는 ignored이다. toolchain 체크리스트를 implement에서 수정하지 않았다. 외부 hooks 설정은 없으므로 before/after hook은 해당 없음.
+- 최종 코드 검증은 원복 deepTest13건·실패skip0 및 별도 PIT1생성1탐지다. 이후 변경은 문서 동기화·인수 기록이며 추가 업무 동작 변경은 없다. 최종 브랜치 리뷰를 별도 시행한다.

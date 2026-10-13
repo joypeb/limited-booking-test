@@ -32,3 +32,5 @@ Jupiter6.0.3/Testcontainers2.0.5/Flyway12.4.0/JDBC42.7.13 및 고정 PG18.6/Redi
 심화 실제 조합(해당 최소 범위만 확인): QuickTheories0.26·Jupiter6.0.3/Java25 정상101회·seed 축소재현 확인. PIT Gradle1.19.0/engine1.22.1/Jupiter지원1.2.3: 순수 프로브 변이1개 생성·탐지. validator core2.46.1은 취득·컴파일 확인, 실제 HTTP는 진행 중.
 
 validator core2.46.1: 실제 HTTP Contract3건 정상/필수id 누락/업무 OpenAPI parse/ref 및 정상 UUID 고의 훼손 탐지·원복 실행 확인. Spring adapter 대신 core를 사용했으며 업무 HTTP 준수는 미검증이다.
+
+실행 조합 전체: Unit3, 일반IT4, Contract3, Property3(내부101회), 지정IT3, PIT1생성1탐지. verifyContract는 Property 제외, verifyProperty는 Contract 제외, deepTest는 총13건. 모든 조합 종료0·실패skip0. 구체적 명령은 test-evidence.md US4 표 참조.

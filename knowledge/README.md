@@ -32,15 +32,15 @@
 - [reservation.md](domain/reservation.md): 예약·멱등 재현·취소·트랜잭션·경쟁의 설계 지식.
 - [security.md](domain/security.md): 로컬 인증·권한·소유권·본문 필터의 설계 지식.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
-- 위 기능은 미구현이며 실제 HTTP·DB·Redis 검증은 미실행이다.
+- 위 업무 기능은 미구현이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - 첫 버전의 업무 도메인은 예약 대상(`resource`)과 예약(`reservation`)이다. `security`·`ratelimit`은 이를 지원하는 기능이며, 필요할 때 같은 형식으로 책임과 계약을 문서화한다. `common`을 독립 업무 도메인으로 가정하지 않는다.
 - 파일 이름은 `<domain-name>.md`를 사용한다. 근거·경계·기대 결과를 먼저 적고, 코드·SQL·테스트·명령은 실제 존재 여부를 확인해 연결한다.
 - 템플릿의 모든 절을 유지한다. 해당 없는 항목은 이유를 적고, 미확정 사항은 질문과 영향 범위를 적는다. 다른 도메인과 공유하는 규칙은 관련 문서로 연결한다.
 
 ## 문서와 구현 상태
 
-2026-10-13 파일 확인 기준으로 애플리케이션은 `backend/`, 기본 패키지는 `com.limitedbooking.backend`이며 Java 25·Spring Boot 4.1.1·Gradle Wrapper 9.7.1의 최소 골격이다. 의존성은 기본 Boot starter와 테스트 starter다. 예약 API·DB·Redis·심화 테스트가 구현·실행됐다고 간주하지 않는다. 이후 작업에서 실제 파일을 다시 확인한다.
+2026-10-13 1단계 수행 후 애플리케이션은 backend/, 기본 패키지는 com.limitedbooking.backend이며 Java25·Boot4.1.1·Gradle9.7.1을 유지했다. MVC·Security·JDBC·Redis·Flyway·Actuator 및 검증 의존성을 추가했다. [실행 안내](../README.md), [버전](../docs/versions.md), [실행 증거](../docs/test-evidence.md)에 실제 상태를 연결한다.
 
-계획서의 Maven·`reservation-backend/`·`com.example.reservation`은 제안된 구성이다. 현재 Gradle·경로·패키지를 유지하고, 테스트 실행 계약은 해당 단계에서 Gradle 태스크로 구현·기록한다. 아직 없는 명령을 실행 안내에 확정값으로 싣지 않는다.
+Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. Unit3·일반IT4·Contract3·Property3(내부101회), PIT 생성1·탐지1이다. 프로브는 도구 확인용이며 후속 ResourceRules/IdempotencyKey/CancellationDecision으로 대체할 예정이다. 업무 API·SQL·인증 UUID·요청 제한·경쟁 검증은 아직 미구현이다. 업무 스키마는 2단계에서 만들며 시험 migration은 test resources에만 있다.
 
-`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 미실시다. 버전·성능 기록 `docs/versions.md`·`docs/performance.md`는 후속 환경·부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
+`knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 미실시다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.

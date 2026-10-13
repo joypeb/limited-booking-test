@@ -31,7 +31,7 @@
 | Performance | k6와 종료 후 DB 검사 | threshold 종료 코드·상태 코드별 결과 |
 
 - Gradle 태스크에서 이름·태그·엔진의 발견 규칙을 명시한다. Unit, 일반 IT, Contract 포함, Property 포함, 전체 심화, PIT의 실행 대상을 구분하고 실제 명령을 기록한다.
-- 계획서 6.2절의 Maven 계약은 검증 범위의 기준이다. 현재 없는 Maven 명령이나 미구현 Gradle 태스크를 실행하지 않는다. 일반 `test`·`build`가 모든 심화 테스트를 포함한다고 가정하지 않는다.
+- 계획서 6.2절의 Gradle 계약을 검증 범위의 기준으로 사용한다. 1단계에서 test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke를 구현·실행했다. 아직 없는 업무 테스트를 실행 안내나 통과 결과로 기록하지 않는다. 일반 `test`·`build`가 모든 심화 테스트를 포함한다고 가정하지 않는다.
 - 테스트 0건·skip·변이 0건·NO_COVERAGE를 통과로 취급하지 않는다. 계획된 태스크가 대상 테스트를 실제 발견하고 고의 실패를 종료 코드에 반영하는지 확인한다.
 
 ## 실제 데이터와 경쟁
@@ -55,3 +55,5 @@
 - PIT 대상은 ResourceRules·IdempotencyKey·CancellationDecision과 대응 Unit으로 한정한다. 초기 탐지율 80% 이상, 중요한 규칙의 설명되지 않은 생존 변이 0건을 기준으로 한다. 동등 변이·도구 한계는 이유를 남긴다.
 - SQL available 조건, 취소 status 조건, 소유자 조건, 키 비교를 하나씩 고의 제거해 관련 테스트가 실패하는지 확인하고 반드시 원복한다. PIT 점수로 SQL·권한·경쟁의 안전성을 대신 주장하지 않는다.
 - 변경·실패·미해결 문제가 없으면 전체 테스트나 부하를 불필요하게 반복하지 않는다. 별도 AI 리뷰는 실행 증거와 직접 설명을 돕는 보조 수단이다.
+
+1단계 실행 확인은 도구 프로브 범위다. 현재 실행 수/XML 게이트와 Test 캐시 비활성화를 사용한다. Property 생성 예산1000과 실제 assertion101회를 구분하고 실제 최소100회를 검사했다. 클래스·이름·태그·skip·빈 입력 실패 및 원복 근거는 docs/test-evidence.md에 있다.

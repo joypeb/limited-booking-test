@@ -2,7 +2,7 @@
 
 ## 상태와 선행 조건
 
-이 문서는 구현 후 사용할 안내다. 지금 존재하는 것은 기존 Wrapper·기본 test 설정·애플리케이션 골격뿐이다. Compose, local 프로필, 분류별 태스크와 smoke 사례는 아직 미구현이며 아래 예정 명령을 실행 성공 기록으로 해석하지 않는다. 이번 계획 명령에서는 환경·기능 테스트를 실행하지 않는다.
+2026-10-13 구현·실행 확인한 1단계 재현 안내다. Compose/local 설정·분류/조합 태스크와 smoke/property/contract/PIT 최소 사례가 존재한다. 현재 실행 근거는 [test-evidence](../../docs/test-evidence.md), 정확한 조합은 [versions](../../docs/versions.md)에서 확인한다. 업무 기능의 실행 근거는 아니다.
 
 먼저 [실행 계약](contracts/validation-contract.md), [시험 데이터](data-model.md), [도구 선택 근거](research.md)를 읽는다. 0단계 계약은 루트 docs/openapi.yaml이다. 실행 환경은 Java25·Docker/Compose와 image 취득 권한, CPU에 맞는 컨테이너 실행이 필요하다. k6는 버전 확인까지만 한다. 설치 전 실제 존재 여부를 확인해 부족한 것만 준비한다.
 
@@ -23,9 +23,9 @@ k6 version
 
 미설치 명령은 실패 이유를 기록하고 준비한다. Docker daemon의 실제 메모리 설정과 CPU, JDK 배포판/패치도 기록한다. backend에서 `./gradlew --version`으로 실제 Wrapper/JVM을 확인하고 취득 실패와 실행 실패를 구분한다. 도구의 현재 버전 조회는 후보 조사·전체 호환 확인과 다르다.
 
-## 2. 구현 후 로컬 기동
+## 2. 로컬 기동
 
-예정 파일 compose.yaml·.env.example·local 설정이 준비된 뒤 프로젝트 루트에서 수행한다. `.env.example`을 개인 `.env`로 복사해 변수값을 채우되 비밀번호를 공유하지 않는다. Compose 환경과 별도로 호스트 JVM에도 POSTGRES_USER, POSTGRES_PASSWORD, TOOLCHAIN_SMOKE_PASSWORD를 주입한다. 환경 전체 덤프나 보간된 Compose 설정 전체를 실행 증거에 붙이지 않는다.
+실제 compose.yaml·.env.example·local 설정으로 프로젝트 루트에서 수행한다. `.env.example`을 개인 `.env`로 복사해 변수값을 채우되 비밀번호를 공유하지 않는다. Compose 환경과 별도로 호스트 JVM에도 POSTGRES_USER, POSTGRES_PASSWORD, TOOLCHAIN_SMOKE_PASSWORD를 주입한다. 환경 전체 덤프나 보간된 Compose 설정 전체를 실행 증거에 붙이지 않는다.
 
 ```sh
 docker compose config --quiet
@@ -62,7 +62,7 @@ docker compose up -d --wait --wait-timeout 120
 
 ## 4. 기본·연동 검증
 
-분류별 태스크가 실제 구현된 뒤 backend에서 수행한다. JDK·Wrapper 확인은 의존성 해석보다 먼저 마쳐야 한다. 최초 증거는 새 실행을 강제하고 각 보고서 생성 시각·실행수를 기록한다.
+구현된 분류별 태스크를 backend에서 수행한다. JDK·Wrapper 확인은 의존성 해석보다 먼저 마쳐야 한다. 최초 증거는 새 실행을 강제하고 각 보고서 생성 시각·실행수를 기록한다.
 
 ```sh
 ./gradlew test --rerun-tasks
@@ -96,7 +96,7 @@ docker compose up -d --wait --wait-timeout 120
 seed 재현 시 동일 환경·도구 버전을 유지하고 QT_SEED 값을 명시적으로 test JVM에 전달한다. 아래 명령은 seed를 기록된 값으로 환경에 설정한 뒤 수행한다. 고의 결함이 있는 실행은 비성공, 원복 후 실행은 성공이어야 한다.
 
 ```sh
-./gradlew propertyTest --tests '*ToolchainPropertyTest' --rerun-tasks
+QT_SEED=20261013 ./gradlew propertyTest --tests '*ToolchainPropertyTest' --rerun-tasks
 ```
 
 고의 결함 주입·원복은 각각 diff로 검토하고 실행 증거와 연결한다. 부적합한 후보는 원인을 분리해 조사에 기재한 대안을 평가하며 테스트 제외·버전 임의 하향으로 통과시키지 않는다.
@@ -116,3 +116,5 @@ Unit·일반 IT·Contract·Property 각 그룹의 실행수≥1·실패0·skip0�
 ## 중단 후 재개 안내
 
 [복구 계약](contracts/validation-contract.md#중단실패-후-정리와-재개)을 적용한다. 격리 시험 migration 실패는 실행 담당자가 오류·metadata·컨테이너 식별값을 남기고 지원 코드/담당자가 이번 시험 자원만 정리한 후 원인 수정·새 DB로 재검증한다. 개발 표식 중단은 새 연결에서 같은 UUID·기대값과 commit 여부를 확인하고, 준비가 확인된 표식으로 전체 보존 시험을 다시 수행한다. 조회 불가·값 불일치·잔존 자원 정리 미확인은 성공으로 기록하지 않는다. schema/개발 DB 초기화·named volume 삭제·무조건 재실행은 복구 절차가 아니다.
+
+실제 현재 수: Unit3, 일반IT4, Contract3, Property3(내부101회), deepTest13. PIT생성1·탐지1·생존0. QuickTheories는 중복을 제거하므로 생성 예산1000과 실제101회를 구분하며 실제 최소100회 조건을 검사한다. 프로브 후속 대체와 미검증 범위는 README/계획의 실제 구현 결과를 참고한다.

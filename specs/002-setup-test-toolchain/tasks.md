@@ -2,8 +2,8 @@
 
 **입력**: `specs/002-setup-test-toolchain/`의 [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [실행 계약](contracts/validation-contract.md), [검증 안내](quickstart.md).
 **작성일**: 2026-10-13
-**현재 문서 브랜치**: `docs/setup-test-toolchain`
-**상태**: 구현 착수. T001~T003 준비 완료; 나머지 실제 검증 결과에 따라 갱신한다.
+**설계 브랜치**: `docs/setup-test-toolchain` | **실제 구현 브랜치**: `chore/setup-test-toolchain`
+**상태**: T001~T042 구현·최소 실행·문서 동기화 완료. 별도 최종 브랜치 리뷰 결과는 docs/test-evidence.md에 기록한다.
 
 **테스트 포함 근거**: 명세가 기본·연동·속성·변이·실제 HTTP 계약의 최소 실행과 실패 탐지를 명시적으로 요구한다. 순수 동작은 테스트 → 동작 실패 → 최소 구현 → 관련 재검증 순서다. 환경·도구 설정은 최소 실행으로 검증하며 준비 부족·컴파일 오류를 기능 실패로 계산하지 않는다.
 **구성**: 준비 → 공통 기반 → US1~US4 → 정리. 각 단계 완료는 실제 근거로 판정하고 기록한다.
@@ -87,20 +87,20 @@
 
 **독립 인수 기준**: 실행 안내·보고서·증거를 대조해 각 범위의 발견 대상/수/종료 코드, 고의 실패 및 원복, 미검증·호환 상태를 판정한다. US1~US3의 개별 성공을 자동으로 전체 성공으로 취급하지 않는다.
 
-- [ ] T034 [US4] `backend/build.gradle`에 verifyContract=verify+Contract, verifyProperty=verify+Property, deepTest=Unit+일반IT+Contract+Property를 연결하고 PIT의 별도 실행을 유지한다. `specs/002-setup-test-toolchain/contracts/validation-contract.md`와 포함·제외·그룹별 결과 검증·지정 IT 옵션 전달을 대조한다. (선행: T033·T013)
-- [ ] T035 [US4] `README.md`와 `specs/002-setup-test-toolchain/quickstart.md`의 모든 정의된 범위를 실제 구현한 태스크로 실행해 그룹별 사례 수·종료 코드·현재 실행 여부를 `docs/test-evidence.md`에 기록한다. 최초 증거는 --rerun-tasks를 사용하며 새 변경 없는 무거운 범위는 불필요하게 반복하지 않는다. cache 재사용은 새 실행으로 표기하지 않는다. (선행: T034)
-- [ ] T036 [US4] `backend/build.gradle`의 Contract/Property 선택에도 0건·고의 skip·잘못된 filter·고의 실패가 비성공으로 드러나는지 한 설정씩 시연한다. `docs/test-evidence.md`에 실패와 원복 후 해당 범위 재검증을 기록하고 이미 US2에서 입증한 동일 기본 사례는 불필요하게 재시연하지 않는다. (선행: T035)
-- [ ] T037 [P] [US4] `docs/versions.md`에서 실제 JDK·Wrapper·BOM 해석·Testcontainers·이미지 tag/digest·PIT/속성/계약 조합을 각 실행 증거와 연결한다. 후보·개별 성공·전체 최소 조합 성공을 구분하고 미검증·확인 불가 이유를 보존한다. (선행: T036)
-- [ ] T038 [P] [US4] `README.md`에 host JVM 환경 별도 주입·local 기동/종료·보존·IT 격리·분류별 명령/보고서·seed재현·고의 결함 원복·심화 범위·PIT 별도 판정을 실제 상태로 정리한다. `.env` 값이나 비밀번호·환경 전체 덤프를 포함하지 않는다. (선행: T036)
-- [ ] T039 [US4] `docs/test-evidence.md`에 FR-001~FR-014 및 SC-001~SC-006별 근거·미완료·원복 확인·다음 한 작업을 연결해 US4 인수 표를 작성한다. “필수 그룹0건·실패·skip·원복 누락은0, 필수 증거가 모두 존재한다”를 적용하며 하나라도 미충족이면 1단계 전체 완료를 보류한다. (선행: T037·T038)
+- [X] T034 [US4] `backend/build.gradle`에 verifyContract=verify+Contract, verifyProperty=verify+Property, deepTest=Unit+일반IT+Contract+Property를 연결하고 PIT의 별도 실행을 유지한다. `specs/002-setup-test-toolchain/contracts/validation-contract.md`와 포함·제외·그룹별 결과 검증·지정 IT 옵션 전달을 대조한다. (선행: T033·T013)
+- [X] T035 [US4] `README.md`와 `specs/002-setup-test-toolchain/quickstart.md`의 모든 정의된 범위를 실제 구현한 태스크로 실행해 그룹별 사례 수·종료 코드·현재 실행 여부를 `docs/test-evidence.md`에 기록한다. 최초 증거는 --rerun-tasks를 사용하며 새 변경 없는 무거운 범위는 불필요하게 반복하지 않는다. cache 재사용은 새 실행으로 표기하지 않는다. (선행: T034)
+- [X] T036 [US4] `backend/build.gradle`의 Contract/Property 선택에도 0건·고의 skip·잘못된 filter·고의 실패가 비성공으로 드러나는지 한 설정씩 시연한다. `docs/test-evidence.md`에 실패와 원복 후 해당 범위 재검증을 기록하고 이미 US2에서 입증한 동일 기본 사례는 불필요하게 재시연하지 않는다. (선행: T035)
+- [X] T037 [P] [US4] `docs/versions.md`에서 실제 JDK·Wrapper·BOM 해석·Testcontainers·이미지 tag/digest·PIT/속성/계약 조합을 각 실행 증거와 연결한다. 후보·개별 성공·전체 최소 조합 성공을 구분하고 미검증·확인 불가 이유를 보존한다. (선행: T036)
+- [X] T038 [P] [US4] `README.md`에 host JVM 환경 별도 주입·local 기동/종료·보존·IT 격리·분류별 명령/보고서·seed재현·고의 결함 원복·심화 범위·PIT 별도 판정을 실제 상태로 정리한다. `.env` 값이나 비밀번호·환경 전체 덤프를 포함하지 않는다. (선행: T036)
+- [X] T039 [US4] `docs/test-evidence.md`에 FR-001~FR-014 및 SC-001~SC-006별 근거·미완료·원복 확인·다음 한 작업을 연결해 US4 인수 표를 작성한다. “필수 그룹0건·실패·skip·원복 누락은0, 필수 증거가 모두 존재한다”를 적용하며 하나라도 미충족이면 1단계 전체 완료를 보류한다. (선행: T037·T038)
 
 ## 7단계: 정리·문서 동기화
 
 **목적**: 실행 확인한 상태와 설계 문서를 일치시키고 검증된 작업을 로컬 이력으로 남긴다.
 
-- [ ] T040 `한정 수량 예약 백엔드 로컬 개발 계획.md`의3·6·7절과 `knowledge/README.md`, `knowledge/rules/architecture.md`, `knowledge/rules/development-and-testing.md`, `knowledge/rules/environment-and-records.md`를 실제 Gradle·파일·명령·검증 상태와 맞춘다. 업무2~5절·고정 API 계약은 변경하지 않으며 1단계 완료 표시는 T039의 실제 인수 결과로만 결정한다. (선행: T039)
-- [ ] T041 `specs/002-setup-test-toolchain/plan.md`, `quickstart.md`와 `docs/decisions.md`에 실제 채택 도구·실패 원인·선택 변경·남은 한계 및 프로브를 후속 실제 규칙으로 대체할 위치를 반영한다. 문서 링크·형식·범위와 고의 결함·임시 설정 잔존을 검사한다. `checklists/toolchain.md` 검토 표시를 대신 변경하지 않는다. (선행: T040)
-- [ ] T042 `docs/test-evidence.md`에 최종 대상 commit/작업 트리·문서 검사·필수 결과·미검증 범위를 기록하고 `knowledge/rules/commit.md`·`git-flow.md`에 따라 관련 경로만 선별한 목적별 로컬 커밋을 남긴다. 실제 변경이 있으면 영향 범위만 재검증하며 외부 push·workflow·병합·태그는 이번 작업에서 수행하지 않는다. (선행: T041)
+- [X] T040 `한정 수량 예약 백엔드 로컬 개발 계획.md`의3·6·7절과 `knowledge/README.md`, `knowledge/rules/architecture.md`, `knowledge/rules/development-and-testing.md`, `knowledge/rules/environment-and-records.md`를 실제 Gradle·파일·명령·검증 상태와 맞춘다. 업무2~5절·고정 API 계약은 변경하지 않으며 1단계 완료 표시는 T039의 실제 인수 결과로만 결정한다. (선행: T039)
+- [X] T041 `specs/002-setup-test-toolchain/plan.md`, `quickstart.md`와 `docs/decisions.md`에 실제 채택 도구·실패 원인·선택 변경·남은 한계 및 프로브를 후속 실제 규칙으로 대체할 위치를 반영한다. 문서 링크·형식·범위와 고의 결함·임시 설정 잔존을 검사한다. `checklists/toolchain.md` 검토 표시를 대신 변경하지 않는다. (선행: T040)
+- [X] T042 `docs/test-evidence.md`에 최종 대상 commit/작업 트리·문서 검사·필수 결과·미검증 범위를 기록하고 `knowledge/rules/commit.md`·`git-flow.md`에 따라 관련 경로만 선별한 목적별 로컬 커밋을 남긴다. 실제 변경이 있으면 영향 범위만 재검증하며 외부 push·workflow·병합·태그는 이번 작업에서 수행하지 않는다. (선행: T041)
 
 ## 의존성과 실행 순서
 

@@ -167,3 +167,16 @@ tasks.register('mutationSmoke') {
         }
     }
 }
+
+tasks.register('verifyContract') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.contractTest
+}
+tasks.register('verifyProperty') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.propertyTest
+}
+tasks.register('deepTest') {
+    group = 'verification'
+    dependsOn tasks.verify, tasks.contractTest, tasks.propertyTest
+}

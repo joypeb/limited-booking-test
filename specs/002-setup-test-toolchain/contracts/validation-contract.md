@@ -2,7 +2,7 @@
 
 ## 상태와 입력
 
-아래 Gradle 태스크·테스트·Compose 설정은 구현 예정이며 현재 실행할 수 있다고 주장하지 않는다. 현재는 `backend/gradlew`, `build.gradle`, 기존 기동 검사만 존재한다. 명령은 구현 후 `backend/`에서 수행한다. 원 계획 6.2절의 Maven 실행 범위를 Gradle로 대응한다.
+2026-10-13 아래 Gradle 태스크·테스트·Compose 설정을 구현·최소 실행 확인했다. 명령은 backend/에서 수행하며 현재 사례 수와 실행 근거는 루트 docs/test-evidence.md에 있다. 업무 API 검증 완료 계약은 아니다.
 
 ## 발견 규칙
 
@@ -18,7 +18,7 @@
 
 ## 실행 조합
 
-| 구현 후 명령 | 필수 실행 그룹 |
+| 명령 | 필수 실행 그룹 |
 | --- | --- |
 | `./gradlew test` | Unit |
 | `./gradlew verify` | Unit + 일반 Integration |
