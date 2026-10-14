@@ -572,3 +572,21 @@ Git root limited-booking, HEAD9eb50af, develop과 docs/define-db-schema의 시�
 
 T003: b3f78eb에 이전 문서 변경 보존 후 feature/db-schema 생성. 시작 develop9eb50af의 직계 문서 커밋이며 develop 병합은 수행하지 않았다.
 T004~005: PostgreSQL-only 접속/current_database·동적 포트·미기동 Redis 제외·종료 검증 및 기존 ToolchainSmokeIT/BackendApplicationIT, `./gradlew test integrationTest --tests '*DatabaseSupportIT' --tests '*ToolchainSmokeIT' --tests '*BackendApplicationIT'` exit0. Unit3/IT5·실패0·skip0. 환경 추가는 최소 실행으로 확인.
+
+### 대상 후보 DDL 인수
+
+업무 V1 적용 전 JDBC 후보 CREATE를 새 실행 소유 DB마다 준비했다. 각 RED의 실제 INSERT가 허용돼 SQLException 기대 assertion이 실패했다(exit1, IT1/실패1/skip0); 최소 제약 추가 후 같은 필터 GREEN(exit0, IT1/실패0/skip0), 매번 Unit3 통과.
+
+| 대상 | 필터 (`*SchemaIT.` 뒤) | RED → GREEN |
+|---|---|---|
+| quantity | *SchemaIT.rejectsInvalidAvailability | exit1 → exit0; GREEN IT1 |
+| resource-null-id | *SchemaIT.rejectsResourceNull_id | exit1 → exit0; GREEN IT1 |
+| resource-null-name | *SchemaIT.rejectsResourceNull_name | exit1 → exit0; GREEN IT1 |
+| resource-null-capacity | *SchemaIT.rejectsResourceNull_capacity | exit1 → exit0; GREEN IT1 |
+| resource-null-available | *SchemaIT.rejectsResourceNull_available | exit1 → exit0; GREEN IT1 |
+| resource-null-created_at | *SchemaIT.rejectsResourceNull_created_at | exit1 → exit0; GREEN IT1 |
+| resource-pk | *SchemaIT.enforcesResourcePrimaryKey | exit1 → exit0; GREEN IT1 |
+| resource-length | *SchemaIT.enforcesResourceNameLength | exit1 → exit0; GREEN IT1 |
+| us1 | *SchemaIT.rejectsResourceNull_*, *SchemaIT.enforcesResourcePrimaryKey, *SchemaIT.enforcesResourceNameLength, *SchemaIT.rejectsInvalidAvailability, *SchemaIT.acceptsAvailabilityBoundaries | exit1 → exit0; GREEN IT9 |
+
+NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resources_pkey·이름 ASCII/😀100허용101거부22001·100자+일반공백 절단 저장을 확인했다. 수량 비정상4종/경계4종을 확인했다. 전체 대상 선택은 Unit3/IT9·실패0·skip0. 초기 `*Resource*` 필터가 아직 구현 전인 예약 FK/인덱스까지 포함해 IT11중2실패한 것은 선택 범위 오류이며 명시된 대상 필터로 수정했다. 드라이버 컴파일 오류도 제약 RED로 계산하지 않았다. 후보는 Flyway가 아니고 업무 마이그레이션 완료 증거가 아니다.
