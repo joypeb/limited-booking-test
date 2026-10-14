@@ -615,3 +615,19 @@ NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resourc
 ### 읽기 Repository 인수
 
 `./gradlew test integrationTest --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT'`: 최소 empty 구현에서 실제 존재 행/SQL 오류 전달 assertion RED exit1, Unit3통과·IT4실패4/skip0. 구현 후 GREEN exit0, Unit3/IT4·실패0·skip0. 대상4필드, 예약7필드, 사용자·원문키 정확분리/대소문자/공백·현재 CANCELLED·UTC마이크로초·null 취소시각·없는행empty·SQL오류전달 및 조회 전후 전체 데이터 불변을 확인했다.
+
+### TestData 인수
+
+`./gradlew test integrationTest --tests '*DatabaseSupportIT'`: no-op stub에서 준비 행 수·초기화 후0행·고의 오류전달 assertion RED exit1/IT4실패3·skip0. 트랜잭션 구현 후 GREEN exit0/Unit3·IT4/실패0·skip0. 별도 연결 준비 데이터/시각 가시성, 초기화2회0행·스키마/이력 보존, 예약 DELETE 뒤 대상 DELETE22012 트리거로 양쪽 전체 행/값 롤백, 장애 제거 뒤 같은DB 새트랜잭션 명시 재요청·장애 객체0을 확인했다. 최초 시각 조회 assertion의 타입추론 컴파일 오류는 명시적 Instant 타입으로 교정했으며 RED에 포함하지 않았다.
+
+### 수량 검사 인수
+
+`./gradlew test integrationTest --tests '*DatabaseSupportIT'`: no-op 검사에서 불일치/대상부재 assertion RED exit1·IT9실패2/skip0. 단일SELECT 구현 후 GREEN exit0·Unit3/IT9·실패0·skip0. 10/8/확정2/취소1·타대상제외·0/0·전부취소 정상 통과, 10/9/확정2와 없는대상 AssertionError 탐지. 코드에서 SELECT1회·LEFT JOIN ON상태조건·COUNT(id)·두 불변식 확인.
+
+### fresh/reapplied 전체 인수 (2026-10-14~15)
+
+네 클래스마다 두 독립 실행 소유 컨테이너를 순차 준비했다. FRESH 원본V1 1건, REAPPLIED 원본1건→양쪽표식/이력/구조 스냅샷→validate→migrate0건→동일 스냅샷을 확인했다. 이름은 실행마다 toolchain_랜덤UUID이며 각 클래스 로그에 모드를 남긴다. 준비 접속 current_database는 컨테이너 소유 이름과 같다. 개발 DB URL/fallback·local 프로필·후보 SQL/분기는0이다.
+
+명령: `./gradlew test integrationTest --tests '*SchemaIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT' --tests '*DatabaseSupportIT'` exit0. Unit3, 업무IT72·실패0·skip0. SchemaIT45(모드별22+실패복구1), ResourceRepositoryIT4(모드별2), ReservationRepositoryIT4(모드별2), DatabaseSupportIT19(모드별9+환경1). 합계 모드별35씩+독립실패복구1+환경1. 소유 자원 종료까지 테스트 실행 범위다.
+
+추가 커밋 경계 검증: 준비가 호출자 트랜잭션에 합류하면 별도 연결에서0행인 RED를 두 모드에서 확인했다(`*DatabaseSupportIT.commitsPreparationEvenWhenCallerTransactionRollsBack`, exit1/IT2실패2). REQUIRES_NEW로 독립 커밋을 보장한 뒤 위 전체72건이 통과했다. 호출자 롤백 뒤에도 준비 행을 읽는다.

@@ -2,6 +2,10 @@ package com.limitedbooking.backend.reservation;
 
 import com.limitedbooking.backend.support.SchemaDatabase;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import com.limitedbooking.backend.support.SchemaDatabases;
+import com.limitedbooking.backend.support.SchemaDatabase.Mode;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.time.*;
 import java.util.UUID;
@@ -9,13 +13,15 @@ import static org.assertj.core.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ReservationRepositoryIT {
+    SchemaDatabases databases;
     SchemaDatabase database;
     static final Instant CREATED=Instant.parse("2026-10-14T01:02:03.123456Z");
     static final Instant CANCELLED=Instant.parse("2026-10-14T02:03:04.654321Z");
-    @BeforeAll void open() {database=new SchemaDatabase();}
-    @AfterAll void close() {if(database!=null)database.close();}
-    @BeforeEach void reset() {database.reset();}
-    @Test void readsAllSevenColumnsByExactUserAndKeyWithCurrentStatus() {
+    @BeforeAll void open() { databases=new SchemaDatabases(); }
+    @AfterAll void close() { if(databases!=null)databases.close(); }
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void readsAllSevenColumnsByExactUserAndKeyWithCurrentStatus(Mode mode) {
+        database=databases.use(mode);
         var resource=UUID.randomUUID();var userA=UUID.randomUUID();var userB=UUID.randomUUID();
         database.jdbc().update("INSERT INTO resources(id,name,capacity,available,created_at) VALUES (?,?,?,?,?)",resource,"대상",10,8,CREATED.atOffset(ZoneOffset.UTC));
         var a=UUID.randomUUID();var b=UUID.randomUUID();var lower=UUID.randomUUID();
@@ -27,7 +33,9 @@ class ReservationRepositoryIT {
         assertThat(repository.findByUserAndKey(userA,"Key_1 ")).isEmpty();assertThat(repository.findByUserAndKey(userA,"Key_2")).isEmpty();
         assertThat(repository.findByUserAndKey(UUID.randomUUID(),"Key_1")).isEmpty();assertThat(database.snapshot()).isEqualTo(before);
     }
-    @Test void propagatesSqlErrors() {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void propagatesSqlErrors(Mode mode) {
+        database=databases.use(mode);
         database.jdbc().execute("ALTER TABLE reservations RENAME COLUMN status TO broken_status");
         try {
             var repository=new ReservationRepository(new NamedParameterJdbcTemplate(database.dataSource()));

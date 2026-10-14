@@ -69,6 +69,7 @@ backend/src/main/java/com/limitedbooking/backend/
   reservation/ReservationStatus.java
 backend/src/test/java/com/limitedbooking/backend/
   support/ContainerTestSupport.java   # 무인자 호환 유지 + PostgreSQL-only 경로
+  support/SchemaDatabases.java        # fresh/reapplied 소유·순차 준비·정리
   support/SchemaDatabase.java         # 실행 소유 업무 V1 DB·스냅샷
   support/TestData.java
   support/DatabaseAssertions.java

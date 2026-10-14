@@ -1,6 +1,10 @@
 package com.limitedbooking.backend.common;
 
 import com.limitedbooking.backend.support.ContainerTestSupport;
+import com.limitedbooking.backend.support.SchemaDatabases;
+import com.limitedbooking.backend.support.SchemaDatabase.Mode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.*;
 import org.postgresql.util.PSQLException;
 import org.flywaydb.core.Flyway;
@@ -16,28 +20,23 @@ import static org.assertj.core.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SchemaIT {
-    ContainerTestSupport containers;
+    SchemaDatabases databases;
     DataSource dataSource;
     static final OffsetDateTime TIME = OffsetDateTime.parse("2026-10-14T01:02:03.123456Z");
-    @BeforeAll void prepare() throws Exception {
-        containers = ContainerTestSupport.postgresOnly();
-        dataSource = new DriverManagerDataSource(containers.postgres.getJdbcUrl(),
-                containers.postgres.getUsername(), containers.postgres.getPassword());
-        assertThat(Flyway.configure().dataSource(dataSource).locations("classpath:db/migration")
-                .executeInTransaction(true).load().migrate().migrationsExecuted).isEqualTo(1);
-    }
-    @AfterAll void close() { if (containers != null) containers.close(); }
-    @BeforeEach void reset() throws Exception {
-        if (scalar("SELECT to_regclass('reservations') IS NOT NULL").equals(true)) execute("DELETE FROM reservations");
-        execute("DELETE FROM resources");
-    }
-    @Test void rejectsInvalidAvailability() throws Exception {
+    @BeforeAll void prepare() { databases = new SchemaDatabases(); }
+    @AfterAll void close() { if (databases != null) databases.close(); }
+    void use(Mode mode) { dataSource = databases.use(mode).dataSource(); }
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsInvalidAvailability(Mode mode) throws Exception {
+        use(mode);
         for (int[] pair : new int[][]{{10,-1},{10,11},{-1,0},{1001,0}}) {
             var row = resource(); row.put("capacity",pair[0]);row.put("available",pair[1]);
             rejected("resources",row,"23514",null);
         }
     }
-    @Test void acceptsAvailabilityBoundaries() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void acceptsAvailabilityBoundaries(Mode mode) throws Exception {
+        use(mode);
         for (int[] pair : new int[][]{{0,0},{1000,1000},{10,0},{10,10}}) {
             var row = resource(); row.put("capacity",pair[0]);row.put("available",pair[1]);insert("resources",row);
             try (var c=dataSource.getConnection();var st=c.prepareStatement("SELECT capacity,available FROM resources WHERE id=?")) {
@@ -45,26 +44,40 @@ class SchemaIT {
             }
         }
     }
-    @Test void rejectsResourceNull_id() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsResourceNull_id(Mode mode) throws Exception {
+        use(mode);
         var row=resource(); row.put("id",null); rejected("resources",row,"23502",null);
     }
-    @Test void rejectsResourceNull_name() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsResourceNull_name(Mode mode) throws Exception {
+        use(mode);
         var row=resource(); row.put("name",null); rejected("resources",row,"23502",null);
     }
-    @Test void rejectsResourceNull_capacity() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsResourceNull_capacity(Mode mode) throws Exception {
+        use(mode);
         var row=resource(); row.put("capacity",null); rejected("resources",row,"23502",null);
     }
-    @Test void rejectsResourceNull_available() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsResourceNull_available(Mode mode) throws Exception {
+        use(mode);
         var row=resource(); row.put("available",null); rejected("resources",row,"23502",null);
     }
-    @Test void rejectsResourceNull_created_at() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsResourceNull_created_at(Mode mode) throws Exception {
+        use(mode);
         var row=resource(); row.put("created_at",null); rejected("resources",row,"23502",null);
     }
-    @Test void enforcesResourcePrimaryKey() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesResourcePrimaryKey(Mode mode) throws Exception {
+        use(mode);
         var row=resource();insert("resources",row);var duplicate=new LinkedHashMap<>(row);duplicate.put("name","different");
         rejected("resources",duplicate,"23505","resources_pkey");
     }
-    @Test void enforcesResourceNameLength() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesResourceNameLength(Mode mode) throws Exception {
+        use(mode);
         for (String character : List.of("a","😀")) {
             var valid=resource();valid.put("name",character.repeat(100));insert("resources",valid);
             assertThat(scalar("SELECT char_length(name) FROM resources WHERE id='"+valid.get("id")+"'")).isEqualTo(100);
@@ -73,7 +86,9 @@ class SchemaIT {
         var spaces=resource();spaces.put("name","a".repeat(100)+" ");insert("resources",spaces);
         assertThat(scalar("SELECT name FROM resources WHERE id='"+spaces.get("id")+"'")).isEqualTo("a".repeat(100));
     }
-    @Test void enforcesUserKeyUniqueness() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesUserKeyUniqueness(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var other=resource();insert("resources",other);
         var first=reservation((UUID)target.get("id"));insert("reservations",first);
         for (Object targetId : List.of(target.get("id"),other.get("id"))) {
@@ -87,10 +102,14 @@ class SchemaIT {
         var differentKey=new LinkedHashMap<>(first);differentKey.put("id",UUID.randomUUID());differentKey.put("idempotency_key","key2");insert("reservations",differentKey);
         assertThat(scalar("SELECT count(*) FROM reservations")).isEqualTo(3L);
     }
-    @Test void rejectsUnknownResource() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsUnknownResource(Mode mode) throws Exception {
+        use(mode);
         rejected("reservations",reservation(UUID.randomUUID()),"23503","fk_reservations_resource");
     }
-    @Test void enforcesStatusAndCancellationTime() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesStatusAndCancellationTime(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);
         for (String status : List.of("CONFIRMED","CANCELLED")) {
             var valid=reservation((UUID)target.get("id"));valid.put("status",status);valid.put("cancelled_at",status.equals("CANCELLED")?TIME.plusHours(1):null);insert("reservations",valid);
@@ -99,46 +118,66 @@ class SchemaIT {
         }
         var unknown=reservation((UUID)target.get("id"));unknown.put("status","UNKNOWN");rejected("reservations",unknown,"23514","ck_reservations_status_cancelled_at");
     }
-    @Test void rejectsReservationNull_id() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_id(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("id",null);rejected("reservations",row,"23502",null);
     }
-    @Test void rejectsReservationNull_resource_id() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_resource_id(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("resource_id",null);rejected("reservations",row,"23502",null);
     }
-    @Test void rejectsReservationNull_user_id() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_user_id(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("user_id",null);rejected("reservations",row,"23502",null);
     }
-    @Test void rejectsReservationNull_idempotency_key() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_idempotency_key(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("idempotency_key",null);rejected("reservations",row,"23502",null);
     }
-    @Test void rejectsReservationNull_status() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_status(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("status",null);rejected("reservations",row,"23502",null);
     }
-    @Test void rejectsReservationNull_created_at() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void rejectsReservationNull_created_at(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("created_at",null);rejected("reservations",row,"23502",null);
     }
-    @Test void enforcesReservationPrimaryKey() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesReservationPrimaryKey(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);var first=reservation((UUID)target.get("id"));insert("reservations",first);
         var duplicate=new LinkedHashMap<>(first);duplicate.put("idempotency_key","other");rejected("reservations",duplicate,"23505","reservations_pkey");
     }
-    @Test void enforcesKeyLength() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void enforcesKeyLength(Mode mode) throws Exception {
+        use(mode);
         var target=resource();insert("resources",target);
         var valid=reservation((UUID)target.get("id"));valid.put("idempotency_key","k".repeat(64));insert("reservations",valid);
         var invalid=reservation((UUID)target.get("id"));invalid.put("idempotency_key","k".repeat(65));rejected("reservations",invalid,"22001",null);
         var spaces=reservation((UUID)target.get("id"));spaces.put("idempotency_key","s".repeat(64)+" ");insert("reservations",spaces);
         assertThat(scalar("SELECT idempotency_key FROM reservations WHERE id='"+spaces.get("id")+"'")).isEqualTo("s".repeat(64));
     }
-    @Test void exposesStatusStorageType() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void exposesStatusStorageType(Mode mode) throws Exception {
+        use(mode);
         assertThat(scalar("SELECT data_type FROM information_schema.columns WHERE table_name='reservations' AND column_name='status'")).isEqualTo("character varying");
         assertThat(scalar("SELECT character_maximum_length FROM information_schema.columns WHERE table_name='reservations' AND column_name='status'")).isEqualTo(16);
     }
-    @Test void exposesResourceLookupIndex() throws Exception {
+    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    void exposesResourceLookupIndex(Mode mode) throws Exception {
+        use(mode);
         assertThat(scalar("SELECT count(*) FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid WHERE c.relname='idx_reservations_resource_id' AND i.indisvalid AND i.indpred IS NULL AND NOT i.indisunique AND pg_get_indexdef(i.indexrelid) LIKE '% ON public.reservations USING btree (resource_id)'")).isEqualTo(1L);
     }
     @Test void rollsBackFailedMigrationAndRecoversInNewDatabase(@TempDir Path directory) throws Exception {
