@@ -3,9 +3,11 @@ package com.limitedbooking.backend.common;
 import com.limitedbooking.backend.support.ContainerTestSupport;
 import org.junit.jupiter.api.*;
 import org.postgresql.util.PSQLException;
-import org.springframework.core.io.ClassPathResource;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.*;
@@ -21,9 +23,8 @@ class SchemaIT {
         containers = ContainerTestSupport.postgresOnly();
         dataSource = new DriverManagerDataSource(containers.postgres.getJdbcUrl(),
                 containers.postgres.getUsername(), containers.postgres.getPassword());
-        try (var c = dataSource.getConnection()) {
-            ScriptUtils.executeSqlScript(c, new ClassPathResource("db/schema-candidate/schema.sql"));
-        }
+        assertThat(Flyway.configure().dataSource(dataSource).locations("classpath:db/migration")
+                .executeInTransaction(true).load().migrate().migrationsExecuted).isEqualTo(1);
     }
     @AfterAll void close() { if (containers != null) containers.close(); }
     @BeforeEach void reset() throws Exception {
@@ -139,6 +140,38 @@ class SchemaIT {
     }
     @Test void exposesResourceLookupIndex() throws Exception {
         assertThat(scalar("SELECT count(*) FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid WHERE c.relname='idx_reservations_resource_id' AND i.indisvalid AND i.indpred IS NULL AND NOT i.indisunique AND pg_get_indexdef(i.indexrelid) LIKE '% ON public.reservations USING btree (resource_id)'")).isEqualTo(1L);
+    }
+    @Test void rollsBackFailedMigrationAndRecoversInNewDatabase(@TempDir Path directory) throws Exception {
+        String original;
+        try(var stream=getClass().getResourceAsStream("/db/migration/V1__create_reservation_schema.sql")) {
+            assertThat(stream).isNotNull();original=new String(stream.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);
+        }
+        var faulty=directory.resolve("V1__create_reservation_schema.sql");Files.writeString(faulty,original+"\nSELECT 1 / 0;\n");
+        String failedDatabase;
+        var failed=ContainerTestSupport.postgresOnly();
+        try(failed) {
+            failedDatabase=failed.postgres.getDatabaseName();
+            var ds=new DriverManagerDataSource(failed.postgres.getJdbcUrl(),failed.postgres.getUsername(),failed.postgres.getPassword());
+            var error=catchThrowable(()->Flyway.configure().dataSource(ds).locations("filesystem:"+directory).executeInTransaction(true).load().migrate());
+            assertThat(error).isInstanceOf(FlywayException.class);
+            Throwable cause=error;while(cause!=null && !(cause instanceof SQLException))cause=cause.getCause();
+            assertThat(cause).isInstanceOf(SQLException.class);assertThat(((SQLException)cause).getSQLState()).isEqualTo("22012");
+            var jdbc=new org.springframework.jdbc.core.JdbcTemplate(ds);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace AND relname IN ('resources','reservations','resources_pkey','reservations_pkey','uq_reservations_user_key','idx_reservations_resource_id')",Long.class)).isZero();
+            if(jdbc.queryForObject("SELECT to_regclass('flyway_schema_history') IS NOT NULL",Boolean.class))
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE version='1' AND success",Long.class)).isZero();
+        }
+        assertThat(failed.postgres.isRunning()).isFalse();
+        try(var recovered=ContainerTestSupport.postgresOnly()) {
+            assertThat(recovered.postgres.getDatabaseName()).isNotEqualTo(failedDatabase);
+            var ds=new DriverManagerDataSource(recovered.postgres.getJdbcUrl(),recovered.postgres.getUsername(),recovered.postgres.getPassword());
+            assertThat(Flyway.configure().dataSource(ds).locations("classpath:db/migration").executeInTransaction(true).load().migrate().migrationsExecuted).isEqualTo(1);
+            var jdbc=new org.springframework.jdbc.core.JdbcTemplate(ds);
+            var error=catchThrowable(()->jdbc.update("INSERT INTO resources VALUES (?,?,?,?,?)",UUID.randomUUID(),"bad",10,-1,TIME));
+            assertThat(error).isInstanceOf(org.springframework.dao.DataAccessException.class);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM resources",Long.class)).isZero();
+        }
+        assertThat(Files.readString(faulty)).isEqualTo(original+"\nSELECT 1 / 0;\n");
     }
     Map<String,Object> resource() {
         var row=new LinkedHashMap<String,Object>();row.put("id",UUID.randomUUID());row.put("name","예약 대상");row.put("capacity",10);row.put("available",10);row.put("created_at",TIME);return row;

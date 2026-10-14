@@ -93,3 +93,7 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 ### 2단계 대상 후보 인수
 
 SchemaIT에서 수량·필수값·PK·문자 길이를 제약별 RED/GREEN으로 검증했다. 후보는 테스트 전용이며 아직 업무 Flyway V1이 아니다. 실제 실행은 docs/test-evidence.md의 대상 후보 DDL 인수를 따른다. API·입력 검증은 미구현이다.
+
+### 2단계 업무 스키마 인수
+
+[업무 V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)과 [SchemaIT](../../backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java)를 구현·실행 검증했다. 저장 제약·실패사본의 전체 DDL 롤백·새 DB 복구는 docs/test-evidence.md에 기록했다. 임시 후보는 제거했다. API·원자적 업무 쓰기·권한·경쟁·멱등 응답은 미구현이다.

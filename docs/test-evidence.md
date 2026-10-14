@@ -590,3 +590,24 @@ T004~005: PostgreSQL-only 접속/current_database·동적 포트·미기동 Redi
 | us1 | *SchemaIT.rejectsResourceNull_*, *SchemaIT.enforcesResourcePrimaryKey, *SchemaIT.enforcesResourceNameLength, *SchemaIT.rejectsInvalidAvailability, *SchemaIT.acceptsAvailabilityBoundaries | exit1 → exit0; GREEN IT9 |
 
 NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resources_pkey·이름 ASCII/😀100허용101거부22001·100자+일반공백 절단 저장을 확인했다. 수량 비정상4종/경계4종을 확인했다. 전체 대상 선택은 Unit3/IT9·실패0·skip0. 초기 `*Resource*` 필터가 아직 구현 전인 예약 FK/인덱스까지 포함해 IT11중2실패한 것은 선택 범위 오류이며 명시된 대상 필터로 수정했다. 드라이버 컴파일 오류도 제약 RED로 계산하지 않았다. 후보는 Flyway가 아니고 업무 마이그레이션 완료 증거가 아니다.
+
+### 예약 후보 DDL 및 V1 복사
+
+- user-key: `*SchemaIT.enforcesUserKeyUniqueness`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- foreign-key: `*SchemaIT.rejectsUnknownResource`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- status-combination: `*SchemaIT.enforcesStatusAndCancellationTime`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-id: `*SchemaIT.rejectsReservationNull_id`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-resource_id: `*SchemaIT.rejectsReservationNull_resource_id`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-user_id: `*SchemaIT.rejectsReservationNull_user_id`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-idempotency_key: `*SchemaIT.rejectsReservationNull_idempotency_key`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-status: `*SchemaIT.rejectsReservationNull_status`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-null-created_at: `*SchemaIT.rejectsReservationNull_created_at`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- reservation-pk: `*SchemaIT.enforcesReservationPrimaryKey`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- key-length: `*SchemaIT.enforcesKeyLength`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- status-type: `*SchemaIT.exposesStatusStorageType`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- resource-index: `*SchemaIT.exposesResourceLookupIndex`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT1·실패0·skip0.
+- candidate-all: `*SchemaIT`; 제약 부재 RED exit1/IT1실패1 이후 GREEN exit0/IT22·실패0·skip0.
+
+모든 예약 제약·상태타입·인덱스 제약별 RED/GREEN 후 최종 후보 CREATE를 V1로 byte-identical 복사. SHA256 `d4fff8c4a6cc64c618c07f538af8f9dd4ef1ffd66c4754074eb0d02a7b270844`. 후보·선택 분기를 제거했다. 고의 실패는 원본 사본 마지막에 SELECT1/0을 추가한 JUnit @TempDir의 V1 파일이며 원본은 변경하지 않는다. SQLSTATE22012/DDL롤백/새DB복구 검증은 아래 실행 결과로 연결한다.
+
+실제 V1 `./gradlew test integrationTest --tests '*SchemaIT'` exit0: Unit3/IT23·실패0·skip0. SchemaIT23은 기존 제약22+실패복구1이다. Flyway 최초 적용1건·실패사본22012 뒤 업무 테이블/인덱스0·성공V1이력0·실패컨테이너 종료·다른DB 원본1건 적용 및 비정상 수량 거부를 확인했다. 생산 V1을 적용한 후 편집하지 않았다.

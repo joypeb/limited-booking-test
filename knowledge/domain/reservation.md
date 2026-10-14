@@ -97,3 +97,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 ### CHK022 실패 처리 검증 연결
 
 2단계의 정상 연결 고의 SQL 실패에서는 업무 V1의 두 테이블·인덱스가 부분 생성돼 남지 않아야 하고 성공 적용 이력은0건이다. 실패 DB의 증거/종료 후 새 테스트 DB에서 원본 V1로 준비를 재개한다. 테스트 초기화는 대상·예약의 부분 삭제를 남기지 않고 전체 롤백하며, 장애 제거 후 같은 DB의 새 트랜잭션으로 재요청한다. 기존 행/값·구조·이력을 별도 연결에서 비교한다. 업무 예약 생성/취소의 장애·경쟁 보장과는 별개의 테스트 지원 계약이며 실행은 미검증이다. [003 실패 처리 계약](../../specs/003-define-db-schema/contracts/persistence-contract.md)에 근거와 검증 사례를 연결했다.
+
+### 2단계 업무 스키마 인수
+
+[업무 V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)과 [SchemaIT](../../backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java)를 구현·실행 검증했다. 저장 제약·실패사본의 전체 DDL 롤백·새 DB 복구는 docs/test-evidence.md에 기록했다. 임시 후보는 제거했다. API·원자적 업무 쓰기·권한·경쟁·멱등 응답은 미구현이다.
