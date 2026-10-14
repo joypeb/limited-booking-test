@@ -33,3 +33,11 @@ Compose와 Testcontainers는 다음 취득 digest를 함께 고정한다. `docke
 Property 생성 예산1000과 실제assertion101회를 구분한다. 고의 n>50 결함은 최초100에서51까지 축소되고 seed20261013으로 재현됐다. 계약 검증기 core는 JDK HTTP fixture의 실제 요청·응답을 검사하며 Spring adapter는 사용하지 않는다. 고정 업무 OpenAPI 읽기 성공은 업무 HTTP 준수 증거가 아니다.
 
 1단계 필수 최소 검증 인수는 충족했다. 구체적 명령·종료 코드·실패 재현·원복·미검증은 [실행 증거](test-evidence.md), 선택 이유는 [결정 기록](decisions.md)을 참조한다.
+
+### 2026-10-14 2단계 환경 재확인
+
+Gradle9.7.1·Corretto25.0.4+7-LTS·MacOS27.0.1 aarch64·Docker29.8.2를 실제 명령 exit0으로 확인했다. 기존 Boot/BOM/고정 이미지 digest를 유지한다.
+
+### 2단계 실제 저장 기반 검증 (2026-10-15)
+
+기존 Boot4.1.1·Java25·Gradle9.7.1·Flyway/pgJDBC BOM 및 PostgreSQL18.6 고정 digest로 V1·조회·초기화를 실행했다. pgJDBC는 기존 runtimeOnly에 더해 SQLSTATE/제약 이름을 확인할 testImplementation에도 노출했다. 새 버전 변경은 없다. Unit3+일반IT78 검증 결과는 docs/test-evidence.md에 기록한다.

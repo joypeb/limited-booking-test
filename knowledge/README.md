@@ -28,11 +28,15 @@
 ## 도메인 문서 목록과 작성 방법
 
 - [_template.md](domain/_template.md): 새 도메인 문서의 공통 형식. 템플릿 자체는 특정 도메인의 확정 계약이 아니다.
-- [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 설계 지식이며 구현·실행 검증은 미완료다.
+- [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기 조회를 구현·검증했으며 입력·HTTP는 후속이다.
 - [reservation.md](domain/reservation.md): 예약·멱등 재현·취소·트랜잭션·경쟁의 설계 지식.
 - [security.md](domain/security.md): 로컬 인증·권한·소유권·본문 필터의 설계 지식.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
-- 위 업무 기능은 미구현이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
+- 저장 기반 외 업무 API·쓰기 트랜잭션·보안/제한은 미구현이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
+- [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
+- [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
+- [2단계 요구사항 검토 목록](../specs/003-define-db-schema/checklists/database.md): 저장 제약·조회와 테스트 격리·재현성의 요구사항 품질을 검토한다. 사용자 요청으로34개 항목의 요구사항 품질을 평가했고 CHK022 실패 처리도 문서 보완 후 충족으로 판단했다. 체크는 구현 완료 표시가 아니다.
+- [2단계 작업 목록](../specs/003-define-db-schema/tasks.md): 네 사용자 이야기별 테스트·실패 탐지·구현·검증과 의존성 순서다. 작업별 실제 검증 후 체크하며 맞춤 요구사항 검토를 대신하지 않는다.
 - 첫 버전의 업무 도메인은 예약 대상(`resource`)과 예약(`reservation`)이다. `security`·`ratelimit`은 이를 지원하는 기능이며, 필요할 때 같은 형식으로 책임과 계약을 문서화한다. `common`을 독립 업무 도메인으로 가정하지 않는다.
 - 파일 이름은 `<domain-name>.md`를 사용한다. 근거·경계·기대 결과를 먼저 적고, 코드·SQL·테스트·명령은 실제 존재 여부를 확인해 연결한다.
 - 템플릿의 모든 절을 유지한다. 해당 없는 항목은 이유를 적고, 미확정 사항은 질문과 영향 범위를 적는다. 다른 도메인과 공유하는 규칙은 관련 문서로 연결한다.
@@ -41,6 +45,8 @@
 
 2026-10-13 1단계 수행 후 애플리케이션은 backend/, 기본 패키지는 com.limitedbooking.backend이며 Java25·Boot4.1.1·Gradle9.7.1을 유지했다. MVC·Security·JDBC·Redis·Flyway·Actuator 및 검증 의존성을 추가했다. [실행 안내](../README.md), [버전](../docs/versions.md), [실행 증거](../docs/test-evidence.md)에 실제 상태를 연결한다.
 
-Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. Unit3·일반IT6·Contract3·Property3(내부101회), PIT 생성1·탐지1이다. 프로브는 도구 확인용이며 후속 ResourceRules/IdempotencyKey/CancellationDecision으로 대체할 예정이다. 업무 API·SQL·인증 UUID·요청 제한·경쟁 검증은 아직 미구현이다. 업무 스키마는 2단계에서 만들며 시험 migration은 test resources에만 있다.
+Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. Unit3·일반IT6·Contract3·Property3(내부101회), PIT 생성1·탐지1이다. 프로브는 도구 확인용이며 후속 ResourceRules/IdempotencyKey/CancellationDecision으로 대체할 예정이다. 업무 API·쓰기 SQL·인증 UUID·요청 제한·경쟁 검증은 아직 미구현이다. 업무 V1·읽기 Repository·테스트 초기화/수량 검사는 2단계에서 구현·검증했고 도구 시험 migration은 별도 test resources에 유지한다.
 
 `knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 미실시다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
+
+2단계 실제 저장 기반 검증은 Unit3·일반IT78(업무72+기존6)이며 실패0·skip0이다. 도구 심화 프로브 수는 과거 실행 기록이며 이번 단계에 Property/PIT/부하를 재실행하지 않았다.

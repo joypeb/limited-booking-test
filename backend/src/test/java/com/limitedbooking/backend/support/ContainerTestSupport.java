@@ -19,7 +19,13 @@ public final class ContainerTestSupport implements AutoCloseable {
             .withExposedPorts(6379).withStartupTimeout(Duration.ofSeconds(120));
 
     public ContainerTestSupport() {
-        try { postgres.start(); redis.start(); }
+        this(true);
+    }
+    public static ContainerTestSupport postgresOnly() {
+        return new ContainerTestSupport(false);
+    }
+    private ContainerTestSupport(boolean startRedis) {
+        try { postgres.start(); if (startRedis) redis.start(); }
         catch (RuntimeException failure) {
             try { close(); } catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
             throw failure;
@@ -28,6 +34,7 @@ public final class ContainerTestSupport implements AutoCloseable {
     @Override public void close() {
         RuntimeException failure = null;
         for (var container : new GenericContainer<?>[]{redis,postgres}) {
+            if (container.getContainerId() == null) continue;
             var executor = Executors.newSingleThreadExecutor(r -> {
                 var thread = new Thread(r,"toolchain-cleanup");thread.setDaemon(true);return thread;
             });
