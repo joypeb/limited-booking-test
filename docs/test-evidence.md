@@ -458,3 +458,114 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 - 같은 적대적 리뷰어의 수정 재평가 PASS: 본문 완료 Future의10초 제한·Timeout/Interrupted 취소·두 호출 경로 적용·실제 회귀와 전체15건 로그를 읽기 전용으로 확인했다. 미해결 Critical/Important0, Minor0. 이 판정 후 수정·기록을 커밋하고 원격 반영한 뒤 develop 대상 PR을 게시한다.
 
 - GitHub 실제 게시 결과: [PR #1](https://github.com/joypeb/limited-booking-test/pull/1), base=develop, head=chore/setup-test-toolchain, OPEN·정식PR(draft 아님)·MERGEABLE. 리뷰/검증된 코드 commit6772606과 원격 head 일치 확인. GitHub statusCheckRollup은 빈 목록이므로 외부 CI 통과를 주장하지 않는다. PR 생성은 완료했고 병합은 수행하지 않았다.
+
+### 2026-10-14 / 2단계 저장 제약·초기화 명세 작성
+
+- 대상 커밋: 기준 HEAD `9eb50af`; 이번 문서 변경은 아직 커밋하지 않았다.
+- 작업 브랜치: `develop`의 깨끗한 작업 트리를 확인하고 `docs/define-db-schema`를 실제 생성·전환했다. 병합·태그·외부 push는 수행하지 않았다.
+- 환경·기준: 기존 저장소와 Spec Kit 1.1.3 설정을 확인했다. `knowledge/README.md`, 규칙 전체, resource·reservation 도메인, 계획서 2~5절·7절 2단계, 개발 헌법을 대조했다.
+- 기대 결과: 수량 범위·사용자/키 유일성·참조·상태/취소 시각·조회·격리된 초기화·수량 보존 검사의 요구사항을 한 기능 명세로 작성한다. 업무 구현이나 테스트 실행을 통과로 표시하지 않는다.
+- 변경: [명세](../specs/003-define-db-schema/spec.md), [품질 체크리스트](../specs/003-define-db-schema/checklists/requirements.md)를 작성하고 `.specify/feature.json`의 활성 경로와 knowledge 읽기 안내의 링크를 갱신했다.
+- 템플릿 확인 명령: `bash .specify/scripts/bash/resolve-template.sh spec-template --json`, 종료 코드 0. 활성 해석 결과는 기본 spec-template이며 이를 복사한 뒤 같은 절 순서로 한국어 명세를 작성했다.
+- 문서 검증 명령: `git diff --check` 및 `python3 - <<'PY'`로 실행한 문서 구조·링크 검사, 종료 코드 각각 0. Python 검사는 활성 경로 일치, 필수 절 존재, FR 11개·SC 5개, 체크리스트 완료 표시 16개, 미해결/템플릿 표시 없음, 명세·체크리스트·knowledge 안내의 상대 링크 27개 존재를 확인했다. 실행 테스트 수는 0건이며 문서 검사 결과만 기록한다.
+- 품질 검토: 체크리스트 16개 항목 통과. 각 요구사항과 인수 사례·성공 기준의 대응은 체크리스트 검토 기록에 연결했다.
+- 전후 훅: `.specify/extensions.yml`이 없어 before_specify·after_specify 훅 실행 대상 없음. 브랜치는 프로젝트 Git Flow 규칙에 따라 별도로 생성했다.
+- 선택 이유: 저장 제약과 입력 규칙을 구분하고, 전체 수량 보존식은 저장 제약만으로 보장되지 않음을 명시했다. 정상 검사와 의도적 불일치 검사를 모두 요구해 검사 도구의 탐지력도 확인하도록 했다.
+- 미완료·미검증: 업무 migration·Repository·TestData·DatabaseAssertions·SchemaIT 구현, 실패→통과 확인, 새/기존 DB 실행은 모두 미실시다. 2단계 계획 체크박스는 변경하지 않았다.
+- 다음 한 작업: `$speckit-plan`으로 2단계 구현·검증 계획을 작성한다. 실제 조회 인터페이스·마이그레이션·단일 SELECT와 기존 Gradle 발견/실행 게이트를 구체화한다.
+- 실제 시간: 미측정.
+
+### 2026-10-14 / 2단계 명세 명확화 검토
+
+- 대상: [003 명세](../specs/003-define-db-schema/spec.md), [품질 체크리스트](../specs/003-define-db-schema/checklists/requirements.md). 기존 문서 작업의 미커밋 변경은 보존했다.
+- 기준: knowledge 읽기 안내·규칙 전체·resource/reservation 도메인, 개발 헌법 및 계획서 2·5.1절·7절 2단계.
+- 경로 확인: `bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only`를 한 번 실행, 종료 코드 0. FEATURE_DIR·FEATURE_SPEC이 사용자가 지정한 003 명세를 가리킨다. 출력의 BRANCH는 기능 경로에서 파생된 값이며 실제 Git 브랜치 생성·전환 기록으로 해석하지 않는다.
+- 검토 결과: 추가 질문·답변 0개. FR-002의 기존 문장이 대상의 이름·수량·생성 시각도 필수 속성에서 제외하는 것으로 읽힐 수 있음을 발견했다. 계획서 5.1의 확정 규칙에 따라 대상의 모든 속성과 예약의 취소 시각 이외 속성이 필수임을 명시했다. 새 정책 결정이나 사용자 답변을 생성하지 않았다.
+- 범주별 검토: 기능 범위·사용자 흐름·품질 속성·외부 의존성·실패/경계·제약/절충·용어·완료 신호·미해결 표시는 현재 단계 기준으로 명확하다. 데이터 모델은 위 문장 교정으로 해소했다. 상세 SQL·테스트 구성·실행 순서는 계획 단계 대상이다.
+- 체크리스트 재검토: 16/16 → 16/16. 새 통과·퇴행·남은 미체크 항목 모두 0개. 체크리스트 표시와 그 외 내용은 변경하지 않았다.
+- 실제 검증: `python3 - <<'PY'` 문서 검사와 `git diff --check`, 종료 코드 각각 0. 필수 속성 문장 교정, FR 11개·SC 5개 유지, 미해결/템플릿 표시 없음, 체크리스트 16개 표시, 명세·체크리스트 상대 링크 존재를 확인했다.
+- 전후 훅: `.specify/extensions.yml` 없음. before_clarify·after_clarify 실행 대상 없음.
+- 미검증: 업무 코드·SQL·DB·HTTP 테스트는 실행하지 않았다. 실행 테스트 수 0건이며 문서 검증을 기능 검증으로 취급하지 않는다. 커밋·병합·외부 push는 수행하지 않았다.
+- 다음 한 작업: `$speckit-plan`으로 2단계 구현·검증 계획 작성. 실제 시간은 미측정.
+
+### 2026-10-14 / 2단계 구현 계획·설계 작성
+
+- 대상 커밋·브랜치: 기준 `9eb50af`, 실제 `docs/define-db-schema`; 이번 문서 변경은 미커밋이다. 이전 specify/clarify의 변경을 보존했다. 브랜치 전환·병합·태그·외부 push는 이번 작업에서 수행하지 않았다.
+- 기준·환경: knowledge 읽기 안내와 목록·규칙 전체·resource/reservation, 개발 헌법·003 명세, 기존 build.gradle·ContainerTestSupport·ToolchainSmokeIT·BackendApplicationIT·버전 기록을 대조했다. 기술 버전은 기존 채택/검증 기록값이며 이번에 재실행 검증한 값은 아니다.
+- 작성물: [plan](../specs/003-define-db-schema/plan.md), [research](../specs/003-define-db-schema/research.md), [data-model](../specs/003-define-db-schema/data-model.md), [저장 계층 계약](../specs/003-define-db-schema/contracts/persistence-contract.md), [quickstart](../specs/003-define-db-schema/quickstart.md). knowledge 읽기 안내에 계획 링크를 등록했다. tasks.md는 후속 작업으로 남겼다.
+- setup 명령: `bash /Users/joypeb/Desktop/projects/limited-booking/.specify/scripts/bash/setup-plan.sh --json`, 종료 코드 0. 명세·계획·기능 경로를 확인했다. JSON BRANCH `003-define-db-schema`는 기능 경로 파생값이며 실제 Git 브랜치 기록으로 사용하지 않았다.
+- 조사: speckit-plan Phase 0 지시에 따라 읽기 전용 조사 에이전트가 Gradle 선택 필터·게이트·컨테이너 호환·Flyway 프로브 위치를 검토했다. 공식 PostgreSQL18 제약, pgJDBC 시각 매핑, Flyway migrate, Gradle 명령행/필터 문서를 확인하고 research.md에 직접 링크를 기록했다. 코드 읽기·문서 확인과 실제 실행은 구분했다.
+- 결정: 기존 도구 유지, 업무 V1과 프로브 경로 분리, PostgreSQL-only 선택 경로 추가 시 무인자 지원 계약 유지, 전체 저장 컬럼 조회, 한 SELECT 수량 검사, 동일 제약 사례의 fresh/reapplied 조건을 계획했다.
+- 실패 확인 계획: 임시 테스트 전용 무제약 구조에서 같은 거부 assertion의 실패를 확인하고 이를 테스트 탐지력 증거로 기록한다. 실제 업무 V1의 RED라고 표현하지 않는다. 임시 구조를 제거한 뒤 새 전용 DB에서 실제 업무 V1을 최종 검증한다. 적용된 V1 수정·clean/repair 우회는 계획하지 않았다.
+- 헌법 검토: 설계 전·후 게이트 모두 통과, 규칙 변경·정당화가 필요한 위반·미해결 설계 질문 없음. 과거 헌법의 구현 상태/CI/채택일 기록은 해당 저장 기능 설계의 새 정책으로 해석하지 않았다.
+- 실제 문서 검증: `python3 - <<'PY'` 구조·링크 검사와 `git diff --check`, 종료 코드 각각 0. 산출물5개, 상대 링크44개, 필수 절·인터페이스·필수 SchemaIT 테스트명, 미결정/템플릿 표시 없음, Markdown fence·공백 정상, tasks 미생성을 확인했다.
+- 전후 훅: `.specify/extensions.yml` 없음. before_plan·after_plan 실행 대상 없음.
+- 미완료·미검증: 업무 코드·V1·IT 작성, Gradle 실행, fresh/reapplied 실제 DB·정리 결과, 테스트 실행 수·RED/GREEN 결과는 모두 미실시다. 실행 테스트 수0건이며 문서 검사 통과를 기능 통과로 보고하지 않는다. 계획서 단계 체크박스는 변경하지 않았다.
+- 다음 한 작업: `$speckit-tasks`로 의존성 순서의 작업 목록 작성. 실제 시간은 미측정.
+
+### 2026-10-14 / 2단계 맞춤 요구사항 체크리스트 생성
+
+- 대상·범위: [database.md](../specs/003-define-db-schema/checklists/database.md)를 새로 생성했다. 저장 제약·조회와 테스트 격리·초기화·재적용·수량 관측의 요구사항 품질을 다룬다. 표준 깊이, 작업 목록 작성·구현 전 검토자용으로 현재 단계 맥락에서 도출했다. 별도 필수 강조 항목은 사용자 입력에 없었다.
+- 기준: knowledge 읽기 안내·Markdown 목록·규칙 전체·resource/reservation, 개발 헌법, 003 명세·계획·데이터 모델·저장 계약 및 계획서 5.1절·7절 2단계를 대조했다. tasks.md는 아직 없다.
+- setup 명령: `bash /Users/joypeb/Desktop/projects/limited-booking/.specify/scripts/bash/check-prerequisites.sh --json --template checklist-template`, 종료 코드0. FEATURE_DIR·AVAILABLE_DOCS·TEMPLATE_CONTENT를 확인하고 활성 체크리스트 템플릿 구조를 사용했다.
+- 작성 결과: CHK001~CHK034, 34개 전부 미체크. 기존 맞춤 파일은 없었으므로 추가 생성이며, requirements.md와 기존 다른 문서는 대체하지 않았다. knowledge 읽기 안내에 목록 링크를 등록했다.
+- 내용 범위: 완전성·명확성·일관성·인수 기준·주요/대체/예외/복구 시나리오·경계·비기능·의존성·단계 경계다. 길이 보장 범위, 새/재적용 검증 범위, 마이그레이션/초기화 실패 요구사항은 검토 질문으로 남겼으며 결함으로 확정하거나 정책을 바꾸지 않았다.
+- 실제 검사: `python3 - <<'PY'`와 `git diff --check`, 종료 코드 각각0. 34개 미체크·연속 번호·질문 형식, 명세/누락/모호함 등의 추적 표기33/34(97%, 기준80% 이상), 상대 링크·공백, 기존 기본 체크리스트16개 표시 유지, tasks 미생성을 확인했다. 나머지1개도 계획·검증 안내 절을 참조한다.
+- 전후 훅: `.specify/extensions.yml` 없음. before_checklist·after_checklist 실행 대상 없음.
+- 미평가·미검증: 이 명령은 항목별 충족 판단을 수행하지 않는다. 체크리스트의 모든 표시는 검토자 소유로 남겼다. 업무 구현·DB/HTTP 테스트 실행·커밋·병합·외부 push는 수행하지 않았다. 실행 테스트 수0건이며 형식 검사를 요구사항 인수나 기능 검증으로 보고하지 않는다.
+- 다음 한 작업: 검토자가 맞춤 목록의 각 요구사항을 평가하고 필요한 문서 보완을 반영한다. 이후 `$speckit-tasks`로 작업 목록을 작성한다. 실제 시간은 미측정.
+
+### 2026-10-14 / 2단계 사용자 이야기별 작업 목록 생성
+
+- 대상: [tasks.md](../specs/003-define-db-schema/tasks.md)를 새로 작성했다. plan.md의 tasks 존재/다음 단계 안내와 knowledge 읽기 안내 링크를 현재 상태에 맞췄다. 다른 기존 미커밋 변경은 보존했다.
+- 기준·입력: 003 명세·계획·데이터 모델·저장 계약·조사·검증 안내, knowledge 읽기 안내·규칙 전체·resource/reservation과 개발 헌법을 대조했다. 업무 기준은 계획서 2~5절·7절 2단계다.
+- setup 명령: `bash /Users/joypeb/Desktop/projects/limited-booking/.specify/scripts/bash/setup-tasks.sh --json`, 종료 코드0. FEATURE_DIR·TASKS_TEMPLATE 절대경로·TASKS_TEMPLATE_CONTENT·AVAILABLE_DOCS를 확인했다.
+- 작성 결과: 총45개 미수행 작업. 준비3·공통기반2·US1(P1)10·US2(P1)6·US3(P2)9·US4(P2)9·정리6이며 공통 합계11개다. 네 이야기의 독립 판정, 전체 의존 그래프, 이야기별 병행/순차 예시, FR/SC 추적 및 US1 최초 MVP를 기록했다.
+- 병행 후보: 8개 표시. US3의 서로 다른 테스트2·모델2·Repository2와 정리의 도메인 문서2다. 의존 검증 완료 후 후보일 뿐 자동 병행 실행 또는 JUnit 병렬 실행 지시가 아니다.
+- 주요 배치: 하나의 공유 업무 V1은 최초 적용 전에 두 테이블·제약·인덱스를 완성한다. 예약 제약 테스트의 RED는 임시 테스트 전용 누락 구조에서의 탐지 증거로 구분하고 실제 업무 V1 최종 검증을 연결했다. 적용된 V1 수정·실패 은폐·0건 허용은 작업에 포함하지 않았다.
+- 체크리스트 상태: 기본 requirements16개 표시와 맞춤 database34개 미체크를 유지했다. 작업 목록 생성은 맞춤 요구사항 검토자 평가를 대신하지 않는다. 구현 진입 상태 확인을 T001에 둔다.
+- 실제 문서 검사: `python3 - <<'PY'` 형식·구조·상대링크 검사와 `git diff --check`, 종료 코드 각각0. 작업45개, T001~T045 연속, 단계별 US라벨, 전 작업 파일경로, 모델제약·제공인터페이스, placeholder 없음, Markdown fence/공백, 체크리스트 유지 상태를 확인했다.
+- 전후 훅: `.specify/extensions.yml` 없음. before_tasks·after_tasks 실행 대상 없음.
+- 미완료·미검증: 모든 작업은 미수행이며 코드·SQL·테스트·Gradle 검증을 실행하지 않았다. 실행 테스트 수0건이다. 커밋·브랜치 전환·병합·외부 push/CI도 이번 명령에서는 수행하지 않았다.
+- 다음 한 작업: `$speckit-analyze`로 spec/plan/tasks의 일관성과 누락을 검토한다. 맞춤 목록의 검토자 평가 및 필요한 문서 보완도 구현 전에 처리한다. 실제 시간은 미측정.
+
+### 2026-10-14 / 분석 C1·I1 수정 승인 반영
+
+- 승인: 사용자가 제안한 수정안 적용 후 speckit-analyze 재실행을 지시했다. 수정 단계와 이후 읽기 전용 분석 단계를 분리한다.
+- 대상: 003 spec/plan/tasks·data-model·research·저장 계약·quickstart, 계획서 5.1·2단계, 도메인/검증 규칙 및 resource/reservation 지식 문서를 동기화했다. 기존 타입·외부 API·OpenAPI·코드·SQL은 변경하지 않았다.
+- C1 수정: 각 제약을 테스트→후보 구조 RED→현재 CREATE DDL 최소 추가→새 소유 DB의 같은 테스트 GREEN으로 순서화했다. resources 후보 인수는 T006~T015, reservations 후보 인수는 T016~T018이다. 전체 후보 내용을 변경 없이 V1로 옮기는 T019와 실제 Flyway 적용 T020을 그 뒤에 둔다. 후보는 테스트 전용 schema-candidate/schema.sql이며 이번에는 예정 경로만 문서화했다. 최종 복사 동일성·후보/분기 제거·적용 V1 불변을 명시했다.
+- I1 수정: 문자 수 기준 저장 상한과 비공백 길이 초과 거부를 명시했다. 비공백 이름100자/키64자 뒤 일반공백1자의 절단 저장을 별도 정상 사례로 요구하고 입력 전처리/문자 규칙은 기존 후속 범위를 유지한다. 명시적 cast의 절단과 NBSP를 공백 예외로 확대하지 않도록 구분했다. SC-001의 판정 범위를 명시된 제약 위반 사례로 정리했다.
+- 근거: PostgreSQL18 공식 문자열 타입 문서를 다시 확인했다. 직접 DB 재현은 미실시이며 출처는 003 research.md에 연결했다. 이름·키의 기존 API 입력 규칙을 완화하거나 새 DB 제약을 추가하는 수정이 아니다.
+- 실제 문서 검사: python3 here-document 검사는 최종 종료코드0, 문서14개·상대링크65개·작업45개·연속ID/US라벨/파일경로·FR11/SC5 유지·Markdown/템플릿을 확인했다. 최초 검사에서는 기존 계획서의 Markdown 두 칸 hard break를 불필요한 공백으로 오탐했으므로 검사 기준만 바로잡고 기존 문서 줄바꿈은 보존했다. git diff --check는 종료코드0이다.
+- 체크리스트: 수정 전 SHA-256과 비교해 requirements.md·database.md 두 파일의 내용·표시 전체가 동일함을 확인했다. 맞춤34개는 미평가 상태를 유지한다.
+- 실제 실행 범위: 문서 수정·검사만 수행했다. 업무 구현·Gradle/DB/HTTP 테스트·커밋·브랜치 전환·외부 작업은 미실시이며 실행 테스트 수0건이다.
+- 다음: 수정 완료 상태를 기준으로 speckit-analyze를 읽기 전용으로 실행하고 분석 결과는 대화에만 보고한다. 이 절은 재분석 통과 기록이 아니다. 실제 시간은 미측정.
+
+### 2026-10-14 / 맞춤 요구사항 체크리스트 사용자 요청 평가
+
+- 요청: 사용자가 speckit-implement의 미체크 우회 질문에 「아니 체크리스트 미 체크인 부분은 체크먼저 해」라고 답해, 구현 단계와 별도로 체크리스트 품질 판단 지원을 명시적으로 요청했다.
+- 대상: [database.md](../specs/003-define-db-schema/checklists/database.md)의 CHK001~034를 현재 명세·계획·모델·계약·조사·검증 안내·작업 목록과 대조했다. 기본 requirements.md의 내용·표시는 유지했다.
+- 판단: 33개는 문서 근거가 충족돼 [x], CHK022는 보완 필요로 [ ]를 유지했다. 항목별 근거34행과 남은 보완 범위를 목록에 기록하고 tasks.md T001의 과거 미평가 상태 안내만 현재33/1로 동기화했다. 구현 작업 체크박스45개는 모두 미수행으로 남겼다.
+- CHK022 근거: 정상 최초/재적용·한 트랜잭션 초기화는 설계돼 있지만 업무 migration 실패의 부분 구조/적용이력/다음 준비와 초기화 중간 실패의 잔류/재시도 인수 기준 또는 구체적 제외 이유가 명시돼 있지 않다. 도구 프로브의 장애 검증은 업무 V1·TestData 복구의 실행 증거가 아니다. 기존 산출물 분석의 요구사항별 작업 연결 확인과 이번 상세 복구 범위 검토를 구분한다.
+- 실제 문서 검사: python3 here-document 종료0, 항목34개·체크33개·미체크CHK022만1개·평가근거34행·ID/상대링크, 기본requirements SHA-256 불변, 작업45개 미체크를 확인했다. git diff --check 종료0.
+- 미완료·미검증: CHK022 문서 보완 및 전체 체크리스트 통과는 미완료다. 요구사항 품질 평가만 수행했으며 업무 구현·DB/HTTP/Gradle 테스트·커밋·외부 작업은 미실시다. 실행 테스트 수0건.
+- 다음 한 작업: CHK022의 migration/초기화 실패 기대값 또는 제외 이유를 문서화하고 재평가한다. 구현은 아직 시작하지 않았다. 실제 시간은 미측정.
+
+### 2026-10-14 / CHK022 실패 처리 요구사항 보완·재평가
+
+- 요청: 사용자가 CHK022 실패 처리 요구사항 보완을 지시했다. 기존 격리·한 트랜잭션·부분 반영 금지·실패 기록 규칙과 1단계 도구 프로브의 새 DB 재개 방식을 기준으로 업무 인수 계약을 명시했다.
+- 변경: 003 spec FR-007~008·SC-003·이야기4.7~4.8, plan의 실패 처리 절, 계약·모델·조사·검증 안내7절, tasks T020/T031~034·추적표, 계획서2단계·검증 규칙·resource/reservation·knowledge 안내를 동기화했다. 외부 API/OpenAPI·의존성·업무 코드·SQL은 변경하지 않았다.
+- 마이그레이션 기대: 원본 V1의 테스트 전용 사본 전체 DDL 뒤22012 오류를 붙여 Flyway 트랜잭션 롤백을 관측한다. 업무 테이블/인덱스 부재·V1 성공 이력0건을 요구하며 이력 테이블 자체는 존재할 수 있다. 실패 DB 증거/자원 종료 뒤 다른 실행소유 DB에 변경하지 않은 V1을1건 적용하고 제약을 검증한다. 원본 V1 변경·clean/repair·무한 재시도는 하지 않는다.
+- 초기화 기대: 예약 삭제 뒤 대상 삭제의 테스트 전용 SQL 장애에서도 두 DELETE 전체 롤백·기존 양쪽 행/값·구조·이력 불변을 요구한다. 예외 후 별도 연결에서 스냅샷을 비교하고 장애 제거 뒤 같은 DB의 새 트랜잭션으로 명시적 초기화를 재요청해 두 테이블0건·구조/이력 유지·장애 객체 정리를 확인한다.
+- 한계: 정상 연결의 고의 SQL 오류에 한정한다. 상태 조회가 불가능하면 불명/검증 실패로 기록하고 해당 환경 후속 사례를 중단한다. 연결 단절/프로세스 중단은11단계이며 롤백 성공을 추정하지 않는다. 생산 코드/마이그레이션에 고의 장애를 추가하지 않는다.
+- 근거: Flyway 공식 migration transaction handling·executeInTransaction 문서를 확인하고 research.md에 링크했다. 기존 ToolchainSmokeIT의 고의 migration 실패/새 DB 재개 코드를 읽었지만 이를 업무 V1/TestData 검증 성공으로 간주하지 않았다.
+- 체크리스트: CHK022를 보완된 문서·예정 시험과 대조해 요구사항 품질 충족으로 재평가했다. 맞춤33/34→34/34, 새 체크1개·퇴행0개·남은 미체크0개. 기본requirements.md는 SHA-256 불변이며 작업45개는 모두 미수행이다.
+- 실제 문서 검사: python3 here-document 종료0, 문서14개·상대링크95개·맞춤34개체크/근거34행·FR11/SC5·작업45개ID·실패시험2개 계약/작업/안내 연결을 확인했다. git diff --check 종료0.
+- 미완료·미검증: 업무 구현·고의 실패 주입·실제 롤백/복구·Gradle/DB/HTTP 테스트·커밋·외부 작업은 미실시다. 실행 테스트 수0건이며 체크는 요구사항 품질 인수만 뜻한다.
+- 다음 한 작업: speckit-implement에서 T001의 문서/체크리스트 상태를 재확인한 뒤 단계별 구현을 진행한다. 실제 시간은 미측정.
+
+## 2단계 구현 진입 (2026-10-14)
+
+requirements16/16·database34/34 검토 완료로 진입 가능. 맞춤 표시는 구현 완료가 아니다. Gradle --version/Docker info exit0: Gradle9.7.1, Corretto25.0.4+7-LTS, MacOS27.0.1 aarch64, Docker29.8.2. `./gradlew test` exit0, Unit3·실패0·skip0. 최초 sandbox 캐시/socket 접근 거부는 환경 권한 문제이며 기능 RED가 아니다.
+
+Git root limited-booking, HEAD9eb50af, develop과 docs/define-db-schema의 시작점 동일. 기존 문서 변경을 보존해 로컬 커밋 후 기능 브랜치에서 이어간다. 별도 worktree를 생성하지 않는다. 외부 push/병합은 수행하지 않는다.
