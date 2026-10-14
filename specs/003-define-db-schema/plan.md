@@ -1,8 +1,8 @@
 # 구현 계획: 예약 데이터 제약과 테스트 초기화
 
-**브랜치**: `docs/define-db-schema` | **날짜**: 2026-10-14 | **명세**: [spec.md](spec.md)
+**브랜치**: `feature/db-schema` | **날짜**: 2026-10-14 | **명세**: [spec.md](spec.md)
 
-**입력**: `specs/003-define-db-schema/spec.md`. Phase 0 조사·Phase 1 설계 완료, 업무 구현·실행 검증 전이다. setup-plan의 BRANCH 값 `003-define-db-schema`는 기능 경로에서 파생되며 실제 Git 브랜치는 위 값이다.
+**입력**: `specs/003-define-db-schema/spec.md`. Phase 0 조사·Phase 1 설계 및 업무 저장 기반 구현·실행 검증을 완료했다. setup-plan의 BRANCH 값 `003-define-db-schema`는 기능 경로에서 파생되며 실제 Git 브랜치는 위 값이다.
 
 ## 요약
 
@@ -52,12 +52,12 @@ specs/003-define-db-schema/
   quickstart.md
   contracts/persistence-contract.md
   checklists/requirements.md
-  tasks.md                         # 작업 목록 생성됨, 아직 미수행
+  tasks.md                         # 검증된 작업별 완료 표시
 ```
 
 ### 구현 단계의 파일 배치
 
-아래 업무 파일은 예정이며, ContainerTestSupport·build.gradle·문서들은 기존 파일이다.
+아래 업무 파일을 구현·검증했으며 ContainerTestSupport·build.gradle·문서들은 기존 파일을 갱신했다.
 
 ```text
 backend/src/main/resources/db/migration/V1__create_reservation_schema.sql
@@ -119,4 +119,4 @@ backend/src/test/java/com/limitedbooking/backend/
 
 FR-001~004는 SchemaIT, FR-005~006은 두 RepositoryIT, FR-007은 fresh/reapplied 및 적용 이력 검사, FR-008~010은 DatabaseSupportIT, FR-011은 실행 기록으로 연결한다. 실행 테스트 수>0·실패0·skip0과 최종 업무 V1 사용을 확인해야 구현 완료다. 단일 SELECT 방식은 코드 검토와 실제 불일치 탐지로 확인한다.
 
-현재 완료는 설계 문서와 [작업 목록](tasks.md) 작성·대조까지다. 스키마·조회 코드·업무 테스트와 새/재적용 DB 검증은 미실행이다. 다음 작업은 `$speckit-analyze`로 산출물 간 일관성을 검토하는 것이며, 구현은 한 검증 대상씩 진행한다.
+V1·두 읽기 Repository·초기화/단일SELECT 검사와 새/재적용 DB 인수를 완료했다. 실제 증거는 docs/test-evidence.md에 연결한다. 다음 작업은 3단계 순수 입력 규칙이며 이번 구현 범위 밖이다.

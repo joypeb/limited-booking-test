@@ -2,7 +2,7 @@
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [저장 계약](contracts/persistence-contract.md), [검증 안내](quickstart.md).
 **작성일**: 2026-10-14
-**상태**: 작업 목록 생성. 모든 작업은 미수행이며 업무 코드·SQL·테스트 실행 완료를 뜻하지 않는다.
+**상태**: 실제 검증한 작업별 완료 표시. 실행 증거는 docs/test-evidence.md를 따른다.
 **테스트**: 명세·계획서에서 직접 DB 제약 검증과 TDD를 요청했으므로 테스트 작업을 포함한다.
 **구성**: 준비→공통 기반→US1(P1)→US2(P1)→US3(P2)→US4(P2)→공통 정리.
 
@@ -97,11 +97,11 @@
 
 ## Phase 7: 공통 정리·완료 기록
 
-- [ ] T040 backend/build.gradle의 기존 verify를 ./gradlew verify로 실행해 변경된 ContainerTestSupport·업무V1·읽기코드가 기존 Unit/일반IT를 깨지 않음을 확인하고 docs/test-evidence.md에 실제 수·실패0·skip0·현재listener/XML 일치를 기록한다; 새 실패/수정이 없으면 Property/PIT/부하까지 확장 반복하지 않는다.
-- [ ] T041 [P] knowledge/domain/resource.md에 실제 책임·migration·조회·테스트·불변식검사의 연결과 후속 입력/HTTP 미검증을 갱신한다; T040 이후 T042와 서로 다른 문서를 담당한다.
-- [ ] T042 [P] knowledge/domain/reservation.md에 실제 전체 저장속성·키제약·현재상태조회·수량검사 연결을 갱신하고 원자성/권한/경쟁/응답재현 미검증을 유지한다; T040 이후 T041과 파일을 분리한다.
-- [ ] T043 README.md·knowledge/README.md·docs/versions.md·docs/decisions.md·docs/test-evidence.md·specs/003-define-db-schema/quickstart.md를 실제 파일·명령·버전·검증 결과에 맞춰 갱신한다; docs/openapi.yaml의 변경 없음과 실행 증거를 대조하고 아직 없는 후속 API·CI·부하를 완료로 기록하지 않는다.
-- [ ] T044 specs/003-define-db-schema/spec.md의 FR-001~011·SC-001~005를 실제 테스트/명령/증거와 연결해 docs/test-evidence.md에 누락·미검증을 기록한다; '한정 수량 예약 백엔드 로컬 개발 계획.md' 2단계 체크박스는 해당 실제 수행·검증 후에만 표시하고 맞춤 database.md 검토 표시는 대신 변경하지 않는다.
+- [X] T040 backend/build.gradle의 기존 verify를 ./gradlew verify로 실행해 변경된 ContainerTestSupport·업무V1·읽기코드가 기존 Unit/일반IT를 깨지 않음을 확인하고 docs/test-evidence.md에 실제 수·실패0·skip0·현재listener/XML 일치를 기록한다; 새 실패/수정이 없으면 Property/PIT/부하까지 확장 반복하지 않는다.
+- [X] T041 [P] knowledge/domain/resource.md에 실제 책임·migration·조회·테스트·불변식검사의 연결과 후속 입력/HTTP 미검증을 갱신한다; T040 이후 T042와 서로 다른 문서를 담당한다.
+- [X] T042 [P] knowledge/domain/reservation.md에 실제 전체 저장속성·키제약·현재상태조회·수량검사 연결을 갱신하고 원자성/권한/경쟁/응답재현 미검증을 유지한다; T040 이후 T041과 파일을 분리한다.
+- [X] T043 README.md·knowledge/README.md·docs/versions.md·docs/decisions.md·docs/test-evidence.md·specs/003-define-db-schema/quickstart.md를 실제 파일·명령·버전·검증 결과에 맞춰 갱신한다; docs/openapi.yaml의 변경 없음과 실행 증거를 대조하고 아직 없는 후속 API·CI·부하를 완료로 기록하지 않는다.
+- [X] T044 specs/003-define-db-schema/spec.md의 FR-001~011·SC-001~005를 실제 테스트/명령/증거와 연결해 docs/test-evidence.md에 누락·미검증을 기록한다; '한정 수량 예약 백엔드 로컬 개발 계획.md' 2단계 체크박스는 해당 실제 수행·검증 후에만 표시하고 맞춤 database.md 검토 표시는 대신 변경하지 않는다.
 - [ ] T045 knowledge/rules/commit.md·knowledge/rules/git-flow.md에 따라 변경 파일·diff·공백·임시경로제거·보고서를 검토한 뒤 docs/test-evidence.md에 최종코드·SQL·테스트·미검증·다음작업을 연결하고 남은 목적별 로컬 커밋을 작성한다; PR/push/병합/태그/외부CI는 이번 구현 완료에 포함하지 않는다.
 
 ## 의존성과 실행 순서
@@ -154,4 +154,4 @@ SC-001의 명시된 제약 위반 거부와 공백 초과분 절단 저장은 US
 
 맞춤 체크리스트의 생성·작업 목록 작성은 검토자 평가가 아니다. 해당 상태를 구현 절차의 게이트에서 확인한다. 문서에 실제 계약 차이가 있으면 기준을 확인·동기화하고, 테스트 통과를 위해 기대값을 임의로 낮추지 않는다. 구현에는 계획서의 superpowers:executing-plans 절차를 적용하고, 독립 작업의 병행이 명시적으로 선택된 경우에만 대응 절차를 사용한다.
 
-각 검증 단위 통과 후 작은 커밋을 남긴다. 적용된 migration 수정, 실패 무시·skip·mock 대체, 개발DB 초기화, 외부 push/공개는 하지 않는다. 현재 이 목록의 모든 체크박스는 미수행이다.
+각 검증 단위 통과 후 작은 커밋을 남긴다. 적용된 migration 수정, 실패 무시·skip·mock 대체, 개발DB 초기화, 외부 push/공개는 하지 않는다. 체크박스는 각 작업의 실제 수행·검증을 확인한 뒤 표시한다.

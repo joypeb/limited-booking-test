@@ -37,3 +37,7 @@ Property 생성 예산1000과 실제assertion101회를 구분한다. 고의 n>50
 ### 2026-10-14 2단계 환경 재확인
 
 Gradle9.7.1·Corretto25.0.4+7-LTS·MacOS27.0.1 aarch64·Docker29.8.2를 실제 명령 exit0으로 확인했다. 기존 Boot/BOM/고정 이미지 digest를 유지한다.
+
+### 2단계 실제 저장 기반 검증 (2026-10-15)
+
+기존 Boot4.1.1·Java25·Gradle9.7.1·Flyway/pgJDBC BOM 및 PostgreSQL18.6 고정 digest로 V1·조회·초기화를 실행했다. pgJDBC는 기존 runtimeOnly에 더해 SQLSTATE/제약 이름을 확인할 testImplementation에도 노출했다. 새 버전 변경은 없다. Unit3+일반IT78 검증 결과는 docs/test-evidence.md에 기록한다.

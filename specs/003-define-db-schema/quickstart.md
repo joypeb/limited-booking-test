@@ -1,6 +1,6 @@
 # 검증 안내: 2단계 저장 기반
 
-현재는 설계 안내다. 아래 업무 IT·V1은 아직 없으며 명령 실행 성공 기록이 아니다. 실제 구현 후 사용하는 절차와 기대 결과를 적었다. [데이터 모델](data-model.md)·[계약](contracts/persistence-contract.md)·[구현 순서](plan.md)를 함께 읽는다.
+업무 IT·V1과 읽기/테스트 지원을 구현·실행 검증했다. 아래는 재현 안내이며 실제 결과는 docs/test-evidence.md를 따른다. [데이터 모델](data-model.md)·[계약](contracts/persistence-contract.md)·[구현 순서](plan.md)를 함께 읽는다.
 
 ## 사전 조건
 
@@ -21,9 +21,9 @@ docker info
 
 JDK·Wrapper·Docker가 준비되지 않으면 먼저 환경 원인을 기록한다. 명령 출력에 자격증명을 붙이지 않는다. 개발 DB를 시작하거나 수동 생성할 필요는 없다.
 
-## 2. 최초 의도적 실패 확인
+## 2. 최초 의도적 실패 확인 (개발 이력)
 
-첫 대상은 `SchemaIT.rejectsInvalidAvailability`다. 구현 순서의 테스트 전용 임시 baseline으로 컬럼/타입만 준비한 상태에서 아래를 실행한다.
+개발 당시 첫 대상은 `SchemaIT.rejectsInvalidAvailability`였다. 최종 트리에는 제약이 이미 있어 아래 명령은 GREEN이며 임시 후보를 재생성하거나 적용 V1을 편집하지 않는다. 구현 순서의 테스트 전용 임시 baseline으로 컬럼/타입만 준비한 상태에서 아래를 실행한다.
 
 ```sh
 ./gradlew test integrationTest --tests '*SchemaIT.rejectsInvalidAvailability'
@@ -67,7 +67,7 @@ verify는 기존 Unit+일반IT를 실행한다. 기존 프로브는 명시한 db
 
 업무 HTTP·권한·멱등 재현·생성/취소 원자성·경쟁·DB 장애는 미검증으로 남긴다. 실행 후에만 계획서 2단계 체크박스를 갱신하고 도메인 문서·README의 구현 연결을 실제 파일에 맞춘다. 검증 대상별 커밋에는 해당 결과를 연결한다. 다음 단계는 작은 규칙과 입력 경계값이며 이번 명령에서 구현하지 않는다.
 
-## 7. CHK022 고의 실패·복구 검증 (구현 후)
+## 7. CHK022 고의 실패·복구 검증
 
 ```sh
 ./gradlew test integrationTest --tests '*SchemaIT.rollsBackFailedMigrationAndRecoversInNewDatabase' --tests '*DatabaseSupportIT.rollsBackFailedResetAndRetriesAfterFaultRemoval'
@@ -77,4 +77,6 @@ verify는 기존 Unit+일반IT를 실행한다. 기존 프로브는 명시한 db
 
 초기화 시험은 커밋된 양쪽 행/값·이력의 스냅샷을 보관하고 대상 DELETE에만22012를 내는 테스트 전용 장애를 설치한다. 예약 삭제 뒤 실패한 초기화가 전체 롤백돼 별도 연결의 스냅샷이 같아야 한다. 장애 제거 후 같은 DB의 새 트랜잭션으로 명시적으로 초기화를 재요청해 두 테이블0건·구조/이력 유지·장애객체 정리를 확인한다.
 
-두 고의 오류는 예상 예외로 인수해 테스트 자체가 통과해야 한다. 종료 코드·실제 시험 수·오류 원인·실패/복구 DB 식별·스냅샷 비교·정리를 기록한다. 연결 단절 등 관측 불가능한 경우는 불명/실패로 보고하며 이번 검증의 통과로 취급하지 않는다. 상세 범위는 [실패 처리 계약](contracts/persistence-contract.md)을 따른다. 아직 실행하지 않았다.
+두 고의 오류는 예상 예외로 인수해 테스트 자체가 통과해야 한다. 종료 코드·실제 시험 수·오류 원인·실패/복구 DB 식별·스냅샷 비교·정리를 기록한다. 연결 단절 등 관측 불가능한 경우는 불명/실패로 보고하며 이번 검증의 통과로 취급하지 않는다. 상세 범위는 [실패 처리 계약](contracts/persistence-contract.md)을 따른다. 두 실패/복구 사례는 실제로 실행·검증했으며 상세 결과는 실행 증거를 따른다.
+
+현재 선택 전체는 Unit3/업무IT72, verify는 Unit3/일반IT78이다. 실패0·skip0이며 업무IT 모드별35건과 독립 실패복구/환경 각1건으로 구분한다. 테스트 XML/HTML은 backend/build의 기존 경로를 사용한다.

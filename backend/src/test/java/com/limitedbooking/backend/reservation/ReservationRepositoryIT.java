@@ -19,7 +19,7 @@ class ReservationRepositoryIT {
     static final Instant CANCELLED=Instant.parse("2026-10-14T02:03:04.654321Z");
     @BeforeAll void open() { databases=new SchemaDatabases(); }
     @AfterAll void close() { if(databases!=null)databases.close(); }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void readsAllSevenColumnsByExactUserAndKeyWithCurrentStatus(Mode mode) {
         database=databases.use(mode);
         var resource=UUID.randomUUID();var userA=UUID.randomUUID();var userB=UUID.randomUUID();
@@ -33,7 +33,7 @@ class ReservationRepositoryIT {
         assertThat(repository.findByUserAndKey(userA,"Key_1 ")).isEmpty();assertThat(repository.findByUserAndKey(userA,"Key_2")).isEmpty();
         assertThat(repository.findByUserAndKey(UUID.randomUUID(),"Key_1")).isEmpty();assertThat(database.snapshot()).isEqualTo(before);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void propagatesSqlErrors(Mode mode) {
         database=databases.use(mode);
         database.jdbc().execute("ALTER TABLE reservations RENAME COLUMN status TO broken_status");

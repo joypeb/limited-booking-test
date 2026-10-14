@@ -26,7 +26,7 @@ class SchemaIT {
     @BeforeAll void prepare() { databases = new SchemaDatabases(); }
     @AfterAll void close() { if (databases != null) databases.close(); }
     void use(Mode mode) { dataSource = databases.use(mode).dataSource(); }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsInvalidAvailability(Mode mode) throws Exception {
         use(mode);
         for (int[] pair : new int[][]{{10,-1},{10,11},{-1,0},{1001,0}}) {
@@ -34,7 +34,7 @@ class SchemaIT {
             rejected("resources",row,"23514",null);
         }
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void acceptsAvailabilityBoundaries(Mode mode) throws Exception {
         use(mode);
         for (int[] pair : new int[][]{{0,0},{1000,1000},{10,0},{10,10}}) {
@@ -44,38 +44,38 @@ class SchemaIT {
             }
         }
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsResourceNull_id(Mode mode) throws Exception {
         use(mode);
         var row=resource(); row.put("id",null); rejected("resources",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsResourceNull_name(Mode mode) throws Exception {
         use(mode);
         var row=resource(); row.put("name",null); rejected("resources",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsResourceNull_capacity(Mode mode) throws Exception {
         use(mode);
         var row=resource(); row.put("capacity",null); rejected("resources",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsResourceNull_available(Mode mode) throws Exception {
         use(mode);
         var row=resource(); row.put("available",null); rejected("resources",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsResourceNull_created_at(Mode mode) throws Exception {
         use(mode);
         var row=resource(); row.put("created_at",null); rejected("resources",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesResourcePrimaryKey(Mode mode) throws Exception {
         use(mode);
         var row=resource();insert("resources",row);var duplicate=new LinkedHashMap<>(row);duplicate.put("name","different");
         rejected("resources",duplicate,"23505","resources_pkey");
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesResourceNameLength(Mode mode) throws Exception {
         use(mode);
         for (String character : List.of("a","😀")) {
@@ -86,7 +86,7 @@ class SchemaIT {
         var spaces=resource();spaces.put("name","a".repeat(100)+" ");insert("resources",spaces);
         assertThat(scalar("SELECT name FROM resources WHERE id='"+spaces.get("id")+"'")).isEqualTo("a".repeat(100));
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesUserKeyUniqueness(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var other=resource();insert("resources",other);
@@ -102,12 +102,12 @@ class SchemaIT {
         var differentKey=new LinkedHashMap<>(first);differentKey.put("id",UUID.randomUUID());differentKey.put("idempotency_key","key2");insert("reservations",differentKey);
         assertThat(scalar("SELECT count(*) FROM reservations")).isEqualTo(3L);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsUnknownResource(Mode mode) throws Exception {
         use(mode);
         rejected("reservations",reservation(UUID.randomUUID()),"23503","fk_reservations_resource");
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesStatusAndCancellationTime(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);
@@ -118,49 +118,49 @@ class SchemaIT {
         }
         var unknown=reservation((UUID)target.get("id"));unknown.put("status","UNKNOWN");rejected("reservations",unknown,"23514","ck_reservations_status_cancelled_at");
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_id(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("id",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_resource_id(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("resource_id",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_user_id(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("user_id",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_idempotency_key(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("idempotency_key",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_status(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("status",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsReservationNull_created_at(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var row=reservation((UUID)target.get("id"));
         row.put("created_at",null);rejected("reservations",row,"23502",null);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesReservationPrimaryKey(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);var first=reservation((UUID)target.get("id"));insert("reservations",first);
         var duplicate=new LinkedHashMap<>(first);duplicate.put("idempotency_key","other");rejected("reservations",duplicate,"23505","reservations_pkey");
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void enforcesKeyLength(Mode mode) throws Exception {
         use(mode);
         var target=resource();insert("resources",target);
@@ -169,13 +169,13 @@ class SchemaIT {
         var spaces=reservation((UUID)target.get("id"));spaces.put("idempotency_key","s".repeat(64)+" ");insert("reservations",spaces);
         assertThat(scalar("SELECT idempotency_key FROM reservations WHERE id='"+spaces.get("id")+"'")).isEqualTo("s".repeat(64));
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void exposesStatusStorageType(Mode mode) throws Exception {
         use(mode);
         assertThat(scalar("SELECT data_type FROM information_schema.columns WHERE table_name='reservations' AND column_name='status'")).isEqualTo("character varying");
         assertThat(scalar("SELECT character_maximum_length FROM information_schema.columns WHERE table_name='reservations' AND column_name='status'")).isEqualTo(16);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void exposesResourceLookupIndex(Mode mode) throws Exception {
         use(mode);
         assertThat(scalar("SELECT count(*) FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid WHERE c.relname='idx_reservations_resource_id' AND i.indisvalid AND i.indpred IS NULL AND NOT i.indisunique AND pg_get_indexdef(i.indexrelid) LIKE '% ON public.reservations USING btree (resource_id)'")).isEqualTo(1L);
@@ -190,6 +190,7 @@ class SchemaIT {
         var failed=ContainerTestSupport.postgresOnly();
         try(failed) {
             failedDatabase=failed.postgres.getDatabaseName();
+            System.out.println("마이그레이션 실패사본 DB="+failedDatabase+" SQLSTATE 기대=22012");
             var ds=new DriverManagerDataSource(failed.postgres.getJdbcUrl(),failed.postgres.getUsername(),failed.postgres.getPassword());
             var error=catchThrowable(()->Flyway.configure().dataSource(ds).locations("filesystem:"+directory).executeInTransaction(true).load().migrate());
             assertThat(error).isInstanceOf(FlywayException.class);
@@ -203,6 +204,7 @@ class SchemaIT {
         assertThat(failed.postgres.isRunning()).isFalse();
         try(var recovered=ContainerTestSupport.postgresOnly()) {
             assertThat(recovered.postgres.getDatabaseName()).isNotEqualTo(failedDatabase);
+            System.out.println("마이그레이션 복구 원본 DB="+recovered.postgres.getDatabaseName()+" 실패DB종료=true");
             var ds=new DriverManagerDataSource(recovered.postgres.getJdbcUrl(),recovered.postgres.getUsername(),recovered.postgres.getPassword());
             assertThat(Flyway.configure().dataSource(ds).locations("classpath:db/migration").executeInTransaction(true).load().migrate().migrationsExecuted).isEqualTo(1);
             var jdbc=new org.springframework.jdbc.core.JdbcTemplate(ds);

@@ -46,3 +46,10 @@ QuickTheories0.26의 Core bytecode에서 examples 루프의 생성과 visitedVal
 ## PR 적대적 리뷰의 전체 HTTP 요청 deadline (2026-10-14)
 
 Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대기를 제한하지 못함을 실제 재현했다. 연결/헤더 timeout을 유지하면서 sendAsync 응답 Future.get(10초)로 전체 본문 완료를 제한하고 timeout·중단 시 원래 Future를 취소한다. 앱 IT와 계약 fixture는 같은 지원 경로를 사용한다. 회귀 실패→수정 통과·최종15건 및 리뷰 PASS를 확인했다. 업무 HTTP 오류/timeout 정책의 구현은 후속 범위다.
+
+## 2단계 저장 기반 구현 결정 (2026-10-15)
+
+- 후보 CREATE를 제약별 RED/GREEN으로 인수하고 완성본을 byte-identical V1로 복사한 뒤 후보 경로를 제거했다. 적용 후 V1은 변경하지 않는다. 도구 프로브의 db/toolchain 위치와 업무 위치는 분리한다.
+- SchemaDatabase/SchemaDatabases는 네 인수 클래스의 fresh/reapplied 독립 컨테이너 준비·스냅샷·정리만 공유한다. 생산 저장 계층은 기능별 두 Repository이며 범용 Repository를 만들지 않는다.
+- TestData는 명시 DataSource와 REQUIRES_NEW를 사용한다. 반환 전 확정된 준비 데이터 계약을 위해 호출자 트랜잭션 롤백과 분리한다. 별도 연결에서0행인 RED 이후 두 모드 GREEN으로 검증했다. 초기화 두 DELETE도 한 독립 트랜잭션이며 중간 SQL 오류는 전체 롤백한다.
+- docs/openapi.yaml은 변경하지 않았다. 업무 V1·읽기 조회의 인수는 API·인증·경쟁·멱등 재현의 완료가 아니다. local DB 실제 V1 적용/전환, 연결 단절/프로세스 중단은 미검증이다.

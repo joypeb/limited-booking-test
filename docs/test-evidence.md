@@ -631,3 +631,39 @@ NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resourc
 명령: `./gradlew test integrationTest --tests '*SchemaIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT' --tests '*DatabaseSupportIT'` exit0. Unit3, 업무IT72·실패0·skip0. SchemaIT45(모드별22+실패복구1), ResourceRepositoryIT4(모드별2), ReservationRepositoryIT4(모드별2), DatabaseSupportIT19(모드별9+환경1). 합계 모드별35씩+독립실패복구1+환경1. 소유 자원 종료까지 테스트 실행 범위다.
 
 추가 커밋 경계 검증: 준비가 호출자 트랜잭션에 합류하면 별도 연결에서0행인 RED를 두 모드에서 확인했다(`*DatabaseSupportIT.commitsPreparationEvenWhenCallerTransactionRollsBack`, exit1/IT2실패2). REQUIRES_NEW로 독립 커밋을 보장한 뒤 위 전체72건이 통과했다. 호출자 롤백 뒤에도 준비 행을 읽는다.
+
+### 기존 일반 IT 영향 검증
+
+`./gradlew verify` exit0, Unit3/일반IT78(업무72+기존6)·실패0·skip0. 현재 listener/XML 게이트 일치, 기존 도구 V1 위치 및 HTTP 클라이언트 종료 회귀 유지. Property/PIT/부하·외부 CI는 이번 단계 재실행하지 않았다. XML 사례 표시를 메서드+모드로 명확히 하고 DB 식별을 로그에 추가한 뒤 최종 verify를 다시 실행한다.
+
+### 요구사항·인수 기준 실행 연결
+
+| 요구사항/기준 | 실제 검증 | 결과 |
+|---|---|---|
+| FR-001·SC-001 | SchemaIT.rejectsInvalidAvailability / acceptsAvailabilityBoundaries | 비정상4종23514/잔류0·경계4종저장값일치 |
+| FR-002·SC-001 | rejectsResourceNull_* / rejectsReservationNull_*·두 enforces*PrimaryKey·enforcesResourceNameLength/enforcesKeyLength·exposesStatusStorageType | 필수값23502·PK23505·ASCII/😀상한·22001·일반공백절단·status폭16 |
+| FR-003~004·SC-001 | enforcesUserKeyUniqueness / rejectsUnknownResource / enforcesStatusAndCancellationTime / exposesResourceLookupIndex | uq이름/23505·FK23503·상태23514·정상허용·인덱스유효비부분 |
+| FR-005~006·SC-002 | ResourceRepositoryIT / ReservationRepositoryIT | 4/7컬럼·정확사용자키·현재취소·UTC마이크로초·empty·SQL오류전달·전체행불변 |
+| FR-007·SC-003 | SchemaDatabase(REAPPLIED)·네클래스Mode·SchemaIT.rollsBackFailedMigrationAndRecoversInNewDatabase | 최초1/재적용0·validate·표식/구조/이력보존·22012잔류0·종료후다른DB복구 |
+| FR-008~009·SC-003 | DatabaseSupportIT.commitsPreparedDataVisibleToAnotherConnection / commitsPreparationEvenWhenCallerTransactionRollsBack / resetsBothTablesRepeatedlyPreservingHistoryAndStructure / rollsBackFailedResetAndRetriesAfterFaultRemoval | 명시소유DS·독립커밋·초기화2회0·실패전체스냅샷불변·장애제거같은DB재요청 |
+| FR-010·SC-004 | DatabaseSupportIT.acceptsMixedStatesAndIgnoresOtherResources / acceptsZeroCapacityWithoutReservations / acceptsAllCancelledReservations / rejectsInventoryMismatch / rejectsMissingResourceInInventoryAssertion | 단일SELECT·정상통과·2종AssertionError탐지 |
+| FR-011·SC-005 | 단계별 위 명령·RED/GREEN 수·환경·최종verify 및 listener/XML 게이트 | 0건/실패/skip 성공처리없음·미실행 구분 |
+
+이번 인수 범위에 미실행 요구사항은 없다. API·입력규칙·생성취소 Writer·권한·경쟁·멱등 응답·요청 제한·연결 단절/프로세스 중단·local DB V1 전환·부하·외부 CI는 범위 밖/미검증이다. 테스트 외 DB에 연결하는 코드 경로를 사용하지 않았으며 개발·부하 DB의 상태를 확인하려고 접속하지도 않았다. 핵심 읽기 파일은 업무 V1/두 Repository, SchemaIT/DatabaseSupportIT, TestData/DatabaseAssertions다. 다음 작업은 3단계 순수 입력 규칙이다.
+
+### 최종 verify와 실제 환경 식별
+
+메서드+모드 사례명과 실행 소유 DB 식별 로그를 반영한 뒤 `./gradlew verify` exit0, Unit3/일반IT78·실패0·skip0. listener와 XML의 수가 같다. 아래는 최종 XML system-out의 실행 소유 식별이며 비밀번호/URL 자격증명은 기록하지 않는다.
+
+- com.limitedbooking.backend.reservation.ReservationRepositoryIT: 업무 DB 준비 database=toolchain_73eb427eea414002b47ab643c14fa48b mode=FRESH 최초 migration=1
+- com.limitedbooking.backend.reservation.ReservationRepositoryIT: 업무 DB 준비 database=toolchain_453e0a10db714ab68694c056718d9b1a mode=REAPPLIED 최초 migration=1 validate=성공 재적용=0 표식/이력/구조=보존
+- com.limitedbooking.backend.common.SchemaIT: 업무 DB 준비 database=toolchain_747c014f30014c2bbbc6588e59aace8f mode=FRESH 최초 migration=1
+- com.limitedbooking.backend.common.SchemaIT: 업무 DB 준비 database=toolchain_bc402f0e6e36432faaab6d434e71f074 mode=REAPPLIED 최초 migration=1 validate=성공 재적용=0 표식/이력/구조=보존
+- com.limitedbooking.backend.common.SchemaIT: 마이그레이션 실패사본 DB=toolchain_579803d37e40405aabef528bb2851496 SQLSTATE 기대=22012
+- com.limitedbooking.backend.common.SchemaIT: 마이그레이션 복구 원본 DB=toolchain_408abb7f1f614d96a6ab339aec8e3da3 실패DB종료=true
+- com.limitedbooking.backend.resource.ResourceRepositoryIT: 업무 DB 준비 database=toolchain_d001610ebb1a473582c2672f3ba42b58 mode=FRESH 최초 migration=1
+- com.limitedbooking.backend.resource.ResourceRepositoryIT: 업무 DB 준비 database=toolchain_c28e0efe60cc4774a3abc2377047473c mode=REAPPLIED 최초 migration=1 validate=성공 재적용=0 표식/이력/구조=보존
+- com.limitedbooking.backend.support.DatabaseSupportIT: 업무 DB 준비 database=toolchain_41dbeaaa429148a2b66059e6be2f8ec3 mode=FRESH 최초 migration=1
+- com.limitedbooking.backend.support.DatabaseSupportIT: 업무 DB 준비 database=toolchain_5d288ef7700144f29d11e3744a429d03 mode=REAPPLIED 최초 migration=1 validate=성공 재적용=0 표식/이력/구조=보존
+
+문서의 실제 파일 링크 검사와 git diff --check 통과. docs/openapi.yaml 변경0, 체크리스트 표시는 변경0, 임시 후보 경로/분기0. 적용 V1 SHA256은 d4fff8c4a6cc64c618c07f538af8f9dd4ef1ffd66c4754074eb0d02a7b270844로 복사 시 값과 동일하다.

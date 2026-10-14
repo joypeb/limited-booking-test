@@ -17,7 +17,7 @@ class ResourceRepositoryIT {
     SchemaDatabase database;
     @BeforeAll void open() { databases=new SchemaDatabases(); }
     @AfterAll void close() { if(databases!=null)databases.close(); }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void readsFourStoredFieldsAndReturnsEmptyOnlyForMissingId(Mode mode) {
         database=databases.use(mode);
         var id=UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -27,7 +27,7 @@ class ResourceRepositoryIT {
         assertThat(repository.find(UUID.fromString("00000000-0000-0000-0000-000000000002"))).isEmpty();
         assertThat(database.snapshot()).isEqualTo(before);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void propagatesSqlErrors(Mode mode) {
         database=databases.use(mode);
         database.jdbc().execute("ALTER TABLE resources RENAME COLUMN name TO broken_name");

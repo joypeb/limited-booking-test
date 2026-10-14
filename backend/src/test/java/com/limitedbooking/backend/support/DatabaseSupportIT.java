@@ -35,7 +35,7 @@ class DatabaseSupportIT {
         assertThat(support.postgres.isRunning()).isFalse();
         assertThat(support.redis.getContainerId()).isNull();
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void commitsPreparedDataVisibleToAnotherConnection(Mode mode) {
         database=databases.use(mode);
         var data=new TestData(database.dataSource());var target=UUID.randomUUID();
@@ -48,7 +48,7 @@ class DatabaseSupportIT {
         assertThat(database.jdbc().<Instant>queryForObject("SELECT created_at FROM reservations WHERE id=?",(rs,n)->rs.getObject(1,OffsetDateTime.class).toInstant(),confirmed.id())).isEqualTo(TIME);
         assertThat(database.jdbc().<Instant>queryForObject("SELECT cancelled_at FROM reservations WHERE id=?",(rs,n)->rs.getObject(1,OffsetDateTime.class).toInstant(),cancelled.id())).isEqualTo(TIME.plusSeconds(1));
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void commitsPreparationEvenWhenCallerTransactionRollsBack(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();
@@ -63,7 +63,7 @@ class DatabaseSupportIT {
         });
         assertThat(database.jdbc().queryForObject("SELECT count(*) FROM resources",Long.class)).isEqualTo(1L);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void resetsBothTablesRepeatedlyPreservingHistoryAndStructure(Mode mode) {
         database=databases.use(mode);
         directData();var history=database.snapshot().get("flyway_schema_history");var structure=database.structure();
@@ -72,7 +72,7 @@ class DatabaseSupportIT {
             data.reset();assertEmpty();assertThat(database.snapshot().get("flyway_schema_history")).isEqualTo(history);assertThat(database.structure()).isEqualTo(structure);
         }
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rollsBackFailedResetAndRetriesAfterFaultRemoval(Mode mode) {
         database=databases.use(mode);
         directData();var before=database.snapshot();var structure=database.structure();
@@ -91,7 +91,7 @@ class DatabaseSupportIT {
         assertThat(database.snapshot().get("flyway_schema_history")).isEqualTo(before.get("flyway_schema_history"));assertThat(database.structure()).isEqualTo(structure);
         assertThat(database.jdbc().queryForObject("SELECT count(*) FROM pg_trigger WHERE tgname='fail_resource_delete'",Long.class)).isZero();
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void acceptsMixedStatesAndIgnoresOtherResources(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();directResource(target,10,8);
@@ -99,26 +99,26 @@ class DatabaseSupportIT {
         var other=UUID.randomUUID();directResource(other,10,9);directReservation(other,"CONFIRMED");
         new DatabaseAssertions(database.dataSource()).assertInventoryConserved(target);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void acceptsZeroCapacityWithoutReservations(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();directResource(target,0,0);
         new DatabaseAssertions(database.dataSource()).assertInventoryConserved(target);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void acceptsAllCancelledReservations(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();directResource(target,10,10);directReservation(target,"CANCELLED");
         new DatabaseAssertions(database.dataSource()).assertInventoryConserved(target);
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsInventoryMismatch(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();directResource(target,10,9);directReservation(target,"CONFIRMED");directReservation(target,"CONFIRMED");
         assertThatThrownBy(()->new DatabaseAssertions(database.dataSource()).assertInventoryConserved(target))
                 .isInstanceOf(AssertionError.class).hasMessageContaining(target.toString());
     }
-    @ParameterizedTest(name="{0}") @EnumSource(Mode.class)
+    @ParameterizedTest(name="{displayName} [{0}]") @EnumSource(Mode.class)
     void rejectsMissingResourceInInventoryAssertion(Mode mode) {
         database=databases.use(mode);
         var target=UUID.randomUUID();

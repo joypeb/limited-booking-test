@@ -1,6 +1,6 @@
 # 저장 계층·테스트 지원 계약
 
-계획서 7절 2단계의 제공 인터페이스를 후속 애플리케이션 계층이 사용할 수 있도록 정의한다. 새 외부 HTTP API는 추가하지 않으며 [기존 OpenAPI](../../../docs/openapi.yaml)는 유지한다. 아래 인터페이스는 모두 구현 예정이다.
+계획서 7절 2단계의 제공 인터페이스를 후속 애플리케이션 계층이 사용할 수 있도록 정의한다. 새 외부 HTTP API는 추가하지 않으며 [기존 OpenAPI](../../../docs/openapi.yaml)는 유지한다. 아래 인터페이스는 구현·실행 검증했다.
 
 ## 읽기 Repository
 
@@ -45,17 +45,17 @@
 
 SchemaIT에서 작성할 검증 이름·데이터·기대값은 다음과 같다. 각 행의 여러 입력은 분리된 인수 사례로 실행하며 실제 실행 수는 구현 후 보고서로 기록한다.
 
-| 예정 테스트 | 준비·입력 | 기대 결과 |
+| 구현 테스트 | 준비·입력 | 기대 결과 |
 | --- | --- | --- |
 | rejectsInvalidAvailability | capacity=10/available=-1·11, capacity=-1·1001 | 23514, 실패 행 없음 |
 | acceptsAvailabilityBoundaries | 0/0·1000/1000·10/0·10/10 | 저장 성공, 저장 값 조회 일치 |
 | enforcesUserKeyUniqueness | A/key1 동일·다른 대상·취소 기존행에 중복, B/key1·A/key2 | 중복23505+uq_reservations_user_key, 다른 조합 성공 |
 | rejectsUnknownResource | 존재하지 않는 resource_id, 나머지 속성 정상 | 23503, 실패 예약 없음 |
 | enforcesStatusAndCancellationTime | 두 정상 조합, 두 비정상 조합, 알 수 없는 상태 | 정상 성공, 비정상23514 |
-| rejectsMissingRequiredValues | 각 NOT NULL 속성을 한 번씩 null | 23502, 기존 행 유지 |
-| enforcesPrimaryKeys | 기존 대상·예약 PK에 중복 INSERT | 23505, 기존 행 유지 |
-| enforcesStoredStringLengths | 이름100/101·키64/65, 비공백 문자·이름 😀 | 문자 수 기준 상한 성공, 초과22001 |
-| documentsTrailingSpaceTruncation | 이름 비공백100자+일반공백1자·키 비공백64자+일반공백1자 | 저장 허용, 각각100자·64자로 잘린 값 |
+| rejectsResourceNull_* / rejectsReservationNull_* | 각 NOT NULL 속성을 한 번씩 null | 23502, 기존 행 유지 |
+| enforcesResourcePrimaryKey / enforcesReservationPrimaryKey | 기존 대상·예약 PK에 중복 INSERT | 23505, 기존 행 유지 |
+| enforcesResourceNameLength / enforcesKeyLength | 이름100/101·키64/65, 비공백 문자·이름 😀 | 문자 수 기준 상한 성공, 초과22001 |
+| enforcesResourceNameLength / enforcesKeyLength (공백 사례) | 이름 비공백100자+일반공백1자·키 비공백64자+일반공백1자 | 저장 허용, 각각100자·64자로 잘린 값 |
 | exposesResourceLookupIndex | pg_indexes/pg_index에서 resource_id 인덱스 확인 | 유효한 비부분 대상 검색 인덱스 존재 |
 
 마이그레이션 준비 자체는 별도 assertion으로 1→0 적용·validate·표식/이력 보존을 확인한다. NOT NULL·FK·UNIQUE 시험은 나머지 조건을 유효하게 두어 다른 제약 위반이 먼저 발생하지 않도록 한다.
@@ -80,4 +80,4 @@ SchemaIT에서 작성할 검증 이름·데이터·기대값은 다음과 같다
 - 초기화 전 행/값·이력의 스냅샷과 예외 후 별도 연결의 상태를 비교한다. 실패한 트랜잭션 안에서 비교하지 않는다. 고의 트리거 제거 후 같은 실행소유 DB에서 새 초기화 트랜잭션을 명시적으로 요청하면 reservations/resources 각각0건·구조/이력 유지여야 한다. 테스트 후 장애 객체와 자원을 제거한다.
 - 자동 무한 재시도나 실패 예외 삼키기는 금지한다. 연결/롤백 문제로 상태를 확인할 수 없으면 불명·검증 실패로 기록하고 해당 환경의 이후 사례를 중단한다. 소유 자원 종료 뒤 새 환경으로 재개하며 불명 상태를 부분 삭제 없음의 증거로 쓰지 않는다.
 
-연결 단절·프로세스 중단·운영 DB 복구는11단계 범위다. 이번 계약은 격리된 정상 연결의 고의 SQL 실패와 실제 롤백 관측에 한정한다. 모든 실행 증거는 후속 구현에서 확보한다.
+연결 단절·프로세스 중단·운영 DB 복구는11단계 범위다. 이번 계약은 격리된 정상 연결의 고의 SQL 실패와 실제 롤백 관측에 한정한다. 실행 증거는 docs/test-evidence.md에 연결한다.

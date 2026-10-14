@@ -33,7 +33,7 @@ public final class SchemaDatabase implements AutoCloseable {
                 assertThat(snapshot()).isEqualTo(before);assertThat(structure()).isEqualTo(structure);
                 reset();
             }
-            System.out.println("업무 DB 준비 mode="+mode+" 최초 migration=1"+(mode == Mode.REAPPLIED?" validate=성공 재적용=0 표식/이력/구조=보존":""));
+            System.out.println("업무 DB 준비 database="+containers.postgres.getDatabaseName()+" mode="+mode+" 최초 migration=1"+(mode == Mode.REAPPLIED?" validate=성공 재적용=0 표식/이력/구조=보존":""));
         } catch (RuntimeException | Error error) {
             try {close();} catch(RuntimeException cleanup) {error.addSuppressed(cleanup);} throw error;
         }
