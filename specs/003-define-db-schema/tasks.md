@@ -102,7 +102,7 @@
 - [X] T042 [P] knowledge/domain/reservation.md에 실제 전체 저장속성·키제약·현재상태조회·수량검사 연결을 갱신하고 원자성/권한/경쟁/응답재현 미검증을 유지한다; T040 이후 T041과 파일을 분리한다.
 - [X] T043 README.md·knowledge/README.md·docs/versions.md·docs/decisions.md·docs/test-evidence.md·specs/003-define-db-schema/quickstart.md를 실제 파일·명령·버전·검증 결과에 맞춰 갱신한다; docs/openapi.yaml의 변경 없음과 실행 증거를 대조하고 아직 없는 후속 API·CI·부하를 완료로 기록하지 않는다.
 - [X] T044 specs/003-define-db-schema/spec.md의 FR-001~011·SC-001~005를 실제 테스트/명령/증거와 연결해 docs/test-evidence.md에 누락·미검증을 기록한다; '한정 수량 예약 백엔드 로컬 개발 계획.md' 2단계 체크박스는 해당 실제 수행·검증 후에만 표시하고 맞춤 database.md 검토 표시는 대신 변경하지 않는다.
-- [ ] T045 knowledge/rules/commit.md·knowledge/rules/git-flow.md에 따라 변경 파일·diff·공백·임시경로제거·보고서를 검토한 뒤 docs/test-evidence.md에 최종코드·SQL·테스트·미검증·다음작업을 연결하고 남은 목적별 로컬 커밋을 작성한다; PR/push/병합/태그/외부CI는 이번 구현 완료에 포함하지 않는다.
+- [X] T045 knowledge/rules/commit.md·knowledge/rules/git-flow.md에 따라 변경 파일·diff·공백·임시경로제거·보고서를 검토한 뒤 docs/test-evidence.md에 최종코드·SQL·테스트·미검증·다음작업을 연결하고 남은 목적별 로컬 커밋을 작성한다; PR/push/병합/태그/외부CI는 이번 구현 완료에 포함하지 않는다.
 
 ## 의존성과 실행 순서
 

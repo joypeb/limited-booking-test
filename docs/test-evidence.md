@@ -667,3 +667,11 @@ NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resourc
 - com.limitedbooking.backend.support.DatabaseSupportIT: 업무 DB 준비 database=toolchain_5d288ef7700144f29d11e3744a429d03 mode=REAPPLIED 최초 migration=1 validate=성공 재적용=0 표식/이력/구조=보존
 
 문서의 실제 파일 링크 검사와 git diff --check 통과. docs/openapi.yaml 변경0, 체크리스트 표시는 변경0, 임시 후보 경로/분기0. 적용 V1 SHA256은 d4fff8c4a6cc64c618c07f538af8f9dd4ef1ffd66c4754074eb0d02a7b270844로 복사 시 값과 동일하다.
+
+### 최종 독립 리뷰와 완료
+
+executing-plans의 독립 리뷰어가 9eb50af..924e0ba 생산 DDL·Repository·지원 코드·4개IT를 읽고 XML Unit3/일반IT78·실패/오류/skip0을 확인했다. 생산 코드 Critical/Important0. 문서의 구현 전 표현 1건(명세·개발검증규칙·원계획의 요약)이 발견됐다. 다음 작업자의 완료 범위 판단과 T043 동기화 기준에 영향을 주므로 상태 정합성 수정 대상으로 재평가하고, 기존 실행 증거와 충돌하는 문구 검증 실패 후 저장 기반 완료/Writer·HTTP 후속으로 교정했다. 내용·링크·공백 검사로 확인했으며 코드 변경은 없다.
+
+리뷰에서 제외한 Writer·HTTP/권한/입력·멱등응답·경쟁·Redis제한·연결단절/프로세스중단·개발DB전환·부하는 기존 계획의 명시 범위 밖이므로 후속으로 유지한다. DB CHECK는 전이 전체나 테이블 간 보존식을 강제하지 않으며 이 경계도 유지한다. 미수정 리뷰 항목은 없다.
+
+T001~T045 실제 수행·검증 완료. 맞춤 체크리스트는 읽기 전용으로 유지했다. after_implement 확장 파일/후크는 없어 건너뛰었다. feature/db-schema와 로컬 커밋을 보존하고 외부 push·PR·병합·태그는 수행하지 않았다. 핵심 파일/다음 한 작업은 위 추적 표와 3단계 입력 규칙을 따른다.
