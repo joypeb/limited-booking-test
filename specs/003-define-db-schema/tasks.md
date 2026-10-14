@@ -18,14 +18,14 @@
 
 - [X] T001 specs/003-define-db-schema/checklists/database.md의 검토자 평가 상태와 specs/003-define-db-schema/checklists/requirements.md를 확인하고 docs/test-evidence.md에 구현 진입 가능 여부를 기록한다; 맞춤 목록은 사용자 요청에 따른 검토로CHK022 실패 처리 요구사항 보완·재평가로34개 충족 상태이며 구현자가 임의로 표시하지 않는다. 길이 보장 범위·새/재적용 범위·실패 복구에 미해결 계약이 있으면 해당 검토 근거를 받아 spec.md·plan.md를 동기화한 뒤 의존 작업을 진행한다.
 - [X] T002 backend/gradlew로 --version, docker info를 실행하고 docs/versions.md·docs/test-evidence.md에 실제 환경과 종료 코드를 기록한다; Java25·Boot4.1.1·Gradle9.7.1·기존 이미지/BOM을 유지하고 개발 DB·local 프로필은 사용하지 않는다.
-- [ ] T003 knowledge/rules/commit.md·knowledge/rules/git-flow.md에 따라 저장소 최상위·HEAD·브랜치·미커밋 변경을 확인하고 docs/test-evidence.md에 실제 수행을 기록한다; 현재 문서 작업을 내용·링크·형식 검증 후 목적별 로컬 커밋으로 보존하고 develop 기반 feature/db-schema 작업 브랜치를 준비한다. 기존 문서 변경은 안전하게 통합·보존하며 reset/clean/stash로 없애거나 외부 push하지 않는다.
+- [X] T003 knowledge/rules/commit.md·knowledge/rules/git-flow.md에 따라 저장소 최상위·HEAD·브랜치·미커밋 변경을 확인하고 docs/test-evidence.md에 실제 수행을 기록한다; 현재 문서 작업을 내용·링크·형식 검증 후 목적별 로컬 커밋으로 보존하고 develop 기반 feature/db-schema 작업 브랜치를 준비한다. 기존 문서 변경은 안전하게 통합·보존하며 reset/clean/stash로 없애거나 외부 push하지 않는다.
 
 ## Phase 2: 공통 기반
 
 **목표**: 실제 격리 DB에 연결하는 지원 경로를 마련한다. 모든 이야기의 선행 조건이다.
 
-- [ ] T004 backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java의 기존 무인자 생성자·public 필드·시작 실패 정리·종료 상한을 읽고 PostgreSQL-only 경로의 최소 접속/종료 기대를 backend/src/test/java/com/limitedbooking/backend/support/DatabaseSupportIT.java에 작성한다; 실행 소유 DB의 current_database()·동적 포트·미기동 Redis의 정리 제외를 확인할 사례를 둔다.
-- [ ] T005 backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java에 PostgreSQL-only 경로를 추가하고 T004의 최소 실행과 기존 ToolchainSmokeIT·BackendApplicationIT을 선택 실행해 docs/test-evidence.md에 기록한다; 무인자 PostgreSQL+Redis 계약·고정 digest·120초 시작/컨테이너별10초 정리 상한을 유지한다. 환경 기반 추가이므로 최소 실행으로 검증하고 db/toolchain 위치·Gradle 게이트를 바꾸지 않는다.
+- [X] T004 backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java의 기존 무인자 생성자·public 필드·시작 실패 정리·종료 상한을 읽고 PostgreSQL-only 경로의 최소 접속/종료 기대를 backend/src/test/java/com/limitedbooking/backend/support/DatabaseSupportIT.java에 작성한다; 실행 소유 DB의 current_database()·동적 포트·미기동 Redis의 정리 제외를 확인할 사례를 둔다.
+- [X] T005 backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java에 PostgreSQL-only 경로를 추가하고 T004의 최소 실행과 기존 ToolchainSmokeIT·BackendApplicationIT을 선택 실행해 docs/test-evidence.md에 기록한다; 무인자 PostgreSQL+Redis 계약·고정 digest·120초 시작/컨테이너별10초 정리 상한을 유지한다. 환경 기반 추가이므로 최소 실행으로 검증하고 db/toolchain 위치·Gradle 게이트를 바꾸지 않는다.
 
 **체크포인트**: 격리된 실제 PostgreSQL의 접속·종료를 확인했다. 업무 스키마는 아직 구현되지 않았다.
 
@@ -34,8 +34,8 @@
 **목표**: 수량·대상 속성 제약을 한 검증 대상씩 테스트 우선으로 구현한다.
 **독립 검증**: 실제 PostgreSQL의 후보 resources DDL에서 수량 10/-1·10/11·-1·1001 거부 및0/0·1000/1000·10/0·10/10 허용, 대상 필수 값·PK·저장 길이를 확인한다. 실제 업무 V1의 Flyway 적용 인수는 US2 완료 후이며 US1 MVP를 마이그레이션 완료로 표시하지 않는다.
 
-- [ ] T006 [US1] backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java에 rejectsInvalidAvailability와 acceptsAvailabilityBoundaries를 작성한다; 10/-1·10/11·-1·1001은23514·실패 행 없음, 0/0·1000/1000·10/0·10/10은 저장 값 일치를 기대한다. 실패 SQL 이후는 autocommit의 새 조회 또는 롤백 후 조회다.
-- [ ] T007 [US1] backend/src/test/resources/db/schema-candidate/schema.sql에 현재 수량 CHECK가 없는 resources 컬럼 구조만 마련하고 backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java에서 이번 실행 소유 DB에 JDBC로 직접 준비한다; id UUID·capacity/available integer·created_at timestamptz의 컬럼 형태는 갖추되 나중에 검증할 NOT NULL·PK는 아직 없고 name은 text로 둔다. 이 파일은 임시 후보이며 Flyway migration이 아니다.
+- [X] T006 [US1] backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java에 rejectsInvalidAvailability와 acceptsAvailabilityBoundaries를 작성한다; 10/-1·10/11·-1·1001은23514·실패 행 없음, 0/0·1000/1000·10/0·10/10은 저장 값 일치를 기대한다. 실패 SQL 이후는 autocommit의 새 조회 또는 롤백 후 조회다.
+- [X] T007 [US1] backend/src/test/resources/db/schema-candidate/schema.sql에 현재 수량 CHECK가 없는 resources 컬럼 구조만 마련하고 backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java에서 이번 실행 소유 DB에 JDBC로 직접 준비한다; id UUID·capacity/available integer·created_at timestamptz의 컬럼 형태는 갖추되 나중에 검증할 NOT NULL·PK는 아직 없고 name은 text로 둔다. 이 파일은 임시 후보이며 Flyway migration이 아니다.
 - [ ] T008 [US1] ./gradlew test integrationTest --tests '*SchemaIT.rejectsInvalidAvailability'를 실행하고 docs/test-evidence.md에 실제 비정상 수량 INSERT가 허용돼 기대 거부 assertion이 실패한 RED를 기록한다; 컴파일·42P01·컨테이너·0건 오류는 제약 RED로 사용하지 않는다.
 - [ ] T009 [US1] RED 이후 backend/src/test/resources/db/schema-candidate/schema.sql의 resources CREATE 정의에 `capacity BETWEEN 0 AND 1000`·`available BETWEEN 0 AND capacity` CHECK만 최소 추가한다; Model의 capacity `0~1000, 최초 수량 불변`·available `0~capacity`를 유지한다. 아직 검증하지 않은 예약·필수 값·PK·길이 제약이나 업무 V1은 작성하지 않는다.
 - [ ] T010 [US1] 새 소유 DB에 T009 후보를 직접 적용하고 T006의 동일 테스트·정상 경계를 실행해 docs/test-evidence.md에 후보 DDL GREEN을 기록한다; Flyway 업무 V1 GREEN으로 보고하지 않는다.

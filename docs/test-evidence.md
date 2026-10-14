@@ -569,3 +569,6 @@ executing-plans가 요구한 독립 리뷰를 읽기 전용 에이전트가 수�
 requirements16/16·database34/34 검토 완료로 진입 가능. 맞춤 표시는 구현 완료가 아니다. Gradle --version/Docker info exit0: Gradle9.7.1, Corretto25.0.4+7-LTS, MacOS27.0.1 aarch64, Docker29.8.2. `./gradlew test` exit0, Unit3·실패0·skip0. 최초 sandbox 캐시/socket 접근 거부는 환경 권한 문제이며 기능 RED가 아니다.
 
 Git root limited-booking, HEAD9eb50af, develop과 docs/define-db-schema의 시작점 동일. 기존 문서 변경을 보존해 로컬 커밋 후 기능 브랜치에서 이어간다. 별도 worktree를 생성하지 않는다. 외부 push/병합은 수행하지 않는다.
+
+T003: b3f78eb에 이전 문서 변경 보존 후 feature/db-schema 생성. 시작 develop9eb50af의 직계 문서 커밋이며 develop 병합은 수행하지 않았다.
+T004~005: PostgreSQL-only 접속/current_database·동적 포트·미기동 Redis 제외·종료 검증 및 기존 ToolchainSmokeIT/BackendApplicationIT, `./gradlew test integrationTest --tests '*DatabaseSupportIT' --tests '*ToolchainSmokeIT' --tests '*BackendApplicationIT'` exit0. Unit3/IT5·실패0·skip0. 환경 추가는 최소 실행으로 확인.
