@@ -611,3 +611,7 @@ NOT NULL은 id/name/capacity/available/created_at 각각 검증, PK23505/resourc
 모든 예약 제약·상태타입·인덱스 제약별 RED/GREEN 후 최종 후보 CREATE를 V1로 byte-identical 복사. SHA256 `d4fff8c4a6cc64c618c07f538af8f9dd4ef1ffd66c4754074eb0d02a7b270844`. 후보·선택 분기를 제거했다. 고의 실패는 원본 사본 마지막에 SELECT1/0을 추가한 JUnit @TempDir의 V1 파일이며 원본은 변경하지 않는다. SQLSTATE22012/DDL롤백/새DB복구 검증은 아래 실행 결과로 연결한다.
 
 실제 V1 `./gradlew test integrationTest --tests '*SchemaIT'` exit0: Unit3/IT23·실패0·skip0. SchemaIT23은 기존 제약22+실패복구1이다. Flyway 최초 적용1건·실패사본22012 뒤 업무 테이블/인덱스0·성공V1이력0·실패컨테이너 종료·다른DB 원본1건 적용 및 비정상 수량 거부를 확인했다. 생산 V1을 적용한 후 편집하지 않았다.
+
+### 읽기 Repository 인수
+
+`./gradlew test integrationTest --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT'`: 최소 empty 구현에서 실제 존재 행/SQL 오류 전달 assertion RED exit1, Unit3통과·IT4실패4/skip0. 구현 후 GREEN exit0, Unit3/IT4·실패0·skip0. 대상4필드, 예약7필드, 사용자·원문키 정확분리/대소문자/공백·현재 CANCELLED·UTC마이크로초·null 취소시각·없는행empty·SQL오류전달 및 조회 전후 전체 데이터 불변을 확인했다.

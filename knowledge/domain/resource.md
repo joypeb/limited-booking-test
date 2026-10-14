@@ -97,3 +97,5 @@ SchemaIT에서 수량·필수값·PK·문자 길이를 제약별 RED/GREEN으로
 ### 2단계 업무 스키마 인수
 
 [업무 V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)과 [SchemaIT](../../backend/src/test/java/com/limitedbooking/backend/common/SchemaIT.java)를 구현·실행 검증했다. 저장 제약·실패사본의 전체 DDL 롤백·새 DB 복구는 docs/test-evidence.md에 기록했다. 임시 후보는 제거했다. API·원자적 업무 쓰기·권한·경쟁·멱등 응답은 미구현이다.
+
+[읽기 Repository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)와 대응 RepositoryIT를 실제 PostgreSQL로 검증했다. 저장값 조회만 제공하며 HTTP·권한·Writer 책임은 후속이다.
