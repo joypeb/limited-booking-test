@@ -37,6 +37,11 @@
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
 - [2단계 요구사항 검토 목록](../specs/003-define-db-schema/checklists/database.md): 저장 제약·조회와 테스트 격리·재현성의 요구사항 품질을 검토한다. 사용자 요청으로34개 항목의 요구사항 품질을 평가했고 CHK022 실패 처리도 문서 보완 후 충족으로 판단했다. 체크는 구현 완료 표시가 아니다.
 - [2단계 작업 목록](../specs/003-define-db-schema/tasks.md): 네 사용자 이야기별 테스트·실패 탐지·구현·검증과 의존성 순서다. 작업별 실제 검증 후 체크하며 맞춤 요구사항 검토를 대신하지 않는다.
+- [3단계 명세](../specs/004-validate-domain-rules/spec.md): 이름·최초 수량·생성 키와 현재 상태별 취소 판단의 순수 규칙 요구사항이다. 명세 품질 검토 완료이며 구현·실행 검증 전이다. 실제 요청 경로 사용은 후속 4~6단계 연동 조건으로 유지한다.
+- [3단계 명세 품질 검토](../specs/004-validate-domain-rules/checklists/requirements.md): 명세 내용·완결성·준비 상태 16개 항목의 검토 결과이며 기능 테스트 통과 기록이 아니다.
+- [3단계 구현 계획](../specs/004-validate-domain-rules/plan.md): 순수 규칙의 파일·인터페이스·테스트 우선 순서와 후속 연동 조건을 설계했다. [조사](../specs/004-validate-domain-rules/research.md)·[값 모델](../specs/004-validate-domain-rules/data-model.md)·[호출 계약](../specs/004-validate-domain-rules/contracts/rules-contract.md)·[검증 안내](../specs/004-validate-domain-rules/quickstart.md)를 포함하며 구현·실행 검증 전이다.
+- [3단계 맞춤 요구사항 검토 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md): 규칙·경계값과 인수·증거 기준의 요구사항 품질34개 항목을 생성했다. 구현 전 검토자용·표준 깊이이며 사용자 요청으로34개 항목을 근거 대조해 전부 충족 판정했다. 구현·실행 완료 표시는 아니다. 내장 명세 품질16개 체크와 별개다.
+- [3단계 작업 목록](../specs/004-validate-domain-rules/tasks.md): 준비·공통 선행·세 사용자 이야기·전체 인수로 나눈33개 작업이다. US1 10개·US2 6개·US3 6개·공통11개이며 모두 미실행이다. 테스트 파일 작성3개만 병행 후보이고 Gradle 실행·공통 기록·커밋은 순차 처리한다.
 - 첫 버전의 업무 도메인은 예약 대상(`resource`)과 예약(`reservation`)이다. `security`·`ratelimit`은 이를 지원하는 기능이며, 필요할 때 같은 형식으로 책임과 계약을 문서화한다. `common`을 독립 업무 도메인으로 가정하지 않는다.
 - 파일 이름은 `<domain-name>.md`를 사용한다. 근거·경계·기대 결과를 먼저 적고, 코드·SQL·테스트·명령은 실제 존재 여부를 확인해 연결한다.
 - 템플릿의 모든 절을 유지한다. 해당 없는 항목은 이유를 적고, 미확정 사항은 질문과 영향 범위를 적는다. 다른 도메인과 공유하는 규칙은 관련 문서로 연결한다.

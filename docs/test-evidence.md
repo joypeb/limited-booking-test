@@ -696,3 +696,53 @@ develop 병합 게이트: **PASS**. `9eb50af...25b8541`의 저장 기반 변경�
 남은 실험 한계는 컨테이너 시작/종료 장애, 실제 연결 단절, 비UTC 세션·나노초 입력의 추가 재현입니다. 코드에서 확정 결함을 찾은 항목은 아닙니다. HTTP·권한·Writer 경쟁·Redis·개발 DB 전환은 합의된 후속 범위로 평가에서 제외했습니다.
 
 PR 본문에 이 판정·검사 범위·실험 한계를 연결한다. 이 기록 커밋은 문서만 변경하며 검토한 코드/SQL/테스트와 기존 실행 증거는 같다.
+
+## 3단계 순수 규칙 명세 작성·품질 검토 (2026-10-15)
+
+사용자가 선택한 계획서 7절 3단계를 `speckit-specify`로 명세화했다. 저장소 최상위와 HEAD 존재, 작업 트리 변경0을 확인한 뒤 로컬 develop90a4085에서 `docs/validate-domain-rules`를 생성했다. 최초 생성은 샌드박스의 Git 참조 쓰기 제한으로 실패했고, 같은 `git switch -c docs/validate-domain-rules`를 승인된 권한으로 실행해 exit0을 확인했다. 커밋·push·PR·병합·태그는 수행하지 않았다.
+
+`bash .specify/scripts/bash/resolve-template.sh spec-template --json` exit0으로 활성 템플릿을 해석하고 순차 번호004에 해당하는 [명세](../specs/004-validate-domain-rules/spec.md)를 작성했다. `.specify/feature.json`의 활성 경로는 `specs/004-validate-domain-rules`다. 사전·사후 모두 `.specify/extensions.yml`이 없어 실행할 확장 훅이 없었다.
+
+계획서 2~5절·3단계와 knowledge 규칙 전체·resource/reservation 지식을 기존 V1·읽기 Repository·ReservationStatus·도구 Unit과 대조했다. 이름의 공백·코드 포인트, 수량0 포함 경계, 키 원문 보존·끝 줄바꿈 거부, 두 상태의 취소 판단을 정의했다. 실제 요청 경로 사용은 4~6단계 연동 조건으로 남겼으며 순수 규칙 검증만으로 실제 취소·수량 복구·경쟁 보장을 주장하지 않는다.
+
+내용 검토는 1회, [명세 품질 항목](../specs/004-validate-domain-rules/checklists/requirements.md)16개 충족·미해결 질문0개다. `python3` 문서 검사 exit0: 사용자 이야기3·FR8·SC5·완료 체크16, 명세/검토목록/knowledge 안내의 로컬 링크32개 실재, 활성 경로 일치, 미치환 자리표시자·줄 끝 공백0을 확인했다. `git diff --check` exit0이다. 문서 검사 결과이며 기능 테스트는 실행하지 않았다. 개발자 설명 인수도 미실시다. 다음 작업은 `$speckit-plan`으로 제공 인터페이스·경계 테스트·실패 확인 절차와 후속 연동 추적을 구체화하는 것이다.
+
+## 3단계 명세 모호성 검토 (2026-10-15)
+
+`speckit-clarify`로 활성 [004 명세](../specs/004-validate-domain-rules/spec.md)를 검토했다. `.specify/scripts/bash/check-prerequisites.sh --json --paths-only`를1회 실행해 exit0·FEATURE_DIR/FEATURE_SPEC를 확인했다. 출력의 BRANCH는 활성 기능 식별값004-validate-domain-rules이며 실제 Git 브랜치는 docs/validate-domain-rules다. 사전·사후 `.specify/extensions.yml` 부재로 실행할 확장 훅은 없다.
+
+계획서 2~5절·7절 3단계, 지식 규칙 전체·resource/reservation 문서와 기존 상태 enum·V1·OpenAPI를 대조했다. 기능 범위·데이터·사용 흐름·비기능 품질·외부 의존성·경계/실패·제약/절충·용어·완료 신호·자리표시자의10개 범주에서 이번 순수 규칙 범위의 중대한 모호성은 발견하지 못했다. 외부 운영·인증·경쟁은 후속 범위로 명시돼 있으며 실제 요청 경로 사용 조건도 유지된다. 예외 표현·프로브 정리·실행 절차는 기존 명세대로 구현 계획에서 정할 사항이므로 사용자 정책 질문으로 올리지 않았다.
+
+질문0·답변0, 명세와 검토목록은 변경하지 않았다. 요구사항·인수 사례·성공 기준을 다시 대조한 품질 재검토는16/16→16/16, 신규 충족0·회귀0·미충족0이다. Python 문서 검사 exit0으로 두 문서의 로컬 링크4개·활성 경로 일치·미치환 표시 없음·사후 훅 부재를 확인했다. 기능 테스트·개발자 설명 인수는 미실시다. 다음 작업은 `$speckit-plan`이다.
+
+## 3단계 구현 계획·설계 문서 작성 (2026-10-15)
+
+사용자 `$speckit-plan` 지시로 `docs/validate-domain-rules`에서 [004 계획](../specs/004-validate-domain-rules/plan.md)·[조사](../specs/004-validate-domain-rules/research.md)·[값 모델](../specs/004-validate-domain-rules/data-model.md)·[호출 계약](../specs/004-validate-domain-rules/contracts/rules-contract.md)·[검증 안내](../specs/004-validate-domain-rules/quickstart.md)를 작성했다. 기존 명세/clarify 변경을 보존했으며 tasks.md·생산 Java·테스트·빌드·SQL·OpenAPI는 변경하지 않았다. 브랜치 생성·커밋·병합·외부 게시를 이번에 수행하지 않았다.
+
+`bash .specify/scripts/bash/setup-plan.sh --json` exit0으로 활성 경로와 템플릿 복사를 확인했다. BRANCH 출력004-validate-domain-rules는 기능 식별값이고 실제 Git 브랜치는 docs/validate-domain-rules다. 사전·사후 `.specify/extensions.yml` 부재로 실행할 훅은 없다. `java --version` exit0: Corretto25.0.4+7-LTS다. Gradle9.7.1·Boot4.1.1은 기존 파일/기록 대조이며 이번에 Gradle 실행·의존성 해석을 다시 하지 않았다.
+
+읽기 전용 조사 에이전트2개가 Java25 공식 문서와 Gradle/프로브 참조를 조사했다. strip·코드 포인트·키 전체 일치·record 검증 생성자·기존 상태 재사용을 선택하고 내부 예외 계약·후속 HTTP 변환 경계를 문서화했다. Unit 프로브는 PIT/Property 의존으로 보존하며 업무 심화 검증의 완료로 보지 않는다. 컴파일 가능한 골격에서 실제 assertion RED→GREEN·최종 전체Unit·별도 설명 확인을 계획했다. 실제 요청 경로 사용은4~6단계 미완료 조건으로 유지한다.
+
+Python 문서 검사 exit0: 설계문서5개(계획149행·조사45행·모델33행·안내57행·계약82행), 로컬 링크25개 존재·미치환 자리표시자0·줄끝공백0·활성경로 일치·tasks 미생성·사후훅 없음·기존 품질 체크16/16 유지를 확인했다. `git diff --check` exit0이며 헌법의 설계 전/후 게이트 위반0·미해결 설계 질문0이다. FR-001~008·SC-001~005 담당 검증과 인터페이스·행렬을 자체 대조했다. 이번 결과는 문서 설계 검토이며 신규 규칙 테스트 수0(미구현·미실행), 개발자 설명/HTTP/DB/Redis/경쟁/심화 검증은 미실시다. 다음 작업은 `$speckit-tasks`로 상세 작업 목록을 생성하는 것이다.
+
+## 3단계 맞춤 체크리스트·작업 목록 생성 (2026-10-15)
+
+사용자가 이어서 요청한 `$speckit-checklist`와 `$speckit-tasks`를 모두 적용했다. 실제 Git 브랜치는 docs/validate-domain-rules이며 기존 명세/계획 변경을 보존했다. `check-prerequisites.sh --json --template checklist-template`와 `setup-tasks.sh --json`은 각각 exit0, FEATURE_DIR는 specs/004-validate-domain-rules이고 활성 템플릿과 research/data-model/contracts/quickstart 목록을 확인했다. 사전·사후 `.specify/extensions.yml`이 없어 두 명령 모두 실행할 훅이 없었다.
+
+[맞춤 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md)은 새 파일로 CHK001~CHK034 총34개를 생성했다. 범위 선택 질문1개에 답변은 아직 없어 권장안인 규칙·경계값+인수·증거 기준, 구현 전 검토자·표준 깊이를 적용했다. 모든 항목은 요구사항 문서의 완결성·명확성·일관성·측정 가능성·범위를 묻고 근거 참조34/34를 포함한다. 전 항목 미체크·미판정이며 생성 과정에서 요구사항 충족을 평가하지 않았다. 기존 requirements.md의16개 체크는 변경하지 않았고 구현 통과를 뜻하지 않는다.
+
+[작업 목록](../specs/004-validate-domain-rules/tasks.md)은 T001~T033 총33개를 생성했다. US1 10개·US2 6개·US3 6개·공통11개이고 모두 미실행이다. 각 이야기의 독립 선택 Unit·컴파일 골격 이후 실제 assertion RED→최소 구현→GREEN·목적 커밋을 배치했다. T005/T015/T021의 서로 다른 테스트 파일 작성만 [P]이며 같은 build 디렉터리의 Gradle 실행·공통 증거/문서·Git 작업은 직렬화한다. US1을 MVP로 제안하고 전체 Unit·설명 인수·후속4~6단계 실제 사용 미완료 조건도 유지한다. 신규 Controller/Writer·스키마·PIT/Property 교체·외부 작업은 추가하지 않았다.
+
+Python 형식 검사 exit0으로33개 연속 작업 ID·체크/이야기 라벨/파일 경로·단계별 개수·병행 표식3개,34개 연속 CHK ID·전 항목 미체크·질문 형식·근거 참조100%, 두 신규 문서 로컬 링크17개·활성경로 일치·기존 품질16개 유지·후크 부재를 확인했다. 계획의 문서 트리와 다음 작업, knowledge/README.md 목록도 갱신했다. 이는 생성 산출물의 형식·연결 검사이며 맞춤 요구사항 품질 판정·코드 리뷰·기능 테스트·개발자 설명 인수는 수행하지 않았다. 다음은 `$speckit-analyze`와 맞춤 목록의 검토자 판정이다. 이번에 커밋·브랜치 생성·병합·외부 게시를 수행하지 않았다.
+
+## 3단계 작업 목록 재생성 요청 반영 (2026-10-15)
+
+사용자가 `$speckit-tasks`를 다시 요청해 기존 [작업 목록](../specs/004-validate-domain-rules/tasks.md)을 현재 명세·계획·모델·계약·조사·검증 안내와 재대조했다. `setup-tasks.sh --json` exit0으로 같은 FEATURE_DIR·활성 작업 템플릿·설계 문서 목록을 확인했다. 사전·사후 `.specify/extensions.yml`이 없어 실행할 훅이 없었다. 현재 docs/validate-domain-rules와 기존 미커밋 변경을 보존했다.
+
+범위·작업33개·T001~T033 ID·전 항목 미체크·이야기 라벨·병행 표식은 유지했다. T001/T008/T014/T020/T022/T024/T026/T028/T030/T031의 축약 문서/Java 경로를 저장소 루트 기준 전체 경로로 구체화했다. 계획 첫 안내도 후속 생성 예정 표현 대신 이미 존재하는 tasks.md와 미실행 상태를 가리키도록 갱신했다. US1 10개·US2 6개·US3 6개·공통11개, 독립 검증과 US1 MVP·후속 연동 경계는 유지한다.
+
+Python 검사 exit0: 연속ID·체크·라벨·파일 경로·분포·병행 후보T005/T015/T021 보존, 두 문서 로컬 링크20개 정상, 활성 경로 일치·사후 훅 없음. 맞춤/내장 체크리스트는 수정 전후 SHA256 동일이며 판정하지 않았다. `git diff --check` exit0이다. 이번 변경은 작업 지시의 경로 명확화이며 신규 기능 테스트·실제 작업 수행·Git 커밋/병합/게시를 하지 않았다. 다음은 `$speckit-analyze`로 산출물 일관성을 검토하는 것이다.
+
+## 3단계 맞춤 체크리스트 검토 인수 (2026-10-15)
+
+사용자가 미판정 우회 진행에는 아니요라고 답하고 “체크리스트 전체 체크해”라고 별도로 요청했다. 명세·계획·모델·계약·작업 목록의 요구사항 근거를 CHK001~CHK034 각각 대조해34/34 충족으로 판정했다. 항목별 근거는 [맞춤 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md)의 판정 표에 기록했다. 내장 명세 품질16/16도 유지한다. 이 체크는 요구사항 품질이며 기능 구현/테스트/설명 인수의 완료가 아니다. speckit-implement의 체크리스트 게이트는50/50 체크·미체크0으로 통과하며 원래 구현 요청을 계속한다.
