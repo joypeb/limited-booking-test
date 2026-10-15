@@ -70,3 +70,7 @@ Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대
 ## 3단계 IdempotencyKey 구현 (2026-10-15)
 
 record compact constructor에서 null과 고정 Pattern의 matches 전체 일치를 검사해 parse/new 두 경로가 같은 불변식을 보장한다. 원문 value·equals/hashCode를 유지하고 키를 오류 메시지에 노출하지 않는다. 내부 IAE를 후속 입력 경계에서만400으로 번역하며 이번에는 HTTP 예외 처리를 추가하지 않았다.
+
+## 3단계 CancellationDecision 구현 (2026-10-15)
+
+기존 ReservationStatus를 default 없는 switch로 두 판단에 대응하며 Objects.requireNonNull로 내부 상태 누락을 NPE로 드러낸다. 판단을 DB 상태나 응답 enum에 섞지 않고 상태·수량·시간을 만들거나 갱신하지 않는다. 실제 취소 원자성은6단계 Writer의 책임이다.

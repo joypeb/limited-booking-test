@@ -76,7 +76,8 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | --- | --- | --- |
 | 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 해당 기능 없음 |
 | 읽기 DTO·Repository | [ReservationRepository](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)·StoredReservation·ReservationStatus | 구현·실행 검증됨 |
-| 입력 규칙·Controller·Service·Writer·필터 | 해당 기능 패키지 예정 | 미구현 |
+| 순수 키·취소 판단 | IdempotencyKey·CancellationDecision 및 대응 Unit | 구현·Unit 검증됨 |
+| Controller·Service·Writer·필터 | 해당 기능 패키지 예정 | 미구현 |
 | 업무 V1·저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ReservationRepositoryIT | 구현·실행 검증됨 |
 | 업무 쓰기 SQL·HTTP/경쟁 테스트 | 후속 단계 예정 | 미구현 |
 | 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
@@ -108,6 +109,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 
 ### 3단계 순수 규칙 설계 (2026-10-15)
 
-[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 검증 생성자를 가진 IdempotencyKey record와 기존 ReservationStatus를 사용하는 CancellationDecision을 설계했다. 무효 키는 IllegalArgumentException, 내부 상태 null은 NullPointerException이며 HTTP 변환은 후속 경계의 책임이다.5단계 생성 키 사용·6단계 이미 취소됨 분기 사용은 별도 인수한다. IdempotencyKey와 대응 Unit56건은 구현·실행 검증됨이다. CancellationDecision·실제 취소/경쟁은 아직 미검증이다.
+[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 검증 생성자를 가진 IdempotencyKey record와 기존 ReservationStatus를 사용하는 CancellationDecision을 설계했다. 무효 키는 IllegalArgumentException, 내부 상태 null은 NullPointerException이며 HTTP 변환은 후속 경계의 책임이다.5단계 생성 키 사용·6단계 이미 취소됨 분기 사용은 별도 인수한다. IdempotencyKey와 대응 Unit56건은 구현·실행 검증됨이다. CancellationDecision·대응 Unit5건도 구현·실행 검증됨이다. 실제 취소/경쟁은 미구현·미검증이다.
 
 생성 키의 순수 검증: [IdempotencyKey](../../backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)·[IdempotencyKeyTest](../../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyKeyTest.java). compact constructor가 parse와 new를 함께 보호하며 원문 equals/hashCode를 제공한다. Repository·StoredReservation의 String은 유지했다. 사용자·키 유일성/대상 충돌/성공 응답 재현·TTL/HTTP 변환과 실제 요청 경로 사용은5단계에서 검증한다.
+
+취소 판단의 순수 검증: [CancellationDecision](../../backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java)·[CancellationDecisionTest](../../backend/src/test/java/com/limitedbooking/backend/reservation/CancellationDecisionTest.java). CONFIRMED→CANCEL_NOW, CANCELLED→ALREADY_CANCELLED, 내부 null→NPE이며 필드·I/O·Clock·저장 의존성 없이 반복 판단한다. 실제 상태 갱신·수량 복구·동일 취소 시각과6단계 Writer 사용은 미완료다.

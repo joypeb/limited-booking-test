@@ -776,3 +776,9 @@ T005~T013: 수량 no-op에서 -1·1001의 IAE 기대2건 실패→5건 통과. �
 - T017-key-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.IdempotencyKeyTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/0/0/0.
 
 T015~T019: 무검증 record에서 parse24건·직접 생성24건의 무효 키 거부가 모두 실패했다. 정상7건·값 동등성1건은 기존 record 동작을 보장하며 억지 RED를 만들지 않았다. compact constructor 최소 구현 후56/0/0/0을 확인했다. K-KEY 전체의 null/빈/65·허용 문자별1/64·공백의 앞/뒤/내부·끝LF/CRLF·비ASCII/구분문자를 양 생성 경로로 대조했다. 같은 원문 equals/hashCode·대소문자 비동등을 확인했으며 다른 값의 hashCode 차이나 참조 동일성을 요구하지 않는다. 이 실행을 최종 US2 인수로 사용하며 HTTP·DB·경쟁·PIT는 미실시다.
+
+- T022-decision-RED: `./gradlew test --tests com.limitedbooking.backend.reservation.CancellationDecisionTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/5/0/0.
+
+- T023-decision-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.CancellationDecisionTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/0/0/0.
+
+T021~T025: null 반환 골격에서 두 상태/반복4건이 값 불일치, 내부 null1건이 예외 미발생으로 실패했다. 두 분기와 명시 null 검사 구현 후5/0/0/0이다. C-DECISION 전체와 대조했고 가변 필드·I/O·Clock·저장 의존성·예약 mock이 없음을 코드 검토했다. 반복 호출은 같은 기대 enum과 대조한다. 이 실행을 US3 최종 인수로 사용하며 실제 상태/수량/시각 갱신·취소 원자성은 검증하지 않았다.

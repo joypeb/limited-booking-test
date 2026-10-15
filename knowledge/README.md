@@ -59,3 +59,5 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 3단계 US1: [ResourceRules](../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java)를 구현했다. 수량·이름 Unit52건을 검증했으며 HTTP 연동·사용자 설명은 별도다.
 
 3단계 US2: [IdempotencyKey](../backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)·[IdempotencyKeyTest](../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyKeyTest.java)의 Unit56건을 검증했다. 멱등 요청 처리·HTTP 연동은 후속이다.
+
+3단계 US3: [CancellationDecision](../backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java)·[CancellationDecisionTest](../backend/src/test/java/com/limitedbooking/backend/reservation/CancellationDecisionTest.java)의 Unit5건을 검증했다. 실제 상태·수량·취소 시각과 Writer 연동은 후속이다.
