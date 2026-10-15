@@ -6,7 +6,7 @@
 - 작성: 2026-10-13, 재확인: 2026-10-15.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2·4·5절, [도메인 규칙](../rules/domain-and-transactions.md), [API 규칙](../rules/api-and-security.md), [0단계 명세](../../specs/001-define-api-contract/spec.md).
 - 설계 상태: 사용자 A 답변으로 코드 포인트 길이, 2026-10-13 추가 답변으로 Java strip 기준 확정.
-- 구현 상태: V1·ResourceView·ResourceRepository 및 저장 IT 구현·실행 검증됨. 입력 규칙·Controller·Service·HTTP는 미구현.
+- 구현 상태: V1·ResourceView·ResourceRepository 및 저장 IT 구현·실행 검증됨. ResourceRules 순수 입력 규칙은 구현·Unit 검증됨. Controller·Service·HTTP는 미구현.
 
 ## 2. 목적·책임·경계
 
@@ -53,10 +53,10 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 | 규칙 | 사례 | 기대 | 종류·상태 |
 | --- | --- | --- | --- |
-| resource-003 | 😀 100개·101개, 앞뒤 공백+100개 | 201·400·201, 저장 이름은 공백 제거 | 문서 기대값, Unit·HTTP 후속 미실행 |
-| resource-001 | capacity 0·1000·-1·1001 | 경계 허용·범위 밖 400 | 후속 미실행 |
+| resource-003 | 😀 100개·101개, 앞뒤 공백+100개 | 201·400·201, 저장 이름은 공백 제거 | Unit 검증됨, HTTP 후속 미실행 |
+| resource-001 | capacity 0·1000·-1·1001 | 경계 허용·범위 밖 400 | Unit 검증됨, HTTP 미실행 |
 | resource-002 | 예약·재요청·취소·중복 취소 | 합계 capacity 유지 | 후속 DB·경쟁 미실행 |
-| resource-003 | 탭·줄바꿈 제거, NBSP 유지·NBSP만1개 | 이름 정규화·길이 정책대로 허용/거부 | [W01~W07 문서 사례](../../docs/test-evidence.md), 실행 미검증 |
+| resource-003 | 탭·줄바꿈 제거, NBSP 유지·NBSP만1개 | 이름 정규화·길이 정책대로 허용/거부 | [W01~W07 문서 사례](../../docs/test-evidence.md), Unit 검증됨·HTTP 미검증 |
 | 권한 | USER 생성·미인증 조회 | 403·401 | 후속 HTTP 미실행 |
 
 [실행 증거](../../docs/test-evidence.md)에 문서 검토와 실제 저장 제약·조회·검사 인수를 구분해 기록한다.
@@ -67,7 +67,8 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | --- | --- | --- |
 | 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 대상 기능 없음 |
 | 읽기 DTO·Repository | [ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)·ResourceView | 구현·실행 검증됨 |
-| 입력 규칙·Controller·Service | resource 패키지 예정 | 미구현 |
+| 입력 규칙 | [ResourceRules](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java) | 구현·Unit52건 검증됨 |
+| Controller·Service | resource 패키지 예정 | 미구현 |
 | 업무 V1·대상 저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ResourceRepositoryIT | 구현·실행 검증됨 |
 | 고정 OpenAPI 초안 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨, 자동 검증 미실행 |
 
@@ -77,11 +78,11 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 이름 길이 실행 검증 미실행 | 코드 포인트와 실제 거부 결과 | 규칙·HTTP 구현 단계에서 경계 시험 |
+| 이름 길이 HTTP 미검증 | Unit52건은 검증됨 | 4단계 실제 요청 경계 시험 |
 | API·업무 쓰기 미구현 | HTTP·원자성 준수 미확인 | 3단계 입력 규칙 이후 API·Writer 개발 |
-| strip 실제 실행 미검증 | 탭·줄바꿈·NBSP·코드 포인트 경계의 실제 결과 | 후속 순수 규칙·HTTP 테스트 |
+| strip HTTP 미검증 | 탭·줄바꿈·NBSP·코드 포인트는 Unit 검증됨 | 4단계 실제 HTTP 테스트 |
 
-이름 길이 코드 포인트·공백 strip 정책은 사용자 답변으로 확정됐다. 업무 규칙은 유지하며 저장 기반의 실행 완료와 후속 입력·HTTP 미검증을 구분한다.
+이름 길이 코드 포인트·공백 strip 정책은 사용자 답변으로 확정됐다. 업무 규칙은 유지하며 저장 기반·순수 입력 규칙의 실행 완료와 HTTP 미검증을 구분한다.
 
 ### 2026-10-14 저장 길이 보장 범위 명확화
 
@@ -93,6 +94,10 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 ### 현재 저장 기반 구현·검증 상태 (2026-10-15)
 
-V1·읽기 Repository와 대응 IT는 구현·실행 검증됨이다. 직접 저장 제약의 보장 범위는 스키마에 한정하며 입력 strip/키 문자 규칙·HTTP·권한·Writer·경쟁·응답 재현은 설계됨/미구현이다. [TestData](../../backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 실행 소유 DataSource의 독립 커밋과 한 트랜잭션 삭제를 사용한다. [DatabaseAssertions](../../backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 단일SELECT에서 capacity/available/확정 수를 검사한다. 보존식 불일치를 스키마가 막는다는 보장은 없으며 실제 업무 쓰기의 보장은 후속이다.
+V1·읽기 Repository와 대응 IT는 구현·실행 검증됨이다. 직접 저장 제약의 보장 범위는 스키마에 한정하며 입력 strip 순수 규칙은3단계에서 구현·Unit 검증했다. HTTP·권한·Writer·경쟁·응답 재현은 미구현이다. [TestData](../../backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 실행 소유 DataSource의 독립 커밋과 한 트랜잭션 삭제를 사용한다. [DatabaseAssertions](../../backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 단일SELECT에서 capacity/available/확정 수를 검사한다. 보존식 불일치를 스키마가 막는다는 보장은 없으며 실제 업무 쓰기의 보장은 후속이다.
 
 fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사례를 검증했다. 실패사본 V1 전체 DDL 롤백과 새DB복구, 초기화 중간 실패의 전체 행/값·구조/이력 보존 및 같은DB 명시적 재요청은 [증거](../../docs/test-evidence.md)를 따른다. 연결 단절·프로세스 중단·부하는 미검증이다.
+
+### 3단계 순수 규칙 설계 (2026-10-15)
+
+[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 ResourceRules의 두 public static 메서드·수량/이름 Unit 경계를 설계했다. 무효 입력은 Java 내부에서 IllegalArgumentException으로 거부하며 정확한 메시지는 고정하지 않는다. 순수 Unit과4단계 실제 요청 경로 사용을 별도 인수한다. ResourceRules·대응 Unit52건의 구현·실행 검증을 완료했다. 개발자 설명 인수는 2026-10-16 설명 후 사용자 완료 지시로 처리했다(독립 재설명 시험 미실시). 4단계 HTTP 연동은 미완료다.

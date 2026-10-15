@@ -696,3 +696,151 @@ develop 병합 게이트: **PASS**. `9eb50af...25b8541`의 저장 기반 변경�
 남은 실험 한계는 컨테이너 시작/종료 장애, 실제 연결 단절, 비UTC 세션·나노초 입력의 추가 재현입니다. 코드에서 확정 결함을 찾은 항목은 아닙니다. HTTP·권한·Writer 경쟁·Redis·개발 DB 전환은 합의된 후속 범위로 평가에서 제외했습니다.
 
 PR 본문에 이 판정·검사 범위·실험 한계를 연결한다. 이 기록 커밋은 문서만 변경하며 검토한 코드/SQL/테스트와 기존 실행 증거는 같다.
+
+## 3단계 순수 규칙 명세 작성·품질 검토 (2026-10-15)
+
+사용자가 선택한 계획서 7절 3단계를 `speckit-specify`로 명세화했다. 저장소 최상위와 HEAD 존재, 작업 트리 변경0을 확인한 뒤 로컬 develop90a4085에서 `docs/validate-domain-rules`를 생성했다. 최초 생성은 샌드박스의 Git 참조 쓰기 제한으로 실패했고, 같은 `git switch -c docs/validate-domain-rules`를 승인된 권한으로 실행해 exit0을 확인했다. 커밋·push·PR·병합·태그는 수행하지 않았다.
+
+`bash .specify/scripts/bash/resolve-template.sh spec-template --json` exit0으로 활성 템플릿을 해석하고 순차 번호004에 해당하는 [명세](../specs/004-validate-domain-rules/spec.md)를 작성했다. `.specify/feature.json`의 활성 경로는 `specs/004-validate-domain-rules`다. 사전·사후 모두 `.specify/extensions.yml`이 없어 실행할 확장 훅이 없었다.
+
+계획서 2~5절·3단계와 knowledge 규칙 전체·resource/reservation 지식을 기존 V1·읽기 Repository·ReservationStatus·도구 Unit과 대조했다. 이름의 공백·코드 포인트, 수량0 포함 경계, 키 원문 보존·끝 줄바꿈 거부, 두 상태의 취소 판단을 정의했다. 실제 요청 경로 사용은 4~6단계 연동 조건으로 남겼으며 순수 규칙 검증만으로 실제 취소·수량 복구·경쟁 보장을 주장하지 않는다.
+
+내용 검토는 1회, [명세 품질 항목](../specs/004-validate-domain-rules/checklists/requirements.md)16개 충족·미해결 질문0개다. `python3` 문서 검사 exit0: 사용자 이야기3·FR8·SC5·완료 체크16, 명세/검토목록/knowledge 안내의 로컬 링크32개 실재, 활성 경로 일치, 미치환 자리표시자·줄 끝 공백0을 확인했다. `git diff --check` exit0이다. 문서 검사 결과이며 기능 테스트는 실행하지 않았다. 개발자 설명 인수도 미실시다. 다음 작업은 `$speckit-plan`으로 제공 인터페이스·경계 테스트·실패 확인 절차와 후속 연동 추적을 구체화하는 것이다.
+
+## 3단계 명세 모호성 검토 (2026-10-15)
+
+`speckit-clarify`로 활성 [004 명세](../specs/004-validate-domain-rules/spec.md)를 검토했다. `.specify/scripts/bash/check-prerequisites.sh --json --paths-only`를1회 실행해 exit0·FEATURE_DIR/FEATURE_SPEC를 확인했다. 출력의 BRANCH는 활성 기능 식별값004-validate-domain-rules이며 실제 Git 브랜치는 docs/validate-domain-rules다. 사전·사후 `.specify/extensions.yml` 부재로 실행할 확장 훅은 없다.
+
+계획서 2~5절·7절 3단계, 지식 규칙 전체·resource/reservation 문서와 기존 상태 enum·V1·OpenAPI를 대조했다. 기능 범위·데이터·사용 흐름·비기능 품질·외부 의존성·경계/실패·제약/절충·용어·완료 신호·자리표시자의10개 범주에서 이번 순수 규칙 범위의 중대한 모호성은 발견하지 못했다. 외부 운영·인증·경쟁은 후속 범위로 명시돼 있으며 실제 요청 경로 사용 조건도 유지된다. 예외 표현·프로브 정리·실행 절차는 기존 명세대로 구현 계획에서 정할 사항이므로 사용자 정책 질문으로 올리지 않았다.
+
+질문0·답변0, 명세와 검토목록은 변경하지 않았다. 요구사항·인수 사례·성공 기준을 다시 대조한 품질 재검토는16/16→16/16, 신규 충족0·회귀0·미충족0이다. Python 문서 검사 exit0으로 두 문서의 로컬 링크4개·활성 경로 일치·미치환 표시 없음·사후 훅 부재를 확인했다. 기능 테스트·개발자 설명 인수는 미실시다. 다음 작업은 `$speckit-plan`이다.
+
+## 3단계 구현 계획·설계 문서 작성 (2026-10-15)
+
+사용자 `$speckit-plan` 지시로 `docs/validate-domain-rules`에서 [004 계획](../specs/004-validate-domain-rules/plan.md)·[조사](../specs/004-validate-domain-rules/research.md)·[값 모델](../specs/004-validate-domain-rules/data-model.md)·[호출 계약](../specs/004-validate-domain-rules/contracts/rules-contract.md)·[검증 안내](../specs/004-validate-domain-rules/quickstart.md)를 작성했다. 기존 명세/clarify 변경을 보존했으며 tasks.md·생산 Java·테스트·빌드·SQL·OpenAPI는 변경하지 않았다. 브랜치 생성·커밋·병합·외부 게시를 이번에 수행하지 않았다.
+
+`bash .specify/scripts/bash/setup-plan.sh --json` exit0으로 활성 경로와 템플릿 복사를 확인했다. BRANCH 출력004-validate-domain-rules는 기능 식별값이고 실제 Git 브랜치는 docs/validate-domain-rules다. 사전·사후 `.specify/extensions.yml` 부재로 실행할 훅은 없다. `java --version` exit0: Corretto25.0.4+7-LTS다. Gradle9.7.1·Boot4.1.1은 기존 파일/기록 대조이며 이번에 Gradle 실행·의존성 해석을 다시 하지 않았다.
+
+읽기 전용 조사 에이전트2개가 Java25 공식 문서와 Gradle/프로브 참조를 조사했다. strip·코드 포인트·키 전체 일치·record 검증 생성자·기존 상태 재사용을 선택하고 내부 예외 계약·후속 HTTP 변환 경계를 문서화했다. Unit 프로브는 PIT/Property 의존으로 보존하며 업무 심화 검증의 완료로 보지 않는다. 컴파일 가능한 골격에서 실제 assertion RED→GREEN·최종 전체Unit·별도 설명 확인을 계획했다. 실제 요청 경로 사용은4~6단계 미완료 조건으로 유지한다.
+
+Python 문서 검사 exit0: 설계문서5개(계획149행·조사45행·모델33행·안내57행·계약82행), 로컬 링크25개 존재·미치환 자리표시자0·줄끝공백0·활성경로 일치·tasks 미생성·사후훅 없음·기존 품질 체크16/16 유지를 확인했다. `git diff --check` exit0이며 헌법의 설계 전/후 게이트 위반0·미해결 설계 질문0이다. FR-001~008·SC-001~005 담당 검증과 인터페이스·행렬을 자체 대조했다. 이번 결과는 문서 설계 검토이며 신규 규칙 테스트 수0(미구현·미실행), 개발자 설명/HTTP/DB/Redis/경쟁/심화 검증은 미실시다. 다음 작업은 `$speckit-tasks`로 상세 작업 목록을 생성하는 것이다.
+
+## 3단계 맞춤 체크리스트·작업 목록 생성 (2026-10-15)
+
+사용자가 이어서 요청한 `$speckit-checklist`와 `$speckit-tasks`를 모두 적용했다. 실제 Git 브랜치는 docs/validate-domain-rules이며 기존 명세/계획 변경을 보존했다. `check-prerequisites.sh --json --template checklist-template`와 `setup-tasks.sh --json`은 각각 exit0, FEATURE_DIR는 specs/004-validate-domain-rules이고 활성 템플릿과 research/data-model/contracts/quickstart 목록을 확인했다. 사전·사후 `.specify/extensions.yml`이 없어 두 명령 모두 실행할 훅이 없었다.
+
+[맞춤 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md)은 새 파일로 CHK001~CHK034 총34개를 생성했다. 범위 선택 질문1개에 답변은 아직 없어 권장안인 규칙·경계값+인수·증거 기준, 구현 전 검토자·표준 깊이를 적용했다. 모든 항목은 요구사항 문서의 완결성·명확성·일관성·측정 가능성·범위를 묻고 근거 참조34/34를 포함한다. 전 항목 미체크·미판정이며 생성 과정에서 요구사항 충족을 평가하지 않았다. 기존 requirements.md의16개 체크는 변경하지 않았고 구현 통과를 뜻하지 않는다.
+
+[작업 목록](../specs/004-validate-domain-rules/tasks.md)은 T001~T033 총33개를 생성했다. US1 10개·US2 6개·US3 6개·공통11개이고 모두 미실행이다. 각 이야기의 독립 선택 Unit·컴파일 골격 이후 실제 assertion RED→최소 구현→GREEN·목적 커밋을 배치했다. T005/T015/T021의 서로 다른 테스트 파일 작성만 [P]이며 같은 build 디렉터리의 Gradle 실행·공통 증거/문서·Git 작업은 직렬화한다. US1을 MVP로 제안하고 전체 Unit·설명 인수·후속4~6단계 실제 사용 미완료 조건도 유지한다. 신규 Controller/Writer·스키마·PIT/Property 교체·외부 작업은 추가하지 않았다.
+
+Python 형식 검사 exit0으로33개 연속 작업 ID·체크/이야기 라벨/파일 경로·단계별 개수·병행 표식3개,34개 연속 CHK ID·전 항목 미체크·질문 형식·근거 참조100%, 두 신규 문서 로컬 링크17개·활성경로 일치·기존 품질16개 유지·후크 부재를 확인했다. 계획의 문서 트리와 다음 작업, knowledge/README.md 목록도 갱신했다. 이는 생성 산출물의 형식·연결 검사이며 맞춤 요구사항 품질 판정·코드 리뷰·기능 테스트·개발자 설명 인수는 수행하지 않았다. 다음은 `$speckit-analyze`와 맞춤 목록의 검토자 판정이다. 이번에 커밋·브랜치 생성·병합·외부 게시를 수행하지 않았다.
+
+## 3단계 작업 목록 재생성 요청 반영 (2026-10-15)
+
+사용자가 `$speckit-tasks`를 다시 요청해 기존 [작업 목록](../specs/004-validate-domain-rules/tasks.md)을 현재 명세·계획·모델·계약·조사·검증 안내와 재대조했다. `setup-tasks.sh --json` exit0으로 같은 FEATURE_DIR·활성 작업 템플릿·설계 문서 목록을 확인했다. 사전·사후 `.specify/extensions.yml`이 없어 실행할 훅이 없었다. 현재 docs/validate-domain-rules와 기존 미커밋 변경을 보존했다.
+
+범위·작업33개·T001~T033 ID·전 항목 미체크·이야기 라벨·병행 표식은 유지했다. T001/T008/T014/T020/T022/T024/T026/T028/T030/T031의 축약 문서/Java 경로를 저장소 루트 기준 전체 경로로 구체화했다. 계획 첫 안내도 후속 생성 예정 표현 대신 이미 존재하는 tasks.md와 미실행 상태를 가리키도록 갱신했다. US1 10개·US2 6개·US3 6개·공통11개, 독립 검증과 US1 MVP·후속 연동 경계는 유지한다.
+
+Python 검사 exit0: 연속ID·체크·라벨·파일 경로·분포·병행 후보T005/T015/T021 보존, 두 문서 로컬 링크20개 정상, 활성 경로 일치·사후 훅 없음. 맞춤/내장 체크리스트는 수정 전후 SHA256 동일이며 판정하지 않았다. `git diff --check` exit0이다. 이번 변경은 작업 지시의 경로 명확화이며 신규 기능 테스트·실제 작업 수행·Git 커밋/병합/게시를 하지 않았다. 다음은 `$speckit-analyze`로 산출물 일관성을 검토하는 것이다.
+
+## 3단계 맞춤 체크리스트 검토 인수 (2026-10-15)
+
+사용자가 미판정 우회 진행에는 아니요라고 답하고 “체크리스트 전체 체크해”라고 별도로 요청했다. 명세·계획·모델·계약·작업 목록의 요구사항 근거를 CHK001~CHK034 각각 대조해34/34 충족으로 판정했다. 항목별 근거는 [맞춤 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md)의 판정 표에 기록했다. 내장 명세 품질16/16도 유지한다. 이 체크는 요구사항 품질이며 기능 구현/테스트/설명 인수의 완료가 아니다. speckit-implement의 체크리스트 게이트는50/50 체크·미체크0으로 통과하며 원래 구현 요청을 계속한다.
+
+## 3단계 구현 착수와 공통 선행 조건 (2026-10-15)
+
+T001: root·HEAD 90a4085·docs/validate-domain-rules·기존 변경5개와004 문서만 대조했다. 이번 명세/계획에 해당하는14개 문서만 검토·명시 경로로 보존 커밋174da7d를 작성했다. `git switch -c feature/validate-domain-rules develop` 뒤 `git cherry-pick 174da7d` exit0으로e3de6ab에 반영했다. 사용자 변경 삭제·stash·reset·외부 게시·develop 병합은 하지 않았다. 첫 Git 쓰기는 샌드박스 권한 실패, 권한 확장 후 성공했다.
+
+T002: requirements16/16·domain-rules34/34, 미판정0이며 기존 검토자 판정표를 읽고 구현 게이트를 통과했다. 두 체크리스트는 수정하지 않는다. `.specify/extensions.yml` 부재로 사전 훅 없음.
+
+T003: build.gradle의 *Test 및 contract/property 제외, 현재 listener/XML 합계·실행≥1·실패/오류/skip0, 캐시 금지·UTF-8/UTC·단일 fork와 junit-platform.properties 병렬 비활성을 확인했다. 기존 두 ReservationStatus와 프로브/PIT/Property 참조를 유지하며 빌드·SQL·OpenAPI는 변경하지 않는다. ignore는 root/backend의 기존 Java 산출물·환경·IDE 제외와 .dockerignore를 확인했으며 현재 구성에 필수 누락 없음.
+
+T004: `java --version` exit0은 Corretto25.0.4+7-LTS, `./gradlew --version` exit0은9.7.1·Mac OS X27.0.1 aarch64다. Gradle 최초 샌드박스 캐시 잠금 접근 실패(exit1)는 권한 확장으로 해결했으며 기능 RED가 아니다. 읽기 명령의 일시적인 backend/backend 경로 오류도 기능 검증과 무관하다. RED/GREEN은 아래 실제 assertion·종료 코드·XML 실행/실패/오류/skip으로만 기록한다. 고정 Unit이라 seed·경쟁 조건은 해당 없다.
+
+- T006-capacity-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 5/2/0/0.
+
+- T007-capacity-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 5/0/0/0.
+
+- T008-name-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 14/9/0/0.
+
+- T009-name-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 14/0/0/0.
+
+- T010-codepoints-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 52/5/0/0.
+
+- T011-resource-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 52/0/0/0.
+
+T005~T013: 수량 no-op에서 -1·1001의 IAE 기대2건 실패→5건 통과. 원문 이름 반환에서 공백 반환값3건과 null/빈/공백 거부6건 실패→14건 통과. 길이 검사 없이 일반/😀/NBSP3종101개가 모두 수용돼5건 실패→52건 통과했다. 정확한 오류 문구에 의존하지 않았다. R-CAPACITY/R-NAME 전체와 대조해 일반/😀/혼합/정리 전100초과·NBSP 각1/양끝/100/101·정상값 재정리를 포함한다. 기대값은 고정 입력과 명시 문자열이며 mock/구현 호출로 계산하지 않는다. 반복 GREEN 없이 직전 XML52/0/0/0을 최종 US1 인수로 사용한다. 사용자 설명·HTTP·IT·PIT는 미실시다.
+
+- T016-key-RED: `./gradlew test --tests com.limitedbooking.backend.reservation.IdempotencyKeyTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/48/0/0.
+
+- T017-key-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.IdempotencyKeyTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/0/0/0.
+
+T015~T019: 무검증 record에서 parse24건·직접 생성24건의 무효 키 거부가 모두 실패했다. 정상7건·값 동등성1건은 기존 record 동작을 보장하며 억지 RED를 만들지 않았다. compact constructor 최소 구현 후56/0/0/0을 확인했다. K-KEY 전체의 null/빈/65·허용 문자별1/64·공백의 앞/뒤/내부·끝LF/CRLF·비ASCII/구분문자를 양 생성 경로로 대조했다. 같은 원문 equals/hashCode·대소문자 비동등을 확인했으며 다른 값의 hashCode 차이나 참조 동일성을 요구하지 않는다. 이 실행을 최종 US2 인수로 사용하며 HTTP·DB·경쟁·PIT는 미실시다.
+
+- T022-decision-RED: `./gradlew test --tests com.limitedbooking.backend.reservation.CancellationDecisionTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/5/0/0.
+
+- T023-decision-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.CancellationDecisionTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/0/0/0.
+
+T021~T025: null 반환 골격에서 두 상태/반복4건이 값 불일치, 내부 null1건이 예외 미발생으로 실패했다. 두 분기와 명시 null 검사 구현 후5/0/0/0이다. C-DECISION 전체와 대조했고 가변 필드·I/O·Clock·저장 의존성·예약 mock이 없음을 코드 검토했다. 반복 호출은 같은 기대 enum과 대조한다. 이 실행을 US3 최종 인수로 사용하며 실제 상태/수량/시각 갱신·취소 원자성은 검증하지 않았다.
+
+- T027-all-Unit-GREEN: `./gradlew test` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.common.ToolchainSmokeTest: 3/0/0/0; com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/0/0/0; com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/0/0/0; com.limitedbooking.backend.resource.ResourceRulesTest: 52/0/0/0.
+
+### 전체 인수·assertion 추적
+
+T027: 전체 Unit116=ResourceRules52+IdempotencyKey56+CancellationDecision5+기존 프로브3이며 현재 listener와4개 XML의 합계가 일치한다. 실패/오류/skip은 전부0, IT·contract/property는 발견되지 않았다. Spring·DB·Redis·Docker 기동 없이 실행했다. 최초 기준 Unit도3/0/0/0이었다. 기존 Gradle deprecated 경고는 남으며 Gradle10/configuration cache는 미검증이다.
+
+T028의 계약·quickstart 대조:
+
+| 계약 | assertion·탐지할 실패 조건 | 실제 RED→GREEN |
+| --- | --- | --- |
+| R-CAPACITY | acceptsCapacityBoundary/rejectsCapacityOutsideRange: 양끝 포함 범위와 보정 없는 거부 | T006→T007 |
+| R-NAME 공백 | normalizesName/rejectsInvalidName: 정확한 반환·내부 공백 유지, null/정리 후 빈 값 거부 | T008→T009 |
+| R-NAME 길이·NBSP | countsCodePoints/rejectsNamesBeyondCodePointLimit/preservesNonBreakingSpaces: UTF-16/정리 전 길이 제한·101 허용·절단·NBSP 제거/금지 거부 | T010→T011, 기존 strip에서 만족한 정상 사례는 회귀 보장 |
+| R-NAME 재정리 | normalizesAgainToSameValue: 각 정상 결과의 재호출도 명시한 기대값과 일치 | T011의52건 포함, 재정리 회귀 보장 |
+| K-KEY | preservesValidKey/rejectsInvalidKey/rejectsWhitespaceAnywhere/rejectsNonAsciiOrSeparators/rejectsInvalidDirectConstruction: 원문 변형·부분 일치·생성자 우회 탐지 | T016→T017 |
+| K-KEY 동등성 | preservesCaseSensitiveEquality: 같은 원문의 equals/hashCode와 대소문자 비동등 | record 기존 동작 회귀 보장 |
+| C-DECISION | mapsReservationStatus/repeatsDecisionWithoutStateChange/rejectsMissingInternalStatus: 매핑·반복·내부 null 오류 | T022→T023 |
+
+T029: 사용자에게 경계값 한 사례의 이유와 전체 assertion 탐지 대상의 검토 여부를 요청했다. 사용자 답변/확인 전으로 미완료다. 위 설명 표와 예시는 사용자 설명을 대신하지 않는다.
+
+T030~T031: README·versions·decisions·knowledge와004 명세/모델/계약/안내/계획 상태를 실제 규칙·Unit 수에 맞췄다. 원계획3단계의 코드/실행5항목만 체크하고 설명 및 실제 요청 경로 사용은 미완료로 남겼다. 버전·빌드·OpenAPI·SQL·기존 프로브는 유지했다. 이번 IT/HTTP/DB/Redis/경쟁/Contract/Property/PIT/부하·외부 CI는 미실행이다.
+
+T032 사전 검사: Python 문서 검사 exit0으로 변경 Markdown16개·로컬 링크191개 실재·줄끝공백0을 확인했다. XML4개 합계116/0/0/0과 신규 클래스별 실행>0을 다시 읽어 listener와 일치함을 확인했다. `git diff --check` exit0, 체크리스트는e3de6ab 대비 차이0이다. build.gradle·OpenAPI·업무 migration·기존 ReservationStatus는90a4085 대비 변경0이다. 최종 생산 코드에 수량 no-op·이름 원문 반환·무검증 키·null 판단 골격은 남아 있지 않다. `.specify/extensions.yml` 부재로 사후 훅도 없다. 독립 리뷰 결과는 아래에 추가한다.
+
+### 최종 독립 리뷰·인수 결과
+
+T032: 읽기 전용 독립 리뷰어가90a4085..903fce9의 생산3개/Unit3개와 현재 문서를 검토했다. Critical0·Important0, 인터페이스·순수성·원문 비노출과 계약 전체/다섯 핵심 실패 조건의 assertion 및 XML116/0/0/0을 확인했다. 테스트 재실행은 하지 않았다. 리뷰 시 T032/T033 미체크와32/33 표현의 일시 차이(Minor1)는 최종 기록·커밋 절차에 따라 두 체크를 반영해 일치시켰다. 이월 Minor는0이다.
+
+리뷰 판단 제외 항목의 처리는 기존 명세 범위를 유지한다: T029는 사용자 설명 대기이며 완료로 세지 않는다(전체 인수 지연). HTTP·입력 형식·인증/오류 변환은4~6단계 후속이다(업무 API 사용 불가). Writer·멱등 응답·취소 복구·경쟁·장애 보장은 후속이다(실제 쓰기 정합성 미보장). 업무 PIT/Property·프로브 교체는 후속이다(변이 탐지율/생성 사례 보장 없음). 이번 미실행 IT/Contract/부하/외부CI의 결과를 새 증거로 주장하지 않는다(해당 경로·성능 회귀 미검증).
+
+T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다. 구현 브랜치는 feature/validate-domain-rules, 기능 커밋은1f38027·b809877·903fce9이다. 최종 커밋 ID와 작업 트리 상태는 커밋 후 git log/status로 확인해 완료 보고에 남긴다. push·PR·develop 병합·태그는 하지 않았다. T029는33개 중 유일한 미완료이며 설명 답변 후 해당 기록을 인수해야 전체 완료다. 사용자가 읽을 핵심은 ResourceRules/IdempotencyKey/CancellationDecision 및 대응 세 Unit·규칙 계약·위 RED/GREEN 표다. 다음 구현은4단계 로컬 인증과 대상 API의 ResourceRules 연동이다.
+
+## 3단계 T029 설명·사용자 완료 지시 반영 (2026-10-16)
+
+**현재 상태: 004 작업33/33 완료.** 2026-10-15의 T029 대기·32/33 기록은 당시 이력이다. 사용자가 T029의 목적을 물은 뒤 “경계값 하나의 이유를 설명해봐”, “테스트가 어떤 오류를 잡아”를 요청했고, 안내를 받은 뒤 “이제 T029처리해”라고 명시적으로 완료를 지시했다. 이 최신 지시를 설명 내용 확인·인수 처리의 근거로 삼았다. 사용자가 아래 내용을 독립적으로 재설명했다고 기록하지 않는다.
+
+- 경계값 설명: capacity=0은 정수0~1000의 하한 포함 규칙에 따라 허용한다. 대상 생성은 가능하지만 예약 가능한 수량은0이므로 예약은 품절이어야 한다. -1은 거부,0·1은 허용이며 `capacity <= 0`으로 거부하는 오류를 해당 Unit이 탐지한다. 품절 HTTP 동작은 후속 기대값이고 이 Unit의 실행 범위가 아니다.
+- 전체 assertion 설명: 수량의 하한/상한 제외·범위 밖 수용, 이름 공백 정리/내부 공백 훼손·null/빈 값·코드 포인트 길이·strip 전 길이 검사·NBSP 제거/금지, 키 구문/길이·공백/끝LF/CRLF·원문/대소문자 변형·직접 생성자 우회·값 동등성 오류, 취소 상태 매핑·반복 판단·내부 null 오류를 안내했다. 실제 재고 음수나 중복 취소의 이중 복구는 후속 DB/트랜잭션 검증 대상이라고 구분했다. 구체적인 assertion 대응은 위 T028 표와 세 Unit을 따른다.
+- 확인 방식과 한계: 설명은 어시스턴트가 제공했고 사용자는 설명 뒤 완료를 지시했다. 사용자 자신의 설명 답변·독립 재설명 시험·추가 질의로 설명 능력을 검증한 증거는 없다. 최신 사용자 지시를 근거로 T029를 인수한 것이며 독립 설명 능력 검증과 구분한다. 기존 FR-008/SC-005의 학습 목적과 규칙은 바꾸지 않았다.
+- 반영: T029·원계획의 설명 체크와 README/knowledge/004 상태를 동기화했다. 과거 실행/대기 기록과 요구사항 품질 체크리스트는 보존했다. 코드·SQL·OpenAPI·테스트·버전 변경은 없다. 기존 전체 Unit116건 통과는 2026-10-15 기록이며 이번 문서 처리에서는 테스트를 재실행하지 않는다.
+- 남은 범위: 실제 요청 경로 사용은4~6단계에서 검증한다. HTTP·Writer·경쟁·업무PIT/Property·부하·외부CI를 이번 설명 인수로 완료 처리하지 않는다. 다음 한 작업은4단계 로컬 인증·대상 API의 ResourceRules 연동이다.
+
+문서 검증(완료 커밋44f6c90 대상): Python 검사 exit0으로 Markdown9개·로컬 링크147개 실재·작업33/33·체크리스트 변경0을 확인했다. `git diff --check HEAD~1 HEAD` exit0이다. 최초 두 검사 스크립트는 각각 Git 한글 경로의 따옴표 출력과 기존 Markdown 줄바꿈용 끝 공백을 처리하지 못해 실패했다. NUL 구분 경로를 사용하고 공백은 실제 변경 줄에 대해 검사하도록 수정한 뒤 통과했다. 테스트/기능 실패는 아니며 이번 기능 테스트는 재실행하지 않았다.
+
+## 3단계 GitHub PR·병합 전 검증 (2026-10-16)
+
+사용자가 develop 대상 GitHub PR 생성, 적대적 코드 리뷰, 이상이 없을 때 병합을 명시적으로 지시했다. `git fetch origin develop` exit0, origin/develop90a4085 대비 feature HEADfec4f75는 뒤처짐0·추가7개 커밋이며 작업 트리는 깨끗했다. 기존 PR은0개였고 merge commit 방식 허용을 확인했다. 별도 release/버전 변경·배포는 이번 범위가 아니다.
+
+`backend/`의 `./gradlew build` exit0으로 jar/bootJar와 전체 Unit116건을 실행했다. XML4개의 ResourceRules52·IdempotencyKey56·CancellationDecision5·프로브3을 현재 listener와 대조해 실패/오류/skip0·합계116 일치를 확인했다. T001~T033 체크33/33과 `git diff --check origin/develop...HEAD` exit0도 확인했다. 기존 Gradle deprecated 경고는 남아 있다. IT/Contract/Property/PIT/부하는 이번에 실행하지 않았다.
+
+`git push -u origin feature/validate-domain-rules`와 `gh pr create --base develop --head feature/validate-domain-rules` exit0으로 [PR #3](https://github.com/joypeb/limited-booking-test/pull/3)을 게시했다. GitHub head는fec4f75, base는develop이며 MERGEABLE/CLEAN을 확인했다. statusCheckRollup·feature workflow 실행은 모두0건이고 저장소에 .github/workflows도 없다. 외부 CI 성공을 주장하지 않으며 로컬 실행 검증과 구분한다.
+
+적대적 리뷰의 첫 Codex CLI 프로세스는 read-only/high로 실행했지만 ChatGPT 계정에서 기본 모델 gpt-6.1-sol을 지원하지 않는400 오류로 exit1 종료했다. 별도 설치 skill YAML 오류 로그도 있었으며 실제 모델 리뷰는 시작되지 않았다. 이 실패를 코드 결함이나 리뷰 통과로 세지 않는다. 읽기 전용의 새 컨텍스트 리뷰 에이전트로 대체했으며 결과는 아래에 기록한다.
+
+### PR #3 적대적 리뷰 결과와 병합 판정
+
+새 컨텍스트의 읽기 전용 리뷰어가 origin/develop..fec4f75의 전체 변경과 새 생산3개/Unit3개를 계약·원계획에 대조했다. 유효한 신규 코드 결함0·머지 차단0으로 판정했다. 실제 생산 코드를 /private/tmp에서 컴파일한 공격 harness41건이 exit0으로 통과했으며 😀100/101·strip 전100초과·NBSP3종·int MIN/MAX·키 끝 LF/CRLF/CR/Unicode 줄바꿈·parse/new·대소문자 동등성·취소 두 상태/null을 포함한다. 리뷰어도 기존 XML116/0/0/0을 읽었고 저장소 변경이나 Gradle 재실행은 하지 않았다.
+
+주 작업자는 세 생산 클래스와 대응 assertion·현재 XML을 독립 대조했고 분류할 유효 지적은 없었다. 빌드·의존성·OpenAPI·SQL·프로브는 기준 대비 변경되지 않았다. T029 사용자 완료 지시와 독립 재설명 미실시를 구분하며 실제 HTTP/Writer/경쟁/업무 심화 검증은 후속으로 유지한다. 이 판정 이후의 변경은 본 PR/리뷰 결과를 남기는 문서뿐이다.
+
+병합 조건: 최신 원격 head가 검토 코드와 동일하고 base가develop이며 충돌·실패/미해결 체크·변경 요청이 없으면 사용자 지시에 따라 merge commit으로 병합한다. PR 설명에 로컬 빌드·별도 CLI 리뷰 실패와 독립 대체 리뷰 결과·외부 CI 미등록을 반영한다. 실제 merge SHA/최종 상태는 GitHub PR과 완료 보고에서 확인하며 병합 전 기록에서 성공을 선포하지 않는다.

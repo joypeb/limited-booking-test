@@ -53,3 +53,24 @@ Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대
 - SchemaDatabase/SchemaDatabases는 네 인수 클래스의 fresh/reapplied 독립 컨테이너 준비·스냅샷·정리만 공유한다. 생산 저장 계층은 기능별 두 Repository이며 범용 Repository를 만들지 않는다.
 - TestData는 명시 DataSource와 REQUIRES_NEW를 사용한다. 반환 전 확정된 준비 데이터 계약을 위해 호출자 트랜잭션 롤백과 분리한다. 별도 연결에서0행인 RED 이후 두 모드 GREEN으로 검증했다. 초기화 두 DELETE도 한 독립 트랜잭션이며 중간 SQL 오류는 전체 롤백한다.
 - docs/openapi.yaml은 변경하지 않았다. 업무 V1·읽기 조회의 인수는 API·인증·경쟁·멱등 재현의 완료가 아니다. local DB 실제 V1 적용/전환, 연결 단절/프로세스 중단은 미검증이다.
+
+## 3단계 순수 규칙 설계 결정 (2026-10-15)
+
+[004 계획](../specs/004-validate-domain-rules/plan.md)의 설계 결정이며 아직 구현·실행 검증하지 않았다. 기존 확정 입력·HTTP·저장 정책은 유지한다.
+
+- 이름은 strip 후 코드 포인트 수로 검사한다. IdempotencyKey는 검증 compact constructor를 가진 record로 하여 public 생성자 우회를 막고 원문 기반 값 동등성을 유지한다. 취소 판단은 기존 ReservationStatus를 소비하며 새 저장 상태를 추가하지 않는다.
+- 무효 이름·수량·키는 내부 Java 호출에서 IllegalArgumentException, 누락된 내부 예약 상태는 NullPointerException으로 구분한다. 정확한 메시지를 계약으로 고정하지 않고 입력 원문을 넣지 않는다. 후속 HTTP에서는 해당 입력 경계의 실패만400으로 변환하고 모든 예외를 일괄 변환하지 않는다.
+- 기존 Unit 프로브와 생산 ToolchainProbe는 PIT/Property가 참조하므로 이번에는 유지한다. 세 업무 Unit만 추가하고 빌드 태스크·게이트·버전은 바꾸지 않는다. 프로브 삭제와 업무 Property/PIT 교체는 후속 심화 범위다. 기존 PIT 생성1/탐지1을 업무 규칙80% 증거로 쓰지 않는다.
+- 컴파일 가능한 최소 골격에서 실제 assertion RED→최소 구현→동일 Unit GREEN→전체 Unit으로 진행한다. 실제 요청 경로 사용은4~6단계별 미완료 조건으로 추적한다. 선택 이유·대안·공식 근거는 [조사](../specs/004-validate-domain-rules/research.md)에 있다.
+
+## 3단계 ResourceRules 구현 (2026-10-15)
+
+기존 확정 정책대로 null 거부→strip→코드 포인트1~100 검사 순서로 구현했다. NBSP 계열은 유지하며 capacity0~1000을 보정 없이 검증한다. UTF-16 길이·정리 전 길이 제한·초과 절단을 사용하지 않는다. Unit52건과 세 그룹 RED/GREEN은 test-evidence.md를 따른다. HTTP와 저장 경계는4단계에서 연결한다.
+
+## 3단계 IdempotencyKey 구현 (2026-10-15)
+
+record compact constructor에서 null과 고정 Pattern의 matches 전체 일치를 검사해 parse/new 두 경로가 같은 불변식을 보장한다. 원문 value·equals/hashCode를 유지하고 키를 오류 메시지에 노출하지 않는다. 내부 IAE를 후속 입력 경계에서만400으로 번역하며 이번에는 HTTP 예외 처리를 추가하지 않았다.
+
+## 3단계 CancellationDecision 구현 (2026-10-15)
+
+기존 ReservationStatus를 default 없는 switch로 두 판단에 대응하며 Objects.requireNonNull로 내부 상태 누락을 NPE로 드러낸다. 판단을 DB 상태나 응답 enum에 섞지 않고 상태·수량·시간을 만들거나 갱신하지 않는다. 실제 취소 원자성은6단계 Writer의 책임이다.

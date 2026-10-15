@@ -41,3 +41,7 @@ Gradle9.7.1·Corretto25.0.4+7-LTS·MacOS27.0.1 aarch64·Docker29.8.2를 실제 �
 ### 2단계 실제 저장 기반 검증 (2026-10-15)
 
 기존 Boot4.1.1·Java25·Gradle9.7.1·Flyway/pgJDBC BOM 및 PostgreSQL18.6 고정 digest로 V1·조회·초기화를 실행했다. pgJDBC는 기존 runtimeOnly에 더해 SQLSTATE/제약 이름을 확인할 testImplementation에도 노출했다. 새 버전 변경은 없다. Unit3+일반IT78 검증 결과는 docs/test-evidence.md에 기록한다.
+
+### 3단계 순수 규칙 실행 (2026-10-15)
+
+feature/validate-domain-rules에서 `java --version`·`./gradlew --version` exit0으로 Corretto25.0.4+7-LTS·Gradle9.7.1·Mac OS X27.0.1 aarch64를 재확인했다. 기존 의존성·BOM·이미지·빌드 태스크 변경 없음. 전체 Unit116건(업무113+프로브3), 실패/오류/skip0을 listener/XML로 확인했다. Docker·DB·Redis를 기동하지 않았고 IT/Contract/Property/PIT·부하는 이번 단계에 재실행하지 않았다. 기존 Gradle10 비호환 deprecated 기능 경고는 남아 있으며 이번 규칙 범위에서는 수정하지 않았다.
