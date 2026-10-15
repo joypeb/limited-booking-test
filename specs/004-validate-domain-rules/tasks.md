@@ -16,15 +16,15 @@
 
 **목적**: 기존 변경을 보존하고 구현 전 검토 상태·작업 위치를 명확히 한다. 새 프로젝트·테스트 태스크·인증/DB 기반을 만들지 않는다.
 
-- [ ] T001 knowledge/rules/git-flow.md·knowledge/rules/commit.md에 따라 저장소 최상위·HEAD·브랜치·기존 변경을 확인하고 docs/validate-domain-rules의 미커밋 문서 변경을 선별 보존한다. 현재 문서 작업을 목적별 커밋으로 저장한 후 develop 기반 feature/validate-domain-rules에 명시적으로 반영하는 로컬 분리 절차를 수행하고 실제 명령/결과를 docs/test-evidence.md에 남긴다. 사용자 변경을 함께 커밋하거나 reset/clean/stash·외부 게시로 처리하지 않는다.
-- [ ] T002 specs/004-validate-domain-rules/checklists/domain-rules.md의 검토자 판정과 미해결 요구사항을 읽고 구현 착수 상태를 docs/test-evidence.md에 기록한다. 항목이 미판정이면 검토자에게 상태를 알리고 기존 승인 지침을 적용한다. 구현 담당자가 체크를 임의 변경하거나 목록 생성만으로 검토 통과를 주장하지 않는다.
+- [X] T001 knowledge/rules/git-flow.md·knowledge/rules/commit.md에 따라 저장소 최상위·HEAD·브랜치·기존 변경을 확인하고 docs/validate-domain-rules의 미커밋 문서 변경을 선별 보존한다. 현재 문서 작업을 목적별 커밋으로 저장한 후 develop 기반 feature/validate-domain-rules에 명시적으로 반영하는 로컬 분리 절차를 수행하고 실제 명령/결과를 docs/test-evidence.md에 남긴다. 사용자 변경을 함께 커밋하거나 reset/clean/stash·외부 게시로 처리하지 않는다.
+- [X] T002 specs/004-validate-domain-rules/checklists/domain-rules.md의 검토자 판정과 미해결 요구사항을 읽고 구현 착수 상태를 docs/test-evidence.md에 기록한다. 항목이 미판정이면 검토자에게 상태를 알리고 기존 승인 지침을 적용한다. 구현 담당자가 체크를 임의 변경하거나 목록 생성만으로 검토 통과를 주장하지 않는다.
 
 ## 2단계: 공통 선행 조건
 
 **목적**: 세 이야기 모두가 의존하는 기존 도구·경계·기록 계약을 확인한다. 여기서는 업무 규칙을 구현하지 않는다.
 
-- [ ] T003 backend/build.gradle과 backend/src/test/resources/junit-platform.properties를 읽어 *Test 및 태그 제외·현재 실행/XML 게이트·UTF-8/UTC·병렬 비활성 계약을 확인한다. ToolchainProbe·ToolchainSmokeTest·Property/PIT 참조와 backend/src/main/java/com/limitedbooking/backend/reservation/ReservationStatus.java의 기존 두 상태를 대조하고 유지할 범위를 docs/test-evidence.md에 기록한다. 빌드·프로브·스키마를 변경하지 않는다.
-- [ ] T004 backend/gradle/wrapper/gradle-wrapper.properties와 docs/versions.md를 대조하면서 backend/에서 java --version·./gradlew --version을 실행하고 환경·종료 코드를 docs/test-evidence.md에 기록한다. 규칙별 RED/GREEN 기록은 입력·기대 assertion·명령·종료 코드·실행/실패/오류/skip 수·미검증 범위를 사용하며 컴파일/환경 실패는 기능 RED로 세지 않는 기준을 확정한다.
+- [X] T003 backend/build.gradle과 backend/src/test/resources/junit-platform.properties를 읽어 *Test 및 태그 제외·현재 실행/XML 게이트·UTF-8/UTC·병렬 비활성 계약을 확인한다. ToolchainProbe·ToolchainSmokeTest·Property/PIT 참조와 backend/src/main/java/com/limitedbooking/backend/reservation/ReservationStatus.java의 기존 두 상태를 대조하고 유지할 범위를 docs/test-evidence.md에 기록한다. 빌드·프로브·스키마를 변경하지 않는다.
+- [X] T004 backend/gradle/wrapper/gradle-wrapper.properties와 docs/versions.md를 대조하면서 backend/에서 java --version·./gradlew --version을 실행하고 환경·종료 코드를 docs/test-evidence.md에 기록한다. 규칙별 RED/GREEN 기록은 입력·기대 assertion·명령·종료 코드·실행/실패/오류/skip 수·미검증 범위를 사용하며 컴파일/환경 실패는 기능 RED로 세지 않는 기준을 확정한다.
 
 **선행 조건 완료**: T001~T004가 완료돼야 이야기 작업을 시작한다. T002의 요구사항 검토와 실제 구현 테스트 인수는 구분한다.
 
@@ -36,22 +36,22 @@
 
 ### 수량 테스트 → 실패 → 구현
 
-- [ ] T005 [P] [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 acceptsCapacityBoundary(0·1·1000 예외 없음)·rejectsCapacityOutsideRange(-1·1001 IllegalArgumentException)를 파라미터화해 먼저 작성한다. 모델의 제약은 “0≤capacity≤1000, 보정 없음”이다.
-- [ ] T006 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 public final/private 생성자와 public static validateCapacity(int): void의 no-op 컴파일 골격만 마련한 뒤 US1 선택 명령에서 -1·1001 거부 assertion이 실제 실패하는지 확인해 docs/test-evidence.md에 기록한다. 컴파일 오류를 RED로 대신하지 않는다.
-- [ ] T007 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java의 validateCapacity에 양끝 포함0~1000 검사와 범위 밖 IllegalArgumentException만 최소 구현하고 같은 수량 테스트 GREEN을 확인해 docs/test-evidence.md에 기록한다. 예외에 입력 원문을 넣거나 메시지 문구를 테스트에 고정하지 않는다.
+- [X] T005 [P] [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 acceptsCapacityBoundary(0·1·1000 예외 없음)·rejectsCapacityOutsideRange(-1·1001 IllegalArgumentException)를 파라미터화해 먼저 작성한다. 모델의 제약은 “0≤capacity≤1000, 보정 없음”이다.
+- [X] T006 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 public final/private 생성자와 public static validateCapacity(int): void의 no-op 컴파일 골격만 마련한 뒤 US1 선택 명령에서 -1·1001 거부 assertion이 실제 실패하는지 확인해 docs/test-evidence.md에 기록한다. 컴파일 오류를 RED로 대신하지 않는다.
+- [X] T007 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java의 validateCapacity에 양끝 포함0~1000 검사와 범위 밖 IllegalArgumentException만 최소 구현하고 같은 수량 테스트 GREEN을 확인해 docs/test-evidence.md에 기록한다. 예외에 입력 원문을 넣거나 메시지 문구를 테스트에 고정하지 않는다.
 
 ### 이름 테스트 → 실패 → 구현
 
-- [ ] T008 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 normalizesName·rejectsInvalidName을 추가해 null·빈 값·일반 공백/탭/줄바꿈만 있는 값·혼합 공백의 거부, 앞뒤 공백 제거와 내부 공백 유지의 정확한 반환값을 명시한다. 이어 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 public static normalizeName(String): String의 원문 반환 골격만 추가하고 해당 이름 테스트의 실제 assertion RED를 docs/test-evidence.md에 기록한다. 모델의 순서는 “null 거부, strip 후 검사”다.
-- [ ] T009 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java의 normalizeName에 null·정리 후 빈 값의 IllegalArgumentException과 strip 전처리만 최소 구현하고 현재 이름/수량 테스트 GREEN을 기록한다. 길이 규칙을 아직 선행 구현하지 않는다.
-- [ ] T010 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 countsCodePoints·preservesNonBreakingSpaces·재정리 동일값 사례를 추가한다. R-NAME의 일반 문자1/100/101·😀100/101·가99+😀·앞뒤 공백+100개, U+00A0/U+2007/U+202F 각각 단독/앞뒤/100/101을 고정값으로 명시하고101개 거부의 실제 RED를 docs/test-evidence.md에 기록한다. 모델 제약 “코드 포인트1~100, 내부 문자와 NBSP 계열 보존, 재정리 동일”을 그대로 적용한다.
-- [ ] T011 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 strip 결과의 codePointCount(0, length())를 이용한1~100 포함 검사를 최소 구현하고 같은 테스트 전체 GREEN을 기록한다. 길이 초과 절단·추가 NBSP 금지·Unicode 변환을 넣지 않는다.
+- [X] T008 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 normalizesName·rejectsInvalidName을 추가해 null·빈 값·일반 공백/탭/줄바꿈만 있는 값·혼합 공백의 거부, 앞뒤 공백 제거와 내부 공백 유지의 정확한 반환값을 명시한다. 이어 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 public static normalizeName(String): String의 원문 반환 골격만 추가하고 해당 이름 테스트의 실제 assertion RED를 docs/test-evidence.md에 기록한다. 모델의 순서는 “null 거부, strip 후 검사”다.
+- [X] T009 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java의 normalizeName에 null·정리 후 빈 값의 IllegalArgumentException과 strip 전처리만 최소 구현하고 현재 이름/수량 테스트 GREEN을 기록한다. 길이 규칙을 아직 선행 구현하지 않는다.
+- [X] T010 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java에 countsCodePoints·preservesNonBreakingSpaces·재정리 동일값 사례를 추가한다. R-NAME의 일반 문자1/100/101·😀100/101·가99+😀·앞뒤 공백+100개, U+00A0/U+2007/U+202F 각각 단독/앞뒤/100/101을 고정값으로 명시하고101개 거부의 실제 RED를 docs/test-evidence.md에 기록한다. 모델 제약 “코드 포인트1~100, 내부 문자와 NBSP 계열 보존, 재정리 동일”을 그대로 적용한다.
+- [X] T011 [US1] backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java에 strip 결과의 codePointCount(0, length())를 이용한1~100 포함 검사를 최소 구현하고 같은 테스트 전체 GREEN을 기록한다. 길이 초과 절단·추가 NBSP 금지·Unicode 변환을 넣지 않는다.
 
 ### 이야기 인수와 기록
 
-- [ ] T012 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java를 규칙 계약 R-CAPACITY/R-NAME 전체와 대조해 입력 누락·실제 데이터 대신 mock·구현 계산으로 만든 기대값이 없는지 검토한다. US1 선택 명령의 최종 결과와 backend/build/test-results/test/TEST-com.limitedbooking.backend.resource.ResourceRulesTest.xml의 실제 실행>0·실패/오류/skip0을 docs/test-evidence.md에 기록한다. 새 코드 변경 없이 직전 같은 실행으로 증명됐다면 반복하지 않는다.
-- [ ] T013 [US1] knowledge/domain/resource.md·knowledge/README.md에 실제 ResourceRules/ResourceRulesTest 연결과 순수 규칙 실행 상태를 갱신하고 docs/decisions.md·docs/test-evidence.md에 strip/코드 포인트 선택·RED/GREEN·assertion 탐지 대상을 연결한다. 4단계 HTTP 사용과 사용자 설명 인수는 아직 미완료로 구분한다.
-- [ ] T014 [US1] knowledge/rules/commit.md에 따라 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java·backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java와 T013의 관련 문서 변경만 경로/조각 단위로 검토·스테이징해 docs/test-evidence.md의 실제 GREEN을 근거로 feat(resource) 목적 커밋을 작성한다. 커밋 메시지 설명은 한국어로 쓰고 외부 push/병합은 하지 않는다.
+- [X] T012 [US1] backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java를 규칙 계약 R-CAPACITY/R-NAME 전체와 대조해 입력 누락·실제 데이터 대신 mock·구현 계산으로 만든 기대값이 없는지 검토한다. US1 선택 명령의 최종 결과와 backend/build/test-results/test/TEST-com.limitedbooking.backend.resource.ResourceRulesTest.xml의 실제 실행>0·실패/오류/skip0을 docs/test-evidence.md에 기록한다. 새 코드 변경 없이 직전 같은 실행으로 증명됐다면 반복하지 않는다.
+- [X] T013 [US1] knowledge/domain/resource.md·knowledge/README.md에 실제 ResourceRules/ResourceRulesTest 연결과 순수 규칙 실행 상태를 갱신하고 docs/decisions.md·docs/test-evidence.md에 strip/코드 포인트 선택·RED/GREEN·assertion 탐지 대상을 연결한다. 4단계 HTTP 사용과 사용자 설명 인수는 아직 미완료로 구분한다.
+- [X] T014 [US1] knowledge/rules/commit.md에 따라 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java·backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java와 T013의 관련 문서 변경만 경로/조각 단위로 검토·스테이징해 docs/test-evidence.md의 실제 GREEN을 근거로 feat(resource) 목적 커밋을 작성한다. 커밋 메시지 설명은 한국어로 쓰고 외부 push/병합은 하지 않는다.
 
 **체크포인트**: US1만으로 이름·수량 규칙을 독립 시연할 수 있다. 예약 생성·취소·HTTP 사용 완료를 뜻하지 않는다.
 

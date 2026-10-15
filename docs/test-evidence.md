@@ -746,3 +746,27 @@ Python 검사 exit0: 연속ID·체크·라벨·파일 경로·분포·병행 후
 ## 3단계 맞춤 체크리스트 검토 인수 (2026-10-15)
 
 사용자가 미판정 우회 진행에는 아니요라고 답하고 “체크리스트 전체 체크해”라고 별도로 요청했다. 명세·계획·모델·계약·작업 목록의 요구사항 근거를 CHK001~CHK034 각각 대조해34/34 충족으로 판정했다. 항목별 근거는 [맞춤 목록](../specs/004-validate-domain-rules/checklists/domain-rules.md)의 판정 표에 기록했다. 내장 명세 품질16/16도 유지한다. 이 체크는 요구사항 품질이며 기능 구현/테스트/설명 인수의 완료가 아니다. speckit-implement의 체크리스트 게이트는50/50 체크·미체크0으로 통과하며 원래 구현 요청을 계속한다.
+
+## 3단계 구현 착수와 공통 선행 조건 (2026-10-15)
+
+T001: root·HEAD 90a4085·docs/validate-domain-rules·기존 변경5개와004 문서만 대조했다. 이번 명세/계획에 해당하는14개 문서만 검토·명시 경로로 보존 커밋174da7d를 작성했다. `git switch -c feature/validate-domain-rules develop` 뒤 `git cherry-pick 174da7d` exit0으로e3de6ab에 반영했다. 사용자 변경 삭제·stash·reset·외부 게시·develop 병합은 하지 않았다. 첫 Git 쓰기는 샌드박스 권한 실패, 권한 확장 후 성공했다.
+
+T002: requirements16/16·domain-rules34/34, 미판정0이며 기존 검토자 판정표를 읽고 구현 게이트를 통과했다. 두 체크리스트는 수정하지 않는다. `.specify/extensions.yml` 부재로 사전 훅 없음.
+
+T003: build.gradle의 *Test 및 contract/property 제외, 현재 listener/XML 합계·실행≥1·실패/오류/skip0, 캐시 금지·UTF-8/UTC·단일 fork와 junit-platform.properties 병렬 비활성을 확인했다. 기존 두 ReservationStatus와 프로브/PIT/Property 참조를 유지하며 빌드·SQL·OpenAPI는 변경하지 않는다. ignore는 root/backend의 기존 Java 산출물·환경·IDE 제외와 .dockerignore를 확인했으며 현재 구성에 필수 누락 없음.
+
+T004: `java --version` exit0은 Corretto25.0.4+7-LTS, `./gradlew --version` exit0은9.7.1·Mac OS X27.0.1 aarch64다. Gradle 최초 샌드박스 캐시 잠금 접근 실패(exit1)는 권한 확장으로 해결했으며 기능 RED가 아니다. 읽기 명령의 일시적인 backend/backend 경로 오류도 기능 검증과 무관하다. RED/GREEN은 아래 실제 assertion·종료 코드·XML 실행/실패/오류/skip으로만 기록한다. 고정 Unit이라 seed·경쟁 조건은 해당 없다.
+
+- T006-capacity-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 5/2/0/0.
+
+- T007-capacity-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 5/0/0/0.
+
+- T008-name-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 14/9/0/0.
+
+- T009-name-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 14/0/0/0.
+
+- T010-codepoints-RED: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 52/5/0/0.
+
+- T011-resource-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 52/0/0/0.
+
+T005~T013: 수량 no-op에서 -1·1001의 IAE 기대2건 실패→5건 통과. 원문 이름 반환에서 공백 반환값3건과 null/빈/공백 거부6건 실패→14건 통과. 길이 검사 없이 일반/😀/NBSP3종101개가 모두 수용돼5건 실패→52건 통과했다. 정확한 오류 문구에 의존하지 않았다. R-CAPACITY/R-NAME 전체와 대조해 일반/😀/혼합/정리 전100초과·NBSP 각1/양끝/100/101·정상값 재정리를 포함한다. 기대값은 고정 입력과 명시 문자열이며 mock/구현 호출로 계산하지 않는다. 반복 GREEN 없이 직전 XML52/0/0/0을 최종 US1 인수로 사용한다. 사용자 설명·HTTP·IT·PIT는 미실시다.

@@ -55,3 +55,5 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 `knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. 독립 재설명 시험과 기능 실행 검증은 미실시다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
 
 2단계 실제 저장 기반 검증은 Unit3·일반IT78(업무72+기존6)이며 실패0·skip0이다. 도구 심화 프로브 수는 과거 실행 기록이며 이번 단계에 Property/PIT/부하를 재실행하지 않았다.
+
+3단계 US1: [ResourceRules](../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java)를 구현했다. 수량·이름 Unit52건을 검증했으며 HTTP 연동·사용자 설명은 별도다.

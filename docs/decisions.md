@@ -62,3 +62,7 @@ Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대
 - 무효 이름·수량·키는 내부 Java 호출에서 IllegalArgumentException, 누락된 내부 예약 상태는 NullPointerException으로 구분한다. 정확한 메시지를 계약으로 고정하지 않고 입력 원문을 넣지 않는다. 후속 HTTP에서는 해당 입력 경계의 실패만400으로 변환하고 모든 예외를 일괄 변환하지 않는다.
 - 기존 Unit 프로브와 생산 ToolchainProbe는 PIT/Property가 참조하므로 이번에는 유지한다. 세 업무 Unit만 추가하고 빌드 태스크·게이트·버전은 바꾸지 않는다. 프로브 삭제와 업무 Property/PIT 교체는 후속 심화 범위다. 기존 PIT 생성1/탐지1을 업무 규칙80% 증거로 쓰지 않는다.
 - 컴파일 가능한 최소 골격에서 실제 assertion RED→최소 구현→동일 Unit GREEN→전체 Unit으로 진행한다. 실제 요청 경로 사용은4~6단계별 미완료 조건으로 추적한다. 선택 이유·대안·공식 근거는 [조사](../specs/004-validate-domain-rules/research.md)에 있다.
+
+## 3단계 ResourceRules 구현 (2026-10-15)
+
+기존 확정 정책대로 null 거부→strip→코드 포인트1~100 검사 순서로 구현했다. NBSP 계열은 유지하며 capacity0~1000을 보정 없이 검증한다. UTF-16 길이·정리 전 길이 제한·초과 절단을 사용하지 않는다. Unit52건과 세 그룹 RED/GREEN은 test-evidence.md를 따른다. HTTP와 저장 경계는4단계에서 연결한다.
