@@ -826,3 +826,21 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
 - 남은 범위: 실제 요청 경로 사용은4~6단계에서 검증한다. HTTP·Writer·경쟁·업무PIT/Property·부하·외부CI를 이번 설명 인수로 완료 처리하지 않는다. 다음 한 작업은4단계 로컬 인증·대상 API의 ResourceRules 연동이다.
 
 문서 검증(완료 커밋44f6c90 대상): Python 검사 exit0으로 Markdown9개·로컬 링크147개 실재·작업33/33·체크리스트 변경0을 확인했다. `git diff --check HEAD~1 HEAD` exit0이다. 최초 두 검사 스크립트는 각각 Git 한글 경로의 따옴표 출력과 기존 Markdown 줄바꿈용 끝 공백을 처리하지 못해 실패했다. NUL 구분 경로를 사용하고 공백은 실제 변경 줄에 대해 검사하도록 수정한 뒤 통과했다. 테스트/기능 실패는 아니며 이번 기능 테스트는 재실행하지 않았다.
+
+## 3단계 GitHub PR·병합 전 검증 (2026-10-16)
+
+사용자가 develop 대상 GitHub PR 생성, 적대적 코드 리뷰, 이상이 없을 때 병합을 명시적으로 지시했다. `git fetch origin develop` exit0, origin/develop90a4085 대비 feature HEADfec4f75는 뒤처짐0·추가7개 커밋이며 작업 트리는 깨끗했다. 기존 PR은0개였고 merge commit 방식 허용을 확인했다. 별도 release/버전 변경·배포는 이번 범위가 아니다.
+
+`backend/`의 `./gradlew build` exit0으로 jar/bootJar와 전체 Unit116건을 실행했다. XML4개의 ResourceRules52·IdempotencyKey56·CancellationDecision5·프로브3을 현재 listener와 대조해 실패/오류/skip0·합계116 일치를 확인했다. T001~T033 체크33/33과 `git diff --check origin/develop...HEAD` exit0도 확인했다. 기존 Gradle deprecated 경고는 남아 있다. IT/Contract/Property/PIT/부하는 이번에 실행하지 않았다.
+
+`git push -u origin feature/validate-domain-rules`와 `gh pr create --base develop --head feature/validate-domain-rules` exit0으로 [PR #3](https://github.com/joypeb/limited-booking-test/pull/3)을 게시했다. GitHub head는fec4f75, base는develop이며 MERGEABLE/CLEAN을 확인했다. statusCheckRollup·feature workflow 실행은 모두0건이고 저장소에 .github/workflows도 없다. 외부 CI 성공을 주장하지 않으며 로컬 실행 검증과 구분한다.
+
+적대적 리뷰의 첫 Codex CLI 프로세스는 read-only/high로 실행했지만 ChatGPT 계정에서 기본 모델 gpt-6.1-sol을 지원하지 않는400 오류로 exit1 종료했다. 별도 설치 skill YAML 오류 로그도 있었으며 실제 모델 리뷰는 시작되지 않았다. 이 실패를 코드 결함이나 리뷰 통과로 세지 않는다. 읽기 전용의 새 컨텍스트 리뷰 에이전트로 대체했으며 결과는 아래에 기록한다.
+
+### PR #3 적대적 리뷰 결과와 병합 판정
+
+새 컨텍스트의 읽기 전용 리뷰어가 origin/develop..fec4f75의 전체 변경과 새 생산3개/Unit3개를 계약·원계획에 대조했다. 유효한 신규 코드 결함0·머지 차단0으로 판정했다. 실제 생산 코드를 /private/tmp에서 컴파일한 공격 harness41건이 exit0으로 통과했으며 😀100/101·strip 전100초과·NBSP3종·int MIN/MAX·키 끝 LF/CRLF/CR/Unicode 줄바꿈·parse/new·대소문자 동등성·취소 두 상태/null을 포함한다. 리뷰어도 기존 XML116/0/0/0을 읽었고 저장소 변경이나 Gradle 재실행은 하지 않았다.
+
+주 작업자는 세 생산 클래스와 대응 assertion·현재 XML을 독립 대조했고 분류할 유효 지적은 없었다. 빌드·의존성·OpenAPI·SQL·프로브는 기준 대비 변경되지 않았다. T029 사용자 완료 지시와 독립 재설명 미실시를 구분하며 실제 HTTP/Writer/경쟁/업무 심화 검증은 후속으로 유지한다. 이 판정 이후의 변경은 본 PR/리뷰 결과를 남기는 문서뿐이다.
+
+병합 조건: 최신 원격 head가 검토 코드와 동일하고 base가develop이며 충돌·실패/미해결 체크·변경 요청이 없으면 사용자 지시에 따라 merge commit으로 병합한다. PR 설명에 로컬 빌드·별도 CLI 리뷰 실패와 독립 대체 리뷰 결과·외부 CI 미등록을 반영한다. 실제 merge SHA/최종 상태는 GitHub PR과 완료 보고에서 확인하며 병합 전 기록에서 성공을 선포하지 않는다.
