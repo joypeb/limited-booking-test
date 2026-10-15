@@ -782,3 +782,35 @@ T015~T019: 무검증 record에서 parse24건·직접 생성24건의 무효 키 �
 - T023-decision-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.CancellationDecisionTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/0/0/0.
 
 T021~T025: null 반환 골격에서 두 상태/반복4건이 값 불일치, 내부 null1건이 예외 미발생으로 실패했다. 두 분기와 명시 null 검사 구현 후5/0/0/0이다. C-DECISION 전체와 대조했고 가변 필드·I/O·Clock·저장 의존성·예약 mock이 없음을 코드 검토했다. 반복 호출은 같은 기대 enum과 대조한다. 이 실행을 US3 최종 인수로 사용하며 실제 상태/수량/시각 갱신·취소 원자성은 검증하지 않았다.
+
+- T027-all-Unit-GREEN: `./gradlew test` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.common.ToolchainSmokeTest: 3/0/0/0; com.limitedbooking.backend.reservation.CancellationDecisionTest: 5/0/0/0; com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/0/0/0; com.limitedbooking.backend.resource.ResourceRulesTest: 52/0/0/0.
+
+### 전체 인수·assertion 추적
+
+T027: 전체 Unit116=ResourceRules52+IdempotencyKey56+CancellationDecision5+기존 프로브3이며 현재 listener와4개 XML의 합계가 일치한다. 실패/오류/skip은 전부0, IT·contract/property는 발견되지 않았다. Spring·DB·Redis·Docker 기동 없이 실행했다. 최초 기준 Unit도3/0/0/0이었다. 기존 Gradle deprecated 경고는 남으며 Gradle10/configuration cache는 미검증이다.
+
+T028의 계약·quickstart 대조:
+
+| 계약 | assertion·탐지할 실패 조건 | 실제 RED→GREEN |
+| --- | --- | --- |
+| R-CAPACITY | acceptsCapacityBoundary/rejectsCapacityOutsideRange: 양끝 포함 범위와 보정 없는 거부 | T006→T007 |
+| R-NAME 공백 | normalizesName/rejectsInvalidName: 정확한 반환·내부 공백 유지, null/정리 후 빈 값 거부 | T008→T009 |
+| R-NAME 길이·NBSP | countsCodePoints/rejectsNamesBeyondCodePointLimit/preservesNonBreakingSpaces: UTF-16/정리 전 길이 제한·101 허용·절단·NBSP 제거/금지 거부 | T010→T011, 기존 strip에서 만족한 정상 사례는 회귀 보장 |
+| R-NAME 재정리 | normalizesAgainToSameValue: 각 정상 결과의 재호출도 명시한 기대값과 일치 | T011의52건 포함, 재정리 회귀 보장 |
+| K-KEY | preservesValidKey/rejectsInvalidKey/rejectsWhitespaceAnywhere/rejectsNonAsciiOrSeparators/rejectsInvalidDirectConstruction: 원문 변형·부분 일치·생성자 우회 탐지 | T016→T017 |
+| K-KEY 동등성 | preservesCaseSensitiveEquality: 같은 원문의 equals/hashCode와 대소문자 비동등 | record 기존 동작 회귀 보장 |
+| C-DECISION | mapsReservationStatus/repeatsDecisionWithoutStateChange/rejectsMissingInternalStatus: 매핑·반복·내부 null 오류 | T022→T023 |
+
+T029: 사용자에게 경계값 한 사례의 이유와 전체 assertion 탐지 대상의 검토 여부를 요청했다. 사용자 답변/확인 전으로 미완료다. 위 설명 표와 예시는 사용자 설명을 대신하지 않는다.
+
+T030~T031: README·versions·decisions·knowledge와004 명세/모델/계약/안내/계획 상태를 실제 규칙·Unit 수에 맞췄다. 원계획3단계의 코드/실행5항목만 체크하고 설명 및 실제 요청 경로 사용은 미완료로 남겼다. 버전·빌드·OpenAPI·SQL·기존 프로브는 유지했다. 이번 IT/HTTP/DB/Redis/경쟁/Contract/Property/PIT/부하·외부 CI는 미실행이다.
+
+T032 사전 검사: Python 문서 검사 exit0으로 변경 Markdown16개·로컬 링크191개 실재·줄끝공백0을 확인했다. XML4개 합계116/0/0/0과 신규 클래스별 실행>0을 다시 읽어 listener와 일치함을 확인했다. `git diff --check` exit0, 체크리스트는e3de6ab 대비 차이0이다. build.gradle·OpenAPI·업무 migration·기존 ReservationStatus는90a4085 대비 변경0이다. 최종 생산 코드에 수량 no-op·이름 원문 반환·무검증 키·null 판단 골격은 남아 있지 않다. `.specify/extensions.yml` 부재로 사후 훅도 없다. 독립 리뷰 결과는 아래에 추가한다.
+
+### 최종 독립 리뷰·인수 결과
+
+T032: 읽기 전용 독립 리뷰어가90a4085..903fce9의 생산3개/Unit3개와 현재 문서를 검토했다. Critical0·Important0, 인터페이스·순수성·원문 비노출과 계약 전체/다섯 핵심 실패 조건의 assertion 및 XML116/0/0/0을 확인했다. 테스트 재실행은 하지 않았다. 리뷰 시 T032/T033 미체크와32/33 표현의 일시 차이(Minor1)는 최종 기록·커밋 절차에 따라 두 체크를 반영해 일치시켰다. 이월 Minor는0이다.
+
+리뷰 판단 제외 항목의 처리는 기존 명세 범위를 유지한다: T029는 사용자 설명 대기이며 완료로 세지 않는다(전체 인수 지연). HTTP·입력 형식·인증/오류 변환은4~6단계 후속이다(업무 API 사용 불가). Writer·멱등 응답·취소 복구·경쟁·장애 보장은 후속이다(실제 쓰기 정합성 미보장). 업무 PIT/Property·프로브 교체는 후속이다(변이 탐지율/생성 사례 보장 없음). 이번 미실행 IT/Contract/부하/외부CI의 결과를 새 증거로 주장하지 않는다(해당 경로·성능 회귀 미검증).
+
+T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다. 구현 브랜치는 feature/validate-domain-rules, 기능 커밋은1f38027·b809877·903fce9이다. 최종 커밋 ID와 작업 트리 상태는 커밋 후 git log/status로 확인해 완료 보고에 남긴다. push·PR·develop 병합·태그는 하지 않았다. T029는33개 중 유일한 미완료이며 설명 답변 후 해당 기록을 인수해야 전체 완료다. 사용자가 읽을 핵심은 ResourceRules/IdempotencyKey/CancellationDecision 및 대응 세 Unit·규칙 계약·위 RED/GREEN 표다. 다음 구현은4단계 로컬 인증과 대상 API의 ResourceRules 연동이다.

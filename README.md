@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행과 2단계 저장 제약·읽기 조회·테스트 초기화를 검증했다. 업무 API는 미구현이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반과3단계 순수 규칙의 Unit 실행을 검증했다. 업무 API는 미구현이다.
 
 ## 로컬 환경
 
@@ -58,17 +58,17 @@ commit 전 오류는 rollback하고 연결을 닫는다. commit 응답 유실은
 
 ## 테스트 실행
 
-backend/에서 실행한다. Java25와 실행 가능한 Docker가 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다.
+backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능한 Docker가 추가로 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다.
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit3 |
-| `./gradlew verify` | Unit3+일반IT78 |
+| `./gradlew test` | Spring 없는 Unit116 (업무113+프로브3) |
+| `./gradlew verify` | Unit116+일반IT78 (이번 단계 IT 재실행 없음) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit3+지정IT3 |
-| `./gradlew verifyContract` | 구성상 Unit3+일반IT78+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit3+일반IT78+Property3; 이번 단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성상 총87; 2단계에서 deepTest 재실행은 하지 않음 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit116+지정IT3 (이번 단계 재실행 없음) |
+| `./gradlew verifyContract` | 구성상 Unit116+일반IT78+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit116+일반IT78+Property3; 이번 단계 재실행 없음 |
+| `./gradlew deepTest` | 네 그룹 구성상 총200; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
@@ -97,6 +97,19 @@ Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 �
 ./gradlew test integrationTest --tests '*SchemaIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT' --tests '*DatabaseSupportIT'
 ```
 
-Unit3+업무IT72를 실행한다. 네 클래스의 fresh/reapplied 두 모드에서 같은 사례를 검증하며, 후자는 validate·migrate0건·표식/이력/구조 보존을 확인한다. [TestData](backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 전달한 테스트 DataSource에서 독립 커밋과 예약→대상 초기화 한 트랜잭션을 제공한다. [수량 검사](backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 SELECT1회로 보존식을 관측하고 불일치·대상 부재를 실패시킨다. 고의 SQL 실패의 마이그레이션 전체 롤백·새 DB 복구와 초기화 롤백·장애 제거 후 재요청도 검증한다.
+현재 구성은 Unit116+업무IT72다. 2단계 당시 실제 실행은 Unit3+업무IT72였으며 이번에는 IT를 재실행하지 않았다. 네 클래스의 fresh/reapplied 두 모드에서 같은 사례를 검증하며, 후자는 validate·migrate0건·표식/이력/구조 보존을 확인한다. [TestData](backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 전달한 테스트 DataSource에서 독립 커밋과 예약→대상 초기화 한 트랜잭션을 제공한다. [수량 검사](backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 SELECT1회로 보존식을 관측하고 불일치·대상 부재를 실패시킨다. 고의 SQL 실패의 마이그레이션 전체 롤백·새 DB 복구와 초기화 롤백·장애 제거 후 재요청도 검증한다.
 
-업무 V1이 추가되어 이후 local 앱 기동은 해당 DB에 V1을 적용한다. 이번 단계는 Testcontainers 소유 DB에서만 실행했으며 기존 reservation_local의 실제 적용/전환은 검증하지 않았다. 적용된 V1은 편집하지 않는다. 상세 재현은 [2단계 안내](specs/003-define-db-schema/quickstart.md), 실행 결과는 [증거](docs/test-evidence.md)를 따른다. 다음 작업은 3단계 순수 입력 규칙이다.
+업무 V1이 추가되어 이후 local 앱 기동은 해당 DB에 V1을 적용한다. 이번 단계는 Testcontainers 소유 DB에서만 실행했으며 기존 reservation_local의 실제 적용/전환은 검증하지 않았다. 적용된 V1은 편집하지 않는다. 상세 재현은 [2단계 안내](specs/003-define-db-schema/quickstart.md), 실행 결과는 [증거](docs/test-evidence.md)를 따른다. 3단계 순수 입력 규칙은 아래와 같이 구현했다.
+
+## 3단계 순수 규칙
+
+[ResourceRules](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)는 수량0~1000과 strip 후 코드 포인트1~100 이름을 검사한다. [IdempotencyKey](backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)는 parse와 직접 생성 모두에서 키를 검증하고 원문을 보존한다. [CancellationDecision](backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java)은 현재 상태에 따른 판단만 반환한다.
+
+```sh
+./gradlew test --tests 'com.limitedbooking.backend.resource.ResourceRulesTest'
+./gradlew test --tests 'com.limitedbooking.backend.reservation.IdempotencyKeyTest'
+./gradlew test --tests 'com.limitedbooking.backend.reservation.CancellationDecisionTest'
+./gradlew test
+```
+
+2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 대기 중이다. 실제 요청 경로 사용과 HTTP·저장 쓰기·멱등성·경쟁 보장, 업무 PIT/Property는 미완료다. 다음 구현은4단계 로컬 인증·대상 API에서 ResourceRules를 사용하는 작업이다.

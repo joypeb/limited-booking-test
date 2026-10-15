@@ -1,6 +1,6 @@
 # 데이터 모델: 입력 값과 취소 판단
 
-작성일: 2026-10-15. [명세](spec.md)의 개념을 Java 내부 값에 대응한 설계다. 새 테이블·migration·영속 엔티티를 추가하지 않는다. 새 규칙 클래스는 미구현이며 기존 저장 데이터와 [ReservationStatus](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationStatus.java)는 그대로 재사용한다.
+작성일: 2026-10-15. [명세](spec.md)의 개념을 Java 내부 값에 대응한 설계다. 새 테이블·migration·영속 엔티티를 추가하지 않는다. 새 규칙 클래스3개는 구현·Unit 검증됐으며 기존 저장 데이터와 [ReservationStatus](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationStatus.java)는 그대로 재사용한다.
 
 ## 대상 입력
 

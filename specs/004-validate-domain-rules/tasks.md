@@ -2,13 +2,13 @@
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [값 모델](data-model.md), [규칙 계약](contracts/rules-contract.md), [검증 안내](quickstart.md).
 
-**상태**: 작업 생성 완료·전 항목 미실행. 작업 체크는 실제 수행·검증 후에만 표시한다. 맞춤 [요구사항 검토 목록](checklists/domain-rules.md)의 체크와는 의미·소유자가 다르다.
+**상태**: 32/33 수행. 순수 규칙 구현·Unit 검증 완료, T029 사용자 설명 대기. 작업 체크는 실제 수행·검증 후에만 표시한다. 맞춤 [요구사항 검토 목록](checklists/domain-rules.md)의 체크와는 의미·소유자가 다르다.
 
 **테스트**: 명세 FR-007~008과 원계획 3단계가 명시적으로 테스트 우선 개발을 요구한다. 코드 작성 후 테스트를 붙이지 않는다. 실제 값·Jupiter·AssertJ를 사용하며 Spring·Mockito·컨테이너를 사용하지 않는다.
 
 ## 형식과 경로
 
-`- [ ] T번호 [P 선택] [US번호 이야기 작업만] 설명과 정확한 경로`를 사용한다. 경로는 저장소 루트 기준이다. 신규 Java 파일은 예정이며 아직 존재하지 않는다. 모든 Gradle 명령의 실행 위치는 `backend/`다.
+`- [ ] T번호 [P 선택] [US번호 이야기 작업만] 설명과 정확한 경로`를 사용한다. 경로는 저장소 루트 기준이다. 신규 Java 파일3개와 대응 Unit3개는 구현·실행 검증됨이다. 모든 Gradle 명령의 실행 위치는 `backend/`다.
 
 [P]는 공통 선행 작업을 마친 뒤 서로 다른 파일을 작성할 수 있다는 뜻이다. Gradle 실행·같은 파일 편집·docs/test-evidence.md 갱신·Git 커밋은 병행하지 않는다. 기본은 US1→US2→US3 순차 진행이며 병행 작업을 자동으로 시작하라는 지시가 아니다.
 
@@ -87,13 +87,13 @@
 
 **선행**: 세 이야기 구현/개별 검증 완료. FR-007~008·SC-004~005를 이야기별 기록과 합쳐 인수한다.
 
-- [ ] T027 backend/에서 ./gradlew test를 실행해 새 세 Unit과 기존 ToolchainSmokeTest만 일반 Unit으로 발견되는지 backend/build/test-results/test/TEST-*.xml과 현재 listener 합계로 대조하고 docs/test-evidence.md에 기록한다. 각 신규 클래스 실행>0·전체 실패/오류/skip0·합계 일치, 기존 프로브3회와 신규 invocation 수 구분을 요구한다. backend/build.gradle의 게이트/태그/캐시 정책은 바꾸지 않는다.
-- [ ] T028 specs/004-validate-domain-rules/quickstart.md·specs/004-validate-domain-rules/contracts/rules-contract.md 전체와 새 세 Unit의 assertion을 대조해 허용/거부/반환값/동등성/판단별 탐지 대상 및 실제 RED/GREEN 증거를 docs/test-evidence.md에 연결한다. 누락은 담당 테스트에 보완하고 변경된 범위만 재검증한다. 기존 프로브를 업무 PIT/Property 검증으로 주장하지 않는다.
+- [X] T027 backend/에서 ./gradlew test를 실행해 새 세 Unit과 기존 ToolchainSmokeTest만 일반 Unit으로 발견되는지 backend/build/test-results/test/TEST-*.xml과 현재 listener 합계로 대조하고 docs/test-evidence.md에 기록한다. 각 신규 클래스 실행>0·전체 실패/오류/skip0·합계 일치, 기존 프로브3회와 신규 invocation 수 구분을 요구한다. backend/build.gradle의 게이트/태그/캐시 정책은 바꾸지 않는다.
+- [X] T028 specs/004-validate-domain-rules/quickstart.md·specs/004-validate-domain-rules/contracts/rules-contract.md 전체와 새 세 Unit의 assertion을 대조해 허용/거부/반환값/동등성/판단별 탐지 대상 및 실제 RED/GREEN 증거를 docs/test-evidence.md에 연결한다. 누락은 담당 테스트에 보완하고 변경된 범위만 재검증한다. 기존 프로브를 업무 PIT/Property 검증으로 주장하지 않는다.
 - [ ] T029 docs/test-evidence.md에 개발자가 설명한 경계값 최소1개의 입력·기대 결과·이유와 전체 assertion의 확인 대상/실패 조건에 대한 확인 근거를 기록한다. 사용자 답변/확인 없이 예시 문장만으로 완료하지 않으며 답변 대기 중이면 이 작업은 미완료로 남기고 독립 문서 정리는 계속한다.
-- [ ] T030 README.md·docs/versions.md·docs/decisions.md·knowledge/README.md·knowledge/domain/resource.md·knowledge/domain/reservation.md를 실제 새 클래스·Unit 명령/범위/실행 수와 동기화한다. 한정 수량 예약 백엔드 로컬 개발 계획.md의3단계 체크는 대응 실행/설명 증거가 있는 항목만 반영하고4~6단계 요청 경로 사용은 별도 미완료로 명시한다. 버전·OpenAPI·DB/Redis 계약을 임의 변경하지 않는다.
-- [ ] T031 specs/004-validate-domain-rules/의 spec.md·plan.md·data-model.md·contracts/rules-contract.md·quickstart.md에서 상태·문서 트리·미구현 표현을 실제 코드와 실행 증거에 맞춰 갱신한다. 순수 규칙 구현·Unit 실행·개발자 설명 인수를 각각 구분하고, 실제 요청 경로 사용은 후속4~6단계에서 검증될 때까지 미완료로 유지한다. checklists/domain-rules.md는 읽기 전용으로 보존하며 기능 테스트 통과를 근거로 판정 표시를 변경하지 않는다.
-- [ ] T032 specs/004-validate-domain-rules/tasks.md의 FR/SC 추적표·완료 표시와 docs/test-evidence.md를 대조하고 Markdown 링크/공백·git diff --check·고의 골격 잔류·변경 범위를 검토한다. 독립 코드 리뷰에서 검증된 결함이 나오면 관련 테스트의 실패→수정→재검증 근거를 남긴다. 사용자 설명·요청 경로·심화 미검증은 숨기지 않는다.
-- [ ] T033 knowledge/rules/commit.md에 따라 T027~T032의 실제 수행 결과에 해당하는 문서/보완 변경만 검토·스테이징해 목적 커밋으로 저장하고 최종 Git 상태·핵심 코드/테스트·미완료/미검증·다음4단계 작업을 docs/test-evidence.md와 완료 보고에 남긴다. T029가 미완료면 전체 완료를 주장하지 않고 유지하며 push/PR·병합·태그는 수행하지 않는다.
+- [X] T030 README.md·docs/versions.md·docs/decisions.md·knowledge/README.md·knowledge/domain/resource.md·knowledge/domain/reservation.md를 실제 새 클래스·Unit 명령/범위/실행 수와 동기화한다. 한정 수량 예약 백엔드 로컬 개발 계획.md의3단계 체크는 대응 실행/설명 증거가 있는 항목만 반영하고4~6단계 요청 경로 사용은 별도 미완료로 명시한다. 버전·OpenAPI·DB/Redis 계약을 임의 변경하지 않는다.
+- [X] T031 specs/004-validate-domain-rules/의 spec.md·plan.md·data-model.md·contracts/rules-contract.md·quickstart.md에서 상태·문서 트리·미구현 표현을 실제 코드와 실행 증거에 맞춰 갱신한다. 순수 규칙 구현·Unit 실행·개발자 설명 인수를 각각 구분하고, 실제 요청 경로 사용은 후속4~6단계에서 검증될 때까지 미완료로 유지한다. checklists/domain-rules.md는 읽기 전용으로 보존하며 기능 테스트 통과를 근거로 판정 표시를 변경하지 않는다.
+- [X] T032 specs/004-validate-domain-rules/tasks.md의 FR/SC 추적표·완료 표시와 docs/test-evidence.md를 대조하고 Markdown 링크/공백·git diff --check·고의 골격 잔류·변경 범위를 검토한다. 독립 코드 리뷰에서 검증된 결함이 나오면 관련 테스트의 실패→수정→재검증 근거를 남긴다. 사용자 설명·요청 경로·심화 미검증은 숨기지 않는다.
+- [X] T033 knowledge/rules/commit.md에 따라 T027~T032의 실제 수행 결과에 해당하는 문서/보완 변경만 검토·스테이징해 목적 커밋으로 저장하고 최종 Git 상태·핵심 코드/테스트·미완료/미검증·다음4단계 작업을 docs/test-evidence.md와 완료 보고에 남긴다. T029가 미완료면 전체 완료를 주장하지 않고 유지하며 push/PR·병합·태그는 수행하지 않는다.
 
 ## 의존성과 실행 순서
 

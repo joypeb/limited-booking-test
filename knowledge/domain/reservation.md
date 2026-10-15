@@ -103,7 +103,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 
 ### 현재 저장 기반 구현·검증 상태 (2026-10-15)
 
-V1·읽기 Repository와 대응 IT는 구현·실행 검증됨이다. 직접 저장 제약의 보장 범위는 스키마에 한정하며 입력 strip/키 문자 규칙·HTTP·권한·Writer·경쟁·응답 재현은 설계됨/미구현이다. [TestData](../../backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 실행 소유 DataSource의 독립 커밋과 한 트랜잭션 삭제를 사용한다. [DatabaseAssertions](../../backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 단일SELECT에서 capacity/available/확정 수를 검사한다. 보존식 불일치를 스키마가 막는다는 보장은 없으며 실제 업무 쓰기의 보장은 후속이다.
+V1·읽기 Repository와 대응 IT는 구현·실행 검증됨이다. 직접 저장 제약의 보장 범위는 스키마에 한정하며 입력 strip/키 문자 순수 규칙과 취소 판단은3단계에서 구현·Unit 검증했다. HTTP·권한·Writer·경쟁·응답 재현은 미구현이다. [TestData](../../backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 실행 소유 DataSource의 독립 커밋과 한 트랜잭션 삭제를 사용한다. [DatabaseAssertions](../../backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 단일SELECT에서 capacity/available/확정 수를 검사한다. 보존식 불일치를 스키마가 막는다는 보장은 없으며 실제 업무 쓰기의 보장은 후속이다.
 
 fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사례를 검증했다. 실패사본 V1 전체 DDL 롤백과 새DB복구, 초기화 중간 실패의 전체 행/값·구조/이력 보존 및 같은DB 명시적 재요청은 [증거](../../docs/test-evidence.md)를 따른다. 연결 단절·프로세스 중단·부하는 미검증이다.
 
