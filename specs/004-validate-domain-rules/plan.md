@@ -1,6 +1,6 @@
 # 구현 계획: 예약 입력과 취소 판단의 기본 규칙 검증
 
-> 구현 담당자는 `superpowers:executing-plans` 또는 `superpowers:subagent-driven-development`로 한 검증 대상씩 구현한다. 이 문서는 Phase 1 설계까지의 산출물이며 상세 작업 목록은 [tasks.md](tasks.md)에 생성돼 있다. 순수 규칙 구현·Unit 검증을 완료했으며 사용자 설명(T029)은 대기 중이다.
+> 구현 담당자는 `superpowers:executing-plans` 또는 `superpowers:subagent-driven-development`로 한 검증 대상씩 구현한다. 이 문서는 Phase 1 설계까지의 산출물이며 상세 작업 목록은 [tasks.md](tasks.md)에 생성돼 있다. 순수 규칙 구현·Unit 검증을 완료했으며 사용자 설명(T029)은 2026-10-16 설명 후 명시적 완료 지시로 처리했다(독립 재설명 시험 미실시).
 
 **브랜치**: `feature/validate-domain-rules` (문서 원본: docs/validate-domain-rules) | **날짜**: 2026-10-15 | **명세**: [spec.md](spec.md)
 
@@ -61,7 +61,7 @@ specs/004-validate-domain-rules/
   contracts/rules-contract.md
   checklists/requirements.md
   checklists/domain-rules.md   # 요구사항 품질34/34 충족
-  tasks.md                    # 작업32/33 수행, T029 대기
+  tasks.md                    # 작업33/33 수행, T029 사용자 완료 지시 반영
 ```
 
 계획 명령은 `tasks.md`를 생성하지 않았다. 이후 사용자의 `$speckit-checklist`·`$speckit-tasks` 요청으로 [맞춤 검토 목록](checklists/domain-rules.md)과 [작업 목록](tasks.md)을 생성했으며 요구사항 품질 판정·규칙 구현·Unit 검증을 완료했다.
@@ -134,7 +134,7 @@ specs/004-validate-domain-rules/
 ### 4. 전체 Unit 인수와 기록 — FR-007~008·SC-004~005
 
 - [X] backend/에서 `./gradlew test`를 한 번 실행해 새 세 클래스와 기존 ToolchainSmokeTest가 발견되는지 XML/현재 결과를 대조한다. 실행>0·실패0·오류0·skip0을 확인하고 업무 규칙 수와 기존 프로브3회는 구분한다. 고정 테스트 총수를 추정해 통과 기록으로 적지 않는다.
-- [ ] 위 각 RED의 명령·대상 입력·assertion 실패를 GREEN과 함께 docs/test-evidence.md에 남긴다. ClassNotFound·컴파일·환경 실패는 RED로 세지 않는다. 설명 인수는 개발자가 예를 들어 capacity=0의 허용 이유와 각 assertion의 탐지 대상을 설명한 근거로 따로 기록한다. 사용자 답변이 없으면 설명 인수는 미완료다.
+- [X] 위 각 RED의 명령·대상 입력·assertion 실패를 GREEN과 함께 docs/test-evidence.md에 남긴다. ClassNotFound·컴파일·환경 실패는 RED로 세지 않는다. 설명 인수는 개발자가 예를 들어 capacity=0의 허용 이유와 각 assertion의 탐지 대상을 설명한 근거로 따로 기록한다. 사용자 답변이 없으면 설명 인수는 미완료다.
 - [X] 전체 diff와 문서 링크·공백을 검사한 뒤 목적별 커밋을 작성한다. 문서174da7d를 보존하고 develop에서 feature/validate-domain-rules를 생성해e3de6ab로 반영했다. develop 병합·외부 게시·태그는 수행하지 않았다.
 
 테스트 클래스는 package-private, Spring 어노테이션·상속 지원·property/contract 태그 없이 `*Test` 이름을 쓴다. `--tests`는 실행 선택이며 공유 test sourceSet의 컴파일까지 줄이지 않는다. 기존 build.gradle의 listener/XML/현재 실행 게이트·캐시 비활성화를 유지한다. 이 범위에서 build/verify/deepTest/PIT·DB·부하를 반복할 필요는 없다. 관련 생산 코드·공유 지원 코드 변경이나 실제 실패가 생기면 영향 검증을 추가한다.
@@ -148,6 +148,6 @@ specs/004-validate-domain-rules/
 | CancellationDecision | CancellationDecisionTest 두 판단·반복 | 6단계 Writer의 이미 취소됨 분기에 사용, 중복 취소 상태·시각·수량 IT |
 | 실행·설명 | Unit 게이트·RED/GREEN 기록·설명 확인 | 요청 경로 사용은 위 세 연동이 검증될 때까지 미완료 |
 
-자체 검토로 FR-001~008·SC-001~005의 담당 검증, 인터페이스 이름·예외 분류·행렬 누락을 대조했다. 위반·미해결 설계 질문은 없다. 현재 순수 규칙 구현·전체 Unit116건을 검증했다. [tasks.md](tasks.md)의 T029 사용자 설명은 대기 중이며 실제 요청 경로 연동은4~6단계에 인수한다. 다음 구현은4단계 로컬 인증과 대상 API다.
+자체 검토로 FR-001~008·SC-001~005의 담당 검증, 인터페이스 이름·예외 분류·행렬 누락을 대조했다. 위반·미해결 설계 질문은 없다. 현재 순수 규칙 구현·전체 Unit116건을 검증했다. [tasks.md](tasks.md)의 T029는 설명 후 사용자 명시적 완료 지시로 처리했으며 실제 요청 경로 연동은4~6단계에 인수한다. 다음 구현은4단계 로컬 인증과 대상 API다.
 
-실행 인수: ResourceRules52·IdempotencyKey56·CancellationDecision5·프로브3, 합계116/실패0/오류0/skip0. RED/GREEN 명령·원인은 [증거](../../docs/test-evidence.md)에 기록했다. 설명 문단 체크는 사용자 답변 전 미완료이며 실제 요청 경로 사용도 미완료다.
+실행 인수: ResourceRules52·IdempotencyKey56·CancellationDecision5·프로브3, 합계116/실패0/오류0/skip0. RED/GREEN 명령·원인은 [증거](../../docs/test-evidence.md)에 기록했다. 설명 문단 체크는 2026-10-16 사용자 명시적 완료 지시를 근거로 반영했다. 독립 재설명 시험은 미실시이며 실제 요청 경로 사용은 미완료다.

@@ -112,4 +112,4 @@ Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 �
 ./gradlew test
 ```
 
-2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 대기 중이다. 실제 요청 경로 사용과 HTTP·저장 쓰기·멱등성·경쟁 보장, 업무 PIT/Property는 미완료다. 다음 구현은4단계 로컬 인증·대상 API에서 ResourceRules를 사용하는 작업이다.
+2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 2026-10-16 설명 후 명시적 완료 지시로 처리했다. 독립 재설명 시험은 미실시다. 실제 요청 경로 사용과 HTTP·저장 쓰기·멱등성·경쟁 보장, 업무 PIT/Property는 미완료다. 다음 구현은4단계 로컬 인증·대상 API에서 ResourceRules를 사용하는 작업이다.

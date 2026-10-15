@@ -100,4 +100,4 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 
 ### 3단계 순수 규칙 설계 (2026-10-15)
 
-[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 ResourceRules의 두 public static 메서드·수량/이름 Unit 경계를 설계했다. 무효 입력은 Java 내부에서 IllegalArgumentException으로 거부하며 정확한 메시지는 고정하지 않는다. 순수 Unit과4단계 실제 요청 경로 사용을 별도 인수한다. ResourceRules·대응 Unit52건의 구현·실행 검증을 완료했다. 개발자 설명·4단계 HTTP 연동은 미완료다.
+[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 ResourceRules의 두 public static 메서드·수량/이름 Unit 경계를 설계했다. 무효 입력은 Java 내부에서 IllegalArgumentException으로 거부하며 정확한 메시지는 고정하지 않는다. 순수 Unit과4단계 실제 요청 경로 사용을 별도 인수한다. ResourceRules·대응 Unit52건의 구현·실행 검증을 완료했다. 개발자 설명 인수는 2026-10-16 설명 후 사용자 완료 지시로 처리했다(독립 재설명 시험 미실시). 4단계 HTTP 연동은 미완료다.
