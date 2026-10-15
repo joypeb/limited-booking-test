@@ -57,3 +57,5 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 2단계 실제 저장 기반 검증은 Unit3·일반IT78(업무72+기존6)이며 실패0·skip0이다. 도구 심화 프로브 수는 과거 실행 기록이며 이번 단계에 Property/PIT/부하를 재실행하지 않았다.
 
 3단계 US1: [ResourceRules](../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java)를 구현했다. 수량·이름 Unit52건을 검증했으며 HTTP 연동·사용자 설명은 별도다.
+
+3단계 US2: [IdempotencyKey](../backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)·[IdempotencyKeyTest](../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyKeyTest.java)의 Unit56건을 검증했다. 멱등 요청 처리·HTTP 연동은 후속이다.

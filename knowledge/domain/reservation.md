@@ -108,4 +108,6 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 
 ### 3단계 순수 규칙 설계 (2026-10-15)
 
-[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 검증 생성자를 가진 IdempotencyKey record와 기존 ReservationStatus를 사용하는 CancellationDecision을 설계했다. 무효 키는 IllegalArgumentException, 내부 상태 null은 NullPointerException이며 HTTP 변환은 후속 경계의 책임이다.5단계 생성 키 사용·6단계 이미 취소됨 분기 사용은 별도 인수한다. 현재는 설계됨이며 신규 클래스·실행·실제 취소/경쟁은 미검증이다.
+[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 검증 생성자를 가진 IdempotencyKey record와 기존 ReservationStatus를 사용하는 CancellationDecision을 설계했다. 무효 키는 IllegalArgumentException, 내부 상태 null은 NullPointerException이며 HTTP 변환은 후속 경계의 책임이다.5단계 생성 키 사용·6단계 이미 취소됨 분기 사용은 별도 인수한다. IdempotencyKey와 대응 Unit56건은 구현·실행 검증됨이다. CancellationDecision·실제 취소/경쟁은 아직 미검증이다.
+
+생성 키의 순수 검증: [IdempotencyKey](../../backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)·[IdempotencyKeyTest](../../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyKeyTest.java). compact constructor가 parse와 new를 함께 보호하며 원문 equals/hashCode를 제공한다. Repository·StoredReservation의 String은 유지했다. 사용자·키 유일성/대상 충돌/성공 응답 재현·TTL/HTTP 변환과 실제 요청 경로 사용은5단계에서 검증한다.

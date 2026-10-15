@@ -66,3 +66,7 @@ Java25의 HttpRequest.timeout만으로 헤더 이후 문자열 본문 완료 대
 ## 3단계 ResourceRules 구현 (2026-10-15)
 
 기존 확정 정책대로 null 거부→strip→코드 포인트1~100 검사 순서로 구현했다. NBSP 계열은 유지하며 capacity0~1000을 보정 없이 검증한다. UTF-16 길이·정리 전 길이 제한·초과 절단을 사용하지 않는다. Unit52건과 세 그룹 RED/GREEN은 test-evidence.md를 따른다. HTTP와 저장 경계는4단계에서 연결한다.
+
+## 3단계 IdempotencyKey 구현 (2026-10-15)
+
+record compact constructor에서 null과 고정 Pattern의 matches 전체 일치를 검사해 parse/new 두 경로가 같은 불변식을 보장한다. 원문 value·equals/hashCode를 유지하고 키를 오류 메시지에 노출하지 않는다. 내부 IAE를 후속 입력 경계에서만400으로 번역하며 이번에는 HTTP 예외 처리를 추가하지 않았다.

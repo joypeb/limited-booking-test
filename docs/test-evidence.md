@@ -770,3 +770,9 @@ T004: `java --version` exit0은 Corretto25.0.4+7-LTS, `./gradlew --version` exit
 - T011-resource-GREEN: `./gradlew test --tests com.limitedbooking.backend.resource.ResourceRulesTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.resource.ResourceRulesTest: 52/0/0/0.
 
 T005~T013: 수량 no-op에서 -1·1001의 IAE 기대2건 실패→5건 통과. 원문 이름 반환에서 공백 반환값3건과 null/빈/공백 거부6건 실패→14건 통과. 길이 검사 없이 일반/😀/NBSP3종101개가 모두 수용돼5건 실패→52건 통과했다. 정확한 오류 문구에 의존하지 않았다. R-CAPACITY/R-NAME 전체와 대조해 일반/😀/혼합/정리 전100초과·NBSP 각1/양끝/100/101·정상값 재정리를 포함한다. 기대값은 고정 입력과 명시 문자열이며 mock/구현 호출로 계산하지 않는다. 반복 GREEN 없이 직전 XML52/0/0/0을 최종 US1 인수로 사용한다. 사용자 설명·HTTP·IT·PIT는 미실시다.
+
+- T016-key-RED: `./gradlew test --tests com.limitedbooking.backend.reservation.IdempotencyKeyTest` (backend/) exit1; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/48/0/0.
+
+- T017-key-GREEN: `./gradlew test --tests com.limitedbooking.backend.reservation.IdempotencyKeyTest` (backend/) exit0; XML 실행/실패/오류/skip: com.limitedbooking.backend.reservation.IdempotencyKeyTest: 56/0/0/0.
+
+T015~T019: 무검증 record에서 parse24건·직접 생성24건의 무효 키 거부가 모두 실패했다. 정상7건·값 동등성1건은 기존 record 동작을 보장하며 억지 RED를 만들지 않았다. compact constructor 최소 구현 후56/0/0/0을 확인했다. K-KEY 전체의 null/빈/65·허용 문자별1/64·공백의 앞/뒤/내부·끝LF/CRLF·비ASCII/구분문자를 양 생성 경로로 대조했다. 같은 원문 equals/hashCode·대소문자 비동등을 확인했으며 다른 값의 hashCode 차이나 참조 동일성을 요구하지 않는다. 이 실행을 최종 US2 인수로 사용하며 HTTP·DB·경쟁·PIT는 미실시다.
