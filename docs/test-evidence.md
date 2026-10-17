@@ -844,3 +844,53 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
 주 작업자는 세 생산 클래스와 대응 assertion·현재 XML을 독립 대조했고 분류할 유효 지적은 없었다. 빌드·의존성·OpenAPI·SQL·프로브는 기준 대비 변경되지 않았다. T029 사용자 완료 지시와 독립 재설명 미실시를 구분하며 실제 HTTP/Writer/경쟁/업무 심화 검증은 후속으로 유지한다. 이 판정 이후의 변경은 본 PR/리뷰 결과를 남기는 문서뿐이다.
 
 병합 조건: 최신 원격 head가 검토 코드와 동일하고 base가develop이며 충돌·실패/미해결 체크·변경 요청이 없으면 사용자 지시에 따라 merge commit으로 병합한다. PR 설명에 로컬 빌드·별도 CLI 리뷰 실패와 독립 대체 리뷰 결과·외부 CI 미등록을 반영한다. 실제 merge SHA/최종 상태는 GitHub PR과 완료 보고에서 확인하며 병합 전 기록에서 성공을 선포하지 않는다.
+
+## 4단계 구현 착수 및 공통 기반 준비 (2026-10-17)
+
+- T001: `develop`(`8366995`)에서 `git switch -c feature/auth-resource-api`로 작업 브랜치를 생성하고, 선행 Spec Kit 단계 산출물을 구간별로 보존 커밋했다(`39bf36b` 명세·요구사항 체크리스트, `6ece577` 구현 계획·연구·데이터 모델·인터페이스 계약·빠른 시작, `642d4ee` 맞춤 체크리스트·작업 분해·지식 색인). 사용자 변경 삭제·reset·원격 push·develop 병합은 수행하지 않았다.
+- T002: `specs/005-auth-resource-api/checklists/requirements.md`(16/16 충족, 미체크 0)와 `specs/005-auth-resource-api/checklists/auth-resource-api.md`(34/34 충족, 미체크 0) 검토 완료 상태를 확인해 구현 게이트를 통과했다. 두 체크리스트 파일은 구현 중 변경하지 않는다.
+- T003~T006: `.env.example`과 `backend/src/main/resources/application-local.yaml`을 `ADMIN_PASSWORD`·`USER_A_PASSWORD`·`USER_B_PASSWORD` 구조로 갱신하고, `ClockConfig`(`Clock.systemUTC()`), `ApiExceptionHandler` 공통 `application/problem+json` 직렬화 골격, `TestData`·`ContainerTestSupport`·`HttpClientTestSupport`·`BackendApplicationIT`의 고정 UUID(`ADMIN_ID`, `USER_A_ID`, `USER_B_ID`)·테스트 전용 가짜 비밀번호·Basic 인증/raw HTTP 전송 헬퍼를 구성했다.
+- 기반 확인 실행: `backend/`에서 `./gradlew test integrationTest --tests com.limitedbooking.backend.BackendApplicationIT` 종료 코드 `0`; `test: tests=116, failed=0, skipped=0`, `integrationTest: tests=1, failed=0, skipped=0`.
+
+### User Story 1·2 (로컬 인증·권한 및 예약 대상 생성·단건 조회) TDD 기록
+
+- T007~T008 (US1 RED): `SecurityIT` 작성 후 최소 골격 상태에서 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=4, failed=4, skipped=0` (기능 미구현으로 4건 모두 의도된 실패 확인).
+- T009~T011 (US1 구현 및 US2 RED): `LocalIdentityResolver`·`SecurityConfig` 구현 및 `ResourceApiIT`(US2 범위) 작성 후 `ResourceController` 최소 골격 상태에서 `./gradlew integrationTest --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=4, failed=4, skipped=0` (대상 생성/조회 엔드포인트 미구현으로 4건 모두 의도된 실패 확인).
+- T012~T015 (US1·US2 GREEN): `ResourceRepository.insert`, `ResourceService.create/get`, `ResourceController`, `ApiExceptionHandler`(`404 NOT_FOUND`) 구현 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `0`; `integrationTest: tests=8, failed=0, skipped=0` (`SecurityIT` 4건, `ResourceApiIT` 4건 모두 통과).
+
+### User Story 3 (8KiB 본문 상한·엄격한 입력 검증·공통 오류 응답) TDD 기록
+
+- T016~T018 (US3 RED): `SecurityIT`(미인증 8,193바이트 일반/chunked/raw `413` 우선 반환, 8,192바이트 재사용 래퍼 전달)와 `ResourceApiIT`(이름/수량 경계 위반, 미정의 `userId`/`quantity`, 중복 JSON 키, 부동소수점 `1.5`/`1.0`, 문자열 `"10"`, 깨진 JSON, 잘못된 UUID 경로 `400`, `text/plain` `415`, 취소 경로 비어 있지 않은 본문 `400` 및 8KiB 초과 `413`) 추가 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=13, failed=4, skipped=0` (신규 US3 검증 4건 의도된 실패 확인).
+- T019~T022 (US3 GREEN): `RequestBodyLimitFilter` 구현 및 `BasicAuthenticationFilter` 앞 등록, `ApiExceptionHandler`의 Jackson 3 엄격 역직렬화(`FAIL_ON_UNKNOWN_PROPERTIES`, `STRICT_DUPLICATE_DETECTION`, `ALLOW_COERCION_OF_SCALARS` 비활성화, `ACCEPT_FLOAT_AS_INT` 비활성화, `LogicalType.Integer` 스칼라 강제 변환 거부) 및 `400`/`415`/`503` 매핑(미분류 SQL 결함 `500` 분리 포함), `SecurityConfig` 내 취소 경로 본문/UUID 검증 구현 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `0`; `integrationTest: tests=14, failed=0, skipped=0` (`SecurityIT` 6건, `ResourceApiIT` 8건 통과).
+
+### Phase 6 (`./gradlew verify` 전체 회귀 게이트·문서 동기화·최종 점검) 기록
+
+- T023 (`./gradlew verify` 전체 회귀 검증):
+  - 실행 명령: `backend/`에서 `./gradlew verify` -> 종료 코드 `0`, `BUILD SUCCESSFUL`
+  - JUnit XML 집계 (`backend/build/test-results/test/TEST-*.xml` 4개, 합계 `116/0/0/0`):
+    - `com.limitedbooking.backend.common.ToolchainSmokeTest`: `3/0/0/0`
+    - `com.limitedbooking.backend.reservation.CancellationDecisionTest`: `5/0/0/0`
+    - `com.limitedbooking.backend.reservation.IdempotencyKeyTest`: `56/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceRulesTest`: `52/0/0/0`
+  - JUnit XML 집계 (`backend/build/test-results/integrationTest/TEST-*.xml` 9개, 합계 `92/0/0/0`):
+    - `com.limitedbooking.backend.BackendApplicationIT`: `1/0/0/0`
+    - `com.limitedbooking.backend.common.HttpClientCleanupIT`: `2/0/0/0`
+    - `com.limitedbooking.backend.common.SchemaIT`: `45/0/0/0`
+    - `com.limitedbooking.backend.common.ToolchainSmokeIT`: `3/0/0/0`
+    - `com.limitedbooking.backend.reservation.ReservationRepositoryIT`: `4/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceApiIT`: `8/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceRepositoryIT`: `4/0/0/0`
+    - `com.limitedbooking.backend.security.SecurityIT`: `6/0/0/0`
+    - `com.limitedbooking.backend.support.DatabaseSupportIT`: `19/0/0/0`
+- T024~T025: `knowledge/domain/security.md`, `knowledge/domain/resource.md`, `knowledge/README.md`, `README.md`, `docs/decisions.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md`(4단계 체크박스 8/8 완료), `specs/005-auth-resource-api/spec.md`·`plan.md`·`tasks.md`(`27/27` 완료)를 실제 구현·검증 상태와 동기화했다 (`checklists/requirements.md` 및 `checklists/auth-resource-api.md`는 수정하지 않음).
+- T026~T027: 저장소 루트에서 `git diff --check` 종료 코드 `0`(서식·공백 오류 0건)을 확인하고, `feature/auth-resource-api` 브랜치에서 구간별 선행 문서 커밋(`39bf36b`, `6ece577`, `642d4ee`)과 구현 커밋(`954f172`, `a2985a3`, `f4e0d3f`)에 이어 최종 검증·문서 동기화 커밋으로 마무리했다. 원격 저장소 `push` 및 `develop` 병합은 수행하지 않는다.
+
+## 4단계 GitHub PR·적대적 코드 리뷰 및 병합 전 검증 (2026-10-17)
+
+- 사용자가 `develop` 대상 GitHub PR 생성, 적대적 코드 리뷰 실행, 병합 적합성 확인 후 병합을 명시적으로 지시했다.
+- `git push -u origin feature/auth-resource-api` 및 `gh pr create --base develop --head feature/auth-resource-api` 종료 코드 `0`으로 [PR #4](https://github.com/joypeb/limited-booking-test/pull/4)를 게시했다.
+- 독립된 읽기 전용 서브에이전트(`5e14debf6eb098b267e1e97b6ad16d50`)가 `origin/develop...HEAD`(`8366995..36adffd`) 전체 프로덕션·테스트·설정·문서·JUnit XML 결과를 계획서 2~5절·7절 4단계, `docs/openapi.yaml`, `specs/005-auth-resource-api/*` 및 헌법 원칙 I~V에 대조해 적대적 코드 리뷰를 수행했다:
+  - **판정**: **PASS** (`Critical 0`, `Major 0`, `Minor 0`, 머지 차단 사유 0건)
+  - 검증 항목: 고정 UUID 3계정(`ADMIN`·`USER_A`·`USER_B`) 및 BCrypt 보관, `LocalIdentityResolver.userId(Authentication)`의 `Principal` 단일 신뢰(`X-User-Id`/본문 `userId` 불신뢰), 무상태 Basic 인증(`JSESSIONID` 미생성)·CSRF 비활성화 사유 명시·CORS 와일드카드 미추가, 인증 앞단 `RequestBodyLimitFilter`의 8,192바이트 초과(일반/`chunked`/길이 헤더 누락) `413` 우선 차단 및 상한 이하 재사용 래퍼 전달, Jackson 3 엄격 설정(미정의 필드·중복 키·부동소수점 `1.5`/`1.0`·문자열 `"10"`·불리언 강제 변환 거부 `400`), `415`, 취소 비어 있지 않은 본문/잘못된 UUID `400`, 일시적 DB 장애 `503` 및 미분류 SQL 결함 `500` 분리, 전 구간 `application/problem+json` 6개 필수 속성 및 민감정보 비노출, `./gradlew verify` JUnit XML(`test` 116/0/0/0, `integrationTest` 92/0/0/0) 일치 확인.
+- 저장소에 `.github/workflows` 외부 CI는 등록되어 있지 않으므로(12단계 예정) 외부 CI 성공을 주장하지 않으며 로컬 `./gradlew verify` 통과와 구분한다.
+- 병합 조건: 최신 원격 head가 검토된 커밋과 일치하고 `MERGEABLE`/`CLEAN` 상태임을 확인한 뒤 사용자 지시에 따라 merge commit 방식으로 `develop`에 병합하고 로컬 `develop`을 동기화한다.

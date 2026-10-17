@@ -2,9 +2,9 @@
 
 ## 1. 기준과 현재 상태
 
-- 예정 패키지: `com.limitedbooking.backend.security`. 작성·확인일: 2026-10-13.
-- 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md).
-- 설계: 기존 확정 규칙. 구현·SQL·테스트: 미구현. 실행 검증: 미실행.
+- 예정·구현 패키지: `com.limitedbooking.backend.security` 및 공통 웹 경계 `com.limitedbooking.backend.common`. 작성·확인일: 2026-10-13, 4단계 구현·검증일: 2026-10-17.
+- 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절·7절 4단계, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md), [4단계 명세](../../specs/005-auth-resource-api/spec.md).
+- 설계: 기존 확정 규칙. 구현·테스트: 4단계 로컬 Basic 인증·고정 UUID Principal(`SecurityConfig`·`LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 공통 `application/problem+json` 오류 응답(`ApiExceptionHandler`), 취소 비어 있지 않은 본문/잘못된 UUID `400` 검증 구현 완료. 실행 검증: `SecurityIT`(6건)·`ResourceApiIT`(8건) 및 `./gradlew verify` 통과. 예약 소유권 조회/취소(`security-001`)와 Redis 쓰기 제한 연결은 5~8단계 후속 미구현.
 
 ## 2. 목적·책임·경계
 
@@ -14,10 +14,10 @@ localhost 비브라우저 API의 인증·ADMIN 권한·소유권과 공통 본�
 
 | 용어 | 의미 | 제약·원본 |
 | --- | --- | --- |
-| ADMIN / USER_A / USER_B | 로컬 고정 계정·UUID | 실제 값·계정 설정은 후속 구현, UUID를 요청에서 받지 않음 |
-| 비밀번호 | Basic 자격 증명 | 환경 변수에서 주입·BCrypt 처리, 문서·응답·Git에 비밀값 없음 |
-| Principal | 인증 사용자 | 예약 소유권 UUID의 유일한 출처 |
-| 본문 | 실제 요청 바이트 | 모든 요청 최대 8192바이트 |
+| ADMIN / USER_A / USER_B | 로컬 고정 계정·UUID | 고정 UUID(`ADMIN`: `00000000-0000-0000-0000-000000000001`, `USER_A`: `...0002`, `USER_B`: `...0003`) 할당 완료, UUID를 요청에서 받지 않음 |
+| 비밀번호 | Basic 자격 증명 | 환경 변수(`ADMIN_PASSWORD`, `USER_A_PASSWORD`, `USER_B_PASSWORD`)에서 주입·BCrypt 보관, 테스트는 가짜 비밀번호 분리, 문서·응답·Git에 비밀값 없음 |
+| Principal | 인증 사용자 | 예약 소유권 UUID의 유일한 출처 (`LocalIdentityResolver.userId(Authentication)`) |
+| 본문 | 실제 요청 바이트 | 모든 요청 최대 8192바이트 (`RequestBodyLimitFilter`에서 인증 앞단 검사 및 재사용 래퍼 전달) |
 
 ## 4. 불변식과 상태 전이
 
@@ -50,20 +50,21 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 
 | 규칙 | 사례 | 기대 | 검증 상태 |
 | --- | --- | --- | --- |
-| security-001 | 타인 예약 USER/ADMIN 접근 | 404, 무변경 | 후속 실제 Authorization·필터 IT 미실행 |
-| security-002 | 미인증+8193바이트 / 상한 이하 미인증 | 413 / 401과 인증 헤더 | 후속 HTTP 미실행 |
-| security-003 | 임의 X-User-Id·비밀번호 오류 | UUID 신뢰 안 함·401 | 후속 HTTP 미실행 |
+| security-001 | 타인 예약 USER/ADMIN 접근 | 404, 무변경 | 6단계 예약 조회·취소 구현 전 미실행 |
+| security-002 | 미인증+8193바이트(일반/chunked/길이 헤더 생략) / 상한 이하 미인증 / 8192바이트 재사용 | 413 / 401과 인증 헤더 / 본문 재사용 | `SecurityIT`·`ResourceApiIT` 실행 검증 완료 (Redis 제한은 8단계 후속) |
+| security-003 | 임의 X-User-Id 무시·본문 `userId` 400·비밀번호 오류 401·무세션·민감정보 비노출 | UUID 신뢰 안 함·400·401·`JSESSIONID` 미생성 | `SecurityIT`·`ResourceApiIT` 실행 검증 완료 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 위 후속 테스트는 아직 존재하거나 실행된 것으로 간주하지 않는다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 예약 소유권(6단계)과 Redis 요청 제한(8단계)은 아직 구현되지 않았다.
 
 ## 8. 구현 연결과 변경 영향
 
 | 책임 | 실제 파일·예정 위치 | 상태 |
 | --- | --- | --- |
-| 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 해당 기능 없음 |
-| 규칙·DTO·Controller·Service·Writer·Repository·필터 | 해당 기능 패키지 예정 | 미구현 |
-| SQL·마이그레이션·실제 HTTP/DB 테스트 | 후속 단계 예정 | 미구현 |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
+| 앱 골격·시계 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java)·[ClockConfig](../../backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java) | 구현·실행 검증됨 |
+| 로컬 인증·권한·고정 UUID 추출 | [SecurityConfig](../../backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)·[LocalIdentityResolver](../../backend/src/main/java/com/limitedbooking/backend/security/LocalIdentityResolver.java) | 구현·실행 검증됨 |
+| 인증 앞단 8KiB 제한·공통 오류·엄격 JSON | [RequestBodyLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/common/RequestBodyLimitFilter.java)·[ApiExceptionHandler](../../backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java) | 구현·실행 검증됨 |
+| 실제 HTTP 보안·오류 통합 테스트 | [SecurityIT](../../backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 (`SecurityIT` 6건, `ResourceApiIT` 8건) |
+| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 4단계 로컬 인증·예약 대상 API 실제 HTTP 검증 완료; 5~8단계 예약/요청 제한 미구현 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -71,7 +72,7 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 기능·저장·필터 미구현 | 실제 응답·경쟁·장애 검증 불가 | 0단계 고정 계약·사례 작성 뒤 1단계 도구 준비 |
-| 실행 미검증 | 계약 선언이 실제 동작 증거가 아님 | 후속 실제 HTTP·의존성 시험 |
+| 예약 소유권 조회·취소 (`security-001`) 미구현 | 타인 예약 `404` 은닉 HTTP 미검증 | 5~6단계 예약 생성·조회·취소 구현 시 `LocalIdentityResolver.userId(Authentication)` 연동 및 검증 |
+| Redis 예약 쓰기 제한 필터 미구현 | 인증 뒤 요청 제한 단계 미검증 | 8단계 Redis 고정 창 요청 제한 구현 시 보안 필터 체인 뒤에 연결 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.

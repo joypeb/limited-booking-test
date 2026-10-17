@@ -31,6 +31,19 @@ public final class ContainerTestSupport implements AutoCloseable {
             throw failure;
         }
     }
+    public void registerLocalAuthAndDatabaseProperties(org.springframework.test.context.DynamicPropertyRegistry properties) {
+        properties.add("server.address", () -> "127.0.0.1");
+        properties.add("spring.datasource.url", postgres::getJdbcUrl);
+        properties.add("spring.datasource.username", postgres::getUsername);
+        properties.add("spring.datasource.password", postgres::getPassword);
+        if (redis.getContainerId() != null) {
+            properties.add("spring.data.redis.host", redis::getHost);
+            properties.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+        }
+        properties.add("ADMIN_PASSWORD", () -> TestData.ADMIN_PASSWORD);
+        properties.add("USER_A_PASSWORD", () -> TestData.USER_A_PASSWORD);
+        properties.add("USER_B_PASSWORD", () -> TestData.USER_B_PASSWORD);
+    }
     @Override public void close() {
         RuntimeException failure = null;
         for (var container : new GenericContainer<?>[]{redis,postgres}) {

@@ -14,10 +14,11 @@ spring:
       host: 127.0.0.1
       port: 6379
       timeout: 200ms
+reservation:
   security:
-    user:
-      name: toolchain
-      password: ${TOOLCHAIN_SMOKE_PASSWORD}
+    admin-password: ${ADMIN_PASSWORD}
+    user-a-password: ${USER_A_PASSWORD}
+    user-b-password: ${USER_B_PASSWORD}
 management:
   endpoints:
     web:

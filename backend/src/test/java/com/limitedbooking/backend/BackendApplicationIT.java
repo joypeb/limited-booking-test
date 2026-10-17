@@ -36,6 +36,9 @@ class BackendApplicationIT {
         properties.add("spring.security.user.name",()->"toolchain");
         String password=UUID.randomUUID().toString();
         properties.add("spring.security.user.password",()->password);
+        properties.add("ADMIN_PASSWORD",()->com.limitedbooking.backend.support.TestData.ADMIN_PASSWORD);
+        properties.add("USER_A_PASSWORD",()->com.limitedbooking.backend.support.TestData.USER_A_PASSWORD);
+        properties.add("USER_B_PASSWORD",()->com.limitedbooking.backend.support.TestData.USER_B_PASSWORD);
         properties.add("management.endpoints.web.exposure.include",()->"health");
         properties.add("management.endpoint.health.show-details",()->"never");
     }
