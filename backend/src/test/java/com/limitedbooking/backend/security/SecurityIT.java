@@ -228,6 +228,86 @@ class SecurityIT {
                 .isInstanceOf(AuthenticationException.class);
     }
 
+    @Test
+    void rejectsPayloadsOver8KiBWith413BeforeAuthenticationIncludingChunkedAndManipulatedLength() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            byte[] oversized = ("{\"name\":\"" + "x".repeat(8180) + "\",\"capacity\":10}")
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(oversized.length).isGreaterThan(8192);
+
+            // 1. 미인증 + Content-Length 포함 8,193바이트 이상 요청 -> 401보다 먼저 413 반환
+            var unauthContentLengthReq = HttpRequest.newBuilder(uri("/api/resources"))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(oversized))
+                    .build();
+            var unauthContentLengthRes = HttpClientTestSupport.send(client, unauthContentLengthReq);
+            assertProblem(unauthContentLengthRes, 413, "PAYLOAD_TOO_LARGE", "/api/resources");
+
+            // 2. 미인증 + Transfer-Encoding: chunked (Content-Length 없음) 8,193바이트 요청 -> 413 반환
+            byte[] exact8193 = new byte[8193];
+            java.util.Arrays.fill(exact8193, (byte) 'a');
+            var unauthChunkedReq = HttpRequest.newBuilder(uri("/api/resources"))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofInputStream(() -> new java.io.ByteArrayInputStream(exact8193)))
+                    .build();
+            var unauthChunkedRes = HttpClientTestSupport.send(client, unauthChunkedReq);
+            assertProblem(unauthChunkedRes, 413, "PAYLOAD_TOO_LARGE", "/api/resources");
+
+            // 3. 미인증 + raw HTTP로 Content-Length 없이 chunked 스트림 전송 (실제 바이트 8,193바이트) -> 413 반환
+            String chunkHex = Integer.toHexString(exact8193.length);
+            byte[] chunkedWireBody = (chunkHex + "\r\n"
+                    + new String(exact8193, java.nio.charset.StandardCharsets.UTF_8)
+                    + "\r\n0\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            String rawHeaders = "POST /api/resources HTTP/1.1\r\n"
+                    + "Host: 127.0.0.1:" + port + "\r\n"
+                    + "Content-Type: application/json\r\n"
+                    + "Transfer-Encoding: chunked\r\n"
+                    + "Connection: close\r\n\r\n";
+            var rawRes = HttpClientTestSupport.sendRawHttp(port, rawHeaders, chunkedWireBody);
+            assertThat(rawRes.statusCode()).isEqualTo(413);
+            assertThat(rawRes.headers().get("content-type")).startsWith("application/problem+json");
+            JsonNode rawProblem = JSON.readTree(rawRes.body());
+            assertThat(rawProblem.get("status").asInt()).isEqualTo(413);
+            assertThat(rawProblem.get("code").asString()).isEqualTo("PAYLOAD_TOO_LARGE");
+            assertThat(rawProblem.get("instance").asString()).isEqualTo("/api/resources");
+
+            assertThat(testData.resourceCount()).isZero();
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    @Test
+    void forwardsBodyAtExact8KiBLimitViaReusableRequestWrapperWithoutDataLoss() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            String prefix = "{\"name\":\"8KiB정확상한좌석\",\"capacity\":10";
+            String suffix = "}";
+            int currentBytes = (prefix + suffix).getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+            String paddedJson = prefix + " ".repeat(8192 - currentBytes) + suffix;
+            byte[] bodyBytes = paddedJson.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(bodyBytes.length).isEqualTo(8192);
+
+            var request = HttpRequest.newBuilder(uri("/api/resources"))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", HttpClientTestSupport.basicAuth(TestData.ADMIN_USERNAME, TestData.ADMIN_PASSWORD))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
+                    .build();
+            var response = HttpClientTestSupport.send(client, request);
+            assertThat(response.statusCode()).isEqualTo(201);
+            JsonNode created = JSON.readTree(response.body());
+            assertThat(created.get("name").asString()).isEqualTo("8KiB정확상한좌석");
+            assertThat(created.get("capacity").asInt()).isEqualTo(10);
+            assertThat(created.get("available").asInt()).isEqualTo(10);
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
     private URI uri(String path) {
         return URI.create("http://127.0.0.1:" + port + path);
     }

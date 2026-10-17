@@ -188,6 +188,186 @@ class ResourceApiIT {
         }
     }
 
+    @Test
+    void rejectsInvalidNamesAndOutOfRangeCapacitiesWith400WithoutSaving() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            String[] invalidBodies = {
+                    "{\"name\":\"\",\"capacity\":10}",
+                    "{\"name\":\"   \\t\\r\\n  \",\"capacity\":10}",
+                    "{\"name\":\"" + "가".repeat(101) + "\",\"capacity\":10}",
+                    "{\"name\":\"" + "😀".repeat(101) + "\",\"capacity\":10}",
+                    "{\"name\":null,\"capacity\":10}",
+                    "{\"capacity\":10}",
+                    "{\"name\":\"유효한 이름\",\"capacity\":null}",
+                    "{\"name\":\"유효한 이름\"}",
+                    "{\"name\":\"음수 수량\",\"capacity\":-1}",
+                    "{\"name\":\"초과 수량\",\"capacity\":1001}"
+            };
+
+            for (String rawJson : invalidBodies) {
+                var request = HttpRequest.newBuilder(uri("/api/resources"))
+                        .timeout(Duration.ofSeconds(10))
+                        .header("Authorization", adminAuth())
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(rawJson))
+                        .build();
+                var response = HttpClientTestSupport.send(client, request);
+                assertProblem(response, 400, "INVALID_REQUEST", "/api/resources");
+            }
+
+            assertThat(testData.resourceCount()).isZero();
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    @Test
+    void rejectsUnknownFieldsDuplicateJsonKeysScalarCoercionsAndMalformedJsonWith400() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            String[] strictViolationBodies = {
+                    "{\"name\":\"미정의 userId 포함\",\"capacity\":10,\"userId\":\"" + TestData.USER_A_ID + "\"}",
+                    "{\"name\":\"미정의 quantity 포함\",\"capacity\":10,\"quantity\":1}",
+                    "{\"name\":\"첫번째이름\",\"name\":\"두번째이름\",\"capacity\":10}",
+                    "{\"name\":\"부동소수점 1.5\",\"capacity\":1.5}",
+                    "{\"name\":\"부동소수점 1.0\",\"capacity\":1.0}",
+                    "{\"name\":\"문자열 수량\",\"capacity\":\"10\"}",
+                    "{\"name\":\"불리언 수량\",\"capacity\":true}",
+                    "{\"name\":\"깨진 JSON\",\"capacity\":"
+            };
+
+            for (String rawJson : strictViolationBodies) {
+                var request = HttpRequest.newBuilder(uri("/api/resources"))
+                        .timeout(Duration.ofSeconds(10))
+                        .header("Authorization", adminAuth())
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(rawJson))
+                        .build();
+                var response = HttpClientTestSupport.send(client, request);
+                assertProblem(response, 400, "INVALID_REQUEST", "/api/resources");
+            }
+
+            assertThat(testData.resourceCount()).isZero();
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    @Test
+    void rejectsInvalidUuidUnsupportedMediaTypeAndNonEmptyOrOversizedCancelBody() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            // 1. 잘못된 UUID 경로 조회 -> 400 INVALID_REQUEST
+            String invalidUuidPath = "/api/resources/not-a-valid-uuid";
+            var badUuidGet = HttpRequest.newBuilder(uri(invalidUuidPath))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", userAAuth())
+                    .GET()
+                    .build();
+            var badUuidResponse = HttpClientTestSupport.send(client, badUuidGet);
+            assertProblem(badUuidResponse, 400, "INVALID_REQUEST", invalidUuidPath);
+
+            // 2. 미지원 Content-Type (text/plain) -> 415 UNSUPPORTED_MEDIA_TYPE
+            var textPlainPost = HttpRequest.newBuilder(uri("/api/resources"))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", adminAuth())
+                    .header("Content-Type", "text/plain; charset=UTF-8")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"좌석\",\"capacity\":10}"))
+                    .build();
+            var textPlainResponse = HttpClientTestSupport.send(client, textPlainPost);
+            assertProblem(textPlainResponse, 415, "UNSUPPORTED_MEDIA_TYPE", "/api/resources");
+
+            // 3. 취소 요청(/api/reservations/{id}/cancel)에 8KiB 이하 비어 있지 않은 본문 -> 400 INVALID_REQUEST
+            String cancelPath = "/api/reservations/" + UUID.randomUUID() + "/cancel";
+            for (String nonEmptyCancelBody : new String[]{"{}", " ", "{\"reason\":\"cancel\"}"}) {
+                var cancelWithBody = HttpRequest.newBuilder(uri(cancelPath))
+                        .timeout(Duration.ofSeconds(10))
+                        .header("Authorization", userAAuth())
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(nonEmptyCancelBody))
+                        .build();
+                var cancelBodyResponse = HttpClientTestSupport.send(client, cancelWithBody);
+                assertProblem(cancelBodyResponse, 400, "INVALID_REQUEST", cancelPath);
+            }
+
+            // 4. 취소 요청 경로의 잘못된 UUID -> 400 INVALID_REQUEST
+            String invalidCancelUuidPath = "/api/reservations/invalid-uuid/cancel";
+            var cancelBadUuid = HttpRequest.newBuilder(uri(invalidCancelUuidPath))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", userAAuth())
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            var cancelBadUuidResponse = HttpClientTestSupport.send(client, cancelBadUuid);
+            assertProblem(cancelBadUuidResponse, 400, "INVALID_REQUEST", invalidCancelUuidPath);
+
+            // 5. 취소 요청에 8KiB 초과 본문(8,193바이트) -> 413 PAYLOAD_TOO_LARGE
+            byte[] oversizedCancelBody = new byte[8193];
+            java.util.Arrays.fill(oversizedCancelBody, (byte) 'x');
+            var cancelOversized = HttpRequest.newBuilder(uri(cancelPath))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", userAAuth())
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(oversizedCancelBody))
+                    .build();
+            var cancelOversizedResponse = HttpClientTestSupport.send(client, cancelOversized);
+            assertProblem(cancelOversizedResponse, 413, "PAYLOAD_TOO_LARGE", cancelPath);
+
+            assertThat(testData.resourceCount()).isZero();
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    @Test
+    void mapsTransientDatabaseFailureTo503AndSurfacesUnclassifiedSqlDefectAs500() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            // 1. 일시적 저장소/타임아웃 오류(SQLSTATE 57014 query_canceled) -> 503 DEPENDENCY_UNAVAILABLE (SQL 비노출)
+            jdbc.execute("""
+                    CREATE FUNCTION fail_resource_insert_timeout() RETURNS trigger LANGUAGE plpgsql AS $$
+                    BEGIN
+                        RAISE EXCEPTION 'simulated statement timeout' USING ERRCODE = '57014';
+                    END $$
+                    """);
+            jdbc.execute("""
+                    CREATE TRIGGER fail_resource_insert_timeout
+                    BEFORE INSERT ON resources
+                    FOR EACH ROW EXECUTE FUNCTION fail_resource_insert_timeout()
+                    """);
+            try {
+                var createRequest = HttpRequest.newBuilder(uri("/api/resources"))
+                        .timeout(Duration.ofSeconds(10))
+                        .header("Authorization", adminAuth())
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"타임아웃 검증\",\"capacity\":5}"))
+                        .build();
+                var response = HttpClientTestSupport.send(client, createRequest);
+                assertProblem(response, 503, "DEPENDENCY_UNAVAILABLE", "/api/resources");
+                assertThat(response.body()).doesNotContain("fail_resource_insert_timeout");
+            } finally {
+                jdbc.execute("DROP TRIGGER fail_resource_insert_timeout ON resources");
+                jdbc.execute("DROP FUNCTION fail_resource_insert_timeout()");
+            }
+
+            // 2. 분류되지 않은 내부 SQL 결함(잘못된 컬럼 참조 42703) -> 4xx/503으로 숨기지 않고 500 반환
+            jdbc.execute("ALTER TABLE resources RENAME COLUMN name TO broken_name");
+            try {
+                String path = "/api/resources/" + UUID.randomUUID();
+                var getRequest = HttpRequest.newBuilder(uri(path))
+                        .timeout(Duration.ofSeconds(10))
+                        .header("Authorization", userAAuth())
+                        .GET()
+                        .build();
+                var response = HttpClientTestSupport.send(client, getRequest);
+                assertThat(response.statusCode()).isEqualTo(500);
+            } finally {
+                jdbc.execute("ALTER TABLE resources RENAME COLUMN broken_name TO name");
+            }
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
     private URI uri(String path) {
         return URI.create("http://127.0.0.1:" + port + path);
     }

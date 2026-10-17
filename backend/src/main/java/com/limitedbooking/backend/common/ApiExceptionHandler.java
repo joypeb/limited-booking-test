@@ -3,16 +3,35 @@ package com.limitedbooking.backend.common;
 import com.limitedbooking.backend.resource.ResourceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.cfg.CoercionAction;
+import tools.jackson.databind.cfg.CoercionInputShape;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.type.LogicalType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+@Configuration
 @RestControllerAdvice
 public class ApiExceptionHandler {
     private static final JsonMapper PROBLEM_MAPPER = JsonMapper.builder().build();
@@ -26,6 +45,60 @@ public class ApiExceptionHandler {
             String code
     ) {}
 
+    @Bean
+    public JsonMapperBuilderCustomizer strictJsonMapperCustomizer() {
+        return builder -> builder
+                .enable(
+                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                        DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY,
+                        DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
+                        DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES
+                )
+                .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+                .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .withCoercionConfig(LogicalType.Integer, coercion -> coercion
+                        .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
+                        .setCoercion(CoercionInputShape.String, CoercionAction.Fail)
+                        .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail)
+                        .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail));
+    }
+
+    @ExceptionHandler({
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class,
+            MethodArgumentNotValidException.class,
+            MissingServletRequestParameterException.class,
+            ServletRequestBindingException.class,
+            IllegalArgumentException.class
+    })
+    public ResponseEntity<ProblemResponse> handleInvalidRequest(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        return problemEntity(
+                HttpStatus.BAD_REQUEST,
+                "잘못된 요청입니다",
+                "요청 형식 또는 입력 값이 유효하지 않습니다.",
+                request,
+                "INVALID_REQUEST"
+        );
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ProblemResponse> handleUnsupportedMediaType(
+            HttpMediaTypeNotSupportedException exception,
+            HttpServletRequest request
+    ) {
+        return problemEntity(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "지원하지 않는 미디어 타입입니다",
+                "Content-Type은 application/json이어야 합니다.",
+                request,
+                "UNSUPPORTED_MEDIA_TYPE"
+        );
+    }
+
     @ExceptionHandler(ResourceService.ResourceNotFoundException.class)
     public ResponseEntity<ProblemResponse> handleResourceNotFound(
             ResourceService.ResourceNotFoundException exception,
@@ -37,6 +110,24 @@ public class ApiExceptionHandler {
                 "요청한 예약 대상이 존재하지 않습니다.",
                 request,
                 "NOT_FOUND"
+        );
+    }
+
+    @ExceptionHandler({
+            TransientDataAccessException.class,
+            DataAccessResourceFailureException.class,
+            QueryTimeoutException.class
+    })
+    public ResponseEntity<ProblemResponse> handleDependencyUnavailable(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        return problemEntity(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "일시적으로 요청을 처리할 수 없습니다",
+                "저장소 연결 또는 응답 지연으로 요청을 처리할 수 없습니다.",
+                request,
+                "DEPENDENCY_UNAVAILABLE"
         );
     }
 
