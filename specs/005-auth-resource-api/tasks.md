@@ -18,9 +18,9 @@
 
 **목적**: 기존 변경 보존·브랜치 상태 확인, 요구사항 품질 검토 게이트 확인, 3개 로컬 계정 비밀번호 환경 변수 키 구성을 준비한다.
 
-- [ ] T001 `knowledge/rules/git-flow.md`와 `knowledge/rules/commit.md`에 따라 저장소 루트에서 현재 브랜치·미커밋 문서를 확인하고 `specs/005-auth-resource-api/` 설계 문서를 보존한 상태에서 `develop` 기반 `feature/auth-resource-api` 작업 브랜치를 준비해 `docs/test-evidence.md`에 기록한다.
-- [ ] T002 `specs/005-auth-resource-api/checklists/auth-resource-api.md`와 `specs/005-auth-resource-api/checklists/requirements.md`의 검토 상태를 확인하고 구현 착수 전 게이트 상태를 `docs/test-evidence.md`에 기록한다 (구현 담당자가 검토자 소유 체크를 임의 변경하지 않는다).
-- [ ] T003 [P] `.env.example`과 `backend/src/main/resources/application-local.yaml`에서 1단계 임시 `toolchain` 계정 설정을 `ADMIN_PASSWORD`, `USER_A_PASSWORD`, `USER_B_PASSWORD` 환경 변수 기반 로컬 인증 속성 구조로 갱신한다 ("비밀번호 원문은 코드·문서·로그·오류 응답에 절대 남기지 않으며, 테스트에서는 실행 환경 비밀번호와 분리된 테스트 전용 가짜 비밀번호를 사용한다").
+- [X] T001 `knowledge/rules/git-flow.md`와 `knowledge/rules/commit.md`에 따라 저장소 루트에서 현재 브랜치·미커밋 문서를 확인하고 `specs/005-auth-resource-api/` 설계 문서를 보존한 상태에서 `develop` 기반 `feature/auth-resource-api` 작업 브랜치를 준비해 `docs/test-evidence.md`에 기록한다.
+- [X] T002 `specs/005-auth-resource-api/checklists/auth-resource-api.md`와 `specs/005-auth-resource-api/checklists/requirements.md`의 검토 상태를 확인하고 구현 착수 전 게이트 상태를 `docs/test-evidence.md`에 기록한다 (구현 담당자가 검토자 소유 체크를 임의 변경하지 않는다).
+- [X] T003 [P] `.env.example`과 `backend/src/main/resources/application-local.yaml`에서 1단계 임시 `toolchain` 계정 설정을 `ADMIN_PASSWORD`, `USER_A_PASSWORD`, `USER_B_PASSWORD` 환경 변수 기반 로컬 인증 속성 구조로 갱신한다 ("비밀번호 원문은 코드·문서·로그·오류 응답에 절대 남기지 않으며, 테스트에서는 실행 환경 비밀번호와 분리된 테스트 전용 가짜 비밀번호를 사용한다").
 
 ---
 
@@ -30,9 +30,9 @@
 
 **⚠️ 중요**: 사용자 이야기(Phase 3~5) 구현 및 통합 테스트 실행 전에 완료되어야 한다.
 
-- [ ] T004 [P] `backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java`에 `@Configuration` 및 `@Bean public Clock clock()`(`Clock.systemUTC()`)을 구현한다.
-- [ ] T005 [P] `backend/src/test/java/com/limitedbooking/backend/support/TestData.java`, `backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java`, `backend/src/test/java/com/limitedbooking/backend/support/HttpClientTestSupport.java`, `backend/src/test/java/com/limitedbooking/backend/BackendApplicationIT.java`에 `ADMIN`·`USER_A`·`USER_B` 고정 UUID 상수, 테스트 전용 가짜 비밀번호(`@DynamicPropertySource` 주입), Basic `Authorization` 헤더 생성 및 raw/chunked 본문 전송 헬퍼를 구성한다 ("세 계정의 UUID는 서로 중복되지 않으며 프로세스 재시작과 무관하게 항상 동일하다").
-- [ ] T006 `backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java`에 `application/problem+json` 응답과 필수 6개 속성(`type`(기본값 `"about:blank"`), `title`, `status`, `detail`, `instance`(`request.getRequestURI()`), `code`)을 생성·직렬화하는 공통 헬퍼 및 기본 `@RestControllerAdvice` 골격을 마련한다 ("내부 구현(SQL·스택 트레이스·비밀번호)을 노출하지 않는 안전한 설명").
+- [X] T004 [P] `backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java`에 `@Configuration` 및 `@Bean public Clock clock()`(`Clock.systemUTC()`)을 구현한다.
+- [X] T005 [P] `backend/src/test/java/com/limitedbooking/backend/support/TestData.java`, `backend/src/test/java/com/limitedbooking/backend/support/ContainerTestSupport.java`, `backend/src/test/java/com/limitedbooking/backend/support/HttpClientTestSupport.java`, `backend/src/test/java/com/limitedbooking/backend/BackendApplicationIT.java`에 `ADMIN`·`USER_A`·`USER_B` 고정 UUID 상수, 테스트 전용 가짜 비밀번호(`@DynamicPropertySource` 주입), Basic `Authorization` 헤더 생성 및 raw/chunked 본문 전송 헬퍼를 구성한다 ("세 계정의 UUID는 서로 중복되지 않으며 프로세스 재시작과 무관하게 항상 동일하다").
+- [X] T006 `backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java`에 `application/problem+json` 응답과 필수 6개 속성(`type`(기본값 `"about:blank"`), `title`, `status`, `detail`, `instance`(`request.getRequestURI()`), `code`)을 생성·직렬화하는 공통 헬퍼 및 기본 `@RestControllerAdvice` 골격을 마련한다 ("내부 구현(SQL·스택 트레이스·비밀번호)을 노출하지 않는 안전한 설명").
 
 **체크포인트**: UTC 시계, 공통 `Problem` 응답 구조, 테스트 컨테이너·Basic 인증 헬퍼 준비 완료.
 

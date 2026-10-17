@@ -844,3 +844,10 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
 주 작업자는 세 생산 클래스와 대응 assertion·현재 XML을 독립 대조했고 분류할 유효 지적은 없었다. 빌드·의존성·OpenAPI·SQL·프로브는 기준 대비 변경되지 않았다. T029 사용자 완료 지시와 독립 재설명 미실시를 구분하며 실제 HTTP/Writer/경쟁/업무 심화 검증은 후속으로 유지한다. 이 판정 이후의 변경은 본 PR/리뷰 결과를 남기는 문서뿐이다.
 
 병합 조건: 최신 원격 head가 검토 코드와 동일하고 base가develop이며 충돌·실패/미해결 체크·변경 요청이 없으면 사용자 지시에 따라 merge commit으로 병합한다. PR 설명에 로컬 빌드·별도 CLI 리뷰 실패와 독립 대체 리뷰 결과·외부 CI 미등록을 반영한다. 실제 merge SHA/최종 상태는 GitHub PR과 완료 보고에서 확인하며 병합 전 기록에서 성공을 선포하지 않는다.
+
+## 4단계 구현 착수 및 공통 기반 준비 (2026-10-17)
+
+- T001: `develop`(`8366995`)에서 `git switch -c feature/auth-resource-api`로 작업 브랜치를 생성하고, 선행 Spec Kit 단계 산출물을 구간별로 보존 커밋했다(`39bf36b` 명세·요구사항 체크리스트, `6ece577` 구현 계획·연구·데이터 모델·인터페이스 계약·빠른 시작, `642d4ee` 맞춤 체크리스트·작업 분해·지식 색인). 사용자 변경 삭제·reset·원격 push·develop 병합은 수행하지 않았다.
+- T002: `specs/005-auth-resource-api/checklists/requirements.md`(16/16 충족, 미체크 0)와 `specs/005-auth-resource-api/checklists/auth-resource-api.md`(34/34 충족, 미체크 0) 검토 완료 상태를 확인해 구현 게이트를 통과했다. 두 체크리스트 파일은 구현 중 변경하지 않는다.
+- T003~T006: `.env.example`과 `backend/src/main/resources/application-local.yaml`을 `ADMIN_PASSWORD`·`USER_A_PASSWORD`·`USER_B_PASSWORD` 구조로 갱신하고, `ClockConfig`(`Clock.systemUTC()`), `ApiExceptionHandler` 공통 `application/problem+json` 직렬화 골격, `TestData`·`ContainerTestSupport`·`HttpClientTestSupport`·`BackendApplicationIT`의 고정 UUID(`ADMIN_ID`, `USER_A_ID`, `USER_B_ID`)·테스트 전용 가짜 비밀번호·Basic 인증/raw HTTP 전송 헬퍼를 구성했다.
+- 기반 확인 실행: `backend/`에서 `./gradlew test integrationTest --tests com.limitedbooking.backend.BackendApplicationIT` 종료 코드 `0`; `test: tests=116, failed=0, skipped=0`, `integrationTest: tests=1, failed=0, skipped=0`.

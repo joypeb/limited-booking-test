@@ -13,6 +13,16 @@ import java.util.UUID;
 
 /** 호출자가 전달한 테스트 소유 DataSource에서만 준비하고 초기화한다. */
 public final class TestData {
+    public static final UUID ADMIN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    public static final UUID USER_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    public static final UUID USER_B_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    public static final String ADMIN_USERNAME = "ADMIN";
+    public static final String USER_A_USERNAME = "USER_A";
+    public static final String USER_B_USERNAME = "USER_B";
+    public static final String ADMIN_PASSWORD = "test-only-admin-password";
+    public static final String USER_A_PASSWORD = "test-only-user-a-password";
+    public static final String USER_B_PASSWORD = "test-only-user-b-password";
+
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaction;
 
@@ -38,6 +48,11 @@ public final class TestData {
                 reservation.idempotencyKey(), reservation.status().name(),
                 reservation.createdAt().atOffset(ZoneOffset.UTC),
                 cancelledAt == null ? null : cancelledAt.atOffset(ZoneOffset.UTC)));
+    }
+
+    public long resourceCount() {
+        Long count = jdbc.queryForObject("SELECT count(*) FROM resources", Long.class);
+        return count == null ? 0L : count;
     }
 
     public void reset() {
