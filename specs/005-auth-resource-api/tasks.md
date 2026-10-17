@@ -2,7 +2,7 @@
 
 **입력**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/auth-resource-contract.md](contracts/auth-resource-contract.md), [quickstart.md](quickstart.md)
 
-**상태**: 0/27 미수행 (`$speckit-tasks` 산출물, 구현 및 테스트 실행 전). 작업 체크(`[x]`)는 실제 코드 작성·명령 실행·검증 후에만 표시하며, 맞춤 [요구사항 검토 목록](checklists/auth-resource-api.md)의 검토자 판정 체크와 구분한다.
+**상태**: 27/27 완료 (2026-10-17, TDD RED→GREEN 및 `./gradlew verify` Unit 116건 + 일반 IT 92건 통과, [실행 증거](../../docs/test-evidence.md) 기록 완료). 작업 체크(`[X]`)는 실제 코드 작성·명령 실행·검증 후에 표시했으며, 맞춤 [요구사항 검토 목록](checklists/auth-resource-api.md)의 검토자 판정 체크와 구분한다.
 
 **테스트 원칙**: [로컬 개발 계획](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 7절 4단계와 명세 FR-010·SC-005에 따라 각 사용자 이야기별로 통합 테스트(`SecurityIT`, `ResourceApiIT`)를 먼저 작성해 기능 미구현 상태의 의도된 실패(RED)를 확인·기록한 뒤 프로덕션 코드를 구현해 통과(GREEN)를 확인한다. 컴파일 오류나 환경 기동 실패는 기능 RED로 세지 않는다.
 
@@ -106,11 +106,11 @@
 
 **목적**: 1~4단계 전체 단위·통합 검증 게이트(`./gradlew verify`)를 통과시키고, 지식 문서·결정 기록·실행 증거·계획서 체크박스를 실제 결과와 동기화한 뒤 커밋한다 (FR-010, SC-005).
 
-- [ ] T023 `backend/`에서 `./gradlew verify`를 실행해 기존 1~3단계 단위·통합 테스트와 4단계 `SecurityIT`·`ResourceApiIT` 전체가 종료 코드 `0`, 실패 `0`, 오류 `0`, 건너뜀 `0`으로 통과하는지 확인하고 JUnit XML 결과(`backend/build/test-results/test/TEST-*.xml`, `backend/build/test-results/integrationTest/TEST-*.xml`)와 함께 `docs/test-evidence.md`에 기록한다.
-- [ ] T024 [P] `knowledge/domain/security.md`, `knowledge/domain/resource.md`, `knowledge/README.md`, `README.md`, `docs/decisions.md`에 4단계 실제 구현 클래스(`SecurityConfig`, `LocalIdentityResolver`, `ClockConfig`, `RequestBodyLimitFilter`, `ApiExceptionHandler`, `ResourceRepository`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT`, `ResourceApiIT`) 상태 및 5~8단계 미구현 범위를 반영한다.
-- [ ] T025 [P] `한정 수량 예약 백엔드 로컬 개발 계획.md`의 7절 「4단계: 로컬 인증과 예약 대상 API」 체크리스트 항목과 `specs/005-auth-resource-api/spec.md`·`specs/005-auth-resource-api/plan.md`·`specs/005-auth-resource-api/tasks.md`의 완료 상태를 실제 실행 증거(`docs/test-evidence.md`)와 대조해 갱신한다 (`specs/005-auth-resource-api/checklists/auth-resource-api.md`는 검토자 소유 문서이므로 수정하지 않는다).
-- [ ] T026 저장소 루트에서 `git diff --check`를 실행해 모든 코드·설정·Markdown 문서의 서식과 공백 오류가 없는지 확인한다.
-- [ ] T027 `knowledge/rules/commit.md`에 따라 변경된 파일들을 목적별 단위로 검토·스테이징하고 한국어 커밋 메시지로 커밋한 뒤 최종 `git status`와 커밋 해시를 `docs/test-evidence.md`에 기록한다 (외부 원격 저장소 `push`나 브랜치 병합은 수행하지 않는다).
+- [X] T023 `backend/`에서 `./gradlew verify`를 실행해 기존 1~3단계 단위·통합 테스트와 4단계 `SecurityIT`·`ResourceApiIT` 전체가 종료 코드 `0`, 실패 `0`, 오류 `0`, 건너뜀 `0`으로 통과하는지 확인하고 JUnit XML 결과(`backend/build/test-results/test/TEST-*.xml`, `backend/build/test-results/integrationTest/TEST-*.xml`)와 함께 `docs/test-evidence.md`에 기록한다.
+- [X] T024 [P] `knowledge/domain/security.md`, `knowledge/domain/resource.md`, `knowledge/README.md`, `README.md`, `docs/decisions.md`에 4단계 실제 구현 클래스(`SecurityConfig`, `LocalIdentityResolver`, `ClockConfig`, `RequestBodyLimitFilter`, `ApiExceptionHandler`, `ResourceRepository`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT`, `ResourceApiIT`) 상태 및 5~8단계 미구현 범위를 반영한다.
+- [X] T025 [P] `한정 수량 예약 백엔드 로컬 개발 계획.md`의 7절 「4단계: 로컬 인증과 예약 대상 API」 체크리스트 항목과 `specs/005-auth-resource-api/spec.md`·`specs/005-auth-resource-api/plan.md`·`specs/005-auth-resource-api/tasks.md`의 완료 상태를 실제 실행 증거(`docs/test-evidence.md`)와 대조해 갱신한다 (`specs/005-auth-resource-api/checklists/auth-resource-api.md`는 검토자 소유 문서이므로 수정하지 않는다).
+- [X] T026 저장소 루트에서 `git diff --check`를 실행해 모든 코드·설정·Markdown 문서의 서식과 공백 오류가 없는지 확인한다.
+- [X] T027 `knowledge/rules/commit.md`에 따라 변경된 파일들을 목적별 단위로 검토·스테이징하고 한국어 커밋 메시지로 커밋한 뒤 최종 `git status`와 커밋 해시를 `docs/test-evidence.md`에 기록한다 (외부 원격 저장소 `push`나 브랜치 병합은 수행하지 않는다).
 
 ---
 

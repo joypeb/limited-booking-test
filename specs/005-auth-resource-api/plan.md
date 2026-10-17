@@ -1,6 +1,6 @@
 # 구현 계획: 로컬 인증과 예약 대상 생성·조회 API
 
-**작업 브랜치**: `feature/auth-resource-api` | **작성일**: 2026-10-17 | **명세**: [spec.md](spec.md)
+**작업 브랜치**: `feature/auth-resource-api` | **작성일**: 2026-10-17 | **명세**: [spec.md](spec.md) | **상태**: 구현 및 `./gradlew verify` 검증 완료 (2026-10-17)
 
 **입력**: `/specs/005-auth-resource-api/spec.md` 기능 명세 및 [로컬 개발 계획](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 7절 「4단계: 로컬 인증과 예약 대상 API」
 
@@ -150,7 +150,7 @@ backend/
    - Jackson 3 `JsonMapperBuilderCustomizer` 빈을 통해 다음을 강제한다:
      - `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` 활성화 (미정의 `userId` 필드 등 거부)
      - `StreamReadFeature.STRICT_DUPLICATE_DETECTION` 활성화 (중복 JSON 키 거부)
-     - `MapperFeature.ALLOW_COERCION_OF_SCALARS` 비활성화 및 `DeserializationFeature.FAIL_ON_FLOAT_FOR_INTS` 활성화, 정수(`LogicalType.Integer`)에 대한 부동소수점·문자열·불리언 강제 변환 거부
+     - `MapperFeature.ALLOW_COERCION_OF_SCALARS` 비활성화 및 `DeserializationFeature.ACCEPT_FLOAT_AS_INT` 비활성화, 정수(`LogicalType.Integer`)에 대한 부동소수점·문자열·불리언 강제 변환 거부
    - `@RestControllerAdvice`에서 모든 정의된 오류를 `application/problem+json` 본문(`type`, `title`, `status`, `detail`, `instance`, `code`)으로 변환한다:
      - `HttpMediaTypeNotSupportedException` -> `415 UNSUPPORTED_MEDIA_TYPE`
      - `HttpMessageNotReadableException`, `MethodArgumentTypeMismatchException`, `MethodArgumentNotValidException`, `IllegalArgumentException` -> `400 INVALID_REQUEST`

@@ -74,3 +74,10 @@ record compact constructor에서 null과 고정 Pattern의 matches 전체 일치
 ## 3단계 CancellationDecision 구현 (2026-10-15)
 
 기존 ReservationStatus를 default 없는 switch로 두 판단에 대응하며 Objects.requireNonNull로 내부 상태 누락을 NPE로 드러낸다. 판단을 DB 상태나 응답 enum에 섞지 않고 상태·수량·시간을 만들거나 갱신하지 않는다. 실제 취소 원자성은6단계 Writer의 책임이다.
+
+## 4단계 로컬 인증과 예약 대상 API 구현 결정 (2026-10-17)
+
+- [005 계획](../specs/005-auth-resource-api/plan.md)과 [조사](../specs/005-auth-resource-api/research.md)에 따라 `SecurityConfig` 내부의 커스텀 `LocalUserPrincipal`(`UserDetails` 구현, 불변 `UUID userId` 보유)에 `ADMIN`·`USER_A`·`USER_B` 고정 UUID를 할당하고 환경 변수 주입 비밀번호를 `BCryptPasswordEncoder`로 보관했다. `LocalIdentityResolver.userId(Authentication)`는 오직 `Principal`에서만 UUID를 추출하며 `X-User-Id` 헤더나 본문 `userId`를 신뢰하지 않는다.
+- `RequestBodyLimitFilter`를 `BasicAuthenticationFilter`보다 앞에 등록해 `Content-Length > 8192`뿐 아니라 길이 헤더가 없거나 `Transfer-Encoding: chunked`인 요청도 최대 `8,193바이트`까지 직접 읽어 초과 시 인증 전에 즉시 `413 PAYLOAD_TOO_LARGE`(`application/problem+json`)를 반환하고, 상한 이하 바이트는 `HttpServletRequestWrapper`로 재제공한다.
+- Spring Boot 4 / Jackson 3(`tools.jackson.databind.json.JsonMapper`)의 `JsonMapperBuilderCustomizer`로 `FAIL_ON_UNKNOWN_PROPERTIES`·`STRICT_DUPLICATE_DETECTION` 활성화, `ALLOW_COERCION_OF_SCALARS`·`ACCEPT_FLOAT_AS_INT` 비활성화 및 `LogicalType.Integer` 스칼라 강제 변환(`CoercionAction.Fail`)을 설정해 미정의 필드·중복 키·부동소수점(`1.5`, `1.0`)·문자열 숫자(`"10"`)를 모두 `400 INVALID_REQUEST`로 거부한다.
+- `ApiExceptionHandler`는 `TransientDataAccessException`·`DataAccessResourceFailureException`·`QueryTimeoutException`만 `503 DEPENDENCY_UNAVAILABLE`로 변환하고, 분류되지 않은 SQL 문법 오류나 내부 런타임 결함은 `4xx`/`503`으로 숨기지 않고 `500`으로 드러나게 했다. 6단계 `ReservationController` 구현 전에도 4단계 취소 본문/UUID 검증 계약을 만족하도록 `SecurityConfig`의 인증 뒤 필터에서 `POST /api/reservations/{id}/cancel`의 비어 있지 않은 본문 및 잘못된 UUID를 `400 INVALID_REQUEST`로 거부한다.

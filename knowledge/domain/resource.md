@@ -3,10 +3,10 @@
 ## 1. 기준과 현재 상태
 
 - 도메인·패키지: resource / `com.limitedbooking.backend.resource`.
-- 작성: 2026-10-13, 재확인: 2026-10-15.
-- 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2·4·5절, [도메인 규칙](../rules/domain-and-transactions.md), [API 규칙](../rules/api-and-security.md), [0단계 명세](../../specs/001-define-api-contract/spec.md).
+- 작성: 2026-10-13, 재확인: 2026-10-17.
+- 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2·4·5·7절, [도메인 규칙](../rules/domain-and-transactions.md), [API 규칙](../rules/api-and-security.md), [0단계 명세](../../specs/001-define-api-contract/spec.md), [4단계 명세](../../specs/005-auth-resource-api/spec.md).
 - 설계 상태: 사용자 A 답변으로 코드 포인트 길이, 2026-10-13 추가 답변으로 Java strip 기준 확정.
-- 구현 상태: V1·ResourceView·ResourceRepository 및 저장 IT 구현·실행 검증됨. ResourceRules 순수 입력 규칙은 구현·Unit 검증됨. Controller·Service·HTTP는 미구현.
+- 구현 상태: V1·`ResourceView`·`ResourceRepository`(`find`·`insert`)·`ResourceRules`·`ResourceService`(`create`·`get`)·`ResourceController`(`POST /api/resources`·`GET /api/resources/{id}`) 및 저장·Unit·HTTP 통합 테스트(`SchemaIT`, `ResourceRepositoryIT`, `ResourceRulesTest`, `ResourceApiIT`, `SecurityIT`) 구현·실행 검증됨. 예약 생성·취소에 따른 `available` 차감/복구 SQL은 5~7단계 후속 미구현.
 
 ## 2. 목적·책임·경계
 
@@ -43,7 +43,7 @@ Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 �
 | POST /api/resources | ADMIN, name·capacity, JSON | 201 ResourceView·Location | 400·401·403·413·415·503 | 대상 생성 |
 | GET /api/resources/{id} | 인증 사용자, UUID | 200 ResourceView | 400·401·404·503 | 없음 |
 
-ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. [OpenAPI 초안](../../docs/openapi.yaml)을 작성했다. [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)와 대조하며 Java strip 정책까지 반영해 문서 계약 인수를 마쳤다. 실제 HTTP 인수는 후속 미실행이며 업무 스키마는 SchemaIT에서 검증했다.
+ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 상세는 API 규칙을 따른다. [OpenAPI 초안](../../docs/openapi.yaml)을 작성했다. [작성 설계](../../specs/001-define-api-contract/contracts/api-contract.md)와 대조하며 Java strip 정책까지 반영해 문서 계약 인수를 마쳤고, 4단계 `ResourceApiIT`·`SecurityIT`에서 실제 HTTP 경로로 생성·조회·오류 계약을 검증했다. 업무 스키마는 `SchemaIT`에서 검증했다.
 
 ## 6. 멱등성·트랜잭션·경쟁·장애
 
@@ -53,24 +53,24 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 | 규칙 | 사례 | 기대 | 종류·상태 |
 | --- | --- | --- | --- |
-| resource-003 | 😀 100개·101개, 앞뒤 공백+100개 | 201·400·201, 저장 이름은 공백 제거 | Unit 검증됨, HTTP 후속 미실행 |
-| resource-001 | capacity 0·1000·-1·1001 | 경계 허용·범위 밖 400 | Unit 검증됨, HTTP 미실행 |
-| resource-002 | 예약·재요청·취소·중복 취소 | 합계 capacity 유지 | 후속 DB·경쟁 미실행 |
-| resource-003 | 탭·줄바꿈 제거, NBSP 유지·NBSP만1개 | 이름 정규화·길이 정책대로 허용/거부 | [W01~W07 문서 사례](../../docs/test-evidence.md), Unit 검증됨·HTTP 미검증 |
-| 권한 | USER 생성·미인증 조회 | 403·401 | 후속 HTTP 미실행 |
+| resource-003 | 😀 100개·101개, 앞뒤 공백+100개 | 201·400·201, 저장 이름은 공백 제거 | Unit 52건 및 `ResourceApiIT` HTTP 검증 완료 |
+| resource-001 | capacity 0·1000·-1·1001, 부동소수점·문자열·중복 키·미정의 `userId` | 경계 허용(201)·범위 밖/엄격 JSON 위반 400 | Unit 52건 및 `ResourceApiIT` HTTP 검증 완료 |
+| resource-002 | 예약·재요청·취소·중복 취소 | 합계 capacity 유지 | 후속 5~7단계 DB·경쟁 미실행 |
+| resource-003 | 탭·줄바꿈 제거, NBSP 유지·NBSP만1개 | 이름 정규화·길이 정책대로 허용/거부 | [W01~W07 문서 사례](../../docs/test-evidence.md), Unit 및 `ResourceApiIT` HTTP 검증 완료 |
+| 권한 | USER 생성·미인증 조회 | 403·401 | `SecurityIT` HTTP 검증 완료 |
 
-[실행 증거](../../docs/test-evidence.md)에 문서 검토와 실제 저장 제약·조회·검사 인수를 구분해 기록한다.
+[실행 증거](../../docs/test-evidence.md)에 문서 검토와 실제 저장 제약·조회·검사·HTTP 인수를 구분해 기록한다.
 
 ## 8. 구현 연결과 변경 영향
 
 | 책임 | 파일·심볼 | 상태 |
 | --- | --- | --- |
-| 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 대상 기능 없음 |
-| 읽기 DTO·Repository | [ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)·ResourceView | 구현·실행 검증됨 |
-| 입력 규칙 | [ResourceRules](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java) | 구현·Unit52건 검증됨 |
-| Controller·Service | resource 패키지 예정 | 미구현 |
-| 업무 V1·대상 저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ResourceRepositoryIT | 구현·실행 검증됨 |
-| 고정 OpenAPI 초안 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨, 자동 검증 미실행 |
+| 앱 골격·UTC 시계 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java)·[ClockConfig](../../backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java) | 구현·실행 검증됨 |
+| 읽기/생성 DTO·Repository | [ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)·[ResourceView](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java) | `find`·`insert` 구현·실행 검증됨 |
+| 입력 규칙 | [ResourceRules](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java) | 구현·Unit 52건 및 HTTP 경로 연동 검증됨 |
+| Controller·Service | [ResourceController](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java)·[ResourceService](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceService.java) | 구현·`ResourceApiIT` 8건·`SecurityIT` 6건 검증됨 |
+| 업무 V1·대상 저장/조회/HTTP 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·`SchemaIT`·`ResourceRepositoryIT`·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 |
+| 고정 OpenAPI 초안 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨, 9단계 OpenAPI 자동 검증은 후속 |
 
 이름 길이 단위의 명확화는 계획서·도메인 규칙·명세·계약 설계에 반영했다. 구현 이후에는 순수 규칙·DTO·OpenAPI·Unit·HTTP 기대값을 함께 검토한다. JDBC 등 선택 이유는 [결정 기록](../../docs/decisions.md)에 작성했다.
 
@@ -78,11 +78,10 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 이름 길이 HTTP 미검증 | Unit52건은 검증됨 | 4단계 실제 요청 경계 시험 |
-| API·업무 쓰기 미구현 | HTTP·원자성 준수 미확인 | 3단계 입력 규칙 이후 API·Writer 개발 |
-| strip HTTP 미검증 | 탭·줄바꿈·NBSP·코드 포인트는 Unit 검증됨 | 4단계 실제 HTTP 테스트 |
+| 예약 생성·취소에 따른 `available` 차감/복구 미구현 | `available + CONFIRMED = capacity` 동적 보존 미검증 | 5~7단계 예약 Writer·멱등성·취소·동시성 구현 및 검증 |
+| 업무 OpenAPI 자동 계약 검증 미실행 | 수동/IT 검증은 완료했으나 validator 자동 대조는 후속 | 9단계 API 계약 및 비정상 입력 테스트에서 검증 |
 
-이름 길이 코드 포인트·공백 strip 정책은 사용자 답변으로 확정됐다. 업무 규칙은 유지하며 저장 기반·순수 입력 규칙의 실행 완료와 HTTP 미검증을 구분한다.
+이름 길이 코드 포인트·공백 strip 정책과 4단계 대상 생성·단건 조회 HTTP API 구현 및 통합 검증을 완료했다. 예약 생성·취소에 따른 수량 변경과 경쟁 보존은 5~7단계에서 구현·검증한다.
 
 ### 2026-10-14 저장 길이 보장 범위 명확화
 
@@ -100,4 +99,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 
 ### 3단계 순수 규칙 설계 (2026-10-15)
 
-[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 ResourceRules의 두 public static 메서드·수량/이름 Unit 경계를 설계했다. 무효 입력은 Java 내부에서 IllegalArgumentException으로 거부하며 정확한 메시지는 고정하지 않는다. 순수 Unit과4단계 실제 요청 경로 사용을 별도 인수한다. ResourceRules·대응 Unit52건의 구현·실행 검증을 완료했다. 개발자 설명 인수는 2026-10-16 설명 후 사용자 완료 지시로 처리했다(독립 재설명 시험 미실시). 4단계 HTTP 연동은 미완료다.
+[004 계획](../../specs/004-validate-domain-rules/plan.md)과 [규칙 계약](../../specs/004-validate-domain-rules/contracts/rules-contract.md)에 ResourceRules의 두 public static 메서드·수량/이름 Unit 경계를 설계했다. 무효 입력은 Java 내부에서 IllegalArgumentException으로 거부하며 정확한 메시지는 고정하지 않는다. 순수 Unit과 4단계 실제 요청 경로 사용을 별도 인수한다. ResourceRules·대응 Unit52건의 구현·실행 검증을 완료했다. 개발자 설명 인수는 2026-10-16 설명 후 사용자 완료 지시로 처리했다(독립 재설명 시험 미실시).
+
+### 4단계 대상 생성·단건 조회 HTTP 연동 완료 (2026-10-17)
+
+[005 계획](../../specs/005-auth-resource-api/plan.md)과 [인터페이스 계약](../../specs/005-auth-resource-api/contracts/auth-resource-contract.md)에 따라 `ResourceRepository.insert`, `ResourceService.create/get`(UTC `Clock` 주입 및 `ResourceRules` 호출), `ResourceController`(`POST /api/resources`, `GET /api/resources/{id}`)를 구현하고, `ResourceApiIT`(8건)와 `SecurityIT`(6건)에서 `capacity = 0/1000`, 이름 공백 strip·NBSP/이모지 보존, 미정의 `userId`·중복 키·부동소수점/문자열 수량·잘못된 UUID `400`, 미존재 `404`, `413`/`415`/`503`을 실제 HTTP 요청 경로에서 검증했다. 예약 생성·취소에 따른 `available` 차감/복구는 5~7단계에서 구현한다.

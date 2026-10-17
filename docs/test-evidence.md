@@ -862,3 +862,25 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
 
 - T016~T018 (US3 RED): `SecurityIT`(미인증 8,193바이트 일반/chunked/raw `413` 우선 반환, 8,192바이트 재사용 래퍼 전달)와 `ResourceApiIT`(이름/수량 경계 위반, 미정의 `userId`/`quantity`, 중복 JSON 키, 부동소수점 `1.5`/`1.0`, 문자열 `"10"`, 깨진 JSON, 잘못된 UUID 경로 `400`, `text/plain` `415`, 취소 경로 비어 있지 않은 본문 `400` 및 8KiB 초과 `413`) 추가 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=13, failed=4, skipped=0` (신규 US3 검증 4건 의도된 실패 확인).
 - T019~T022 (US3 GREEN): `RequestBodyLimitFilter` 구현 및 `BasicAuthenticationFilter` 앞 등록, `ApiExceptionHandler`의 Jackson 3 엄격 역직렬화(`FAIL_ON_UNKNOWN_PROPERTIES`, `STRICT_DUPLICATE_DETECTION`, `ALLOW_COERCION_OF_SCALARS` 비활성화, `ACCEPT_FLOAT_AS_INT` 비활성화, `LogicalType.Integer` 스칼라 강제 변환 거부) 및 `400`/`415`/`503` 매핑(미분류 SQL 결함 `500` 분리 포함), `SecurityConfig` 내 취소 경로 본문/UUID 검증 구현 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `0`; `integrationTest: tests=14, failed=0, skipped=0` (`SecurityIT` 6건, `ResourceApiIT` 8건 통과).
+
+### Phase 6 (`./gradlew verify` 전체 회귀 게이트·문서 동기화·최종 점검) 기록
+
+- T023 (`./gradlew verify` 전체 회귀 검증):
+  - 실행 명령: `backend/`에서 `./gradlew verify` -> 종료 코드 `0`, `BUILD SUCCESSFUL`
+  - JUnit XML 집계 (`backend/build/test-results/test/TEST-*.xml` 4개, 합계 `116/0/0/0`):
+    - `com.limitedbooking.backend.common.ToolchainSmokeTest`: `3/0/0/0`
+    - `com.limitedbooking.backend.reservation.CancellationDecisionTest`: `5/0/0/0`
+    - `com.limitedbooking.backend.reservation.IdempotencyKeyTest`: `56/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceRulesTest`: `52/0/0/0`
+  - JUnit XML 집계 (`backend/build/test-results/integrationTest/TEST-*.xml` 9개, 합계 `92/0/0/0`):
+    - `com.limitedbooking.backend.BackendApplicationIT`: `1/0/0/0`
+    - `com.limitedbooking.backend.common.HttpClientCleanupIT`: `2/0/0/0`
+    - `com.limitedbooking.backend.common.SchemaIT`: `45/0/0/0`
+    - `com.limitedbooking.backend.common.ToolchainSmokeIT`: `3/0/0/0`
+    - `com.limitedbooking.backend.reservation.ReservationRepositoryIT`: `4/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceApiIT`: `8/0/0/0`
+    - `com.limitedbooking.backend.resource.ResourceRepositoryIT`: `4/0/0/0`
+    - `com.limitedbooking.backend.security.SecurityIT`: `6/0/0/0`
+    - `com.limitedbooking.backend.support.DatabaseSupportIT`: `19/0/0/0`
+- T024~T025: `knowledge/domain/security.md`, `knowledge/domain/resource.md`, `knowledge/README.md`, `README.md`, `docs/decisions.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md`(4단계 체크박스 8/8 완료), `specs/005-auth-resource-api/spec.md`·`plan.md`·`tasks.md`(`27/27` 완료)를 실제 구현·검증 상태와 동기화했다 (`checklists/requirements.md` 및 `checklists/auth-resource-api.md`는 수정하지 않음).
+- T026~T027: 저장소 루트에서 `git diff --check` 종료 코드 `0`(서식·공백 오류 0건)을 확인하고, `feature/auth-resource-api` 브랜치에서 구간별 선행 문서 커밋(`39bf36b`, `6ece577`, `642d4ee`)과 구현 커밋(`954f172`, `a2985a3`, `f4e0d3f`)에 이어 최종 검증·문서 동기화 커밋으로 마무리했다. 원격 저장소 `push` 및 `develop` 병합은 수행하지 않는다.

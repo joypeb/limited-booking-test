@@ -1,10 +1,10 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반과3단계 순수 규칙의 Unit 실행을 검증했다. 업무 API는 미구현이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5~8단계 예약 생성·멱등성·취소·동시성·Redis 요청 제한은 후속 미구현이다.
 
 ## 로컬 환경
 
-`.env.example`을 참고해 루트 `.env`에 POSTGRES_USER, POSTGRES_PASSWORD, TOOLCHAIN_SMOKE_PASSWORD를 설정한다. 값은 공유·커밋하지 않는다. Compose 보간이 호스트 JVM에도 자동 전달되지는 않는다. IDE에서는 같은 환경 변수를 별도로 설정한다.
+`.env.example`을 참고해 루트 `.env`에 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `USER_A_PASSWORD`, `USER_B_PASSWORD`를 설정한다. 값은 공유·커밋하지 않는다. Compose 보간이 호스트 JVM에도 자동 전달되지는 않는다. IDE에서는 같은 환경 변수를 별도로 설정한다.
 
 프로젝트 루트에서:
 
@@ -17,7 +17,7 @@ cd backend
 ./gradlew bootRun --args='--spring.profiles.active=local' -Dfile.encoding=UTF-8 -Duser.timezone=UTC
 ```
 
-앱은 127.0.0.1:8080, PostgreSQL은 127.0.0.1:5432/reservation_local, Redis는 127.0.0.1:6379다. 앱 준비 상한60초, HTTP 연결3초·전체10초로 health를 확인한다. health만 노출하고 상세값은 숨긴다. toolchain 계정은 기동 확인용 Boot 기본 계정이며 업무 UUID 인증 구현이 아니다. UTF-8/UTC를 사용한다.
+앱은 127.0.0.1:8080, PostgreSQL은 127.0.0.1:5432/reservation_local, Redis는 127.0.0.1:6379다. 앱 준비 상한60초, HTTP 연결3초·전체10초로 health를 확인한다. health만 노출하고 상세값은 숨긴다. `ADMIN`·`USER_A`·`USER_B`는 고정 UUID Principal과 환경 변수 주입 비밀번호(BCrypt 보관)를 사용한다. UTF-8/UTC를 사용한다.
 
 ```sh
 curl --connect-timeout 3 --max-time 10 --fail http://127.0.0.1:8080/actuator/health
@@ -63,12 +63,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
 | `./gradlew test` | Spring 없는 Unit116 (업무113+프로브3) |
-| `./gradlew verify` | Unit116+일반IT78 (이번 단계 IT 재실행 없음) |
+| `./gradlew verify` | Unit116+일반IT92 (업무86+기존6) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
 | `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit116+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit116+일반IT78+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit116+일반IT78+Property3; 이번 단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성상 총200; 이번 단계 재실행 없음 |
+| `./gradlew verifyContract` | 구성상 Unit116+일반IT92+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit116+일반IT92+Property3; 이번 단계 재실행 없음 |
+| `./gradlew deepTest` | 네 그룹 구성상 총214; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
@@ -83,7 +83,7 @@ XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/test
 
 Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
 
-도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL을 검증했다. 업무 쓰기 SQL·권한·경쟁·멱등 응답·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
+도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성·취소 쓰기 SQL·소유권·경쟁·멱등 응답·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
 
 최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합은 일반IT4/총13이며, 이후 종료 회귀로14건, PR 적대적 리뷰의 본문 정체 회귀로15건이 됐다.
 
@@ -91,15 +91,15 @@ Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 �
 
 ## 2단계 저장 기반
 
-[업무 V1](backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)은 resources/reservations와 수량·필수값·PK·사용자/키 유일성·FK·상태/취소시각·길이·대상 인덱스를 생성한다. [대상 조회](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)와 [예약 조회](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)는 저장값을 읽는다. 예약 생성·취소 트랜잭션이나 HTTP API를 제공한 상태는 아니다.
+[업무 V1](backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)은 resources/reservations와 수량·필수값·PK·사용자/키 유일성·FK·상태/취소시각·길이·대상 인덱스를 생성한다. [대상 조회·생성](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)과 [예약 조회](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)는 저장값을 다룬다. 예약 생성·취소 트랜잭션이나 예약 HTTP API를 제공한 상태는 아니다.
 
 ```sh
 ./gradlew test integrationTest --tests '*SchemaIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT' --tests '*DatabaseSupportIT'
 ```
 
-현재 구성은 Unit116+업무IT72다. 2단계 당시 실제 실행은 Unit3+업무IT72였으며 이번에는 IT를 재실행하지 않았다. 네 클래스의 fresh/reapplied 두 모드에서 같은 사례를 검증하며, 후자는 validate·migrate0건·표식/이력/구조 보존을 확인한다. [TestData](backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 전달한 테스트 DataSource에서 독립 커밋과 예약→대상 초기화 한 트랜잭션을 제공한다. [수량 검사](backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 SELECT1회로 보존식을 관측하고 불일치·대상 부재를 실패시킨다. 고의 SQL 실패의 마이그레이션 전체 롤백·새 DB 복구와 초기화 롤백·장애 제거 후 재요청도 검증한다.
+현재 전체 구성은 Unit116+일반IT92(1단계 6 + 2단계 72 + 4단계 14)다. 네 클래스의 fresh/reapplied 두 모드에서 같은 사례를 검증하며, 후자는 validate·migrate0건·표식/이력/구조 보존을 확인한다. [TestData](backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 전달한 테스트 DataSource에서 독립 커밋과 예약→대상 초기화 한 트랜잭션을 제공한다. [수량 검사](backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 SELECT1회로 보존식을 관측하고 불일치·대상 부재를 실패시킨다. 고의 SQL 실패의 마이그레이션 전체 롤백·새 DB 복구와 초기화 롤백·장애 제거 후 재요청도 검증한다.
 
-업무 V1이 추가되어 이후 local 앱 기동은 해당 DB에 V1을 적용한다. 이번 단계는 Testcontainers 소유 DB에서만 실행했으며 기존 reservation_local의 실제 적용/전환은 검증하지 않았다. 적용된 V1은 편집하지 않는다. 상세 재현은 [2단계 안내](specs/003-define-db-schema/quickstart.md), 실행 결과는 [증거](docs/test-evidence.md)를 따른다. 3단계 순수 입력 규칙은 아래와 같이 구현했다.
+업무 V1이 추가되어 이후 local 앱 기동은 해당 DB에 V1을 적용한다. 이번 단계는 Testcontainers 소유 DB에서만 실행했으며 기존 reservation_local의 실제 적용/전환은 검증하지 않았다. 적용된 V1은 편집하지 않는다. 상세 재현은 [2단계 안내](specs/003-define-db-schema/quickstart.md), 실행 결과는 [증거](docs/test-evidence.md)를 따른다. 3단계 순수 입력 규칙과 4단계 로컬 인증·예약 대상 API는 아래와 같이 구현했다.
 
 ## 3단계 순수 규칙
 
@@ -112,4 +112,15 @@ Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 �
 ./gradlew test
 ```
 
-2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 2026-10-16 설명 후 명시적 완료 지시로 처리했다. 독립 재설명 시험은 미실시다. 실제 요청 경로 사용과 HTTP·저장 쓰기·멱등성·경쟁 보장, 업무 PIT/Property는 미완료다. 다음 구현은4단계 로컬 인증·대상 API에서 ResourceRules를 사용하는 작업이다.
+2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 2026-10-16 설명 후 명시적 완료 지시로 처리했다. 독립 재설명 시험은 미실시다.
+
+## 4단계 로컬 인증과 예약 대상 API
+
+[SecurityConfig](backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)·[LocalIdentityResolver](backend/src/main/java/com/limitedbooking/backend/security/LocalIdentityResolver.java)는 고정 UUID를 가진 `ADMIN`·`USER_A`·`USER_B` 로컬 무상태 Basic 인증(BCrypt)과 `Principal` 단일 신뢰를 제공한다. [RequestBodyLimitFilter](backend/src/main/java/com/limitedbooking/backend/common/RequestBodyLimitFilter.java)는 인증 앞단에서 실제 스트림 읽기 `8,192바이트(8KiB)` 상한(`413 PAYLOAD_TOO_LARGE`)과 재사용 가능한 요청 래퍼를 제공하고, [ApiExceptionHandler](backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java)는 Jackson 3 엄격 JSON 역직렬화 및 전 구간 공통 `application/problem+json` 응답을 처리한다. [ResourceController](backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java)·[ResourceService](backend/src/main/java/com/limitedbooking/backend/resource/ResourceService.java)·[ClockConfig](backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java)는 UTC `Clock`과 `ResourceRules`를 사용해 예약 대상 생성(`POST /api/resources` `201`)과 단건 조회(`GET /api/resources/{id}` `200`/`404`)를 제공한다.
+
+```sh
+./gradlew integrationTest --tests 'com.limitedbooking.backend.security.SecurityIT' --tests 'com.limitedbooking.backend.resource.ResourceApiIT'
+./gradlew verify
+```
+
+2026-10-17 `SecurityIT` 6건·`ResourceApiIT` 8건 및 `./gradlew verify`(Unit 116 + 일반 IT 92, 실패·오류·skip 0) 통과를 확인했다. 상세 계약은 [4단계 계약](specs/005-auth-resource-api/contracts/auth-resource-contract.md)과 [실행 증거](docs/test-evidence.md)를 따른다. 다음 구현은 5단계 예약 생성·성공한 키·롤백이다.
