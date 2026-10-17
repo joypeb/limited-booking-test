@@ -884,3 +884,13 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
     - `com.limitedbooking.backend.support.DatabaseSupportIT`: `19/0/0/0`
 - T024~T025: `knowledge/domain/security.md`, `knowledge/domain/resource.md`, `knowledge/README.md`, `README.md`, `docs/decisions.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md`(4단계 체크박스 8/8 완료), `specs/005-auth-resource-api/spec.md`·`plan.md`·`tasks.md`(`27/27` 완료)를 실제 구현·검증 상태와 동기화했다 (`checklists/requirements.md` 및 `checklists/auth-resource-api.md`는 수정하지 않음).
 - T026~T027: 저장소 루트에서 `git diff --check` 종료 코드 `0`(서식·공백 오류 0건)을 확인하고, `feature/auth-resource-api` 브랜치에서 구간별 선행 문서 커밋(`39bf36b`, `6ece577`, `642d4ee`)과 구현 커밋(`954f172`, `a2985a3`, `f4e0d3f`)에 이어 최종 검증·문서 동기화 커밋으로 마무리했다. 원격 저장소 `push` 및 `develop` 병합은 수행하지 않는다.
+
+## 4단계 GitHub PR·적대적 코드 리뷰 및 병합 전 검증 (2026-10-17)
+
+- 사용자가 `develop` 대상 GitHub PR 생성, 적대적 코드 리뷰 실행, 병합 적합성 확인 후 병합을 명시적으로 지시했다.
+- `git push -u origin feature/auth-resource-api` 및 `gh pr create --base develop --head feature/auth-resource-api` 종료 코드 `0`으로 [PR #4](https://github.com/joypeb/limited-booking-test/pull/4)를 게시했다.
+- 독립된 읽기 전용 서브에이전트(`5e14debf6eb098b267e1e97b6ad16d50`)가 `origin/develop...HEAD`(`8366995..36adffd`) 전체 프로덕션·테스트·설정·문서·JUnit XML 결과를 계획서 2~5절·7절 4단계, `docs/openapi.yaml`, `specs/005-auth-resource-api/*` 및 헌법 원칙 I~V에 대조해 적대적 코드 리뷰를 수행했다:
+  - **판정**: **PASS** (`Critical 0`, `Major 0`, `Minor 0`, 머지 차단 사유 0건)
+  - 검증 항목: 고정 UUID 3계정(`ADMIN`·`USER_A`·`USER_B`) 및 BCrypt 보관, `LocalIdentityResolver.userId(Authentication)`의 `Principal` 단일 신뢰(`X-User-Id`/본문 `userId` 불신뢰), 무상태 Basic 인증(`JSESSIONID` 미생성)·CSRF 비활성화 사유 명시·CORS 와일드카드 미추가, 인증 앞단 `RequestBodyLimitFilter`의 8,192바이트 초과(일반/`chunked`/길이 헤더 누락) `413` 우선 차단 및 상한 이하 재사용 래퍼 전달, Jackson 3 엄격 설정(미정의 필드·중복 키·부동소수점 `1.5`/`1.0`·문자열 `"10"`·불리언 강제 변환 거부 `400`), `415`, 취소 비어 있지 않은 본문/잘못된 UUID `400`, 일시적 DB 장애 `503` 및 미분류 SQL 결함 `500` 분리, 전 구간 `application/problem+json` 6개 필수 속성 및 민감정보 비노출, `./gradlew verify` JUnit XML(`test` 116/0/0/0, `integrationTest` 92/0/0/0) 일치 확인.
+- 저장소에 `.github/workflows` 외부 CI는 등록되어 있지 않으므로(12단계 예정) 외부 CI 성공을 주장하지 않으며 로컬 `./gradlew verify` 통과와 구분한다.
+- 병합 조건: 최신 원격 head가 검토된 커밋과 일치하고 `MERGEABLE`/`CLEAN` 상태임을 확인한 뒤 사용자 지시에 따라 merge commit 방식으로 `develop`에 병합하고 로컬 `develop`을 동기화한다.
