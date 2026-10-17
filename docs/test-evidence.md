@@ -851,3 +851,9 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
 - T002: `specs/005-auth-resource-api/checklists/requirements.md`(16/16 충족, 미체크 0)와 `specs/005-auth-resource-api/checklists/auth-resource-api.md`(34/34 충족, 미체크 0) 검토 완료 상태를 확인해 구현 게이트를 통과했다. 두 체크리스트 파일은 구현 중 변경하지 않는다.
 - T003~T006: `.env.example`과 `backend/src/main/resources/application-local.yaml`을 `ADMIN_PASSWORD`·`USER_A_PASSWORD`·`USER_B_PASSWORD` 구조로 갱신하고, `ClockConfig`(`Clock.systemUTC()`), `ApiExceptionHandler` 공통 `application/problem+json` 직렬화 골격, `TestData`·`ContainerTestSupport`·`HttpClientTestSupport`·`BackendApplicationIT`의 고정 UUID(`ADMIN_ID`, `USER_A_ID`, `USER_B_ID`)·테스트 전용 가짜 비밀번호·Basic 인증/raw HTTP 전송 헬퍼를 구성했다.
 - 기반 확인 실행: `backend/`에서 `./gradlew test integrationTest --tests com.limitedbooking.backend.BackendApplicationIT` 종료 코드 `0`; `test: tests=116, failed=0, skipped=0`, `integrationTest: tests=1, failed=0, skipped=0`.
+
+### User Story 1·2 (로컬 인증·권한 및 예약 대상 생성·단건 조회) TDD 기록
+
+- T007~T008 (US1 RED): `SecurityIT` 작성 후 최소 골격 상태에서 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=4, failed=4, skipped=0` (기능 미구현으로 4건 모두 의도된 실패 확인).
+- T009~T011 (US1 구현 및 US2 RED): `LocalIdentityResolver`·`SecurityConfig` 구현 및 `ResourceApiIT`(US2 범위) 작성 후 `ResourceController` 최소 골격 상태에서 `./gradlew integrationTest --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `1`; `integrationTest: tests=4, failed=4, skipped=0` (대상 생성/조회 엔드포인트 미구현으로 4건 모두 의도된 실패 확인).
+- T012~T015 (US1·US2 GREEN): `ResourceRepository.insert`, `ResourceService.create/get`, `ResourceController`, `ApiExceptionHandler`(`404 NOT_FOUND`) 구현 후 `./gradlew integrationTest --tests com.limitedbooking.backend.security.SecurityIT --tests com.limitedbooking.backend.resource.ResourceApiIT` 실행 -> 종료 코드 `0`; `integrationTest: tests=8, failed=0, skipped=0` (`SecurityIT` 4건, `ResourceApiIT` 4건 모두 통과).

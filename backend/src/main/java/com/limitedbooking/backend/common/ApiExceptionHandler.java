@@ -1,10 +1,12 @@
 package com.limitedbooking.backend.common;
 
+import com.limitedbooking.backend.resource.ResourceService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -23,6 +25,20 @@ public class ApiExceptionHandler {
             String instance,
             String code
     ) {}
+
+    @ExceptionHandler(ResourceService.ResourceNotFoundException.class)
+    public ResponseEntity<ProblemResponse> handleResourceNotFound(
+            ResourceService.ResourceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return problemEntity(
+                HttpStatus.NOT_FOUND,
+                "예약 대상을 찾을 수 없습니다",
+                "요청한 예약 대상이 존재하지 않습니다.",
+                request,
+                "NOT_FOUND"
+        );
+    }
 
     public static ProblemResponse problem(int status, String title, String detail, String instance, String code) {
         return new ProblemResponse(
