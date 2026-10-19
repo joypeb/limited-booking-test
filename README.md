@@ -63,12 +63,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
 | `./gradlew test` | Spring 없는 Unit137 (기존116+생성 조정/분류21) |
-| `./gradlew verify` | Unit137+일반IT115 (기존92+생성23) |
+| `./gradlew verify` | Unit137+일반IT120 (기존92+생성28) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
 | `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit137+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit137+일반IT115+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit137+일반IT115+Property3; 이번 단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성상 총258; 이번 단계 재실행 없음 |
+| `./gradlew verifyContract` | 구성상 Unit137+일반IT120+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit137+일반IT120+Property3; 이번 단계 재실행 없음 |
+| `./gradlew deepTest` | 네 그룹 구성상 총263; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.

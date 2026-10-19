@@ -57,3 +57,5 @@ compileClasspath 실행: 종료0, org.postgresql:postgresql →42.7.13, 동일 B
 ### 2026-10-19 5단계 실행 환경
 
 Corretto25.0.4.7.1·Gradle9.7.1·Docker daemon29.8.2에서 동일 PostgreSQL18.6 고정digest 및 Boot4.1.1/BOM을 유지했다. PostgreSQL42.7.13은 compileClasspath 해석 종료0으로 확인했다. 신규 IT 각각 실제 Hikari maximumPoolSize10/connectionTimeout3000ms를 확인하며 실제 Writer에서 read committed/lock_timeout2s/statement_timeout5s를 검사했다. 새 버전 추가·하향 없이 MockitoSpyBean/실제 프록시/SQLSTATE 메타데이터를 실행 확인했다. Gradle10 호환/심화·부하는 이번에 검증하지 않았다.
+
+5단계 리뷰 수정 후 최종 일반verify는 Unit137/일반IT120, 실패·오류·skip0이다. 비표준UUID HTTP 회귀5건을 추가했으며 의존성 버전 변경은 없다.

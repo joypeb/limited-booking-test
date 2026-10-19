@@ -1031,3 +1031,25 @@ T039: ./gradlew test integrationTest --tests '*ReservationCreateIT' --tests '*Id
 - 로컬 feature/reservation-create에서 검증 대상별 커밋만 작성한다. develop병합·push·공개 없음. 최종 독립 리뷰 결과는 후속 기록한다.
 
 문서 검증: 변경/006 Markdown 로컬 링크264개, 누락0. git diff --check 종료0. 운영 src/main의 pg_sleep/Mockito/실패주입 플래그 검색0건. 체크리스트 requirements16/16·custom34/34 유지. T001~T043 수행 완료 후 독립 최종 리뷰를 진행한다.
+
+### 독립 최종 리뷰 및 단일 수정 — UUID 입력
+
+- 독립 리뷰 범위58f4106..9cdb39f: Critical0·Important1·Minor1. 수량/트랜잭션/재현 경계는 적합했다. Important는 Jackson 기본 UUID 바인딩이 Base64 22/24자 및 UUID앞뒤공백을 허용하는 입력 결함이다.
+- 실제 RED: ./gradlew integrationTest --tests '*ReservationCreateIT.rejectsNonUuidWireRepresentationsWithoutConsumingKey', 종료1·5건 중4실패(400 기대/201 실제),축약UUID1건은 기존400 회귀였다. 새 예약 대상 UUID...0001을 준비해 잘못된 표기가 실제 수량 변경까지 진입함을 재현했다.
+- 최소 수정: CreateReservationRequest의 명시적 JsonCreator에서 원문36자 UUID 패턴 확인 후 UUID로 변환한다. Base64/공백제거를 허용하지 않고 대소문자는 모두 허용한다. 기존 UUID record와 외부 계약은 유지한다.
+
+- 문서 현재표의 생성 미구현 표시는 knowledge를 먼저 읽는 작업자에게 이미 완료한 생성 구현을 다시 지시하므로 T041 현재 상태 동기화의 누락으로 평가했다. 같은 수정 과정에서 resource.md의 현재표/다음 작업을 취소·실제 경쟁 후속으로 정정했다. 동작 변경 없는 문서 정정은 링크·diff 검사로 확인한다.
+- 판단 보류에 대한 최종 판정: 실제 경쟁 반복은7단계, GET/소유권·취소는6단계, Redis/429/Redis장애는8단계, 응답유실·전체연결/프로세스중단은11단계, 업무자동계약·Property·PIT·부하·외부CI는9~12단계다. 현재 생성 기능/SQL·timeout의 인수를 대신하지 않는 별도 후속 범위로 유지한다. 잘못된 범위 판단이면 최종 예약 시스템의 정합성·장애 보장을 과대평가할 수 있으므로 전체 버전 완료로 보고하지 않는다.
+
+UUID 수정 관련 GREEN: ./gradlew integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT', 종료0·21건(Create16+Idempotency5)·실패/오류/skip0. 비표준5건·엄격JSON과 정상UUID 대소문자재현 모두 통과했다.
+
+수정 후 지정 인수: ./gradlew test integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT', 종료0·Unit137·지정IT28(Create16/Idempotency5/Rollback7),실패/오류/skip0. listener/XML 대조 일치.
+
+수정 후 최종 전체verify: ./gradlew verify, 종료0·1분9초·Unit137/일반IT120,실패0·오류0·skip0. listener/XML 합계를 대조했다. 독립 리뷰의 UUID 입력 결함은4건 기능RED→5건GREEN 및 관련/전체 회귀로 해결했으며 T041 문서 현재표도 정정했다. 남은 리뷰 지적/유예Minor는0건이다. 재리뷰 대신 단일 수정 후 전체 검증으로 확인했다.
+
+최종 수행 판단과 한계:
+- 기존 사용자 지정 경로에서 별도 feature 브랜치로 작업했다. 기존 미커밋 명세를 보존했으며 별도 worktree 수준의 변경 격리는 없다.
+- 관측한 SQLSTATE55P03만503으로 추가 연결했다. 같은 상태의 다른 잠금 획득 실패도 의존성 이용불가503에 포함되지만 다른SQL/내부결함은 숨기지 않는다.
+- 6~12단계의 소유자GET/취소·실제경쟁·Redis·전체응답유실/연결중단·심화/부하/CI는 후속이다. 이 판단이 잘못되면 전체 예약 시스템의 정합성·장애 보장을 과대평가하므로5단계 인수 범위를 유지한다.
+
+수정 후 문서 링크264개/누락0·diff-check0·운영 실패주입 검색0건을 재확인했다. 전후 확장 훅 파일은 없으며 생략했다. feature/reservation-create를 유지하고 merge/push/공개/외부CI는 수행하지 않는다.

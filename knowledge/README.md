@@ -53,7 +53,7 @@
 
 - [5단계 명세](../specs/006-reservation-create/spec.md): 예약 생성·성공한 키 재현·실패 복구·잘못된 요청 거부를 네 사용자 이야기와 12개 요구사항으로 정의했다. 명세 품질 검토 후 생성·멱등성·롤백·입력 HTTP/DB 구현·실행 검증을 완료했다.
 - [5단계 명세 품질 검토](../specs/006-reservation-create/checklists/requirements.md): 내용·완결성·준비 상태 16개 항목의 문서 검토 결과다. 기능 테스트 통과나 실제 경쟁·장애 검증 완료를 뜻하지 않는다.
-- [5단계 구현 계획](../specs/006-reservation-create/plan.md): 트랜잭션 밖 Service·별도 Writer, 성공 키 재현·정밀도·유일 위반 분류·롤백 검증 순서를 설계했다. [조사](../specs/006-reservation-create/research.md)·[데이터 모델](../specs/006-reservation-create/data-model.md)·[생성 계약](../specs/006-reservation-create/contracts/reservation-create-contract.md)·[검증 안내](../specs/006-reservation-create/quickstart.md)를 포함한다. 코드·신규 Unit21/IT23과 실행 인수를 완료했다.
+- [5단계 구현 계획](../specs/006-reservation-create/plan.md): 트랜잭션 밖 Service·별도 Writer, 성공 키 재현·정밀도·유일 위반 분류·롤백 검증 순서를 설계했다. [조사](../specs/006-reservation-create/research.md)·[데이터 모델](../specs/006-reservation-create/data-model.md)·[생성 계약](../specs/006-reservation-create/contracts/reservation-create-contract.md)·[검증 안내](../specs/006-reservation-create/quickstart.md)를 포함한다. 코드·신규 Unit21/IT28과 실행 인수를 완료했다.
 - [5단계 맞춤 요구사항 검토 목록](../specs/006-reservation-create/checklists/reservation-create.md): 생성·성공 키 재현·원자적 실패 복구·오류·단계 경계를 검토하는 34개 항목이다. 구현 전 검토자용·표준 깊이로 생성했고, 사용자 지시로 항목별 근거를 대조해34/34 품질 충족 판정했다. 구현·실행 완료가 아니며 내장 명세 품질16개 체크와 별개다.
 - [5단계 작업 목록](../specs/006-reservation-create/tasks.md): 준비·공통 선행·네 사용자 이야기·전체 인수의 43개 작업이다. US1 10개·US2 7개·US3 11개·US4 6개·공통 9개다. 작업별 실제 실행 증거로 완료 상태를 관리하며 전체 인수 결과는 tasks.md와 docs/test-evidence.md를 따른다. 서로 다른 테스트 파일 작성 4개만 병행 후보이고 공유 구현·Gradle·기록·커밋은 순차 처리한다. 작업 생성 당시에는 맞춤 요구사항 검토 상태를 유지했고, 후속 사용자 지시로 별도34/34 품질 평가를 완료했다.
   2026-10-19 분석의 C1·G1·G2 보완으로 T019 테스트·RED→T020 구현·GREEN 순서, 신규 세 IT의 풀10/연결 획득3000ms 설정·실제 적용값 확인, 입력 오류·품절 후 같은 키 재시도 성공을 관련 계획·계약·검증 안내에 반영했다. 당시에는 문서 보완이었고 이후5단계 구현에서 해당 순서·설정·실패 키 복구를 실행 검증했다.
@@ -69,6 +69,6 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 4단계 `./gradlew verify` 기준 일반 Unit은 116건(업무 113 + 프로브 3), 일반 IT는 92건(1단계 6 + 2단계 72 + 4단계 `SecurityIT` 6·`ResourceApiIT` 8)이며 실패·오류·skip 0이다. `ResourceRules`는 4단계 실제 요청 경로에 연동 완료되었으며 `IdempotencyKey`는5단계 생성 경로에 연동했고 `CancellationDecision`은6단계 취소 연동 후속이다.
 
 
-2026-10-19 5단계: 생성 Controller/Service/Writer·Repository 조건UPDATE/INSERT RETURNING·구조화 유일 위반 분류기를 구현했다. 전체 Unit137과 생성3IT23의 지정 인수를 통과했다. 최종 일반verify의 현재 수/결과는 [실행 증거](../docs/test-evidence.md)를 따른다. 실제 경쟁/취소/Redis/심화는 후속이다.
+2026-10-19 5단계: 생성 Controller/Service/Writer·Repository 조건UPDATE/INSERT RETURNING·구조화 유일 위반 분류기를 구현했다. 전체 Unit137과 생성3IT28의 지정 인수를 통과했다. 최종 일반verify의 현재 수/결과는 [실행 증거](../docs/test-evidence.md)를 따른다. 실제 경쟁/취소/Redis/심화는 후속이다.
 
-최종 일반verify: Unit137·일반IT115, 실패·오류·skip0. 상세 명령/환경/한계는 docs/test-evidence.md에 기록했다.
+최종 일반verify: Unit137·일반IT120, 실패·오류·skip0. 상세 명령/환경/한계는 docs/test-evidence.md에 기록했다.

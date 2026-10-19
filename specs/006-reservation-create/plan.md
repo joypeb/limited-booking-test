@@ -112,3 +112,5 @@ UPDATE 0 뒤 SELECT는 오류가 발생하지 않은 Writer 트랜잭션의 새�
 ## 복잡성 추적
 
 정당화가 필요한 헌법 위반은 없다. 별도 Writer와 PostgreSQL 전용 분류기는 계획서가 요구하는 트랜잭션·제약 판별 경계를 위한 최소 구성이다.
+
+최종 실행(2026-10-19): 지정 Unit137/IT28, 일반verify Unit137/IT120, 실패·오류·skip0. 독립 리뷰의 UUID 기본 바인딩 허용 결함을 실제HTTP RED→엄격JsonCreator→GREEN으로 수정했다. 문서 현재표도 정정했으며 실제 경쟁·취소·Redis는 후속이다.

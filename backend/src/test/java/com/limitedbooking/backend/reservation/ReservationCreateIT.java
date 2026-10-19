@@ -234,4 +234,22 @@ class ReservationCreateIT {
         inventory(id,0,1);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+        "AAAAAAAAAAAAAAAAAAAAAQ==", "AAAAAAAAAAAAAAAAAAAAAQ",
+        " 00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000001 ",
+        "1-1-1-1-1"
+    })
+    void rejectsNonUuidWireRepresentationsWithoutConsumingKey(String rawId) throws Exception {
+        UUID id=UUID.fromString("00000000-0000-0000-0000-000000000001");
+        data.resource(id,"UUID 원문 검증",1,1,Instant.EPOCH);
+        problem(post("uuid-wire",JSON.writeValueAsString(Map.of("resourceId",rawId))),400,"INVALID_REQUEST");
+        inventory(id,1,0);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM reservations",Integer.class)).isZero();
+        var valid=post("uuid-wire",payload(id));
+        assertThat(valid.statusCode()).isEqualTo(201);
+        assertThat(valid.headers().firstValue("Idempotent-Replayed")).contains("false");
+        inventory(id,0,1);
+    }
+
 }

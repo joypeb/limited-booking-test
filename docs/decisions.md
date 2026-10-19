@@ -96,3 +96,8 @@ record compact constructor에서 null과 고정 Pattern의 matches 전체 일치
 - 기존 설계대로 외부 Writer/트랜잭션 밖 Service, UTC MICROS·RETURNING, 성공 행 키 기록을 구현했다. pgJDBC42.7.13은 동일 BOM implementation으로 이동했다.
 - 실제 lock timeout은 UncategorizedSQLException/SQLSTATE55P03으로 전달됐다. 기존 transient 매핑에 포괄되지 않아 정확한55P03만503으로 보완했다. Hikari 풀 고갈은 CannotCreateTransactionException의 직접 SQLTransientConnectionException 원인을 확인해503으로 연결한다. 연결SQLState08/SQLNonTransientConnectionException도 실제 연결 실패 범주다. 메시지 파싱이나 모든TransactionException503은 사용하지 않는다.
 - INSERT전 실패·문장 지연·풀 소진은 테스트 전용 MockitoSpyBean에서 실제 SQL/트랜잭션을 유지해 주입했다. 별도 연결로 무변경과 동일 키 복구를 검증한다. 실제 경쟁 반복/응답 유실은 이번 단계 인수가 아니다.
+
+
+### 독립 리뷰 반영: 예약 대상 UUID 원문 검증
+
+Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정 uuid 입력 계약보다 느슨함을 실제HTTP로 재현했다. 요청record의 명시적JsonCreator가 원문36자 UUID 패턴을 확인 후 변환하도록 최소 변경했다. 사용자 정책·OpenAPI는 바꾸지 않으며 대소문자UUID 값 비교는 유지한다.
