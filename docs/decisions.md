@@ -81,3 +81,23 @@ record compact constructor에서 null과 고정 Pattern의 matches 전체 일치
 - `RequestBodyLimitFilter`를 `BasicAuthenticationFilter`보다 앞에 등록해 `Content-Length > 8192`뿐 아니라 길이 헤더가 없거나 `Transfer-Encoding: chunked`인 요청도 최대 `8,193바이트`까지 직접 읽어 초과 시 인증 전에 즉시 `413 PAYLOAD_TOO_LARGE`(`application/problem+json`)를 반환하고, 상한 이하 바이트는 `HttpServletRequestWrapper`로 재제공한다.
 - Spring Boot 4 / Jackson 3(`tools.jackson.databind.json.JsonMapper`)의 `JsonMapperBuilderCustomizer`로 `FAIL_ON_UNKNOWN_PROPERTIES`·`STRICT_DUPLICATE_DETECTION` 활성화, `ALLOW_COERCION_OF_SCALARS`·`ACCEPT_FLOAT_AS_INT` 비활성화 및 `LogicalType.Integer` 스칼라 강제 변환(`CoercionAction.Fail`)을 설정해 미정의 필드·중복 키·부동소수점(`1.5`, `1.0`)·문자열 숫자(`"10"`)를 모두 `400 INVALID_REQUEST`로 거부한다.
 - `ApiExceptionHandler`는 `TransientDataAccessException`·`DataAccessResourceFailureException`·`QueryTimeoutException`만 `503 DEPENDENCY_UNAVAILABLE`로 변환하고, 분류되지 않은 SQL 문법 오류나 내부 런타임 결함은 `4xx`/`503`으로 숨기지 않고 `500`으로 드러나게 했다. 6단계 `ReservationController` 구현 전에도 4단계 취소 본문/UUID 검증 계약을 만족하도록 `SecurityConfig`의 인증 뒤 필터에서 `POST /api/reservations/{id}/cancel`의 비어 있지 않은 본문 및 잘못된 UUID를 `400 INVALID_REQUEST`로 거부한다.
+
+## 2026-10-19 — 5단계 생성 계획의 트랜잭션·오류·검증 경계
+
+- 상태: [006 계획](../specs/006-reservation-create/plan.md)의 설계 선택이다. 코드 반영·실행 검증 전이며 기존 업무 정책·API·V1은 변경하지 않는다.
+- Service는 트랜잭션을 시작하지 않고 활성 상위 트랜잭션을 거부한다. 별도 READ COMMITTED Writer의 전체 롤백 뒤에만 사용자/키 유일 위반을 복구한다. REQUIRES_NEW나 실패 트랜잭션 안 계속 조회는 채택하지 않는다.
+- PostgreSQL 오류 구조에서 같은 예외의 SQLSTATE23505·정확한 제약명을 확인한다. 이를 위해 동일 BOM의 드라이버를 runtimeOnly에서 implementation으로 이동할 예정이다. 메시지 파싱·모든 중복/무결성 오류의 성공 재현은 제외한다.
+- 시각은 기존 MICROS 절삭과 저장 RETURNING 값을 사용한다. 테스트는 실제 UPDATE/트랜잭션을 유지한 테스트 전용 Repository 실패 주입과 종료 후 별도 연결 상태 검사다. 실제 경쟁 반복은 7단계이며 순수 분기 검증을 경쟁 증거로 취급하지 않는다.
+- 공식 근거·대안·미검증 범위는 [조사](../specs/006-reservation-create/research.md), 실행 예정 절차는 [검증 안내](../specs/006-reservation-create/quickstart.md)를 따른다.
+
+
+## 2026-10-19 — 5단계 구현에서 확인한 오류 전달
+
+- 기존 설계대로 외부 Writer/트랜잭션 밖 Service, UTC MICROS·RETURNING, 성공 행 키 기록을 구현했다. pgJDBC42.7.13은 동일 BOM implementation으로 이동했다.
+- 실제 lock timeout은 UncategorizedSQLException/SQLSTATE55P03으로 전달됐다. 기존 transient 매핑에 포괄되지 않아 정확한55P03만503으로 보완했다. Hikari 풀 고갈은 CannotCreateTransactionException의 직접 SQLTransientConnectionException 원인을 확인해503으로 연결한다. 연결SQLState08/SQLNonTransientConnectionException도 실제 연결 실패 범주다. 메시지 파싱이나 모든TransactionException503은 사용하지 않는다.
+- INSERT전 실패·문장 지연·풀 소진은 테스트 전용 MockitoSpyBean에서 실제 SQL/트랜잭션을 유지해 주입했다. 별도 연결로 무변경과 동일 키 복구를 검증한다. 실제 경쟁 반복/응답 유실은 이번 단계 인수가 아니다.
+
+
+### 독립 리뷰 반영: 예약 대상 UUID 원문 검증
+
+Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정 uuid 입력 계약보다 느슨함을 실제HTTP로 재현했다. 요청record의 명시적JsonCreator가 원문36자 UUID 패턴을 확인 후 변환하도록 최소 변경했다. 사용자 정책·OpenAPI는 바꾸지 않으며 대소문자UUID 값 비교는 유지한다.

@@ -29,10 +29,10 @@
 
 - [_template.md](domain/_template.md): 새 도메인 문서의 공통 형식. 템플릿 자체는 특정 도메인의 확정 계약이 아니다.
 - [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기/생성 SQL, `ResourceRules` Unit 52건, 4단계 `POST /api/resources`·`GET /api/resources/{id}` HTTP 통합 테스트(`ResourceApiIT` 8건)까지 구현·검증했으며 예약 생성/취소에 따른 수량 차감·복구는 5~7단계 후속이다.
-- [reservation.md](domain/reservation.md): 예약·멱등 재현·취소·트랜잭션·경쟁의 설계 지식.
+- [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백의 구현·검증과 취소·경쟁의 설계 지식.
 - [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)은 후속이다.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
-- 예약 생성·취소 API·쓰기 트랜잭션·경쟁·Redis 요청 제한(5~8단계)은 미구현이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
+- 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소·실제 경쟁·Redis 요청 제한(6~8단계)은 후속이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
 - [2단계 요구사항 검토 목록](../specs/003-define-db-schema/checklists/database.md): 저장 제약·조회와 테스트 격리·재현성의 요구사항 품질을 검토한다. 사용자 요청으로34개 항목의 요구사항 품질을 평가했고 CHK022 실패 처리도 문서 보완 후 충족으로 판단했다. 체크는 구현 완료 표시가 아니다.
@@ -51,12 +51,24 @@
 - 파일 이름은 `<domain-name>.md`를 사용한다. 근거·경계·기대 결과를 먼저 적고, 코드·SQL·테스트·명령은 실제 존재 여부를 확인해 연결한다.
 - 템플릿의 모든 절을 유지한다. 해당 없는 항목은 이유를 적고, 미확정 사항은 질문과 영향 범위를 적는다. 다른 도메인과 공유하는 규칙은 관련 문서로 연결한다.
 
+- [5단계 명세](../specs/006-reservation-create/spec.md): 예약 생성·성공한 키 재현·실패 복구·잘못된 요청 거부를 네 사용자 이야기와 12개 요구사항으로 정의했다. 명세 품질 검토 후 생성·멱등성·롤백·입력 HTTP/DB 구현·실행 검증을 완료했다.
+- [5단계 명세 품질 검토](../specs/006-reservation-create/checklists/requirements.md): 내용·완결성·준비 상태 16개 항목의 문서 검토 결과다. 기능 테스트 통과나 실제 경쟁·장애 검증 완료를 뜻하지 않는다.
+- [5단계 구현 계획](../specs/006-reservation-create/plan.md): 트랜잭션 밖 Service·별도 Writer, 성공 키 재현·정밀도·유일 위반 분류·롤백 검증 순서를 설계했다. [조사](../specs/006-reservation-create/research.md)·[데이터 모델](../specs/006-reservation-create/data-model.md)·[생성 계약](../specs/006-reservation-create/contracts/reservation-create-contract.md)·[검증 안내](../specs/006-reservation-create/quickstart.md)를 포함한다. 코드·신규 Unit21/IT28과 실행 인수를 완료했다.
+- [5단계 맞춤 요구사항 검토 목록](../specs/006-reservation-create/checklists/reservation-create.md): 생성·성공 키 재현·원자적 실패 복구·오류·단계 경계를 검토하는 34개 항목이다. 구현 전 검토자용·표준 깊이로 생성했고, 사용자 지시로 항목별 근거를 대조해34/34 품질 충족 판정했다. 구현·실행 완료가 아니며 내장 명세 품질16개 체크와 별개다.
+- [5단계 작업 목록](../specs/006-reservation-create/tasks.md): 준비·공통 선행·네 사용자 이야기·전체 인수의 43개 작업이다. US1 10개·US2 7개·US3 11개·US4 6개·공통 9개다. 작업별 실제 실행 증거로 완료 상태를 관리하며 전체 인수 결과는 tasks.md와 docs/test-evidence.md를 따른다. 서로 다른 테스트 파일 작성 4개만 병행 후보이고 공유 구현·Gradle·기록·커밋은 순차 처리한다. 작업 생성 당시에는 맞춤 요구사항 검토 상태를 유지했고, 후속 사용자 지시로 별도34/34 품질 평가를 완료했다.
+  2026-10-19 분석의 C1·G1·G2 보완으로 T019 테스트·RED→T020 구현·GREEN 순서, 신규 세 IT의 풀10/연결 획득3000ms 설정·실제 적용값 확인, 입력 오류·품절 후 같은 키 재시도 성공을 관련 계획·계약·검증 안내에 반영했다. 당시에는 문서 보완이었고 이후5단계 구현에서 해당 순서·설정·실패 키 복구를 실행 검증했다.
+
 ## 문서와 구현 상태
 
 2026-10-13 1단계 수행 후 애플리케이션은 backend/, 기본 패키지는 com.limitedbooking.backend이며 Java25·Boot4.1.1·Gradle9.7.1을 유지했다. MVC·Security·JDBC·Redis·Flyway·Actuator 및 검증 의존성을 추가했다. [실행 안내](../README.md), [버전](../docs/versions.md), [실행 증거](../docs/test-evidence.md)에 실제 상태를 연결한다.
 
-Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. 1~3단계에 이어 2026-10-17 4단계 로컬 Basic 인증·권한(`SecurityConfig`, `LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 엄격 JSON 역직렬화 및 공통 `problem+json` 오류 처리(`ApiExceptionHandler`), UTC `Clock`(`ClockConfig`), 예약 대상 생성·단건 조회(`ResourceRepository.insert`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT` 6건, `ResourceApiIT` 8건)를 구현하고 `./gradlew verify`(Unit 116건 + 일반 IT 92건, 실패·오류·skip 0건)를 통과했다. 예약 생성·멱등성·취소·동시성·Redis 요청 제한(5~8단계)은 아직 미구현이다.
+Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. 1~3단계에 이어 2026-10-17 4단계 로컬 Basic 인증·권한(`SecurityConfig`, `LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 엄격 JSON 역직렬화 및 공통 `problem+json` 오류 처리(`ApiExceptionHandler`), UTC `Clock`(`ClockConfig`), 예약 대상 생성·단건 조회(`ResourceRepository.insert`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT` 6건, `ResourceApiIT` 8건)를 구현하고 `./gradlew verify`(Unit 116건 + 일반 IT 92건, 실패·오류·skip 0건)를 통과했다. 5단계 예약 생성·멱등성·원자적 실패 복구를 추가 구현했다. 예약 조회·취소·실제 동시성 반복·Redis 요청 제한(6~8단계)은 후속이다.
 
 `knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
 
-현재 `./gradlew verify` 기준 일반 Unit은 116건(업무 113 + 프로브 3), 일반 IT는 92건(1단계 6 + 2단계 72 + 4단계 `SecurityIT` 6·`ResourceApiIT` 8)이며 실패·오류·skip 0이다. `ResourceRules`는 4단계 실제 요청 경로에 연동 완료되었으며 `IdempotencyKey`·`CancellationDecision`의 실제 요청 경로 연동은 5~6단계에서 인수한다.
+4단계 `./gradlew verify` 기준 일반 Unit은 116건(업무 113 + 프로브 3), 일반 IT는 92건(1단계 6 + 2단계 72 + 4단계 `SecurityIT` 6·`ResourceApiIT` 8)이며 실패·오류·skip 0이다. `ResourceRules`는 4단계 실제 요청 경로에 연동 완료되었으며 `IdempotencyKey`는5단계 생성 경로에 연동했고 `CancellationDecision`은6단계 취소 연동 후속이다.
+
+
+2026-10-19 5단계: 생성 Controller/Service/Writer·Repository 조건UPDATE/INSERT RETURNING·구조화 유일 위반 분류기를 구현했다. 전체 Unit137과 생성3IT28의 지정 인수를 통과했다. 최종 일반verify의 현재 수/결과는 [실행 증거](../docs/test-evidence.md)를 따른다. 실제 경쟁/취소/Redis/심화는 후속이다.
+
+최종 일반verify: Unit137·일반IT120, 실패·오류·skip0. 상세 명령/환경/한계는 docs/test-evidence.md에 기록했다.

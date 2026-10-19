@@ -78,10 +78,10 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 예약 생성·취소에 따른 `available` 차감/복구 미구현 | `available + CONFIRMED = capacity` 동적 보존 미검증 | 5~7단계 예약 Writer·멱등성·취소·동시성 구현 및 검증 |
+| 취소의 `available` 복구·실제 경쟁 미구현 | 생성·재현·실패 롤백 보존은5단계 검증 완료; 취소/경쟁 보존 후속 | 6단계 조회·취소,7단계 실제 동시성 검증 |
 | 업무 OpenAPI 자동 계약 검증 미실행 | 수동/IT 검증은 완료했으나 validator 자동 대조는 후속 | 9단계 API 계약 및 비정상 입력 테스트에서 검증 |
 
-이름 길이 코드 포인트·공백 strip 정책과 4단계 대상 생성·단건 조회 HTTP API 구현 및 통합 검증을 완료했다. 예약 생성·취소에 따른 수량 변경과 경쟁 보존은 5~7단계에서 구현·검증한다.
+이름 길이 코드 포인트·공백 strip 정책과 4단계 대상 생성·단건 조회 HTTP API 구현 및 통합 검증을 완료했다. 예약 생성의 조건부 차감·재현 무변경·실패 롤백과 수량 보존은5단계에서 검증했다. 취소 복구·실제 경쟁 보존은6~7단계 후속이다.
 
 ### 2026-10-14 저장 길이 보장 범위 명확화
 
@@ -104,3 +104,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 4단계 대상 생성·단건 조회 HTTP 연동 완료 (2026-10-17)
 
 [005 계획](../../specs/005-auth-resource-api/plan.md)과 [인터페이스 계약](../../specs/005-auth-resource-api/contracts/auth-resource-contract.md)에 따라 `ResourceRepository.insert`, `ResourceService.create/get`(UTC `Clock` 주입 및 `ResourceRules` 호출), `ResourceController`(`POST /api/resources`, `GET /api/resources/{id}`)를 구현하고, `ResourceApiIT`(8건)와 `SecurityIT`(6건)에서 `capacity = 0/1000`, 이름 공백 strip·NBSP/이모지 보존, 미정의 `userId`·중복 키·부동소수점/문자열 수량·잘못된 UUID `400`, 미존재 `404`, `413`/`415`/`503`을 실제 HTTP 요청 경로에서 검증했다. 예약 생성·취소에 따른 `available` 차감/복구는 5~7단계에서 구현한다.
+
+
+### 2026-10-19 예약 생성 연동
+
+5단계 ResourceRepository.decrementIfAvailable은 available>0 조건 UPDATE를 제공하며 별도 예약 Writer에서 INSERT와 함께 커밋한다. ReservationCreateIT/IdempotencyIT/ReservationRollbackIT에서 수량 보존·재현 무변경·실패 전체 롤백을 실제 PostgreSQL로 확인했다. 수량 복구 취소는6단계 후속이다. 실행 근거는 [증거](../../docs/test-evidence.md)다.
