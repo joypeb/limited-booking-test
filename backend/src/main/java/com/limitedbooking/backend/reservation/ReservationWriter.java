@@ -32,7 +32,8 @@ public class ReservationWriter {
         jdbc.execute("SET LOCAL statement_timeout = '5s'");
         int changed = resources.decrementIfAvailable(resourceId);
         if (changed == 0) {
-            reservations.findByUserAndKey(userId, key.value());
+            var existing = reservations.findByUserAndKey(userId, key.value());
+            if (existing.isPresent()) return ReservationService.replay(existing.get(), resourceId);
             if (resources.find(resourceId).isEmpty()) {
                 throw new com.limitedbooking.backend.resource.ResourceService.ResourceNotFoundException(resourceId);
             }
