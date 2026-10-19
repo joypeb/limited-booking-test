@@ -18,7 +18,15 @@ public class ReservationService {
         }
         var existing = reservations.findByUserAndKey(userId, key.value());
         if (existing.isPresent()) return replay(existing.get(), resourceId);
-        return writer.create(userId, resourceId, key);
+        try {
+            return writer.create(userId, resourceId, key);
+        } catch (RuntimeException failure) {
+            if (!com.limitedbooking.backend.common.UniqueViolationClassifier.isReservationUserKeyViolation(failure)) throw failure;
+            // Writer 프록시의 전체 롤백이 끝난 뒤 트랜잭션 밖의 새 조회다.
+            var committed = reservations.findByUserAndKey(userId, key.value())
+                    .orElseThrow(() -> new IllegalStateException("중복 생성 키의 성공 기록이 없습니다.", failure));
+            return replay(committed, resourceId);
+        }
     }
     static CreateReservationResult replay(StoredReservation stored, UUID resourceId) {
         if (!stored.resourceId().equals(resourceId)) throw new IdempotencyConflictException();

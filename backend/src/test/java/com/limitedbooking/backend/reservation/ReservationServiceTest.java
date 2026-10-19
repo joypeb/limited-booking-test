@@ -40,4 +40,49 @@ class ReservationServiceTest {
         order.verify(writer).create(user,resource,key);
         order.verifyNoMoreInteractions();
     }
+    RuntimeException duplicate() {
+        return new org.springframework.dao.DuplicateKeyException("중복", com.limitedbooking.backend.common.UniqueViolationClassifierTest.pg("23505","uq_reservations_user_key"));
+    }
+    void duplicateThen(Optional<StoredReservation> after) {
+        when(repository.findByUserAndKey(user,"Case_Key")).thenReturn(Optional.empty(),after);
+        when(writer.create(user,resource,key)).thenThrow(duplicate());
+    }
+    void verifyRecoveryOrder() {
+        var order=inOrder(repository,writer);
+        order.verify(repository).findByUserAndKey(user,"Case_Key");
+        order.verify(writer).create(user,resource,key);
+        order.verify(repository).findByUserAndKey(user,"Case_Key");
+        order.verifyNoMoreInteractions();
+    }
+    @Test void duplicateAfterWriterReturnsRequeriesAndReplays() {
+        var existing=stored(resource);duplicateThen(Optional.of(existing));
+        var result=service.create(user,resource,key);
+        assertThat(result.replayed()).isTrue();assertThat(result.body().id()).isEqualTo(existing.id());
+        verifyRecoveryOrder();
+    }
+    @Test void duplicateAfterWriterReturnsRequeriesAndConflicts() {
+        duplicateThen(Optional.of(stored(UUID.randomUUID())));
+        assertThatThrownBy(() -> service.create(user,resource,key)).isInstanceOf(ReservationService.IdempotencyConflictException.class);
+        verifyRecoveryOrder();
+    }
+    @Test void duplicateWithoutCommittedSuccessIsInternalDefect() {
+        duplicateThen(Optional.empty());
+        assertThatThrownBy(() -> service.create(user,resource,key)).isInstanceOf(IllegalStateException.class);
+        verifyRecoveryOrder();
+    }
+    @Test void nonTargetFailuresPropagateWithoutRetry() {
+        for (RuntimeException failure : List.of(new org.springframework.dao.DuplicateKeyException("PK",
+                com.limitedbooking.backend.common.UniqueViolationClassifierTest.pg("23505","reservations_pkey")),
+                new org.springframework.dao.DataIntegrityViolationException("FK",
+                com.limitedbooking.backend.common.UniqueViolationClassifierTest.pg("23503","fk_reservations_resource")),
+                new org.springframework.dao.DataAccessResourceFailureException("연결"),new IllegalStateException("내부"))) {
+            reset(repository,writer);
+            when(writer.create(user,resource,key)).thenThrow(failure);
+            assertThatThrownBy(() -> service.create(user,resource,key)).isSameAs(failure);
+            var order=inOrder(repository,writer);
+            order.verify(repository).findByUserAndKey(user,"Case_Key");
+            order.verify(writer).create(user,resource,key);order.verifyNoMoreInteractions();
+        }
+    }
+
 }

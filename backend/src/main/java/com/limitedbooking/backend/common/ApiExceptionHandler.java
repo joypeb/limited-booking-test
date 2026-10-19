@@ -141,6 +141,27 @@ public class ApiExceptionHandler {
         return problemEntity(HttpStatus.CONFLICT, "생성 키가 충돌했습니다", "같은 생성 키가 다른 예약 대상에 사용됐습니다.", request, "IDEMPOTENCY_CONFLICT");
     }
 
+    @ExceptionHandler(org.springframework.jdbc.UncategorizedSQLException.class)
+    public ResponseEntity<ProblemResponse> handleUncategorizedSql(
+            org.springframework.jdbc.UncategorizedSQLException exception, HttpServletRequest request) {
+        // 현재 드라이버/Spring 조합에서 잠금 timeout은 일반 SQL 예외로 전달된다.
+        if (!"55P03".equals(exception.getSQLException().getSQLState())) throw exception;
+        return handleDependencyUnavailable(exception, request);
+    }
+
+    @ExceptionHandler(org.springframework.transaction.CannotCreateTransactionException.class)
+    public ResponseEntity<ProblemResponse> handleTransactionStart(
+            org.springframework.transaction.CannotCreateTransactionException exception, HttpServletRequest request) {
+        var cause = exception.getCause();
+        if (cause instanceof java.sql.SQLException sql
+                && (sql instanceof java.sql.SQLTransientConnectionException
+                || sql instanceof java.sql.SQLNonTransientConnectionException
+                || (sql.getSQLState() != null && sql.getSQLState().startsWith("08")))) {
+            return handleDependencyUnavailable(exception, request);
+        }
+        throw exception;
+    }
+
     public static ProblemResponse problem(int status, String title, String detail, String instance, String code) {
         return new ProblemResponse(
                 "about:blank",
