@@ -153,4 +153,4 @@ flowchart LR
 - 일반 verify는 자동 계약·Property·PIT·부하 전체가 아니다. 테스트0건·skip은 성공이 아니며 실행하지 않은 검증을 완료 체크하지 않는다.
 - 체크리스트 요구사항 품질 승인, 작업 수행 완료, 계획서의 단계 인수를 서로 구분한다. 총43개 작업의 실제 수행 결과는 위 완료 표시와 docs/test-evidence.md를 따른다.
 
-최종 독립 리뷰의 UUID 입력 보완 후에도 T001~T043 완료다. 지정 Unit137/IT28 및 일반verify Unit137/IT120(실패·오류·skip0), 문서 링크264/누락0을 확인했다. 재현/수정 내역은 docs/test-evidence.md를 따른다.
+최종 독립 리뷰의 UUID 입력 보완 후에도 T001~T043 완료다. 지정 Unit137/IT28 및 일반verify Unit137/IT120(실패·오류·skip0), 문서 링크269/누락0을 NUL 구분 경로로 최종 확인했다. 재현/수정 내역은 docs/test-evidence.md를 따른다.
