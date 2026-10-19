@@ -2,9 +2,9 @@
 
 ## 1. 기준과 현재 상태
 
-- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-15.
+- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-19.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md).
-- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 업무 Writer·HTTP·보안/제한은 미구현.
+- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소·실제 경쟁 반복·Redis 제한은 후속이다.
 
 ## 2. 목적·책임·경계
 
@@ -66,20 +66,20 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | reservation-001~003 | capacity=1 예약·재요청·취소·재요청·중복 취소 | 추가 예약 없음, 복구 1회, 수량식 유지 | 수동 사례 작성·대조됨, HTTP/DB 미실행 |
 | reservation-002 | 마지막 1개 동일 키 / 다른 대상 동일 키 경쟁 | 한 성공 행 / 한 성공과 충돌, 패자 수량 롤백 | 후속 IT 예정 |
 | reservation-003 | 중복 취소·생성/취소 경쟁 | 동일 취소 시각·수량식 유지 | 후속 IT 예정 |
-| 롤백 | UPDATE 뒤 INSERT 실패 | 행·수량 부분 반영 없음 | 후속 IT 예정 |
+| 롤백 | UPDATE 뒤 INSERT 실패 | 행·수량 부분 반영 없음, 같은 키 재시도 | ReservationRollbackIT 실제 HTTP/DB 검증 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 위 후속 테스트는 아직 존재하거나 실행된 것으로 간주하지 않는다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 아래5단계에서 실행했으며 취소/실제 경쟁은 후속이다.
 
 ## 8. 구현 연결과 변경 영향
 
 | 책임 | 실제 파일·예정 위치 | 상태 |
 | --- | --- | --- |
-| 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 존재, 해당 기능 없음 |
+| 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 생성 기능 포함 |
 | 읽기 DTO·Repository | [ReservationRepository](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)·StoredReservation·ReservationStatus | 구현·실행 검증됨 |
 | 순수 키·취소 판단 | IdempotencyKey·CancellationDecision 및 대응 Unit | 구현·Unit 검증됨 |
-| Controller·Service·Writer·필터 | 해당 기능 패키지 예정 | 미구현 |
+| 생성 Controller·Service·Writer | reservation 패키지, 아래5단계 구현 링크 | 구현·HTTP/DB 검증됨; Redis 필터 후속 |
 | 업무 V1·저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ReservationRepositoryIT | 구현·실행 검증됨 |
-| 업무 쓰기 SQL·HTTP/경쟁 테스트 | 후속 단계 예정 | 미구현 |
+| 생성 쓰기 SQL·HTTP | ResourceRepository/ReservationRepository, 생성3IT | 구현·실행 검증됨; 실제 경쟁 후속 |
 | 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
@@ -88,8 +88,8 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 업무 쓰기·HTTP·필터 미구현 | 응답·경쟁·의존성 장애 미확인 | 3단계 입력 규칙 이후 Writer·HTTP 개발 |
-| 실행 미검증 | 계약 선언이 실제 동작 증거가 아님 | 후속 실제 HTTP·의존성 시험 |
+| 예약 GET/취소 미구현 | 소유권/수량 복구 미검증 | 6단계 개발 |
+| 실제 경쟁/Redis/심화 미검증 | 순차·장애 검증으로 경쟁 전체를 입증하지 않음 | 7단계 이후 개발/검증 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.
 
@@ -114,3 +114,19 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 생성 키의 순수 검증: [IdempotencyKey](../../backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)·[IdempotencyKeyTest](../../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyKeyTest.java). compact constructor가 parse와 new를 함께 보호하며 원문 equals/hashCode를 제공한다. Repository·StoredReservation의 String은 유지했다. 사용자·키 유일성/대상 충돌/성공 응답 재현·TTL/HTTP 변환과 실제 요청 경로 사용은5단계에서 검증한다.
 
 취소 판단의 순수 검증: [CancellationDecision](../../backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java)·[CancellationDecisionTest](../../backend/src/test/java/com/limitedbooking/backend/reservation/CancellationDecisionTest.java). CONFIRMED→CANCEL_NOW, CANCELLED→ALREADY_CANCELLED, 내부 null→NPE이며 필드·I/O·Clock·저장 의존성 없이 반복 판단한다. 실제 상태 갱신·수량 복구·동일 취소 시각과6단계 Writer 사용은 미완료다.
+
+## 5단계 생성 설계 연결 (2026-10-19)
+
+[006 구현 계획](../../specs/006-reservation-create/plan.md)과 [생성 계약](../../specs/006-reservation-create/contracts/reservation-create-contract.md)에 트랜잭션 밖 Service·별도 READ COMMITTED Writer·조건부 차감/INSERT RETURNING·정확한 사용자/키 유일 위반 분류를 설계했다. Service는 상위 활성 트랜잭션을 거부하고, Writer 유일 위반은 전체 롤백 후 새 조회로만 복구한다. UPDATE0 뒤 정상 트랜잭션 안 새 SELECT와 구분한다. 생성 시각은 MICROS 정규화·저장 반환값을 최초/재현 모두에 사용한다. 실제 UPDATE 뒤 테스트 전용 저장 실패 주입·별도 연결의 불변식 검사·동일 키 재시도를 계획했다.
+
+기존 업무 규칙·외부 계약·스키마 변경은 없다. 설계 당시 신규 Controller/Service/Writer/분류기/쓰기 SQL과 지정 세 IT는 미구현이었으며 아래 구현 기록에서 완료했다. 준비된 CANCELLED 행의 최초 생성 재현은 5단계에서 다루고 실제 조회/취소·경쟁 반복·Redis 제한은 후속이다. 앞의 과거 확인일별 구현/검증 기록은 당시 범위다.
+
+
+### 2026-10-19 5단계 구현·검증 연결
+
+- [ReservationController](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java) → [ReservationService](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationService.java) → [ReservationWriter](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java) → 두 Repository의 조건UPDATE/INSERT RETURNING을 구현했다. DTO는 CreateReservationRequest/CreatedReservationView/CreateReservationResult record다.
+- Service는 활성 상위 트랜잭션을 거부한다. Writer는 READ_COMMITTED, 같은 연결에서 SET LOCAL lock_timeout2s·statement_timeout5s를 적용한다. UPDATE0의 새 SELECT와 오류 후 롤백 완료 뒤 Service 새 SELECT는 별도 경로다.
+- [분류기](../../backend/src/main/java/com/limitedbooking/backend/common/UniqueViolationClassifier.java)는 동일 PSQLException의23505/정확한 제약명만 확인한다. Cause/nextException은 identity 순환 방지 탐색이다. 55P03 UncategorizedSQLException과 실제 연결 획득 원인만 공통503으로 추가 연결했다. 다른 제약/내부결함500은 유지한다.
+- [ReservationCreateIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationCreateIT.java)11건, [IdempotencyIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/IdempotencyIT.java)5건, [ReservationRollbackIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationRollbackIT.java)7건과 Service/Writer/Classifier Unit21건을 작성했다. 실제 실행 결과는 [증거](../../docs/test-evidence.md)를 따른다.
+- 최초/재현/DB 시각 ...123456Z, CANCELLED 준비 상태 불변, 실패 키 재사용, 실제 차감 후 실패 롤백, 직접 Writer 유일 위반·lock/statement/획득 장애503와 복구를 확인했다. 각 IT 풀10/3000ms·동적 DB·실제 Authorization·단일SELECT 수량식을 사용한다.
+- 앞 절의 취소/소유자 GET·실제 경쟁 사례는 설계이며 아직 미구현/미실행이다. 다음 한 작업은6단계 소유자의 예약 조회·취소다.

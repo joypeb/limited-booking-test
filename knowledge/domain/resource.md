@@ -104,3 +104,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 4단계 대상 생성·단건 조회 HTTP 연동 완료 (2026-10-17)
 
 [005 계획](../../specs/005-auth-resource-api/plan.md)과 [인터페이스 계약](../../specs/005-auth-resource-api/contracts/auth-resource-contract.md)에 따라 `ResourceRepository.insert`, `ResourceService.create/get`(UTC `Clock` 주입 및 `ResourceRules` 호출), `ResourceController`(`POST /api/resources`, `GET /api/resources/{id}`)를 구현하고, `ResourceApiIT`(8건)와 `SecurityIT`(6건)에서 `capacity = 0/1000`, 이름 공백 strip·NBSP/이모지 보존, 미정의 `userId`·중복 키·부동소수점/문자열 수량·잘못된 UUID `400`, 미존재 `404`, `413`/`415`/`503`을 실제 HTTP 요청 경로에서 검증했다. 예약 생성·취소에 따른 `available` 차감/복구는 5~7단계에서 구현한다.
+
+
+### 2026-10-19 예약 생성 연동
+
+5단계 ResourceRepository.decrementIfAvailable은 available>0 조건 UPDATE를 제공하며 별도 예약 Writer에서 INSERT와 함께 커밋한다. ReservationCreateIT/IdempotencyIT/ReservationRollbackIT에서 수량 보존·재현 무변경·실패 전체 롤백을 실제 PostgreSQL로 확인했다. 수량 복구 취소는6단계 후속이다. 실행 근거는 [증거](../../docs/test-evidence.md)다.

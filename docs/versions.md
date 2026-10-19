@@ -52,3 +52,8 @@ feature/validate-domain-rules에서 `java --version`·`./gradlew --version` exit
 PostgreSQL 드라이버를 동일 Boot BOM의 implementation으로 이동하고 중복 testImplementation을 제거했다. compileClasspath 해석 결과는 후속 실행 기록으로 확인한다. 새 버전 지정 없음.
 
 compileClasspath 실행: 종료0, org.postgresql:postgresql →42.7.13, 동일 BOM 유지.
+
+
+### 2026-10-19 5단계 실행 환경
+
+Corretto25.0.4.7.1·Gradle9.7.1·Docker daemon29.8.2에서 동일 PostgreSQL18.6 고정digest 및 Boot4.1.1/BOM을 유지했다. PostgreSQL42.7.13은 compileClasspath 해석 종료0으로 확인했다. 신규 IT 각각 실제 Hikari maximumPoolSize10/connectionTimeout3000ms를 확인하며 실제 Writer에서 read committed/lock_timeout2s/statement_timeout5s를 검사했다. 새 버전 추가·하향 없이 MockitoSpyBean/실제 프록시/SQLSTATE 메타데이터를 실행 확인했다. Gradle10 호환/심화·부하는 이번에 검증하지 않았다.

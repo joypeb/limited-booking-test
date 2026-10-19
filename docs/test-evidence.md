@@ -894,3 +894,140 @@ T033: 명시 경로의 문서/최종 체크만 목적 커밋으로 보존한다.
   - 검증 항목: 고정 UUID 3계정(`ADMIN`·`USER_A`·`USER_B`) 및 BCrypt 보관, `LocalIdentityResolver.userId(Authentication)`의 `Principal` 단일 신뢰(`X-User-Id`/본문 `userId` 불신뢰), 무상태 Basic 인증(`JSESSIONID` 미생성)·CSRF 비활성화 사유 명시·CORS 와일드카드 미추가, 인증 앞단 `RequestBodyLimitFilter`의 8,192바이트 초과(일반/`chunked`/길이 헤더 누락) `413` 우선 차단 및 상한 이하 재사용 래퍼 전달, Jackson 3 엄격 설정(미정의 필드·중복 키·부동소수점 `1.5`/`1.0`·문자열 `"10"`·불리언 강제 변환 거부 `400`), `415`, 취소 비어 있지 않은 본문/잘못된 UUID `400`, 일시적 DB 장애 `503` 및 미분류 SQL 결함 `500` 분리, 전 구간 `application/problem+json` 6개 필수 속성 및 민감정보 비노출, `./gradlew verify` JUnit XML(`test` 116/0/0/0, `integrationTest` 92/0/0/0) 일치 확인.
 - 저장소에 `.github/workflows` 외부 CI는 등록되어 있지 않으므로(12단계 예정) 외부 CI 성공을 주장하지 않으며 로컬 `./gradlew verify` 통과와 구분한다.
 - 병합 조건: 최신 원격 head가 검토된 커밋과 일치하고 `MERGEABLE`/`CLEAN` 상태임을 확인한 뒤 사용자 지시에 따라 merge commit 방식으로 `develop`에 병합하고 로컬 `develop`을 동기화한다.
+
+## 2026-10-19 — 5단계 명세 품질 검토
+
+- 기준 커밋: `58f4106`(명세 변경 전). 실제 생성·전환한 로컬 작업 브랜치: `docs/reservation-create-spec`. develop 병합·커밋·push·외부 CI 실행은 수행하지 않았다.
+- 대상: [예약 생성 명세](../specs/006-reservation-create/spec.md), [품질 검토](../specs/006-reservation-create/checklists/requirements.md), 활성 기능 경로 `.specify/feature.json`, 지식 문서 목록. 기존 동작·외부 계약 변경은 없다.
+- 근거: 계획서 2~5절·7절 5단계, knowledge 규칙 전체와 reservation/resource/security/ratelimit 도메인, 헌법. 실제 예약 읽기 저장소·키 규칙·V1 SQL·Gradle 발견 규칙과 대조했다. 생성 처리 및 선택된 세 통합 테스트는 아직 없다.
+- 템플릿: `bash .specify/scripts/bash/resolve-template.sh spec-template --json`으로 해석하고 `.specify/templates/spec-template.md`를 복사해 작성했다. `feature_numbering=sequential`에 따라 `006-reservation-create`를 생성했다. 사전·사후 `.specify/extensions.yml`은 존재하지 않아 실행할 훅이 없다.
+- 검증: `python3` 문서 검사(종료 코드 0)로 사용자 이야기 4개·FR 12개·SC 5개·품질 체크 16/16·미해결 표식 없음·활성 경로 일치·명세/체크리스트/지식 목록의 로컬 링크 55개 존재·훅 파일 부재를 확인했다. 요구사항과 인수 시나리오의 의미 대조는 품질 검토 목록에 기록했다.
+- `git diff --check`: 종료 코드 0. 문서 검증이며 앱 테스트 수·seed·경쟁 스레드·DB 연결 수는 해당 없음이다. Java·DB·Redis 버전 호환성은 이번 작업에서 재검증하지 않았다.
+- 미완료·미검증: 5단계 구현 계획·작업 목록·코드·Unit/IT 실행, 실제 경쟁·장애·취소·Redis 제한. 계획서의 구현 완료 체크는 변경하지 않았다.
+- 다음 한 작업: `$speckit-plan`으로 5.2절의 트랜잭션 경계·제공 인터페이스·오류 분류·테스트 우선 검증 순서를 구체화한다.
+
+## 2026-10-19 — 5단계 명세 명확화 검토
+
+- 대상: [006 명세](../specs/006-reservation-create/spec.md). `check-prerequisites.sh --json --paths-only`를 1회 실행해 활성 기능을 확인했다. 작업 브랜치는 기존 `docs/reservation-create-spec`을 유지했다.
+- 검토 근거: 계획서 2~5절·7절 5단계, 헌법, knowledge 규칙과 관련 도메인, 실제 예약 읽기 저장소·키 값 객체·V1 제약·OpenAPI 및 현재 테스트 목록. 명세의 기대 결과와 실제 구현 완료 여부를 구분했다.
+- 질문·응답: 0개. 기존 확정 정책으로 판단할 수 없는 핵심 모호성이 발견되지 않아 명세·품질 체크리스트 본문은 변경하지 않았다. 실제 사용자 답변이 없으므로 명확화 질문·응답 절을 생성하지 않았다.
+- 범주별 판정: 기능 범위·도메인/데이터·사용자 흐름·비기능 품질·외부 의존성·경계/실패·제약/절충·용어·완료 신호·미해결 표식의 10개 범주 모두 이번 5단계 범위에서 명확하다. 비기능 기준은 기존 로컬 환경·대기 상한·실패 복구·보안 규칙을 적용한다. 성능 부하·관측 확장·실제 경쟁 반복 검증은 기존 후속 단계 경계를 유지한다.
+- 수동 의미 검토로 품질 16개 항목을 재평가했다. 결과 16/16 → 16/16, 신규 충족 0·퇴행 0·미충족 0. Python 문서 검사 종료 코드 0: 활성 기능 경로·FR12개·SC5개·미해결 표식 없음·체크 상태·로컬 링크 9개를 확인했다.
+- 사전·사후 `.specify/extensions.yml`은 없어 실행할 훅이 없다. `git diff --check` 종료 코드 0. 애플리케이션·DB·Redis·지정 IT·일반 verify는 미실행이며 테스트 수·seed·경쟁 조건은 해당 없음이다.
+- 다음 한 작업: `$speckit-plan`으로 기존 제공 인터페이스·별도 쓰기 트랜잭션·중복 오류 분류·TDD 순서를 구체화한다. 미해결 업무 정책 또는 명확화 재실행이 필요한 항목은 없다.
+
+## 2026-10-19 — 5단계 구현 계획·Phase 1 설계 문서 검토
+
+- 기준 커밋: `58f4106`, 실제 Git 브랜치 `docs/reservation-create-spec`. 기존 명세·명확화의 미커밋 변경을 보존했다. 브랜치 추가 생성·병합·커밋·push·외부 CI는 수행하지 않았다.
+- `bash .specify/scripts/bash/setup-plan.sh --json`: 종료 코드0, FEATURE_SPEC/IMPL_PLAN/FEATURE_DIR는 `specs/006-reservation-create`다. 출력 BRANCH=`006-reservation-create`는 스크립트의 기능 식별값이며 실제 Git 전환 결과가 아니다. 이후 실제 브랜치를 별도로 확인했다.
+- [구현 계획](../specs/006-reservation-create/plan.md)·[조사](../specs/006-reservation-create/research.md)·[데이터 모델](../specs/006-reservation-create/data-model.md)·[생성 계약](../specs/006-reservation-create/contracts/reservation-create-contract.md)·[검증 안내](../specs/006-reservation-create/quickstart.md) 5개 산출물을 작성했다. 읽기 전용 조사 에이전트가 실제 저장소와 Spring/PostgreSQL/PGJDBC 공식 자료를 대조했다. 신규 스키마·업무 정책 변경은 없다.
+- 헌법 I~V 조사 전/설계 후 관문을 모두 설계 기준으로 충족 판정했다. 신규 업무 정책 질문은 없으며 향후 실제 드라이버·프록시·테스트 주입·timeout 매핑의 실행 확인과 구분했다. 과거 헌법의 채택일/CI TODO를 완료로 바꾸지 않았다.
+- Python 문서 검사: 종료 코드0. 설계 산출물5개·지식 문서2개의 로컬 링크90개·미해결 템플릿 표식 없음·코드펜스 짝·행 끝 공백·활성 경로 일치·tasks.md 미생성을 확인했다. 생성 계약의 FR001~012 연결·내부 인터페이스·201/Location/Replay·오류 및 트랜잭션 분기는 수동 대조했다.
+- `git diff --check`: 종료 코드0. `.specify/extensions.yml`은 사전/사후 모두 없어 실행할 훅이 없다. 지식 목록·예약 설계 연결과 결정 기록을 갱신했다.
+- 미실행: 앱·Unit·지정 세 IT·verify·DB/Redis·실제 경쟁·장애·부하·외부 CI. 테스트 수·seed·경쟁 스레드 수는 해당 없음이다. 버전 실행 호환성도 이번 문서 작업에서 재검증하지 않았다. 계획서 구현 체크박스는 변경하지 않았다.
+- 다음 한 작업: `$speckit-tasks`로 네 사용자 이야기의 RED→GREEN·관련 검증·기록을 의존성 순서로 분해한다. 구현 시 먼저 capacity1 최초 생성 HTTP 검증 하나부터 진행한다.
+
+## 2026-10-19 — 5단계 맞춤 요구사항 체크리스트 생성
+
+- 실제 브랜치: `docs/reservation-create-spec`, 기준 커밋 `58f4106`. 기존 명세·계획·기록 변경을 보존했다. 새 커밋·병합·외부 작업은 수행하지 않았다.
+- `bash .specify/scripts/bash/check-prerequisites.sh --json --template checklist-template`: 종료 코드0. 활성 디렉터리 `specs/006-reservation-create`, 조사·데이터 모델·계약·검증 안내와 해석된 체크리스트 템플릿을 확인했다. tasks.md는 아직 없다.
+- 검토 깊이/용도 선택 질문1개를 제시했고 응답 없이 기본값(구현 전 검토자용·표준 깊이)을 적용했다. 기능 범위는 기존 명세·계획에 따라 생성·멱등 재현·원자적 실패 복구 중심이며 취소·실제 경쟁·Redis는 후속 경계만 다룬다.
+- [맞춤 목록](../specs/006-reservation-create/checklists/reservation-create.md)을 신규 생성했다. CHK001~CHK034 총34개이며 요구사항 완전성·명확성·일관성·측정 가능성·시나리오·경계·비기능·전제·모호성을 묻는다. 모두 미체크이고 품질 충족 판정은 수행하지 않았다. 내장 requirements.md의16개 항목 상태도 변경하지 않았다.
+- Python 형식 검사 1차: 종료 코드1, CHK032의 직접 명세 참조 누락을 발견했다. 기존 계획/계약/검증 안내 참조를 보존하며 Spec 전제 참조를 보완한 뒤 재검사 종료 코드0: 연속·중복 없는34 ID, 전체 미체크·질문형·명세 참조100%, 로컬 링크61개 정상, 템플릿 표식 없음.
+- `git diff --check`: 종료 코드0. `.specify/extensions.yml`은 사전·사후 모두 없어서 실행할 훅이 없다. 지식 문서 목록에 새 맞춤 목록을 등록했다.
+- 이번 검증은 생성물 형식·참조 검사다. 요구사항34개 충족 평가·기능 구현·앱/DB/Redis/테스트/CI 실행은 미실시다. 다음 한 작업은 검토자가 목록의 요구사항 근거를 평가하고 보완할 항목을 정하는 것이다.
+
+## 2026-10-19 — 5단계 의존성 순서 작업 목록 생성
+
+- 실제 브랜치 `docs/reservation-create-spec`, 기준 커밋 `58f4106`. 앞선 명세·계획·체크리스트의 미커밋 변경을 보존했다. 새 브랜치·커밋·병합·push·외부 작업은 수행하지 않았다.
+- `bash .specify/scripts/bash/setup-tasks.sh --json`: 종료 코드0. FEATURE_DIR=`specs/006-reservation-create`, 절대 TASKS_TEMPLATE 경로와 해석된 템플릿, 조사·데이터 모델·계약·검증 안내의 존재를 확인했다.
+- [tasks.md](../specs/006-reservation-create/tasks.md) 신규 생성: 총43개, 준비2·공통 선행2·US1 10·US2 7·US3 11·US4 6·전체 인수5. 모두 미완료다. 명세의 네 사용자 이야기·FR001~012·SC001~005와 제공 인터페이스·실패/복구 검증을 연결했다.
+- 의존성은 준비→선행→US1→US2→US3→US4→전체 인수다. 각 이야기는 커밋된 준비 데이터로 독립 인수 가능하지만 공유 운영 파일 수정은 순차다. 병행 후보는 T015/T016, T024/T025의 서로 다른 테스트 파일 작성뿐이다. Gradle·공통 기록·커밋은 순차다. 실제 병행 구현을 수행한 기록이 아니다.
+- 최초 MVP는 US1의 한 개 생성·품절/대상 없음·다른 키 추가 예약이다. US2 멱등 재현·US3 원자적 실패 복구·US4 입력/오류 인수와 최종 회귀 전에는5단계 전체 완료가 아니다. 구현 전에 테스트를 먼저 작성하며 기존 동작이 이미 충족하는 항목은 인위적인 RED 없이 회귀로 기록한다.
+- Python 정적 검사: 종료 코드0. 43개 전부 체크박스·연속T001~T043·해당 이야기 라벨·파일 경로 포함, [P]4개·작업분류 일치·코드펜스 짝·로컬 링크68개 정상·맞춤 체크34개 미체크 보존·사전/사후 훅 파일 없음 확인. 내용 대조로 데이터 제약·TDD·실패 주입·실제 DB와 순수 분기 구분·후속 단계 경계를 확인했다.
+- `git diff --check`: 종료 코드0. plan.md의 후속 작업 문서 존재 설명과 knowledge 목록을 갱신했다. 내장 품질16개·맞춤34개 체크 상태는 바꾸지 않았으며 맞춤 목록의 미검토를 승인으로 간주하지 않았다.
+- 미실행: 기능 구현·Unit/IT·verify·실제 DB/Redis/경쟁/장애/부하·외부CI. 이번 검증은 작업 목록의 형식·추적·문서 링크 검증이다. 다음 한 작업은 `$speckit-analyze`로 명세·계획·작업의 일관성/누락을 교차 검토하는 것이다. 맞춤 요구사항 목록의 검토자 평가는 여전히 별개로 남아 있다.
+
+## 2026-10-19 — 분석 C1·G1·G2 수정안 반영
+
+- 사용자 지시: 수정안 제안 후 “수정 진행해”로 문서 편집을 승인했다. 앞선 analyze의 읽기 전용 실행과 구분되는 후속 수정이다. 실제 브랜치 `docs/reservation-create-spec`, 기준 커밋 `58f4106`의 기존 미커밋 변경을 보존했다.
+- C1: tasks.md의 T019를 Writer UPDATE0 분기 직접 테스트·기능 RED로, T020을 최소 구현·GREEN으로 재구성했다. plan.md·생성 계약·quickstart의 순서와 의존성 설명을 함께 맞췄다. T019 앞선 Service 선조회 인수로 Writer 분기 테스트를 대신하지 않는다.
+- G1: T004와 신규 IT 작성 T005/T015/T022에 동적 테스트 설정 `spring.datasource.hikari.maximum-pool-size=10`, `spring.datasource.hikari.connection-timeout=3000`을 명시했다. T030에는 실제 DataSource 적용값 확인·유한 종료·503·무변경·복구 후201/false를 요구했다. local 프로필을 통한 개발 DB 설정 사용과 정확히3초 응답 단정은 하지 않는다. 관련 plan/contract/quickstart를 동기화했다. 실제 Java/YAML 설정을 구현한 것은 아니다.
+- G2: T012/T014에 유효 키K의 품절A409→같은K의 예약가능B201/false를, T033/T038에 유효 키K의 잘못된 본문400→본문만 수정한 동일K201/false를 추가했다. 실패 직후 예약/키 없음·수량 불변과 재시도 후 예약1개·보존식을 구분했다. 기존 계약의 실패 키 비보존 요구를 명시적으로 작업에 연결한 것이며 정책 변경은 아니다.
+- 검증: Python 문서 검사 종료 코드0. 작업43개·연속ID·기존[P]4개 유지, T019/T020 및 의존성 일치, 세 IT 풀 설정/실제 적용값 확인과 두 재시도 사례/인수 연결, 로컬 링크21개·코드펜스 짝을 확인했다. 맞춤34개 미체크·내장16개 체크 유지. `git diff --check` 종료 코드0.
+- 변경 범위: plan.md·tasks.md·quickstart.md·contracts/reservation-create-contract.md와 knowledge 목록·이 기록. spec.md·업무 코드·SQL·OpenAPI·체크 마커는 변경하지 않았다. 작업 완료 체크와 계획서 단계 체크도 하지 않았다.
+- 미실행: 기능 구현·Unit/IT/verify·DB/Redis/경쟁/장애·전체 analyze 재실행·외부CI. 이번에는 승인된 세 지적의 문서 보완과 해당 일관성만 검증했다. 다음 한 작업은 `$speckit-analyze`로 전체 명세·계획·작업을 다시 교차 검토하는 것이다.
+
+## 2026-10-19 — 분석 I1 검증 위치 표기 수정
+
+- 사용자 지시 “반영 후 다시 speckit-analyze”에 따라 분석 시작 전에 승인된 표기 수정만 반영했다.
+- specs/006-reservation-create/contracts/reservation-create-contract.md의 FR-010 검증 연결을 ReservationRollbackIT(T022~T023·T030)의 저장/의존성 실패 복구와 ReservationCreateIT(T012·T014·T033·T038)의 입력 오류/품절 후 키 재사용으로 나눴다. 실패 직후 무변경·같은 키201/false·예약1개·보존식 기준은 유지했다.
+- 요구사항·작업 수·ID·체크 상태·업무 코드·SQL·외부 계약은 변경하지 않았다. `git diff --check` 종료 코드0. 기능 테스트는 미실행이다.
+- 뒤따르는 speckit-analyze는 읽기 전용으로 수행하며 결과는 대화에 보고한다. 이 수정 기록은 분석의 파일 쓰기가 아니다.
+
+## 2026-10-19 — 5단계 맞춤 요구사항 품질 34개 평가
+
+- 사용자 지시: 마지막 안내의 “맞춤 체크리스트34개 항목의 요구사항 품질 평가”에 대해 “진행해”라고 명시해 평가를 수행했다. 체크리스트 신규 생성이나 기능 구현 요청으로 확대하지 않았다.
+- 실제 브랜치 `docs/reservation-create-spec`, 기준 커밋 `58f4106`. 기존 명세·계획·분석 보완·기록의 미커밋 변경을 보존했다. 새 브랜치·커밋·병합·외부 작업은 수행하지 않았다.
+- 대상 [맞춤 체크리스트](../specs/006-reservation-create/checklists/reservation-create.md)의 CHK001~034를 각 질문에 따라 spec·plan·data-model·contracts·research·quickstart·tasks 및 docs/openapi.yaml·기준 계획서와 대조했다. C1/G1/G2/I1이 보완된 최신 문서가 평가 기준이다.
+- 결과: 0/34 → 34/34 충족, 미충족/판정 보류0. 각 항목별 근거와 판단 이유34개를 체크리스트 검토표에 작성하고 [x]로 갱신했다. 체크는 요구사항 문서 품질 판정이며 구현·기능 실행 완료가 아니다.
+- CHK013은 실제 고정 OpenAPI의201/Location/Replay·생성 네 필드·CONFIRMED·오류 분류와 대조했다. CHK033은 본문상한→인증→입력→Service 키 비교의 유효 입력 전제를 확인했다. CHK034는 기준 계획서2절 실패조건표·7절11단계의 커밋 후 응답 폐기·DB커밋 확인·동일id재시도 요구를 근거로 상세 장애 검증의 후속 경계를 확인했다.
+- tasks.md의 검토 대기 설명과 T002의 최신 결과 확인 문구, knowledge/README.md의 상태를 실제34/34 평가 결과로 맞췄다. 작업43개는 전부 미완료이며 내장 품질16개 마커는 변경하지 않았다. 업무 규칙·spec/plan·SQL·운영 코드·OpenAPI는 변경하지 않았다.
+- 검증: Python 문서 검사 종료 코드0. 맞춤34개 체크·34개 개별 근거·연속ID·누락/중복 없음, 작업43개 미완료·내장16개 유지, 코드펜스 짝·로컬 링크70개 정상 확인. `git diff --check` 종료 코드0.
+- 미실행: 앱·Unit/IT·verify·DB/Redis·실제 경쟁·장애·부하·CI. 버전 호환성/seed/실제 테스트 수의 새 실행 증거는 없다. 다음 한 작업은 `$speckit-implement`로 최신 게이트와 작업 브랜치를 확인한 뒤 T001부터 순서대로 진행하는 것이다.
+
+
+## 2026-10-19 / 5단계 구현 시작 — T001~T004
+
+- 기준: knowledge/README.md·rules 전체, reservation/resource/security 도메인, 계획서2~5절과006 spec/plan/contracts를 대조했다. 기존 V1·저장 지원을 유지한다.
+- 시작 HEAD: 58f41066786d10c1cb483422827617ae4c7fed19. docs/reservation-create-spec의 기존 문서4개 수정과 specs/006 미추적 파일을 보존하고 develop 기준 feature/reservation-create를 생성했다. 별도 worktree 생성 없이 사용자 지정 작업 루트에서 작업한다. 병합·push 없음.
+- 구현 게이트: requirements.md 16/16, reservation-create.md 34/34 충족, 미완료0. 검토자 마커 변경 없음.
+- 환경: Corretto25.0.4.7.1, Docker29.8.2. Docker Desktop 시작 후 연결 확인. 최초 sandbox의 소켓/Gradle 캐시 제한은 승인된 실행으로 해결했다.
+- baseline: backend/에서 ./gradlew test, 종료0, Unit116·실패0·skip0(listener/XML).
+- 테스트는 postgresOnly의 고정18.6 이미지·동적 포트·전용 DB를 사용한다. local 프로필은 사용하지 않는다. 신규3IT의 풀10/획득3000ms를 명시한다. V1 변경 없음.
+
+T003: ./gradlew dependencies --configuration compileClasspath 종료0, PostgreSQL42.7.13(BOM). T006: 최초 IT1건 실패(201 기대/404 실제), 종료1·skip0. 앞선 테스트 타입 추론 컴파일 오류는 수정했으며 기능 RED에 포함하지 않는다.
+
+### US1 RED→GREEN (T005~T014)
+
+- 최초 선택 실행: integrationTest --tests '*ReservationCreateIT.createsFirstReservation' 종료1,1건 중1실패(404/201). 최소 생성 구현 후 같은 명령 종료0,1건 통과.
+- 추가 기대값: integrationTest --tests '*ReservationCreateIT' 종료1,4건 중2실패(품절/없는 대상이500),2건 회귀 통과. UPDATE0 키 재조회 후 대상 없음/품절 구분·SOLD_OUT409를 추가했다.
+- 각 HTTP 종료 후 별도 연결로 available·행 수·인증UUID·키 미보존·단일SELECT 보존식을 확인한다. 품절 A 실패 키로 B 생성201/false를 검사한다. US2 재현·US3 복구·US4 추가 경계는 아직 미완료다.
+
+US1 인수: ./gradlew integrationTest --tests '*ReservationCreateIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT', 종료0·12건·실패0·오류0·skip0.
+
+### US2 조정 분기 (T015~T020)
+
+- ./gradlew test --tests '*ReservationServiceTest' integrationTest --tests '*IdempotencyIT': 종료1, Unit3건 모두실패(키 선조회 미호출·재현/충돌 미구현). Unit 실패로 IT는 실행 안 됨.
+- IdempotencyIT 독립 실행은 Clock Bean 이름 중복으로 기동 실패했다. systematic-debugging으로 BeanDefinitionOverrideException을 확인하고 테스트 전용 fixedClock 이름으로 수정했다. 기능 RED로 세지 않는다. Service는 이미 확보한 Unit RED에 따라 구현했다.
+- ./gradlew test --tests '*ReservationWriterTest': 종료1,4건 중2실패(UPDATE0 재현/충돌이404),없음/품절2건 회귀통과. 이후 새 SELECT 결과의 재현/충돌 분기를 추가했다. 실제 경쟁 관측은7단계다.
+
+US2 인수: ./gradlew test --tests '*ReservationServiceTest' --tests '*ReservationWriterTest' integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT', 종료0·Unit7·IT9·실패/오류/skip0. 마지막 수량 재현, 충분/품절/없는 다른 대상 충돌, 사용자/키 격리, UUID값 비교, 저장/최초/재현 ...123456Z 일치, CANCELLED 행 불변을 확인했다.
+
+T022~T023: ./gradlew integrationTest --tests '*ReservationRollbackIT', 종료0·IT1·실패/오류/skip0. 실제 같은 트랜잭션에서 available0 관측→INSERT 전 실패500→종료 후 available1/예약0/키 없음→주입 제거 후 동일 키201/false. 기존 Writer가 이미 만족한 회귀이며 가짜 RED 없음. 주입은 finally에서 원복한다.
+
+T026 RED: ./gradlew test --tests '*UniqueViolationClassifierTest' --tests '*ReservationServiceTest', 종료1·17건 중5실패(분류2·복구3),skip0. 대상 메타데이터 탐색과 Writer 롤백 뒤 재조회만 최소 구현한다.
+
+T027~T028: 같은 선택 Unit 명령 종료0·17건·실패/오류/skip0. SQLSTATE/정확한 제약명이 동일 PSQLException일 때만 분류하며 순환 체인 종료·비대상 전파·새 조회1회·성공 누락 내부 오류를 검사했다.
+
+T029~T030: ./gradlew integrationTest --tests '*ReservationRollbackIT', 종료1·6건 중2실패·skip0. 실제 Writer 유일 위반(23505/uq_reservations_user_key) 후 차감 롤백·상위 트랜잭션 거부·statement timeout은통과. 풀 소진과 lock timeout은503 기대/500 실제. 로그의 원인은 각각 CannotCreateTransactionException→SQLTransientConnectionException(3005ms,active10)과 UncategorizedSQLException SQLSTATE55P03이다. T031에서 실제 연결 획득 원인과 정확한55P03만503으로 보완한다. 미분류SQL/트랜잭션 내부결함은500 유지 회귀를 추가한다.
+
+US3 인수: ./gradlew test --tests '*UniqueViolationClassifierTest' --tests '*ReservationServiceTest' --tests '*ReservationWriterTest' integrationTest --tests '*ReservationRollbackIT' --tests '*ReservationCreateIT' --tests '*IdempotencyIT', 종료0·Unit21·IT16·실패/오류/skip0. RollbackIT7건. 풀 실제10/3000ms, Writer 실제read committed/lock2s/statement5s 확인. 잠금/문장/풀503 뒤 수량1·예약0·키없음 및 같은 키201/false, 미분류SQL/Transaction500를 확인했다. 주입/잠금/연결을 finally 정리한다.
+
+T033~T035: ./gradlew integrationTest --tests '*ReservationCreateIT', 종료0·8건·실패/오류/skip0. 기존 키 검증·필터·엄격JSON·인증UUID 처리를 재사용해 모든 추가 입력/인증 사례가 첫 실행 회귀GREEN이었다. 유효 키·잘못된 본문400 직후 키/예약 없음·수량불변 및 동일 키 정상 본문201/false를 확인했다. 인위적 RED/불필요한 운영 변경 없음.
+
+US4/T036~T038: ./gradlew integrationTest --tests '*ReservationCreateIT' --tests '*SecurityIT' --tests '*ResourceApiIT', 종료0·25건(11+6+8)·실패/오류/skip0. 8192통과,8193인증전413, Content-Length 없는 chunked(HTTP client/raw) 실제8193거부, 미디어415,기존성공키의 잘못된입력400/미인증401 우선, 인증3계정/위조헤더 무시·오류필드/WWW-Authenticate/민감정보 비노출을 확인했다. 기존 공통 처리와 T011 입력 검증이 모두 충족해 운영 수정은 불필요했다.
+
+T039: ./gradlew test integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT', 종료0·Unit137·지정IT23(Create11/Idempotency5/Rollback7),실패/오류/skip0. listener와 현재XML 합계를 대조했다.
+
+### 5단계 최종 전체 인수 — T040~T043
+
+- backend/ ./gradlew verify: 종료0, 1분7초. 현재 listener/XML: Unit137·일반IT115, 실패0·오류0·skip0. 신규23IT 외 기존92IT도 통과했다. 심화 태스크/부하/외부CI는 실행하지 않았다.
+- 검증한 코드: ReservationController(인증UUID/입력), Service(트랜잭션밖 선조회/롤백후 복구), Writer(READ COMMITTED/SET LOCAL/조건차감·저장), UniqueViolationClassifier(정확한 구조 메타데이터). SQL은 ResourceRepository.decrementIfAvailable·ReservationRepository.insert에 있다.
+- 핵심 테스트: ReservationCreateIT11·IdempotencyIT5·ReservationRollbackIT7, Service7·Writer4·Classifier10 Unit. 실제 PostgreSQL18.6·동적 포트/전용DB이며 개발DB·volume은 변경하지 않았다.
+- 기준 정책·V1·고정OpenAPI 변경 없음. POST/201/Location/Replay/4필드 및 오류code를 고정계약과 대조했다. 자동 업무 OpenAPI validator는9단계 후속이다.
+- README·versions·decisions·지식3도메인/목록·006문서·계획서5단계 체크를 실행 근거에 맞췄다. 기존 미커밋006 설계·분석 기록을 검토·보존한 후 같은 기능 문서 묶음에 포함한다. checklists 마커는 변경하지 않았다.
+- 실제 경쟁 반복·응답 유실·소유자GET/취소·Redis·업무계약/Property/PIT·부하·외부CI 미검증. 다음 한 작업:6단계 소유자의 예약 단건 조회·취소.
+- 로컬 feature/reservation-create에서 검증 대상별 커밋만 작성한다. develop병합·push·공개 없음. 최종 독립 리뷰 결과는 후속 기록한다.
+
+문서 검증: 변경/006 Markdown 로컬 링크264개, 누락0. git diff --check 종료0. 운영 src/main의 pg_sleep/Mockito/실패주입 플래그 검색0건. 체크리스트 requirements16/16·custom34/34 유지. T001~T043 수행 완료 후 독립 최종 리뷰를 진행한다.
