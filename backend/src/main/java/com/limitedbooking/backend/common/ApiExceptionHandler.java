@@ -131,6 +131,11 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(com.limitedbooking.backend.reservation.ReservationWriter.SoldOutException.class)
+    public ResponseEntity<ProblemResponse> handleSoldOut(Exception exception, HttpServletRequest request) {
+        return problemEntity(HttpStatus.CONFLICT, "예약 가능한 수량이 없습니다", "대상은 현재 품절입니다.", request, "SOLD_OUT");
+    }
+
     public static ProblemResponse problem(int status, String title, String detail, String instance, String code) {
         return new ProblemResponse(
                 "about:blank",

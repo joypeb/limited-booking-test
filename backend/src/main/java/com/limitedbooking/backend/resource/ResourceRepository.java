@@ -19,6 +19,13 @@ public class ResourceRepository {
         this.jdbc = jdbc;
     }
 
+    public int decrementIfAvailable(UUID resourceId) {
+        return jdbc.update("""
+                UPDATE resources SET available = available - 1
+                WHERE id = :resourceId AND available > 0
+                """, Map.of("resourceId", resourceId));
+    }
+
     public Optional<ResourceView> find(UUID id) {
         var rows = jdbc.query("""
                 SELECT id, name, capacity, available

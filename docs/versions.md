@@ -45,3 +45,10 @@ Gradle9.7.1·Corretto25.0.4+7-LTS·MacOS27.0.1 aarch64·Docker29.8.2를 실제 �
 ### 3단계 순수 규칙 실행 (2026-10-15)
 
 feature/validate-domain-rules에서 `java --version`·`./gradlew --version` exit0으로 Corretto25.0.4+7-LTS·Gradle9.7.1·Mac OS X27.0.1 aarch64를 재확인했다. 기존 의존성·BOM·이미지·빌드 태스크 변경 없음. 전체 Unit116건(업무113+프로브3), 실패/오류/skip0을 listener/XML로 확인했다. Docker·DB·Redis를 기동하지 않았고 IT/Contract/Property/PIT·부하는 이번 단계에 재실행하지 않았다. 기존 Gradle10 비호환 deprecated 기능 경고는 남아 있으며 이번 규칙 범위에서는 수정하지 않았다.
+
+
+### 2026-10-19 예약 생성 컴파일 범위
+
+PostgreSQL 드라이버를 동일 Boot BOM의 implementation으로 이동하고 중복 testImplementation을 제거했다. compileClasspath 해석 결과는 후속 실행 기록으로 확인한다. 새 버전 지정 없음.
+
+compileClasspath 실행: 종료0, org.postgresql:postgresql →42.7.13, 동일 BOM 유지.
