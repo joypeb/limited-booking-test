@@ -155,3 +155,7 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 7단계 경쟁 검증 설계 연결 (2026-10-20)
 
 [구현 계획](../../specs/008-reservation-concurrency/plan.md)·[경쟁 계약](../../specs/008-reservation-concurrency/contracts/concurrency-contract.md)에 실제 HTTP/격리DB·11종 각10회·테스트 Spy 관측·단일 수량 snapshot·모든 작업 종료를 설계했다. 키 강제 경쟁 장벽은 트랜잭션 밖 최초 실제 빈 조회 뒤에 두고, 같은 자원 차감 후 양측 대기를 금지한다. 생성/취소 두 순서도 연결·잠금 보유 전 대기로 제어한다. 업무 계약·스키마 변경 없이 테스트 지원만 확장할 예정이며 아직 신규 테스트·실행 증거는 없다.
+
+### U1 종료 실패 격리 설계 보완
+
+7단계 경쟁 테스트는 클래스 단위 최초 종료 실패 상태를 유지하고 부모 setup의 첫 보호 검사로 reset·준비·요청 제출을 차단하도록 [계획](../../specs/008-reservation-concurrency/plan.md)·[작업](../../specs/008-reservation-concurrency/tasks.md)을 보완했다. 기본 무동작 보호 검사와 null-client 정리로 기존 테스트 동작을 유지하며 다음 회차 세 작업0회·최초 원인 보존의 별도 fixture 검증을 예정한다. 문서 설계 보완이며 코드 구현·실행 증거는 후속이다.

@@ -25,6 +25,8 @@
 | InventorySnapshot | resourceId, capacity, available, totalCount, confirmedCount | 여러 대상도 단일 SELECT로 얻고 대상 누락·음수·불일치 실패 |
 | CleanupResult | 제출/종료 수, Executor 종료, 서버 inFlight, HTTP 종료, 정리 예외 | 종료 확인 전 reset/다음 회차 금지 |
 
+차단 상태는 CleanupResult의 회차별 결과와 별개로 클래스 실행 전체에서 유지하는 테스트 메모리 상태다. 최초 종료 실패 원인만 원자적으로 보존하고 회차 setup/cleanup으로 해제하지 않는다. 보호 검사 실패는 DB reset·준비·요청 제출0회와 원인 보존으로 판정한다. 제품 DB에는 저장하지 않는다.
+
 ## 전이와 판정
 
 - 일반 생성 성공: available -1, CONFIRMED 행+1을 함께 커밋한다.

@@ -68,7 +68,7 @@ backend/src/main/java/com/limitedbooking/backend/
   resource/ResourceRepository.java  (기존)
 backend/src/test/java/com/limitedbooking/backend/
   reservation/ReservationConcurrencyIT.java  (신규 예정)
-  reservation/ReservationApiTestSupport.java  (기존 재사용)
+  reservation/ReservationApiTestSupport.java  (기존 확장 예정: setup 첫 보호 검사)
   support/ConcurrencyTestSupport.java  (신규 예정)
   support/ConcurrencyTestSupportTest.java  (신규 예정)
   support/DatabaseAssertions.java  (기존 확장 예정)
@@ -97,7 +97,7 @@ backend/src/test/java/com/limitedbooking/backend/
 
 작업자10·풀10을 실제 설정과 getMaximumPoolSize/getConnectionTimeout으로 확인한다. 소규모 요청은2개(취소는10개)이며 Hikari active 연결 수를 테스트 전용 sampler로10ms 간격 관측해 최대값과 샘플 간격을 기록한다. 이는 표본 최대값이므로 정확한 피크로 주장하지 않는다. 쿼리/관측을 위해 장벽에서 연결을 추가 획득하지 않는다. HTTP 클라이언트 내부 스레드·서버 스레드 수와 요청 Executor 작업자 수를 구분한다.
 
-장벽 실패·Future 예외·상한 초과 시 회차는 실패다. releaseAll과 shutdownNow 후 awaitTermination10초를 검사하고 서버 측 Spy 진입/퇴장 추적으로 in-flight0도10초 이내 확인한다. 응답 취소만으로 서버 요청 종료를 가정하지 않는다. 정리 실패는 원래 예외에 suppressed로 남기며 원래 실패를 숨기지 않는다. 전체 종료 확인 실패 시 suite를 중단하고 DB reset을 금지한다. 실행 환경이 느리면 먼저 원인을 조사하며 시간/버전/풀을 임의로 바꿔 통과시키지 않는다.
+장벽 실패·Future 예외·상한 초과 시 회차는 실패다. releaseAll과 shutdownNow 후 awaitTermination10초를 검사하고 서버 측 Spy 진입/퇴장 추적으로 in-flight0도10초 이내 확인한다. 응답 취소만으로 서버 요청 종료를 가정하지 않는다. 정리 실패는 원래 예외에 suppressed로 남기며 원래 실패를 숨기지 않는다. Executor·서버 요청·HTTP 클라이언트 중 하나라도 종료 확인에 실패하면 클래스 단위 차단 상태에 최초 원인을 원자적으로 보존한다. 이 상태는 테스트 인스턴스가 회차마다 새로 생성돼도 유지하며 BeforeEach/AfterEach에서 초기화하지 않는다. 이후 회차는 부모 ReservationApiTestSupport.setup()의 첫 동작인 보호 검사에서 실패하여 DB reset·준비 데이터 생성·요청 제출을 모두 금지한다. 부모에 기본 무동작인 protected 보호 메서드를 추가하고 경쟁 클래스가 재정의한다. 자식 @BeforeEach만으로 검사하면 부모 reset보다 늦으므로 사용하지 않는다. 부모 setup이 차단돼 client가 생성되지 않은 경우 부모 cleanup은 null 클라이언트를 정리하지 않으며, 경쟁 cleanup도 현재 회차에서 생성한 자원만 정리한다. 다른 기존 테스트는 기본 무동작 검사를 사용해 기존 동작을 유지한다. JUnit 실행 전체의 즉시 중단에 의존하지 않고 후속 회차를 같은 최초 원인을 가진 실패로 처리하며 성공이나 skip으로 바꾸지 않는다. 보호 상태는 해당 클래스 실행이 끝날 때까지 해제하지 않는다. 승인한 인수는 종료 실패를 주입한 뒤 다음 setup 진입에서 reset·준비·요청 제출이 각각0회이고 최초 원인이 유지됨을 확인하는 것이다. 실행 환경이 느리면 먼저 원인을 조사하며 시간/버전/풀을 임의로 바꿔 통과시키지 않는다.
 
 ## Complexity Tracking
 

@@ -43,3 +43,7 @@ Hikari maximumPoolSize10/connectionTimeout3000ms, DB read committed/lock_timeout
 docs/test-evidence.md에 명령·종료 코드·실제 수·대상 commit·날짜·시간·이미지/digest·작업자/풀·연결 관측값·샘플 한계·반복별 상태·경로/순서 관측·최종 snapshot·미검증을 남긴다. 실제 버전은 docs/versions.md, 설계 변경은 docs/decisions.md에 기록한다. 현재 문서 작성 단계에서는 계획서 체크박스를 표시하지 않는다.
 
 매 회차 finally에서 모든 대기 해제→작업 종료·서버 in-flight0 확인→Spy/플래그 초기화→HTTP 종료 순서로 정리한다. 클래스 소유 컨텍스트와 컨테이너는 기존 DirtiesContext/종료 listener 규칙을 따른다. 정리 실패로 다음 회차를 진행하지 않고 개발 DB·volume을 지우지 않는다. 로컬 반복은 모든 실행 순서나 운영 성능의 증명이 아니다. 다음8단계에서 Redis 제한 도입 시 실제 HTTP 경쟁 경로를 유지하고10000건/60초·회차별 테스트 전용 키 초기화를 명시한다.
+
+### 종료 실패 후 초기화 차단 (U1 보완)
+
+Executor·서버 요청·HTTP 클라이언트의 종료 확인 실패는 최초 원인을 클래스 단위 차단 상태에 보존한다. 회차마다 상태를 해제하지 않는다. ReservationApiTestSupport.setup의 첫 동작에 기본 무동작 보호 메서드를 두고 경쟁 클래스에서 재정의하여 부모 DB reset 전에 실패시킨다. 자식 BeforeEach 검사만으로 대체하지 않는다. 이후 회차는 reset·준비·요청 제출 각각0회이며 최초 실패 원인을 유지해야 한다. setup 차단으로 client가 없으면 cleanup은 null을 안전하게 처리하고 회차 소유 자원만 정리한다. JUnit 전체 중단에 의존하지 않고 후속 회차는 실패로 판정하며 skip이나 성공으로 숨기지 않는다. 실제 부모 setup 순서는 별도 상태를 소유한 테스트 fixture로 검증하고110회 경쟁 인수와 지원 검증 수를 구분한다. 이는 설계·후속 검증 기준이며 아직 실행하지 않았다.
