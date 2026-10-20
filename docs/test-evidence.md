@@ -1159,3 +1159,9 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*'`: 종료0, 반복10/10. 매회 capacity10/요청100/작업자10,201×10·409/SOLD_OUT×90,total/confirmed10·available0. 모든 Future 수집/Executor 종료/서버0/HTTP 종료를 검사했다.
 - 기존 제품 구현은 통과했다. ResourceRepository의 `available > 0`만 고의 제거: 동일 명령 종료1,10/10 실패. DB CHECK가 음수 차감을 거부하여 예상 품절90 대신500이 발생하는 것을 HTTP 분포가 탐지했다. 즉시 원복했고 제품 코드는 변경하지 않았다.
 - 원복 후 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*' --tests '*ReservationCreateIT'`: 종료0,IT26(C01반복10+기존16), 실패/오류/skip0. 22초. 각 회차의 수량과 연결 표본은 최종 전체 인수 기록에 합친다. 표본은 정확한 연결 피크/운영 성능 증거가 아니다.
+
+### US2 T015~T021: C02/C03/C04/C07/C08
+
+- 각10회(총50회) 실제 HTTP·DB 초기 실행: 종료0. C02/03 동일값10건·false1/true9·1행·잔여0/9, C04 대상별 차감1·실제23505/uq_reservations_user_key·승자1행/잔여0·패자0행/잔여1, C07 차감0 뒤 활성 트랜잭션 성공 재조회, C08 두 차감1 뒤 UNIQUE·롤백 후 비트랜잭션 성공 재조회를 모두 관측했다. 최초 실제 빈 선조회 두 개만 트랜잭션 밖에서 기다린다.
+- Service의 대상 UUID 비교만 고의 제거한 C04 실행: 종료1,10/10 실패(201이2개여서 단일 성공/충돌 계약 위반). 즉시 원복했다. 기존 제품 결함은 발견하지 않아 제품 변경 없음.
+- 원복 후 위5종 각10회 + `IdempotencyIT`5 + `ReservationRollbackIT`7: `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C02*' --tests '*ReservationConcurrencyIT.C03*' --tests '*ReservationConcurrencyIT.C04*' --tests '*ReservationConcurrencyIT.C07*' --tests '*ReservationConcurrencyIT.C08*' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT'`, 종료0/IT62/실패·오류·skip0,27초. 저장UTC마이크로초·Location·JSON필드 일치와 실패키 복구 회귀 유지.

@@ -188,6 +188,73 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         snapshot(target,0,10,10); report();
     }
 
+    /** 첫 실제 빈 선조회 두 개만 맞춘다. 이 지점에는 활성 트랜잭션/연결/잠금이 없다. */
+    void firstTwoEmpty(String key) {
+        var barrier=gate(2); var ordinal=new AtomicInteger();
+        doAnswer(call -> {
+            @SuppressWarnings("unchecked") var found=(Optional<StoredReservation>)call.callRealMethod();
+            event("lookup",found.isPresent()?"present":"empty");
+            if(found.isEmpty() && !TransactionSynchronizationManager.isActualTransactionActive()
+                    && ordinal.incrementAndGet()<=2) {
+                assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+                event("first-empty","no transaction"); barrier.meet();
+            }
+            return found;
+        }).when(reservations).findByUserAndKey(TestData.USER_A_ID,key);
+    }
+    void uniqueThenOutsideLookup() {
+        var unique=events.require("unique");
+        assertThat(unique.transaction()).isTrue();
+        assertThat(unique.detail()).isEqualTo("23505/uq_reservations_user_key");
+        assertThat(events.all()).anySatisfy(e -> {
+            assertThat(e.phase()).isEqualTo("lookup"); assertThat(e.request()).isEqualTo(unique.request());
+            assertThat(e.sequence()).isGreaterThan(unique.sequence()); assertThat(e.transaction()).isFalse();
+            assertThat(e.detail()).isEqualTo("present");
+        });
+        assertThat(events.all().stream().filter(e->e.phase().equals("first-empty"))).hasSize(2);
+    }
+    @RepeatedTest(10) void C02_lastOneSameKeyTenRequests(RepetitionInfo info) throws Exception {
+        begin("C02",info); var target=resource(1);
+        identical(run(same(target,"C02",10)),10);
+        snapshot(target,0,1,1); report();
+    }
+    @RepeatedTest(10) void C03_sufficientStockSameKeyUniqueRollback(RepetitionInfo info) throws Exception {
+        begin("C03",info); var target=resource(10); firstTwoEmpty("C03");
+        identical(run(same(target,"C03",10)),10); uniqueThenOutsideLookup();
+        snapshot(target,9,1,1); report();
+    }
+    @RepeatedTest(10) void C04_differentResourcesSameKeyRollsBackLoser(RepetitionInfo info) throws Exception {
+        begin("C04",info); var a=resource(1); var b=resource(1); firstTwoEmpty("C04");
+        var responses=run(List.of(creation(a,"C04"),creation(b,"C04")));
+        assertThat(responses.stream().filter(r->r.statusCode()==201)).hasSize(1);
+        assertThat(responses.stream().filter(r->r.statusCode()==409)).hasSize(1);
+        problem(responses.stream().filter(r->r.statusCode()==409).findFirst().orElseThrow(),409,"IDEMPOTENCY_CONFLICT");
+        var winner=UUID.fromString(JSON.readTree(responses.stream().filter(r->r.statusCode()==201).findFirst().orElseThrow().body()).get("resourceId").asString());
+        lastSnapshot=new DatabaseAssertions(dataSource).snapshot(List.of(a,b));
+        for(var id:List.of(a,b)) assertThat(lastSnapshot.get(id)).isEqualTo(
+                new DatabaseAssertions.InventorySnapshot(id,1,id.equals(winner)?0:1,id.equals(winner)?1:0,id.equals(winner)?1:0));
+        assertThat(events.all().stream().filter(e -> e.phase().equals("decrement") && e.detail().endsWith(":1"))).hasSize(2);
+        uniqueThenOutsideLookup(); report();
+    }
+    @RepeatedTest(10) void C07_lastOneUpdateZeroRereadsWinnerInsideTransaction(RepetitionInfo info) throws Exception {
+        begin("C07",info); var target=resource(1); firstTwoEmpty("C07");
+        identical(run(same(target,"C07",2)),2);
+        var zero=events.all().stream().filter(e->e.phase().equals("decrement")&&e.detail().endsWith(":0")).findFirst().orElseThrow();
+        assertThat(zero.transaction()).isTrue();
+        assertThat(events.all()).anySatisfy(e -> {
+            assertThat(e.request()).isEqualTo(zero.request()); assertThat(e.sequence()).isGreaterThan(zero.sequence());
+            assertThat(e.phase()).isEqualTo("lookup"); assertThat(e.transaction()).isTrue(); assertThat(e.detail()).isEqualTo("present");
+        });
+        assertThat(events.all().stream().filter(e->e.phase().equals("first-empty"))).hasSize(2);
+        snapshot(target,0,1,1); report();
+    }
+    @RepeatedTest(10) void C08_twoStockUniqueRollsBackProvisionalDecrement(RepetitionInfo info) throws Exception {
+        begin("C08",info); var target=resource(2); firstTwoEmpty("C08");
+        identical(run(same(target,"C08",2)),2); uniqueThenOutsideLookup();
+        assertThat(events.all().stream().filter(e->e.phase().equals("decrement")&&e.detail().endsWith(":1"))).hasSize(2);
+        snapshot(target,1,1,1); report();
+    }
+
     @Test void parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe() throws Exception {
         class Fixture extends ReservationApiTestSupport {
             final StopState state=new StopState(); int prepared; int submitted;
