@@ -175,6 +175,19 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         assertThat(stored.createdAt().getNano()%1000).isZero();
     }
 
+    @RepeatedTest(10) void C01_capacityTenHundredRequests(RepetitionInfo info) throws Exception {
+        begin("C01",info); UUID target=resource(10);
+        var jobs=IntStream.range(0,100).mapToObj(i -> creation(target,"C01_"+i)).toList();
+        var responses=run(jobs);
+        assertThat(responses.stream().filter(r -> r.statusCode()==201)).hasSize(10);
+        assertThat(responses.stream().filter(r -> r.statusCode()==409)).hasSize(90);
+        responses.forEach(r -> {
+            if(r.statusCode()==409) problem(r,409,"SOLD_OUT");
+            else { assertThat(r.statusCode()).isEqualTo(201); assertThat(JSON.readTree(r.body()).get("status").asString()).isEqualTo("CONFIRMED"); }
+        });
+        snapshot(target,0,10,10); report();
+    }
+
     @Test void parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe() throws Exception {
         class Fixture extends ReservationApiTestSupport {
             final StopState state=new StopState(); int prepared; int submitted;

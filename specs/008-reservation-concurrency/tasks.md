@@ -36,10 +36,10 @@
 
 독립 인수: C01을10회 실행해 각 회차 201×10·SOLD_OUT×90·confirmed10·available0과 모든 작업 종료를 확인한다.
 
-- [ ] T011 [US1] backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java에 C01 @RepeatedTest(10)을 먼저 작성한다. capacity10·고정 사용자/다른 키 조합100건·작업자10을 사용하고 최초 작업자 준비 후 시작을 해제한다. 정확한 HTTP 분포와 모든 요청 종료 뒤 snapshot·사용자키 최대1행을 검사한다. FR-001/006~008, SC-001.
-- [ ] T012 [US1] C01 탐지력을 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java로 확인한다. 기존 구현이 통과하면 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java의 available>0 방어만 임시 고의 변경하여 예상 결과 실패를 관측하고 즉시 원복한다. docs/test-evidence.md에 실제 결함과 고의 결함을 구별한다.
-- [ ] T013 [US1] C01에 실제 결함이 있으면 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java의 실패 근거에 한해 해당 resource/ResourceRepository.java 또는 reservation/ReservationWriter.java를 최소 수정하고, 없다면 제품 변경 없이 시험을 정리한다. 모든 제출 결과 수집과 “제출 수와 결과 수 동일”을 재확인한다.
-- [ ] T014 [US1] backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java의 C01 지정 실행10회와 영향받는 기존 예약 생성 시험을 수행해 docs/test-evidence.md에 반복별 결과·시간·종료·snapshot·연결 표본 한계를 기록하고 목적별 커밋을 남긴다. FR-013/014, SC-005/006.
+- [X] T011 [US1] backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java에 C01 @RepeatedTest(10)을 먼저 작성한다. capacity10·고정 사용자/다른 키 조합100건·작업자10을 사용하고 최초 작업자 준비 후 시작을 해제한다. 정확한 HTTP 분포와 모든 요청 종료 뒤 snapshot·사용자키 최대1행을 검사한다. FR-001/006~008, SC-001.
+- [X] T012 [US1] C01 탐지력을 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java로 확인한다. 기존 구현이 통과하면 backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java의 available>0 방어만 임시 고의 변경하여 예상 결과 실패를 관측하고 즉시 원복한다. docs/test-evidence.md에 실제 결함과 고의 결함을 구별한다.
+- [X] T013 [US1] C01에 실제 결함이 있으면 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java의 실패 근거에 한해 해당 resource/ResourceRepository.java 또는 reservation/ReservationWriter.java를 최소 수정하고, 없다면 제품 변경 없이 시험을 정리한다. 모든 제출 결과 수집과 “제출 수와 결과 수 동일”을 재확인한다.
+- [X] T014 [US1] backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java의 C01 지정 실행10회와 영향받는 기존 예약 생성 시험을 수행해 docs/test-evidence.md에 반복별 결과·시간·종료·snapshot·연결 표본 한계를 기록하고 목적별 커밋을 남긴다. FR-013/014, SC-005/006.
 
 ## Phase 4: US2 — 동시 재전송·키 충돌 (P1)
 

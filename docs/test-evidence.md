@@ -1153,3 +1153,9 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - `./gradlew integrationTest --tests '*DatabaseSupportIT'`: 빈 snapshot 골격에서23건 중 신규4건 실패·종료1. 실제 DB에서 결과 집합 누락과 오류 미거부를 탐지했다. 단일LEFT JOIN 집계 구현 후23건·종료0.
 - `./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: Unit145·부모setup fixture1·종료0. 보호 검사 생략 고의 변경은 fixture1건 실패·종료1로 탐지 후 원복했다. 실제 DataSource 무호출(reset0), 준비0, 제출0, 최초 원인 보존과 null-client cleanup을 검증했다.
 - 최종 기반 게이트 `./gradlew test integrationTest --tests '*DatabaseSupportIT' --tests '*ReservationConcurrencyIT' --tests '*ReservationCreateIT'`: 종료0,Unit145·IT40(23+1+16), 실패/오류/skip0. 실행 지원은 최대10작업자, DB풀10/3000ms이며 10ms 연결 표본을 사용한다. 아직 업무 경쟁은 미실행.
+
+### US1 T011~T014: C01
+
+- `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*'`: 종료0, 반복10/10. 매회 capacity10/요청100/작업자10,201×10·409/SOLD_OUT×90,total/confirmed10·available0. 모든 Future 수집/Executor 종료/서버0/HTTP 종료를 검사했다.
+- 기존 제품 구현은 통과했다. ResourceRepository의 `available > 0`만 고의 제거: 동일 명령 종료1,10/10 실패. DB CHECK가 음수 차감을 거부하여 예상 품절90 대신500이 발생하는 것을 HTTP 분포가 탐지했다. 즉시 원복했고 제품 코드는 변경하지 않았다.
+- 원복 후 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*' --tests '*ReservationCreateIT'`: 종료0,IT26(C01반복10+기존16), 실패/오류/skip0. 22초. 각 회차의 수량과 연결 표본은 최종 전체 인수 기록에 합친다. 표본은 정확한 연결 피크/운영 성능 증거가 아니다.
