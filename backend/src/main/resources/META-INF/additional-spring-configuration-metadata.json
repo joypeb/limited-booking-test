@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "reservation.security.admin-password",
+      "type": "java.lang.String",
+      "description": "Local ADMIN password supplied through ADMIN_PASSWORD."
+    },
+    {
+      "name": "reservation.security.user-a-password",
+      "type": "java.lang.String",
+      "description": "Local USER_A password supplied through USER_A_PASSWORD."
+    },
+    {
+      "name": "reservation.security.user-b-password",
+      "type": "java.lang.String",
+      "description": "Local USER_B password supplied through USER_B_PASSWORD."
+    }
+  ]
+}

@@ -91,3 +91,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 ### PR #6 인코딩 취소 경로 검증 보완 (2026-10-20)
 
 원시 URI 접두사·접미사로 분기하는 취소 검증 필터는 MVC의 경로 디코딩과 차이가 있다. 신규 취소 Controller에서 매칭된 모든 경로의 캐시 본문0바이트를 다시 검사해 인코딩 경로도400/무변경을 보장한다. 인증·8KiB 상한 필터의 순서는 유지한다. ReservationCancelIT의 두 인코딩 경로 회귀가 실제 보안 필터와 HTTP·DB를 통과한다.
+
+
+### Qodana null 계약과 설정 설명 (2026-10-20)
+
+LocalUserPrincipal과 필터 doFilterInternal은 상위 Spring JSpecify null 불허 계약을 좁은 범위의 NullMarked로 명시한다. UserDetailsService의 username은 null 불허이므로 알려지지 않은 비-null 사용자명만 기존 인증 실패로 처리한다. 추가 Spring 설정 메타데이터는 reservation.security 비밀번호3개의 타입·설명만 제공하며 환경 변수/Value 바인딩은 유지한다. SQL 예외의 nullable SQLException이 없거나 미분류 SQLSTATE이면 원래 오류를 다시 던지고55P03만 기존503으로 처리한다. [Qodana 분류](../../docs/qodana-review.md)·[실행 증거](../../docs/test-evidence.md)를 참고하며 Qodana 자체 재검사는 미실행이다.

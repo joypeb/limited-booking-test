@@ -7,6 +7,7 @@ import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -25,6 +26,7 @@ public class RequestBodyLimitFilter extends OncePerRequestFilter {
     public static final int MAX_BODY_BYTES = 8192;
 
     @Override
+    @NullMarked
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,

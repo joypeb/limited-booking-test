@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,6 +45,7 @@ public class SecurityConfig {
     private static final String CANCEL_PREFIX = "/api/reservations/";
     private static final String CANCEL_SUFFIX = "/cancel";
 
+    @NullMarked
     public record LocalUserPrincipal(
             UUID userId,
             String username,
@@ -108,7 +110,7 @@ public class SecurityConfig {
         );
 
         return username -> {
-            LocalUserPrincipal principal = username == null ? null : users.get(username);
+            LocalUserPrincipal principal = users.get(username);
             if (principal == null) {
                 throw new UsernameNotFoundException("로컬 인증 계정을 찾을 수 없습니다.");
             }
@@ -145,6 +147,7 @@ public class SecurityConfig {
 
         OncePerRequestFilter cancelRequestValidationFilter = new OncePerRequestFilter() {
             @Override
+            @NullMarked
             protected void doFilterInternal(
                     HttpServletRequest request,
                     HttpServletResponse response,
