@@ -59,3 +59,13 @@ compileClasspath 실행: 종료0, org.postgresql:postgresql →42.7.13, 동일 B
 Corretto25.0.4.7.1·Gradle9.7.1·Docker daemon29.8.2에서 동일 PostgreSQL18.6 고정digest 및 Boot4.1.1/BOM을 유지했다. PostgreSQL42.7.13은 compileClasspath 해석 종료0으로 확인했다. 신규 IT 각각 실제 Hikari maximumPoolSize10/connectionTimeout3000ms를 확인하며 실제 Writer에서 read committed/lock_timeout2s/statement_timeout5s를 검사했다. 새 버전 추가·하향 없이 MockitoSpyBean/실제 프록시/SQLSTATE 메타데이터를 실행 확인했다. Gradle10 호환/심화·부하는 이번에 검증하지 않았다.
 
 5단계 리뷰 수정 후 최종 일반verify는 Unit137/일반IT120, 실패·오류·skip0이다. 비표준UUID HTTP 회귀5건을 추가했으며 의존성 버전 변경은 없다.
+
+
+### 6단계 조회·취소 실행 (2026-10-20)
+
+Corretto25.0.4+7-LTS·Gradle9.7.1·Boot4.1.1·Docker daemon29.8.2 및 기존 PostgreSQL18.6 고정 digest를 유지했다. 새 의존성·스키마 변경 없음. verify Unit137·일반IT136, local 프로필 curl11단계와 최종 DB 보존식 통과. 소유권/취소/복구 롤백까지 실제 HTTP·DB 검증하며 경쟁 반복·Redis 제한·심화·부하/외부CI는 후속이다. 세부는 [실행 증거](test-evidence.md)를 따른다.
+
+
+### PR6 적대적 리뷰 후 재검증 (2026-10-20)
+
+Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존성 변경 없이 인코딩 취소 경로의 본문 계약 회귀2건을 추가해 최종 verify Unit137·일반IT138 실패/오류/skip0을 확인했다. 앞선6단계 최초 인수137/136과 구분한다. 외부CI 성공을 의미하지 않는다.

@@ -26,6 +26,19 @@ public class ResourceRepository {
                 """, Map.of("resourceId", resourceId));
     }
 
+    public void lockForUpdate(UUID id) {
+        DataAccessUtils.requiredSingleResult(jdbc.query(
+                "SELECT id FROM resources WHERE id = :id FOR UPDATE",
+                Map.of("id", id), (rs, n) -> rs.getObject("id", UUID.class)));
+    }
+
+    public int incrementIfBelowCapacity(UUID id) {
+        return jdbc.update("""
+                UPDATE resources SET available = available + 1
+                WHERE id = :id AND available < capacity
+                """, Map.of("id", id));
+    }
+
     public Optional<ResourceView> find(UUID id) {
         var rows = jdbc.query("""
                 SELECT id, name, capacity, available

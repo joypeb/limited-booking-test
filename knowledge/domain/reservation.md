@@ -2,9 +2,9 @@
 
 ## 1. 기준과 현재 상태
 
-- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-19.
+- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-20.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md).
-- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소·실제 경쟁 반복·Redis 제한은 후속이다.
+- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소를 6단계에서 구현하고 HTTP·실제 DB 취소/롤백을 검증했다. 실제 경쟁 반복·Redis 제한은 후속이다.
 
 ## 2. 목적·책임·경계
 
@@ -63,12 +63,12 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 
 | 규칙 | 사례 | 기대 결과 | 검증 상태 |
 | --- | --- | --- | --- |
-| reservation-001~003 | capacity=1 예약·재요청·취소·재요청·중복 취소 | 추가 예약 없음, 복구 1회, 수량식 유지 | 수동 사례 작성·대조됨, HTTP/DB 미실행 |
+| reservation-001~003 | capacity=1 예약·재요청·취소·재요청·중복 취소 | 추가 예약 없음, 복구 1회, 수량식 유지 | ReservationOwnershipIT·ReservationCancelIT HTTP/DB 검증 |
 | reservation-002 | 마지막 1개 동일 키 / 다른 대상 동일 키 경쟁 | 한 성공 행 / 한 성공과 충돌, 패자 수량 롤백 | 후속 IT 예정 |
 | reservation-003 | 중복 취소·생성/취소 경쟁 | 동일 취소 시각·수량식 유지 | 후속 IT 예정 |
 | 롤백 | UPDATE 뒤 INSERT 실패 | 행·수량 부분 반영 없음, 같은 키 재시도 | ReservationRollbackIT 실제 HTTP/DB 검증 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 아래5단계에서 실행했으며 취소/실제 경쟁은 후속이다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 5단계, 소유권·취소·롤백은 6단계에서 실행했다. 실제 경쟁 반복은 후속이다.
 
 ## 8. 구현 연결과 변경 영향
 
@@ -88,7 +88,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 예약 GET/취소 미구현 | 소유권/수량 복구 미검증 | 6단계 개발 |
+| 예약 GET/취소 구현 | 소유권·수량 복구·롤백 IT 검증 | 6단계 최종 인수는 실행 증거 참조 |
 | 실제 경쟁/Redis/심화 미검증 | 순차·장애 검증으로 경쟁 전체를 입증하지 않음 | 7단계 이후 개발/검증 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.
@@ -132,3 +132,17 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 - 앞 절의 취소/소유자 GET·실제 경쟁 사례는 설계이며 아직 미구현/미실행이다. 다음 한 작업은6단계 소유자의 예약 조회·취소다.
 
 입력 보완: CreateReservationRequest.fromJson은 원문36자 UUID를 확인 후 값으로 변환한다. Base64 22/24자·문자열 앞뒤공백·축약형은400이며 실패 키를 남기지 않는다. 정상 UUID 영문 대소문자는 모두 허용한다. 관련 HTTP 회귀5건을 추가했다.
+
+
+## 6단계 조회·취소 구현 연결 (2026-10-20)
+
+[ReservationView](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationView.java)는 현재 상태의 다섯 필드를 반환하고 cancelledAt null도 직렬화한다. [Controller](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java)는 인증 UUID만 Service에 넘기며 UUID 경로는 표준 8-4-4-4-12 텍스트를 검사한다(대소문자 허용). [Service](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationService.java)의 get은 `findByIdAndUser` 단건 SELECT, cancel은 상위 트랜잭션을 거부한 뒤 별도 Writer를 호출한다. 타인·관리자·없는 예약은 동일404다.
+
+[Writer](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)는 READ COMMITTED/SET LOCAL→소유자 조회→`CancellationDecision.ALREADY_CANCELLED` 조기 반환 또는 대상 FOR UPDATE→CONFIRMED 조건 상태UPDATE→1건일 때만 available<capacity 조건 복구→저장값 재조회 순서다. 복구0건은 내부 오류500과 전체 롤백이며 분류된 timeout은503이다. 취소 timestamp는 Clock UTC 마이크로초이며 응답은 DB 재조회 값이다.
+
+[OwnershipIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationOwnershipIT.java)·[CancelIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationCancelIT.java)는 실제 Basic HTTP/격리 PostgreSQL·수량 보존식으로 검증한다. 취소 복구 장애는 테스트 Spy에만 있으며 실제 상태 갱신 후 실패·롤백을 확인한다. 중복 취소, 대상 잠금 중 이미 취소된 분기, 낡은 CONFIRMED 조회 뒤 조건UPDATE0 분기를 구분한다. 실제 경쟁 반복은 7단계다. 세부 명령·고의 변경 탐지·실행 수는 [실행 증거](../../docs/test-evidence.md)의 6단계를 따른다.
+
+
+### PR #6 적대적 리뷰: 인코딩 경로의 취소 본문 (2026-10-20)
+
+취소 본문 검증은 raw URI 기반 보안 필터에만 의존하지 않는다. MVC가 디코딩한 경로로 Handler를 선택한 뒤 Controller에서도 `RequestBodyLimitFilter.getCachedBody`의 실제 바이트가0인지 검사하고 Service 호출 전에 거부한다. 따라서 `%63ancel` 또는 `%72eservations` 경로에도 비어 있지 않은 본문은400이며 상태·수량을 변경하지 않는다. 동일 경로의 빈 본문은 정상 취소한다. 두 경로의 실제 HTTP/DB 회귀를 추가했고, RED에서는200/CANCELLED/available1을 관측한 뒤 수정했다. API·도메인 규칙 변경 없이 기존 계약의 적용 누락을 고쳤다. [실행 증거](../../docs/test-evidence.md)의 PR6 리뷰 기록을 따른다.

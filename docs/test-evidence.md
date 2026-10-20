@@ -1055,3 +1055,87 @@ UUID 수정 관련 GREEN: ./gradlew integrationTest --tests '*ReservationCreateI
 수정 후 문서 링크264개/누락0·diff-check0·운영 실패주입 검색0건을 재확인했다. 전후 확장 훅 파일은 없으며 생략했다. feature/reservation-create를 유지하고 merge/push/공개/외부CI는 수행하지 않는다.
 
 최종 경로 감사: git diff --name-only -z 58f4106 HEAD를 사용해 한글 계획서 경로까지 포함한 전체 변경 Markdown 링크269개·누락0을 확인했다. 앞선264개 검사는 Git의 한글 경로 인용 출력 때문에 계획서의5개 링크를 제외한 부분 집계였다. NUL 구분 재검사로 보완했으며 문서/기능 결함이나 테스트 실패는 아니다. 최종43/43·체크리스트16/16·34/34·확장훅없음을 재확인했다.
+
+
+## 2026-10-20 6단계 예약 조회·취소 — 구현 중간 증거
+
+- 기준: specs/007-reservation-cancel의 spec/plan/tasks, 계획서 5.3·7절 6단계, knowledge의 도메인·트랜잭션/API·보안 규칙. 계약·스키마·의존성 변경 없음.
+- Git: 설계 `63dd7e4`를 사용자 `진행해` 승인 후 develop에 `282295b`로 --no-ff 병합하고 `feature/reservation-cancel` 분기. 구현 결과는 로컬 커밋하며 외부 push/병합은 하지 않는다.
+- 사전 확인: requirements 체크리스트16/16, Markdown8개 로컬 링크 오류0, 공백 검사 종료0. SecurityIT 기존6건은 일반 본문 상한 증거만 있고 취소 경로400/413 증거는 없어 신규 IT로 보완.
+- 환경: Corretto25.0.4+7-LTS, Gradle9.7.1, Boot4.1.1, Docker daemon29.8.2, PostgreSQL18.6 고정 digest(기존 ContainerTestSupport), RANDOM_PORT/격리 DB. 신규 두 IT의 Hikari 풀10·획득3000ms는 실제 적용값 assertion 포함. JUnit 클래스 순차, 테스트 전체 트랜잭션 없음.
+- 조회 RED: `cd backend && ./gradlew integrationTest --tests '*ReservationOwnershipIT'` 종료1, 3건 모두 HTTP 기능 부재로 실패. GET200/404/400 기대와 기존 미구현 응답 불일치(컴파일 성공).
+- 조회 GREEN: 같은 명령 종료0, 3건 실패/오류/skip0. null cancelledAt 필수 직렬화, 타인/관리자/없는 UUID404, 인증401+헤더, 비표준 UUID400.
+- 취소 RED: `./gradlew integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'` 종료1, 7건 중 최초 취소/타인 취소2건 실패. 기존 취소 본문400·상한413은 이미 통과.
+- 취소 GREEN: 위 명령에 `--tests '*SecurityIT'` 추가, 종료0, 13건 실패/오류/skip0. capacity1 상태/수량 복구, 저장 UTC 시각과 GET 동일, 소유권/본문400·413 무변경.
+- US3 추가: `./gradlew integrationTest --tests '*ReservationCancelIT'` 종료0, 7건 실패/오류/skip0. 반복 취소(2·3번째) 응답 전체 값 불변. 복구 예외/0건/QueryTimeoutException을 테스트 Spy에만 주입하고 실제 상태 UPDATE 후 같은 트랜잭션의 CANCELLED 및 lock_timeout2s/statement_timeout5s/read committed를 관측. 500/500/503과 롤백(CONFIRMED/null/available0), finally reset 후200 재시도 확인. 활성 상위 트랜잭션 거부도 확인.
+- T020은 US2에서 방어를 이미 구현하여 추가 당시 GREEN이다. 일반 중복 취소만으로 조기 반환·상태 조건을 각각 제거하면 두 방어가 서로를 가려 각1건 종료0이었다. 탐지 실패를 숨기지 않고 별도 사례 보강을 진행했다. 복구0건 검사 제거는 `zeroRecoveryIsInternalDefectAndRollsBack`에서 기대500/실제200으로 종료1(1건 실패), 원복했다.
+- 보강 원본 실행: CancelIT9건 종료0. 이미 취소된 상태에서 별도 연결의 대상 잠금을 유지해도 재취소200이며, 오래된 CONFIRMED 첫 조회만 Spy로 전달하고 실제 조건UPDATE가0건이면 기존 취소 응답과 수량을 보존한다. 후자는 경쟁 중 낡은 조회의 경로 검증이며 동시성 반복 증거가 아니다.
+
+실제 경쟁 반복/실제 잠금 timeout 경합 전체/Redis 제한/업무 자동 계약·속성·PIT·부하·외부 CI는 이번 범위 밖이다. 대상 잠금 단일 사례와 QueryTimeoutException 주입을 실제 경쟁·DB 중단 검증으로 일반화하지 않는다.
+
+- T021 보강 고의 변경: 조기 반환 제거→`alreadyCancelledDoesNotWaitForResourceLock` 기대200/실제503로1건 실패·종료1. status 조건 제거→`staleConfirmedReadCannotRepeatStatusUpdateOrRecovery` 기대200/실제500로1건 실패·종료1. 변경을 각각 따로 적용하고 finally에서 원복했다. 첫 시험의 탐지 실패는 위 기록을 유지하며 보강 시험으로 각 방어를 실제 탐지했다.
+
+- 원복 및 US4 지정 검증: `cd backend && ./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'` 종료0, Unit137·OwnershipIT5·CancelIT11(지정IT16) 실패/오류/skip0. 취소 후 원 키의201/Replay=true/CONFIRMED·Location·JSON 최초 값, GET CANCELLED 불변과 복구 후 USER_B 품절 키K2의 새201/false를 실제 HTTP·DB로 확인했다. US4는 기존 생성 재현 규칙이 이미 구현되어 추가 당시 GREEN이며 RED를 새로 주장하지 않는다.
+
+
+### 6단계 최종 인수 (2026-10-20, 구현 커밋 5b4019c)
+
+- `cd backend && ./gradlew verify`: 종료0, Unit137·일반IT136(기존120+Ownership5+Cancel11), 실패/오류/skip0. 실제 실행66초. test/integrationTest XML의 합계도 대조했다. 기존 Gradle10 비호환 deprecated 경고와 Mockito bootstrap classpath JVM 경고는 유지되며 새 버전 변경은 없다.
+- 독립 읽기 전용 리뷰: `282295b..5b4019c`를 실행 계획 스킬의 별도 리뷰 에이전트가 검토했다. 중요/경미 기능 결함 없음. 소유권404·본문/UUID·잠금 순서·트랜잭션·UPDATE0 재조회·롤백·정밀도·멱등 재현과 테스트 탐지력을 확인했다. 리뷰는 테스트를 독립 재실행한 증거가 아니다.
+- `docs/openapi.yaml`의 getReservation/cancelReservation과 수동 대조: 현재 응답의 id/resourceId/status/createdAt/cancelledAt 다섯 필드·CONFIRMED null·CANCELLED UTC timestamp,200 JSON,400/401/404/413/503 problem+json·code를 신규 IT/CLI 결과와 대조했다. 정상 생성 재현은201/Location/Idempotent-Replayed를 유지한다. 계약 변경 없음. 500은 기존 안전한 내부 오류 경로이며 정의되지 않은 오류 code를 추가하지 않았다. 자동 업무 계약 검증·429는 후속 단계다.
+- CLI 착수 시 `.env`에 ADMIN_PASSWORD 등 인증 변수가 없어 사전검사가 종료1로 중단했다(앱 기동/데이터 변경 전). 이후 이번 앱 프로세스에만 임시 난수 비밀번호를 환경 변수로 주입하고 `.env`는 수정하지 않았다. 실제 자격증명은 출력·기록하지 않았다.
+- `docker compose up -d postgres redis` 종료0. `.env`의 DB 접속값은 호스트 JVM에 별도 주입하고 `cd backend && ./gradlew bootRun --args=--spring.profiles.active=local`로127.0.0.1:8080에서 실행했다. health200 후 실제 curl을 호출했다. 요청마다 연결3초/전체10초, 비밀번호는 curl stdin config로 전달해 프로세스 인수/로그에 남기지 않았다. UTF-8·UTC이며 local 프로필 설정·실제 UTC 응답을 확인했다.
+
+| CLI 순서 | 실제 요청 | 응답 |
+| --- | --- | --- |
+| 1 | ADMIN POST /api/resources, capacity1 | 201 + Location |
+| 2 | USER_A GET /api/resources/{resourceId} | 200 |
+| 3 | USER_A POST /api/reservations, 새 key | 201 + Location + replayed=false |
+| 4 | 같은 key/대상 POST | 201 + 같은 Location/JSON + true |
+| 5 | USER_A GET 예약 | 200 CONFIRMED/cancelledAt null |
+| 6 | USER_A POST 예약/cancel, 본문 없음 | 200 CANCELLED/UTC 시각 |
+| 7 | 동일 취소 POST | 200, 첫 취소 JSON 동일 |
+| 8 | USER_B GET 예약 | 404 NOT_FOUND |
+| 9 | 취소 뒤 원 key POST | 201, 최초 CONFIRMED/Location/JSON + true |
+| 10 | USER_A GET 예약 | 200, 첫 취소 JSON 동일 |
+| 11 | USER_A GET 대상 | 200 available1 |
+
+CLI 대상=`fa3fb767-67f9-417c-9488-308559421629`. 개발 DB는 초기화·삭제하지 않았으며 이번 대상만 새로 생성하고 최종 상태를 SELECT했다. 결과 `capacity=1|available=1|CONFIRMED=0|total=1`이며 보존식을 만족한다. 앱 프로세스 그룹을 종료하고 이번 기동한 Compose 서비스를 `docker compose stop postgres redis`(종료0)로 정지했다. 8080 LISTEN 없음도 확인했다. PostgreSQL named volume 및 이번 CLI 데이터는 보존했다. IT는 계속 별도의 격리 DB를 사용했다.
+
+재현 명령은 README/007 quickstart의 local 기동 후 다음 형태다(인증 환경 변수의 실제 값은 기록하지 않음).
+
+```sh
+curl --connect-timeout 3 --max-time 10 --user "ADMIN:$ADMIN_PASSWORD" \
+  -H 'Content-Type: application/json' -d '{"name":"CLI 검증","capacity":1}' \
+  http://127.0.0.1:8080/api/resources
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  http://127.0.0.1:8080/api/resources/<대상-UUID>
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  -H 'Content-Type: application/json' -H 'Idempotency-Key: cli-새키' \
+  -d '{"resourceId":"<대상-UUID>"}' http://127.0.0.1:8080/api/reservations
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  http://127.0.0.1:8080/api/reservations/<예약-UUID>
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  -X POST http://127.0.0.1:8080/api/reservations/<예약-UUID>/cancel
+```
+
+4·9는 같은 생성 명령,7은 같은 취소 명령을 반복하고8은 USER_B로 조회한다. 최종 DB 검사는 `docker compose exec -T postgres sh -c 'exec psql -U "$POSTGRES_USER" -d reservation_local'`에서 이번 대상만 대상으로 resources와 reservations를 LEFT JOIN해 capacity/available/count(CONFIRMED)/count(전체)를 GROUP BY 단일 SELECT로 확인했다.
+
+미완료 범위: 이번 명세의 업무 구현·일반검증·CLI 인수는 완료했다. 실제 동시성 반복(7단계), Redis20/60초 및 장애(8단계), 자동 업무 계약·속성·PIT/부하/외부CI는 후속이다. 실제 취소 QueryTimeoutException은 테스트 주입으로만 검증했으며 DB 중단·실제 timeout 반복과 구분한다. 다음 한 작업은 7단계 경쟁 시나리오 명세·기대 결과 확정이다.
+
+최종 문서 검증: 변경 Markdown13개(공백·한글 경로 포함)의 로컬 링크 오류0, 작업32/32·미완료0, test/integrationTest XML 합계137/136·실패/오류/skip0을 대조했다. `git diff --check` 종료0. 최종 문서 수정 이후 backend 소스는 검증한 구현 커밋5b4019c와 동일하다. 사전·사후 `.specify/extensions.yml` 부재를 확인하여 확장 훅은 없다.
+
+
+## 2026-10-20 PR #6 적대적 리뷰와 계약 회귀 보완
+
+- 사용자 지시: `develop` 대상 GitHub PR 생성 → 적대적 코드 리뷰 → 문제 없을 때 결과 코멘트·병합. `git fetch origin`으로 대상 d5c05ee96859e773d040909f10a96b74696bf536을 확인하고 `git push -u origin feature/reservation-cancel`, `gh pr create --base develop --head feature/reservation-cancel --body-file ...`를 실행했다. [PR #6](https://github.com/joypeb/limited-booking-test/pull/6), 최초 head bf27a30a3de0b3b9276399f9aa4bf55bf58ed4d0. 작업 트리 clean, 초기 GitHub 체크 등록0, mergeState CLEAN이다. 원격 작업은 이번 최신 지시로 승인되었다.
+- 리뷰 절차: `review` 스킬의 SQL/수량·경쟁/소유권·타입/시각·계약 점검, 독립 적대적 검토 및 testing/maintainability·security/API/performance 전문 검토를 수행했다. Codex CLI0.163.0의 읽기 전용 적대적 exec와 `codex review --base origin/develop` 구조화 검토도 각각 종료0. 외부 리뷰 댓글은0이었다. 새 코드의 내부 사용자 영향과 실제 재현으로 판정했고 후속7·8단계 부재는 결함으로 세지 않았다.
+- 발견 P2/confidence9: 원시 `getRequestURI()` 접두사·접미사로 취소 본문을 검사하는 필터와 MVC 경로 디코딩 사이의 차이. `/api/reservations/{id}/%63ancel`, `/api/%72eservations/{id}/cancel`에 인증 소유자와 `{}` 본문을 보내면 필터를 우회하여 Controller가 취소를 실행했다. 독립 적대적·API/보안 리뷰와 Codex CLI가 같은 결함을 지적했다.
+- RED: `cd backend && ./gradlew integrationTest --tests '*ReservationCancelIT.encodedCancelPathsCannotBypassEmptyBodyContract'` 종료1, 파라미터2건 모두 실패. 두 경로 모두 기대400/실제200, 기대CONFIRMED/실제CANCELLED, cancelledAt null 위반, 기대available0/실제1을 실제 HTTP·PostgreSQL로 관측했다. 컴파일 성공 후 기능 실패이며 미인가 사용자 권한우회라고 과장하지 않는다. 소유자의 잘못된 요청을 잘못 처리한 계약 결함이다.
+- 수정: `ReservationController.cancel`이 Handler 선택 후 인증/상한 필터에서 전달한 캐시 본문을 직접 검사하고 비어 있지 않으면 Service 호출 전에 IllegalArgumentException→400 INVALID_REQUEST로 거부한다. 기존 raw 필터를 유지해 일반 요청 동작·검증 순서에 회귀를 만들지 않는다. 경로 자체를 금지하거나 OpenAPI/도메인 정책을 바꾸지 않는다.
+- GREEN: `./gradlew integrationTest --tests '*ReservationCancelIT' --tests '*ReservationOwnershipIT' --tests '*SecurityIT'` 종료0, 24건 실패/오류/skip0. 이후 같은 인코딩 경로의 빈 본문 정상200/CANCELLED/available1 회귀도 추가했다.
+- 최종 `./gradlew verify` 종료0, Unit137·일반IT138(기존120+Ownership5+Cancel13), 실패/오류/skip0. 실제70초. XML 합계도137/138로 대조했다. 추가된 파라미터2건은 본문{}400·CONFIRMED/null/available0 불변과 동일 경로 빈 본문200·정상복구를 함께 검증한다.
+- 수정 이후 최신 작업 트리의 Codex 구조화 리뷰는 수정이 필요한 추가 결함 없음으로 종료했다. 초기 적대적 결과의 P2는 위 RED→수정→GREEN/전체verify로 해소했다. 테스트/유지보수 전문 검토는 추가 발견 없음이며 소유권·잠금·롤백·시각·최초 응답 재현에서도 추가 확정 결함이 없다.
+- 계약 연결: 007 FR-003·FR-004와 계획서4.1·5.3의 기존 본문 없음/오류 무변경 요구를 확장 경로에도 적용한다. 기준 계획서·도메인 지식·계약 보조 문서·현재 테스트 수를 동기화했다. OpenAPI 정본·스키마·의존성 변경 없음.
+
+리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.

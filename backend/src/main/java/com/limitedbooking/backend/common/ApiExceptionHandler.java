@@ -113,6 +113,12 @@ public class ApiExceptionHandler {
         );
     }
 
+    @ExceptionHandler(com.limitedbooking.backend.reservation.ReservationService.ReservationNotFoundException.class)
+    public ResponseEntity<ProblemResponse> handleReservationNotFound(Exception exception, HttpServletRequest request) {
+        return problemEntity(HttpStatus.NOT_FOUND, "예약을 찾을 수 없습니다",
+                "요청한 예약을 찾을 수 없습니다.", request, "NOT_FOUND");
+    }
+
     @ExceptionHandler({
             TransientDataAccessException.class,
             DataAccessResourceFailureException.class,

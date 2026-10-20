@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 예약 조회·취소·실제 경쟁 반복·Redis 요청 제한은6~8단계 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 실제 경쟁 반복·Redis 요청 제한은7~8단계 후속이다.
 
 ## 로컬 환경
 
@@ -63,12 +63,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
 | `./gradlew test` | Spring 없는 Unit137 (기존116+생성 조정/분류21) |
-| `./gradlew verify` | Unit137+일반IT120 (기존92+생성28) |
+| `./gradlew verify` | Unit137+일반IT138 (기존92+생성28+조회·취소18) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
 | `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit137+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit137+일반IT120+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit137+일반IT120+Property3; 이번 단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성상 총263; 이번 단계 재실행 없음 |
+| `./gradlew verifyContract` | 구성상 Unit137+일반IT138+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit137+일반IT138+Property3; 이번 단계 재실행 없음 |
+| `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
@@ -83,7 +83,7 @@ XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/test
 
 Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
 
-도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성 쓰기 SQL·멱등 응답·전체 롤백을5단계에서 검증했다. 취소 쓰기·소유권·실제 경쟁 반복·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
+도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성 쓰기 SQL·멱등 응답·전체 롤백을5단계에서 검증했다. 취소 쓰기·소유권·롤백은6단계에서 검증했다. 실제 경쟁 반복·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
 
 최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합은 일반IT4/총13이며, 이후 종료 회귀로14건, PR 적대적 리뷰의 본문 정체 회귀로15건이 됐다.
 
@@ -138,7 +138,7 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
   -d '{"resourceId":"<생성한 대상 UUID>"}' http://127.0.0.1:8080/api/reservations
 ```
 
-같은 명령을 다시 보내면 최초 성공을 재현한다. Location의 예약 GET과 취소 API는 아직 미구현이며 다음6단계다. 위 curl은 로컬 사용 안내이고 이번 실행은 격리 Testcontainers HTTP로 검증했다.
+같은 명령을 다시 보내면 최초 성공을 재현한다. Location의 예약 GET과 취소 API는 아래6단계에서 구현했다. 위 curl은 로컬 사용 안내이고 이번 실행은 격리 Testcontainers HTTP로 검증했다.
 
 ```sh
 ./gradlew test integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT'
@@ -146,3 +146,20 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 ```
 
 정확한 실행 결과와 미검증 범위는 [5단계 증거](docs/test-evidence.md) 및 [검증 안내](specs/006-reservation-create/quickstart.md)를 따른다. 실제 경쟁 반복(7단계), Redis 제한(8단계), 업무 자동 계약·속성·변이·부하는 후속이다.
+
+
+## 6단계 소유자 조회·취소
+
+[ReservationController](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java)의 `GET /api/reservations/{id}`와 `POST /api/reservations/{id}/cancel`은 소유자의 현재 상태를 반환한다. 타인 예약은 관리자에게도404다. 확정 상태의 `cancelledAt`은 null을 포함하고, 취소되면 저장된 UTC 취소 시각을 반환한다. 취소 본문은 비어 있어야 한다.
+
+```sh
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  http://127.0.0.1:8080/api/reservations/<예약-UUID>
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  -X POST http://127.0.0.1:8080/api/reservations/<예약-UUID>/cancel
+cd backend
+./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'
+./gradlew verify
+```
+
+취소와 수량1 복구는 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)의 단일 트랜잭션으로 커밋한다. 중복 취소는 시각·수량을 유지한다. 원래 생성 키의 재요청은 최초201/CONFIRMED를 재현하고 GET은 CANCELLED다. 지정IT18·일반verify(Unit137/IT138)·local CLI 11단계를 통과했다. [실행 증거](docs/test-evidence.md), [6단계 안내](specs/007-reservation-cancel/quickstart.md)를 참조한다. 다음은7단계 실제 경쟁 검증이다.

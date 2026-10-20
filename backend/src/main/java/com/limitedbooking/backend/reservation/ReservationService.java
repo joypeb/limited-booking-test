@@ -11,6 +11,7 @@ public class ReservationService {
     public ReservationService(ReservationWriter writer, ReservationRepository reservations) {
         this.writer = writer; this.reservations = reservations;
     }
+    public static final class ReservationNotFoundException extends RuntimeException {}
     public static final class IdempotencyConflictException extends RuntimeException {}
     public CreateReservationResult create(UUID userId, UUID resourceId, IdempotencyKey key) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -28,6 +29,18 @@ public class ReservationService {
             return replay(committed, resourceId);
         }
     }
+    public ReservationView get(UUID userId, UUID reservationId) {
+        return ReservationView.from(reservations.findByIdAndUser(reservationId, userId)
+                .orElseThrow(ReservationNotFoundException::new));
+    }
+
+    public ReservationView cancel(UUID userId, UUID reservationId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("예약 취소 Service에는 상위 트랜잭션을 사용할 수 없습니다.");
+        }
+        return writer.cancel(userId, reservationId);
+    }
+
     static CreateReservationResult replay(StoredReservation stored, UUID resourceId) {
         if (!stored.resourceId().equals(resourceId)) throw new IdempotencyConflictException();
         return new CreateReservationResult(CreatedReservationView.from(stored), true);
