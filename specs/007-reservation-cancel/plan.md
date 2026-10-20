@@ -1,10 +1,10 @@
 # 구현 계획: 소유자의 예약 조회·취소
 
-**작업 Git 브랜치**: 설계 `docs/reservation-cancel-spec`, 구현 예정 `feature/reservation-cancel` | **작성일**: 2026-10-20 | **명세**: [spec.md](spec.md)
+**작업 Git 브랜치**: 설계 `docs/reservation-cancel-spec`, 구현 `feature/reservation-cancel` | **작성일**: 2026-10-20 | **명세**: [spec.md](spec.md)
 
 **입력**: `specs/007-reservation-cancel/spec.md`, 로컬 개발 계획 2~5절(5.3 취소 흐름)·7절 6단계.
 
-**상태**: Phase 0 조사와 Phase 1 설계까지 완료했다. 코드·테스트는 아직 구현하지 않았고 실행 검증도 하지 않았다. setup-plan이 출력한 `BRANCH=007-reservation-cancel`은 기능 디렉터리에서 나온 값일 뿐, 실제 Git 브랜치가 아니다.
+**상태**: Phase 0/1 설계와 전체 구현·검증을 완료했다(2026-10-20). 실제 브랜치는 `feature/reservation-cancel`이며 구현 커밋은 `5b4019c`다. 신규 OwnershipIT5·CancelIT11, 전체 Unit137·일반IT136과 local curl11단계를 통과했다. [실행 증거](../../docs/test-evidence.md)를 따른다. 아래 설계 시점 상태·예정 구조는 당시 기준이며 현재 구현은 소스와 실행 증거를 따른다.
 
 ## 요약
 
@@ -18,7 +18,7 @@
 - **검증**: Jupiter/AssertJ/Testcontainers 기반 실제 PostgreSQL, RANDOM_PORT HTTP와 실제 Basic Authorization. 신규 `ReservationCancelIT`·`ReservationOwnershipIT`, 필요하면 순수 `ReservationServiceTest`·`ReservationWriterTest` 보강.
 - **제약**: 트랜잭션 시작 시 `SET LOCAL lock_timeout '2s'`·`statement_timeout '5s'`. 풀 최대 10·획득 대기 3초를 신규 IT에도 명시. 취소 본문 비어 있지 않으면 400(기존 필터), 8KiB 초과 413.
 - **규모/범위**: 단건 조회·취소만. 목록·재활성화·삭제·경쟁 반복(7단계)·Redis 제한(8단계) 제외.
-- **실제 상태(2026-10-20 확인)**: `ReservationStatus`·`StoredReservation`·`CancellationDecision`(Unit 검증만, 요청 경로 미연동)·`findByUserAndKey`·`decrementIfAvailable`·취소 본문 검증 필터는 있다. GET/cancel Controller·Service·Writer 메서드, `ReservationView`, 소유자 조회 SQL, 대상 잠금/복구 SQL은 없다.
+- **설계 당시 상태(2026-10-20 구현 전 확인)**: `ReservationStatus`·`StoredReservation`·`CancellationDecision`(Unit 검증만, 요청 경로 미연동)·`findByUserAndKey`·`decrementIfAvailable`·취소 본문 검증 필터는 있다. GET/cancel Controller·Service·Writer 메서드, `ReservationView`, 소유자 조회 SQL, 대상 잠금/복구 SQL은 없다.
 
 ## 헌법 점검
 

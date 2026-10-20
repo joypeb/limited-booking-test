@@ -32,7 +32,7 @@
 - [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백의 구현·검증과 취소·경쟁의 설계 지식.
 - [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)은 후속이다.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
-- 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소·실제 경쟁·Redis 요청 제한(6~8단계)은 후속이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
+- 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계 구현·검증 완료, 실제 경쟁·Redis 제한(7~8단계)은 후속이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
 - [2단계 요구사항 검토 목록](../specs/003-define-db-schema/checklists/database.md): 저장 제약·조회와 테스트 격리·재현성의 요구사항 품질을 검토한다. 사용자 요청으로34개 항목의 요구사항 품질을 평가했고 CHK022 실패 처리도 문서 보완 후 충족으로 판단했다. 체크는 구현 완료 표시가 아니다.
@@ -62,13 +62,20 @@
 
 2026-10-13 1단계 수행 후 애플리케이션은 backend/, 기본 패키지는 com.limitedbooking.backend이며 Java25·Boot4.1.1·Gradle9.7.1을 유지했다. MVC·Security·JDBC·Redis·Flyway·Actuator 및 검증 의존성을 추가했다. [실행 안내](../README.md), [버전](../docs/versions.md), [실행 증거](../docs/test-evidence.md)에 실제 상태를 연결한다.
 
-Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. 1~3단계에 이어 2026-10-17 4단계 로컬 Basic 인증·권한(`SecurityConfig`, `LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 엄격 JSON 역직렬화 및 공통 `problem+json` 오류 처리(`ApiExceptionHandler`), UTC `Clock`(`ClockConfig`), 예약 대상 생성·단건 조회(`ResourceRepository.insert`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT` 6건, `ResourceApiIT` 8건)를 구현하고 `./gradlew verify`(Unit 116건 + 일반 IT 92건, 실패·오류·skip 0건)를 통과했다. 5단계 예약 생성·멱등성·원자적 실패 복구를 추가 구현했다. 예약 조회·취소·실제 동시성 반복·Redis 요청 제한(6~8단계)은 후속이다.
+Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도구 최소 실행을 확인했다. 1~3단계에 이어 2026-10-17 4단계 로컬 Basic 인증·권한(`SecurityConfig`, `LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 엄격 JSON 역직렬화 및 공통 `problem+json` 오류 처리(`ApiExceptionHandler`), UTC `Clock`(`ClockConfig`), 예약 대상 생성·단건 조회(`ResourceRepository.insert`, `ResourceService`, `ResourceController`)와 통합 테스트(`SecurityIT` 6건, `ResourceApiIT` 8건)를 구현하고 `./gradlew verify`(Unit 116건 + 일반 IT 92건, 실패·오류·skip 0건)를 통과했다. 5단계 예약 생성·멱등성·원자적 실패 복구를 추가 구현했다. 예약 조회·취소는6단계 검증 완료, 실제 동시성 반복·Redis 제한(7~8단계)은 후속이다.
 
 `knowledge/`는 지속적인 도메인 지식·규칙을 보관한다. 현재 [OpenAPI 초안](../docs/openapi.yaml), [결정 기록](../docs/decisions.md), [문서 검토 증거](../docs/test-evidence.md)를 작성했다. 이름 공백 범위는 Java strip으로 확정해 계약 문서 인수를 마쳤고, 본인 설명은 질의·보완 뒤 사용자 확인으로 T025를 처리해 0단계 문서·학습 인수를 마쳤다. [버전 기록](../docs/versions.md)은 작성·실행 대조했고, docs/performance.md는 후속 부하 단계에서 작성할 예정이다. 문서 작성과 실제 기능·HTTP·DB·Redis 검증을 구분한다.
 
-4단계 `./gradlew verify` 기준 일반 Unit은 116건(업무 113 + 프로브 3), 일반 IT는 92건(1단계 6 + 2단계 72 + 4단계 `SecurityIT` 6·`ResourceApiIT` 8)이며 실패·오류·skip 0이다. `ResourceRules`는 4단계 실제 요청 경로에 연동 완료되었으며 `IdempotencyKey`는5단계 생성 경로에 연동했고 `CancellationDecision`은6단계 취소 연동 후속이다.
+4단계 `./gradlew verify` 기준 일반 Unit은 116건(업무 113 + 프로브 3), 일반 IT는 92건(1단계 6 + 2단계 72 + 4단계 `SecurityIT` 6·`ResourceApiIT` 8)이며 실패·오류·skip 0이다. `ResourceRules`는 4단계 실제 요청 경로에 연동 완료되었으며 `IdempotencyKey`는5단계 생성 경로에 연동했고 `CancellationDecision`은6단계 취소의 이미 취소됨 분기에 연동·검증했다.
 
 
 2026-10-19 5단계: 생성 Controller/Service/Writer·Repository 조건UPDATE/INSERT RETURNING·구조화 유일 위반 분류기를 구현했다. 전체 Unit137과 생성3IT28의 지정 인수를 통과했다. 최종 일반verify의 현재 수/결과는 [실행 증거](../docs/test-evidence.md)를 따른다. 실제 경쟁/취소/Redis/심화는 후속이다.
 
 최종 일반verify: Unit137·일반IT120, 실패·오류·skip0. 상세 명령/환경/한계는 docs/test-evidence.md에 기록했다.
+
+
+## 6단계 소유자 조회·취소 (2026-10-20)
+
+- [명세](../specs/007-reservation-cancel/spec.md)·[계획](../specs/007-reservation-cancel/plan.md)·[작업](../specs/007-reservation-cancel/tasks.md): 소유자 조회·원자적 취소·중복 취소·복구 장애 롤백·취소 후 생성 재요청을 구현·검증했다.
+- [조사](../specs/007-reservation-cancel/research.md)·[값 모델](../specs/007-reservation-cancel/data-model.md)·[계약](../specs/007-reservation-cancel/contracts/reservation-cancel-contract.md)·[검증 안내](../specs/007-reservation-cancel/quickstart.md)·[명세 품질16개](../specs/007-reservation-cancel/checklists/requirements.md)를 연결한다. 체크리스트는 구현 완료 표시와 구분한다.
+- 신규 OwnershipIT5·CancelIT11, 최종 일반 verify Unit137·일반IT136 실패/오류/skip0. local 프로필 curl11단계와 최종 DB 보존식을 확인했다. 상세 실행·고의 변경 탐지는 [증거](../docs/test-evidence.md), 구현 연결은 [예약](domain/reservation.md)·[보안](domain/security.md)·[대상](domain/resource.md)을 따른다. 실제 경쟁 반복·Redis·심화·부하는 후속이다.

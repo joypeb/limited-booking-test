@@ -109,3 +109,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 2026-10-19 예약 생성 연동
 
 5단계 ResourceRepository.decrementIfAvailable은 available>0 조건 UPDATE를 제공하며 별도 예약 Writer에서 INSERT와 함께 커밋한다. ReservationCreateIT/IdempotencyIT/ReservationRollbackIT에서 수량 보존·재현 무변경·실패 전체 롤백을 실제 PostgreSQL로 확인했다. 수량 복구 취소는6단계 후속이다. 실행 근거는 [증거](../../docs/test-evidence.md)다.
+
+
+### 2026-10-20 취소 수량 복구 연동
+
+[ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)에 `lockForUpdate`(대상 행 SELECT FOR UPDATE)와 `incrementIfBelowCapacity`(available<capacity 조건 +1)를 추가했다. 예약 Writer는 대상 잠금을 예약 상태 갱신보다 먼저 얻고 상태 변경1건일 때만 복구한다. 복구0건·예외는 상태와 수량을 전체 롤백한다. [ReservationCancelIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationCancelIT.java)의 실제 PostgreSQL·HTTP 검증과 단일 SELECT 보존식 검사로 확인했다. 중복 취소는 추가 복구하지 않는다. 실제 경쟁 반복은7단계 후속이다.

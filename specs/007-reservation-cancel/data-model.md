@@ -24,7 +24,7 @@ stateDiagram-v2
   CANCELLED --> CANCELLED: 중복 취소 (변경 없음)
 ```
 
-## Repository 추가 (예정)
+## Repository 추가 (구현·검증 완료)
 - `ReservationRepository.findByIdAndUser(id, userId): Optional<StoredReservation>`
 - `ReservationRepository.markCancelled(id, userId, cancelledAt): int` — `status='CONFIRMED'` 조건
 - `ResourceRepository.lockForUpdate(resourceId)` — `SELECT id FROM resources WHERE id=:id FOR UPDATE`

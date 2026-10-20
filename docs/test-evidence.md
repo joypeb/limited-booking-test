@@ -1076,3 +1076,51 @@ UUID 수정 관련 GREEN: ./gradlew integrationTest --tests '*ReservationCreateI
 - T021 보강 고의 변경: 조기 반환 제거→`alreadyCancelledDoesNotWaitForResourceLock` 기대200/실제503로1건 실패·종료1. status 조건 제거→`staleConfirmedReadCannotRepeatStatusUpdateOrRecovery` 기대200/실제500로1건 실패·종료1. 변경을 각각 따로 적용하고 finally에서 원복했다. 첫 시험의 탐지 실패는 위 기록을 유지하며 보강 시험으로 각 방어를 실제 탐지했다.
 
 - 원복 및 US4 지정 검증: `cd backend && ./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'` 종료0, Unit137·OwnershipIT5·CancelIT11(지정IT16) 실패/오류/skip0. 취소 후 원 키의201/Replay=true/CONFIRMED·Location·JSON 최초 값, GET CANCELLED 불변과 복구 후 USER_B 품절 키K2의 새201/false를 실제 HTTP·DB로 확인했다. US4는 기존 생성 재현 규칙이 이미 구현되어 추가 당시 GREEN이며 RED를 새로 주장하지 않는다.
+
+
+### 6단계 최종 인수 (2026-10-20, 구현 커밋 5b4019c)
+
+- `cd backend && ./gradlew verify`: 종료0, Unit137·일반IT136(기존120+Ownership5+Cancel11), 실패/오류/skip0. 실제 실행66초. test/integrationTest XML의 합계도 대조했다. 기존 Gradle10 비호환 deprecated 경고와 Mockito bootstrap classpath JVM 경고는 유지되며 새 버전 변경은 없다.
+- 독립 읽기 전용 리뷰: `282295b..5b4019c`를 실행 계획 스킬의 별도 리뷰 에이전트가 검토했다. 중요/경미 기능 결함 없음. 소유권404·본문/UUID·잠금 순서·트랜잭션·UPDATE0 재조회·롤백·정밀도·멱등 재현과 테스트 탐지력을 확인했다. 리뷰는 테스트를 독립 재실행한 증거가 아니다.
+- `docs/openapi.yaml`의 getReservation/cancelReservation과 수동 대조: 현재 응답의 id/resourceId/status/createdAt/cancelledAt 다섯 필드·CONFIRMED null·CANCELLED UTC timestamp,200 JSON,400/401/404/413/503 problem+json·code를 신규 IT/CLI 결과와 대조했다. 정상 생성 재현은201/Location/Idempotent-Replayed를 유지한다. 계약 변경 없음. 500은 기존 안전한 내부 오류 경로이며 정의되지 않은 오류 code를 추가하지 않았다. 자동 업무 계약 검증·429는 후속 단계다.
+- CLI 착수 시 `.env`에 ADMIN_PASSWORD 등 인증 변수가 없어 사전검사가 종료1로 중단했다(앱 기동/데이터 변경 전). 이후 이번 앱 프로세스에만 임시 난수 비밀번호를 환경 변수로 주입하고 `.env`는 수정하지 않았다. 실제 자격증명은 출력·기록하지 않았다.
+- `docker compose up -d postgres redis` 종료0. `.env`의 DB 접속값은 호스트 JVM에 별도 주입하고 `cd backend && ./gradlew bootRun --args=--spring.profiles.active=local`로127.0.0.1:8080에서 실행했다. health200 후 실제 curl을 호출했다. 요청마다 연결3초/전체10초, 비밀번호는 curl stdin config로 전달해 프로세스 인수/로그에 남기지 않았다. UTF-8·UTC이며 local 프로필 설정·실제 UTC 응답을 확인했다.
+
+| CLI 순서 | 실제 요청 | 응답 |
+| --- | --- | --- |
+| 1 | ADMIN POST /api/resources, capacity1 | 201 + Location |
+| 2 | USER_A GET /api/resources/{resourceId} | 200 |
+| 3 | USER_A POST /api/reservations, 새 key | 201 + Location + replayed=false |
+| 4 | 같은 key/대상 POST | 201 + 같은 Location/JSON + true |
+| 5 | USER_A GET 예약 | 200 CONFIRMED/cancelledAt null |
+| 6 | USER_A POST 예약/cancel, 본문 없음 | 200 CANCELLED/UTC 시각 |
+| 7 | 동일 취소 POST | 200, 첫 취소 JSON 동일 |
+| 8 | USER_B GET 예약 | 404 NOT_FOUND |
+| 9 | 취소 뒤 원 key POST | 201, 최초 CONFIRMED/Location/JSON + true |
+| 10 | USER_A GET 예약 | 200, 첫 취소 JSON 동일 |
+| 11 | USER_A GET 대상 | 200 available1 |
+
+CLI 대상=`fa3fb767-67f9-417c-9488-308559421629`. 개발 DB는 초기화·삭제하지 않았으며 이번 대상만 새로 생성하고 최종 상태를 SELECT했다. 결과 `capacity=1|available=1|CONFIRMED=0|total=1`이며 보존식을 만족한다. 앱 프로세스 그룹을 종료하고 이번 기동한 Compose 서비스를 `docker compose stop postgres redis`(종료0)로 정지했다. 8080 LISTEN 없음도 확인했다. PostgreSQL named volume 및 이번 CLI 데이터는 보존했다. IT는 계속 별도의 격리 DB를 사용했다.
+
+재현 명령은 README/007 quickstart의 local 기동 후 다음 형태다(인증 환경 변수의 실제 값은 기록하지 않음).
+
+```sh
+curl --connect-timeout 3 --max-time 10 --user "ADMIN:$ADMIN_PASSWORD" \
+  -H 'Content-Type: application/json' -d '{"name":"CLI 검증","capacity":1}' \
+  http://127.0.0.1:8080/api/resources
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  http://127.0.0.1:8080/api/resources/<대상-UUID>
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  -H 'Content-Type: application/json' -H 'Idempotency-Key: cli-새키' \
+  -d '{"resourceId":"<대상-UUID>"}' http://127.0.0.1:8080/api/reservations
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  http://127.0.0.1:8080/api/reservations/<예약-UUID>
+curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
+  -X POST http://127.0.0.1:8080/api/reservations/<예약-UUID>/cancel
+```
+
+4·9는 같은 생성 명령,7은 같은 취소 명령을 반복하고8은 USER_B로 조회한다. 최종 DB 검사는 `docker compose exec -T postgres sh -c 'exec psql -U "$POSTGRES_USER" -d reservation_local'`에서 이번 대상만 대상으로 resources와 reservations를 LEFT JOIN해 capacity/available/count(CONFIRMED)/count(전체)를 GROUP BY 단일 SELECT로 확인했다.
+
+미완료 범위: 이번 명세의 업무 구현·일반검증·CLI 인수는 완료했다. 실제 동시성 반복(7단계), Redis20/60초 및 장애(8단계), 자동 업무 계약·속성·PIT/부하/외부CI는 후속이다. 실제 취소 QueryTimeoutException은 테스트 주입으로만 검증했으며 DB 중단·실제 timeout 반복과 구분한다. 다음 한 작업은 7단계 경쟁 시나리오 명세·기대 결과 확정이다.
+
+최종 문서 검증: 변경 Markdown13개(공백·한글 경로 포함)의 로컬 링크 오류0, 작업32/32·미완료0, test/integrationTest XML 합계137/136·실패/오류/skip0을 대조했다. `git diff --check` 종료0. 최종 문서 수정 이후 backend 소스는 검증한 구현 커밋5b4019c와 동일하다. 사전·사후 `.specify/extensions.yml` 부재를 확인하여 확장 훅은 없다.

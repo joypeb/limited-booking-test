@@ -69,11 +69,11 @@ description: "6단계 소유자의 예약 조회·취소 작업 목록"
 
 ## Phase 7: Polish & 마감
 
-- [ ] T028 `cd backend && ./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'`와 `./gradlew verify`를 실행한다. 종료 코드·Unit/IT 수·실패/skip 0을 확인한다.
-- [ ] T029 quickstart.md의 CLI 1회 전체 실행(local 프로필, curl)을 수행하고 명령·응답 요약을 기록한다.
-- [ ] T030 [P] docs/test-evidence.md에 실행 증거를 기록하고 knowledge/domain/reservation.md(구현됨·검증 근거, CancellationDecision 연동)를 갱신한다. 계획서 7절 6단계 체크박스는 실제 검증된 항목만 표시하고, 현재 상태 문단을 갱신한다.
-- [ ] T031 [P] docs/openapi.yaml과 실제 응답(필드·코드)을 대조하고, 차이가 있으면 계약 변경 없이 구현을 고친다.
-- [ ] T032 검증 대상별 로컬 커밋을 만든다(commit.md). push·병합은 사용자 지시가 있을 때만 한다.
+- [X] T028 `cd backend && ./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'`와 `./gradlew verify`를 실행한다. 종료 코드·Unit/IT 수·실패/skip 0을 확인한다.
+- [X] T029 quickstart.md의 CLI 1회 전체 실행(local 프로필, curl)을 수행하고 명령·응답 요약을 기록한다.
+- [X] T030 [P] docs/test-evidence.md에 실행 증거를 기록하고 knowledge/domain/reservation.md(구현됨·검증 근거, CancellationDecision 연동)를 갱신한다. 계획서 7절 6단계 체크박스는 실제 검증된 항목만 표시하고, 현재 상태 문단을 갱신한다.
+- [X] T031 [P] docs/openapi.yaml과 실제 응답(필드·코드)을 대조하고, 차이가 있으면 계약 변경 없이 구현을 고친다.
+- [X] T032 검증 대상별 로컬 커밋을 만든다(commit.md). push·병합은 사용자 지시가 있을 때만 한다.
 
 ## Dependencies & Execution Order
 
@@ -97,3 +97,7 @@ description: "6단계 소유자의 예약 조회·취소 작업 목록"
 
 - T021: 두 방어를 각각 제거한 최초 일반 중복 취소 시험은 통과했다. 보강 후 조기 반환 제거는 `alreadyCancelledDoesNotWaitForResourceLock`에서 기대200/실제503, status 조건 제거는 `staleConfirmedReadCannotRepeatStatusUpdateOrRecovery`에서 기대200/실제500으로 각각 실패했다. 모두 원복하고 재검증한다. 두 방어의 개별 탐지를 위해 T021 기대 실패 사례를 확장했으며 도메인 계약은 유지한다.
 - T020·T022~T027은 US2 구현의 동작을 추가 확인하므로 최초 GREEN이면 이를 명시하고 고의 변경 탐지로 보완한다.
+
+### 최종 실행 상태 (2026-10-20)
+
+32/32 완료. 구현 로컬 커밋 `5b4019c`; 지정 Unit137/IT16, 최종 verify Unit137/일반IT136, 실패/오류/skip0. local CLI11단계 및 DB 최종 보존식을 확인했다. 전체 변경의 독립 코드 리뷰에서 중요/경미 기능 결함 없음. 세부 명령·고의 변경·원복·계획 조정은 docs/test-evidence.md와 docs/decisions.md에 기록했다. 구현 브랜치는 유지하며 외부 push·구현 병합은 하지 않는다. `.specify/extensions.yml`이 없어 사전/사후 확장 훅은 없다.
