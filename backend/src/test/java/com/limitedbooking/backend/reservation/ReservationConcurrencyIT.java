@@ -255,6 +255,102 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         snapshot(target,1,1,1); report();
     }
 
+    @RepeatedTest(10) void C05_tenCancellationsRestoreExactlyOnce(RepetitionInfo info) throws Exception {
+        begin("C05",info); var target=resource(1); var id=confirmed(target);
+        var before=JSON.readTree(get(id).body());
+        assertThat(before.get("cancelledAt").isNull()).isTrue();
+        List<Callable<HttpResponse<String>>> jobs=IntStream.range(0,10).mapToObj(i -> (Callable<HttpResponse<String>>)()->cancel(id)).toList();
+        var responses=run(jobs); var first=JSON.readTree(responses.getFirst().body());
+        for(var response:responses) {
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().firstValue("Content-Type").orElseThrow()).startsWith("application/json");
+            assertThat(JSON.readTree(response.body())).isEqualTo(first);
+        }
+        assertThat(first.size()).isEqualTo(5);
+        assertThat(first.get("id").asString()).isEqualTo(id.toString());
+        assertThat(first.get("resourceId").asString()).isEqualTo(target.toString());
+        assertThat(first.get("status").asString()).isEqualTo("CANCELLED");
+        assertThat(first.get("createdAt")).isEqualTo(before.get("createdAt"));
+        assertThat(first.get("cancelledAt").asString()).endsWith("Z");
+        var stored=reservations.findByIdAndUser(id,TestData.USER_A_ID).orElseThrow();
+        assertThat(Instant.parse(first.get("cancelledAt").asString())).isEqualTo(stored.cancelledAt());
+        assertThat(events.all().stream().filter(e -> e.phase().equals("cancel-update")&&e.detail().equals("1"))).hasSize(1);
+        assertThat(events.all().stream().filter(e -> e.phase().equals("restore"))).hasSize(1);
+        snapshot(target,1,1,0); report();
+    }
+    void mixedResult(UUID target,UUID old,List<HttpResponse<String>> responses,boolean expectSuccess,String key) throws Exception {
+        var creation=responses.getFirst(); var cancellation=responses.get(1);
+        assertThat(cancellation.statusCode()).isEqualTo(200);
+        var cancelled=JSON.readTree(cancellation.body());
+        assertThat(cancelled.get("status").asString()).isEqualTo("CANCELLED");
+        assertThat(cancelled.get("id").asString()).isEqualTo(old.toString());
+        assertThat(cancelled.get("cancelledAt").isNull()).isFalse();
+        assertThat(JSON.readTree(get(old).body())).isEqualTo(cancelled);
+        if(expectSuccess) {
+            assertThat(creation.statusCode()).isEqualTo(201);
+            var created=JSON.readTree(creation.body());
+            assertThat(created.get("status").asString()).isEqualTo("CONFIRMED");
+            assertThat(created.get("id").asString()).isNotEqualTo(old.toString());
+            snapshot(target,0,2,1);
+        } else {
+            problem(creation,409,"SOLD_OUT"); snapshot(target,1,1,0);
+            event("before-retry",String.valueOf(lastSnapshot));
+            assertThat(reservations.findByUserAndKey(TestData.USER_A_ID,key)).isEmpty();
+            var retry=create(target,"USER_A",key); assertThat(retry.statusCode()).isEqualTo(201);
+            assertThat(retry.headers().firstValue("Idempotent-Replayed")).contains("false");
+            assertThat(JSON.readTree(retry.body()).get("id").asString()).isNotEqualTo(old.toString());
+            snapshot(target,0,2,1); event("after-retry",String.valueOf(lastSnapshot));
+        }
+        assertThat(reservations.findByIdAndUser(old,TestData.USER_A_ID).orElseThrow().status()).isEqualTo(ReservationStatus.CANCELLED);
+    }
+    @RepeatedTest(10) void C06_createCancelRaceAllowsOnlyTwoStates(RepetitionInfo info) throws Exception {
+        begin("C06",info); var target=resource(1); var old=confirmed(target);
+        var responses=run(List.of(creation(target,"C06"),()->cancel(old)));
+        mixedResult(target,old,responses,responses.getFirst().statusCode()==201,"C06"); report();
+    }
+    @RepeatedTest(10) void C09_committedCancellationPrecedesCreateDecision(RepetitionInfo info) throws Exception {
+        begin("C09",info); var target=resource(1); var old=confirmed(target); var wait=gate(1);
+        var first=new AtomicBoolean(true);
+        doAnswer(call -> {
+            var found=call.callRealMethod(); event("lookup", "empty");
+            if(first.compareAndSet(true,false)) {
+                assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+                event("create-wait","no transaction"); wait.awaitRelease(); event("create-released","after cancel commit");
+            }
+            return found;
+        }).when(reservations).findByUserAndKey(TestData.USER_A_ID,"C09");
+        var responses=run(List.of(creation(target,"C09"),()-> {
+            wait.awaitReady(); var response=cancel(old); assertThat(response.statusCode()).isEqualTo(200);
+            snapshot(target,1,1,0); event("cancel-committed",String.valueOf(lastSnapshot)); wait.release(); return response;
+        }));
+        assertThat(events.require("cancel-committed").sequence()).isGreaterThan(events.require("create-wait").sequence());
+        assertThat(events.require("create-released").sequence()).isGreaterThan(events.require("cancel-committed").sequence());
+        assertThat(events.all()).anySatisfy(e -> {
+            assertThat(e.phase()).isEqualTo("decrement"); assertThat(e.request()).isEqualTo("C09");
+            assertThat(e.sequence()).isGreaterThan(events.require("create-released").sequence()); assertThat(e.detail()).endsWith(":1");
+        });
+        mixedResult(target,old,responses,true,"C09"); report();
+    }
+    @RepeatedTest(10) void C10_soldOutCompletesBeforeCancellationRestore(RepetitionInfo info) throws Exception {
+        begin("C10",info); var target=resource(1); var old=confirmed(target); var wait=gate(1);
+        doAnswer(call -> {
+            inFlight.incrementAndGet(); requestId.set(old.toString()); event("cancel-enter",old.toString());
+            try {
+                assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+                event("cancel-wait","no transaction"); wait.awaitRelease(); event("cancel-released","after sold out");
+                return call.callRealMethod();
+            } finally { event("cancel-exit",old.toString()); requestId.remove(); inFlight.decrementAndGet(); }
+        }).when(service).cancel(TestData.USER_A_ID,old);
+        var responses=run(List.of(()-> {
+            wait.awaitReady(); var response=create(target,"USER_A","C10"); problem(response,409,"SOLD_OUT");
+            event("sold-out-completed","409/SOLD_OUT"); wait.release(); return response;
+        },()->cancel(old)));
+        assertThat(events.require("sold-out-completed").sequence()).isGreaterThan(events.require("cancel-wait").sequence());
+        assertThat(events.require("cancel-released").sequence()).isGreaterThan(events.require("sold-out-completed").sequence());
+        assertThat(events.require("restore").sequence()).isGreaterThan(events.require("cancel-released").sequence());
+        mixedResult(target,old,responses,false,"C10"); report();
+    }
+
     @Test void parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe() throws Exception {
         class Fixture extends ReservationApiTestSupport {
             final StopState state=new StopState(); int prepared; int submitted;
