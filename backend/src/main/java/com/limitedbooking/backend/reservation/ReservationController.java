@@ -24,4 +24,27 @@ public class ReservationController {
         return ResponseEntity.created(URI.create("/api/reservations/" + result.body().id()))
                 .header("Idempotent-Replayed", Boolean.toString(result.replayed())).body(result.body());
     }
+    @org.springframework.web.bind.annotation.InitBinder
+    void strictReservationId(org.springframework.web.bind.WebDataBinder binder) {
+        binder.registerCustomEditor(java.util.UUID.class, new java.beans.PropertyEditorSupport() {
+            @Override public void setAsText(String value) {
+                if (!value.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))
+                    throw new IllegalArgumentException("예약 식별자는 UUID여야 합니다.");
+                setValue(java.util.UUID.fromString(value));
+            }
+        });
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ReservationView get(Authentication authentication,
+            @org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return service.get(identity.userId(authentication), id);
+    }
+
+    @PostMapping(value = "/{id}/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ReservationView cancel(Authentication authentication,
+            @org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+        return service.cancel(identity.userId(authentication), id);
+    }
+
 }

@@ -1055,3 +1055,24 @@ UUID 수정 관련 GREEN: ./gradlew integrationTest --tests '*ReservationCreateI
 수정 후 문서 링크264개/누락0·diff-check0·운영 실패주입 검색0건을 재확인했다. 전후 확장 훅 파일은 없으며 생략했다. feature/reservation-create를 유지하고 merge/push/공개/외부CI는 수행하지 않는다.
 
 최종 경로 감사: git diff --name-only -z 58f4106 HEAD를 사용해 한글 계획서 경로까지 포함한 전체 변경 Markdown 링크269개·누락0을 확인했다. 앞선264개 검사는 Git의 한글 경로 인용 출력 때문에 계획서의5개 링크를 제외한 부분 집계였다. NUL 구분 재검사로 보완했으며 문서/기능 결함이나 테스트 실패는 아니다. 최종43/43·체크리스트16/16·34/34·확장훅없음을 재확인했다.
+
+
+## 2026-10-20 6단계 예약 조회·취소 — 구현 중간 증거
+
+- 기준: specs/007-reservation-cancel의 spec/plan/tasks, 계획서 5.3·7절 6단계, knowledge의 도메인·트랜잭션/API·보안 규칙. 계약·스키마·의존성 변경 없음.
+- Git: 설계 `63dd7e4`를 사용자 `진행해` 승인 후 develop에 `282295b`로 --no-ff 병합하고 `feature/reservation-cancel` 분기. 구현 결과는 로컬 커밋하며 외부 push/병합은 하지 않는다.
+- 사전 확인: requirements 체크리스트16/16, Markdown8개 로컬 링크 오류0, 공백 검사 종료0. SecurityIT 기존6건은 일반 본문 상한 증거만 있고 취소 경로400/413 증거는 없어 신규 IT로 보완.
+- 환경: Corretto25.0.4+7-LTS, Gradle9.7.1, Boot4.1.1, Docker daemon29.8.2, PostgreSQL18.6 고정 digest(기존 ContainerTestSupport), RANDOM_PORT/격리 DB. 신규 두 IT의 Hikari 풀10·획득3000ms는 실제 적용값 assertion 포함. JUnit 클래스 순차, 테스트 전체 트랜잭션 없음.
+- 조회 RED: `cd backend && ./gradlew integrationTest --tests '*ReservationOwnershipIT'` 종료1, 3건 모두 HTTP 기능 부재로 실패. GET200/404/400 기대와 기존 미구현 응답 불일치(컴파일 성공).
+- 조회 GREEN: 같은 명령 종료0, 3건 실패/오류/skip0. null cancelledAt 필수 직렬화, 타인/관리자/없는 UUID404, 인증401+헤더, 비표준 UUID400.
+- 취소 RED: `./gradlew integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'` 종료1, 7건 중 최초 취소/타인 취소2건 실패. 기존 취소 본문400·상한413은 이미 통과.
+- 취소 GREEN: 위 명령에 `--tests '*SecurityIT'` 추가, 종료0, 13건 실패/오류/skip0. capacity1 상태/수량 복구, 저장 UTC 시각과 GET 동일, 소유권/본문400·413 무변경.
+- US3 추가: `./gradlew integrationTest --tests '*ReservationCancelIT'` 종료0, 7건 실패/오류/skip0. 반복 취소(2·3번째) 응답 전체 값 불변. 복구 예외/0건/QueryTimeoutException을 테스트 Spy에만 주입하고 실제 상태 UPDATE 후 같은 트랜잭션의 CANCELLED 및 lock_timeout2s/statement_timeout5s/read committed를 관측. 500/500/503과 롤백(CONFIRMED/null/available0), finally reset 후200 재시도 확인. 활성 상위 트랜잭션 거부도 확인.
+- T020은 US2에서 방어를 이미 구현하여 추가 당시 GREEN이다. 일반 중복 취소만으로 조기 반환·상태 조건을 각각 제거하면 두 방어가 서로를 가려 각1건 종료0이었다. 탐지 실패를 숨기지 않고 별도 사례 보강을 진행했다. 복구0건 검사 제거는 `zeroRecoveryIsInternalDefectAndRollsBack`에서 기대500/실제200으로 종료1(1건 실패), 원복했다.
+- 보강 원본 실행: CancelIT9건 종료0. 이미 취소된 상태에서 별도 연결의 대상 잠금을 유지해도 재취소200이며, 오래된 CONFIRMED 첫 조회만 Spy로 전달하고 실제 조건UPDATE가0건이면 기존 취소 응답과 수량을 보존한다. 후자는 경쟁 중 낡은 조회의 경로 검증이며 동시성 반복 증거가 아니다.
+
+실제 경쟁 반복/실제 잠금 timeout 경합 전체/Redis 제한/업무 자동 계약·속성·PIT·부하·외부 CI는 이번 범위 밖이다. 대상 잠금 단일 사례와 QueryTimeoutException 주입을 실제 경쟁·DB 중단 검증으로 일반화하지 않는다.
+
+- T021 보강 고의 변경: 조기 반환 제거→`alreadyCancelledDoesNotWaitForResourceLock` 기대200/실제503로1건 실패·종료1. status 조건 제거→`staleConfirmedReadCannotRepeatStatusUpdateOrRecovery` 기대200/실제500로1건 실패·종료1. 변경을 각각 따로 적용하고 finally에서 원복했다. 첫 시험의 탐지 실패는 위 기록을 유지하며 보강 시험으로 각 방어를 실제 탐지했다.
+
+- 원복 및 US4 지정 검증: `cd backend && ./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'` 종료0, Unit137·OwnershipIT5·CancelIT11(지정IT16) 실패/오류/skip0. 취소 후 원 키의201/Replay=true/CONFIRMED·Location·JSON 최초 값, GET CANCELLED 불변과 복구 후 USER_B 품절 키K2의 새201/false를 실제 HTTP·DB로 확인했다. US4는 기존 생성 재현 규칙이 이미 구현되어 추가 당시 GREEN이며 RED를 새로 주장하지 않는다.

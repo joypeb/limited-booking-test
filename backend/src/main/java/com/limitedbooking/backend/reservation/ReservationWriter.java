@@ -44,4 +44,25 @@ public class ReservationWriter {
                 Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
         return new CreateReservationResult(CreatedReservationView.from(stored), false);
     }
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ReservationView cancel(UUID userId, UUID reservationId) {
+        jdbc.execute("SET LOCAL lock_timeout = '2s'");
+        jdbc.execute("SET LOCAL statement_timeout = '5s'");
+        var stored = reservations.findByIdAndUser(reservationId, userId)
+                .orElseThrow(ReservationService.ReservationNotFoundException::new);
+        if (CancellationDecision.from(stored.status()) == CancellationDecision.ALREADY_CANCELLED) {
+            return ReservationView.from(stored);
+        }
+        // 생성과 동일하게 resource → reservation 순서로 갱신 잠금을 얻는다.
+        resources.lockForUpdate(stored.resourceId());
+        int changed = reservations.markCancelled(reservationId, userId,
+                Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+        if (changed == 1 && resources.incrementIfBelowCapacity(stored.resourceId()) != 1) {
+            throw new IllegalStateException("취소 수량 복구 불변식 위반");
+        }
+        if (changed != 0 && changed != 1) throw new IllegalStateException("취소 상태 갱신 건수 오류");
+        return ReservationView.from(reservations.findByIdAndUser(reservationId, userId)
+                .orElseThrow(ReservationService.ReservationNotFoundException::new));
+    }
+
 }
