@@ -55,7 +55,7 @@ public final class ConcurrencyTestSupport {
         } catch (RuntimeException | Error failure) { primary=failure; }
         finally {
             start.countDown();
-            try { releaseAll.run(); } catch (RuntimeException | Error cleanup) { primary=preserve(primary,cleanup); }
+            try { releaseAll.run(); } catch (RuntimeException | Error cleanup) { primary=preserve(primary != null ? primary : outcomes.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().orElse(null),cleanup); }
             // 클라이언트 작업 취소 이전에 외부 장벽은 호출자가 releaseAll로 해제한다.
             for (var future : futures) if (!future.isDone()) future.cancel(true);
             executor.shutdownNow();
@@ -65,11 +65,12 @@ public final class ConcurrencyTestSupport {
             } catch (InterruptedException failure) {
                 Thread.currentThread().interrupt();
                 var cleanup = new IllegalStateException("Executor 종료 인터럽트",failure);
-                state.stop(cleanup); primary=preserve(primary,cleanup);
-            } catch (RuntimeException cleanup) { state.stop(cleanup); primary=preserve(primary,cleanup); }
+                state.stop(cleanup); primary=preserve(primary != null ? primary : outcomes.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().orElse(null),cleanup);
+            } catch (RuntimeException cleanup) { state.stop(cleanup); primary=preserve(primary != null ? primary : outcomes.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().orElse(null),cleanup); }
         }
         if (primary instanceof Error error) throw error;
-        if (primary != null) throw (RuntimeException) primary;
+        if (primary instanceof RuntimeException failure) throw failure;
+        if (primary != null) throw new IllegalStateException("경쟁 실행/정리 실패", primary);
         return List.copyOf(outcomes);
     }
     public static Throwable preserve(Throwable original, Throwable cleanup) {

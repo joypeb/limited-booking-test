@@ -84,4 +84,27 @@ class ConcurrencyTestSupportTest {
                 .isInstanceOf(IllegalStateException.class);
         } finally { release.countDown(); }
     }
+    @Test void releasesExternalBarrierBeforeCancellingWorkers() {
+        var gate=new CountDownLatch(1); var released=new AtomicBoolean();
+        var run=new ConcurrencyTestSupport(new ConcurrencyTestSupport.StopState());
+        var result=run.run(List.of(() -> { gate.await(); return 1; }),Duration.ofMillis(50),()-> {
+            released.set(true); gate.countDown();
+        });
+        assertThat(result.getFirst().failure()).isInstanceOf(TimeoutException.class);
+        assertThat(released).isTrue(); assertThat(run.terminated()).isTrue();
+    }
+    @Test void failedJobRemainsPrimaryWhenAnotherWorkerCannotTerminate() {
+        var release=new CountDownLatch(1); var state=new ConcurrencyTestSupport.StopState();
+        var original=new IllegalArgumentException("original job fault");
+        var run=new ConcurrencyTestSupport(state,Duration.ofMillis(20));
+        try {
+            var thrown=catchThrowable(() -> run.run(List.of(() -> { throw original; },()-> {
+                while(release.getCount()>0) { try { release.await(); } catch(InterruptedException ignored) { } }
+                return 1;
+            }),Duration.ofMillis(100)));
+            assertThat(thrown).isSameAs(original);
+            assertThat(thrown.getSuppressed()).singleElement().isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(state::check).hasCauseInstanceOf(IllegalStateException.class);
+        } finally { release.countDown(); }
+    }
 }

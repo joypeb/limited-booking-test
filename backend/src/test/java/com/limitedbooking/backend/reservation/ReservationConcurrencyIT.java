@@ -49,6 +49,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     final AtomicBoolean settingsChecked=new AtomicBoolean();
     ScheduledExecutorService sampler;
     boolean observed;
+    boolean reported;
     String caseId;
     int repetition;
     long started;
@@ -64,7 +65,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
                 .when(service).cancel(any(),any());
         doAnswer(call -> {
             var found=call.callRealMethod();
-            event("lookup", String.valueOf(found));
+            event("lookup", ((Optional<?>)found).isPresent()?"present":"empty");
             return found;
         }).when(reservations).findByUserAndKey(any(),anyString());
         doAnswer(call -> {
@@ -73,7 +74,8 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
                 assertThat(jdbc.queryForObject("SHOW lock_timeout",String.class)).isEqualTo("2s");
                 assertThat(jdbc.queryForObject("SHOW statement_timeout",String.class)).isEqualTo("5s");
                 assertThat(jdbc.queryForObject("SHOW transaction_isolation",String.class)).isEqualTo("read committed");
-                event("settings","read committed/2s/5s");
+                assertThat(jdbc.queryForObject("SHOW timezone",String.class)).endsWith("UTC");
+                event("settings","read committed/2s/5s/"+jdbc.queryForObject("SHOW server_version",String.class));
             }
             event("decrement",call.getArgument(0)+":"+changed);
             return changed;
@@ -110,7 +112,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         while(inFlight.get()!=0 && System.nanoTime()<until) TimeUnit.MILLISECONDS.sleep(10);
         if(inFlight.get()!=0) throw new IllegalStateException("서버 in-flight 종료10초 초과");
     }
-    @AfterEach void finish() throws Exception {
+    @Override @AfterEach void cleanup() throws Exception {
         if(!observed) return;
         Throwable failure=null;
         releaseAll();
@@ -122,7 +124,11 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         }
         // 종료가 확인되지 않으면 Spring 자동 Spy reset도 비활성화하여 다음 회차의 오염을 막는다.
         if(failure==null) reset(service,reservations,resources);
-        try { cleanup(); client=null; } catch(Throwable error) { STOP.stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
+        try { super.cleanup(); client=null; } catch(Throwable error) { STOP.stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
+        if(results!=null && !reported) {
+            System.out.println("FAILED-RUN case="+caseId+" repetition="+repetition+" outcomes="+results+" snapshot="+lastSnapshot);
+            System.out.println("PATH case="+caseId+" repetition="+repetition+" events="+events.all());
+        }
         System.out.println("CLEANUP case="+caseId+" repetition="+repetition+" server="+inFlight.get()+" http="+(client==null)+" failure="+(failure==null?"none":failure.getClass().getSimpleName()));
         if(failure instanceof Exception error) throw error;
         if(failure instanceof Error error) throw error;
@@ -131,7 +137,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     List<HttpResponse<String>> run(List<Callable<HttpResponse<String>>> jobs) throws Exception {
         var runner=new ConcurrencyTestSupport(STOP);
         results=runner.run(jobs,Duration.ofSeconds(jobs.size()==100?120:30),this::releaseAll);
-        quiescent();
+        try { quiescent(); } catch(Exception failure) { STOP.stop(failure); throw failure; }
         assertThat(runner.terminated()).isTrue();
         assertThat(results).hasSize(jobs.size()).allSatisfy(r -> assertThat(r.failure()).isNull());
         return results.stream().map(Outcome::value).toList();
@@ -147,6 +153,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM (SELECT user_id,idempotency_key FROM reservations GROUP BY user_id,idempotency_key HAVING count(*)>1) d",Integer.class)).isZero();
     }
     void report() {
+        reported=true;
         var distribution=results.stream().collect(java.util.stream.Collectors.groupingBy(r -> r.value()==null ? "exception" :
                 r.value().statusCode()+":"+(r.value().statusCode()==409?JSON.readTree(r.value().body()).get("code").asString():"ok"),java.util.stream.Collectors.counting()));
         assertThat(poolMax.get()).isBetween(0,10);
@@ -349,6 +356,35 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         assertThat(events.require("cancel-released").sequence()).isGreaterThan(events.require("sold-out-completed").sequence());
         assertThat(events.require("restore").sequence()).isGreaterThan(events.require("cancel-released").sequence());
         mixedResult(target,old,responses,false,"C10"); report();
+    }
+
+    @RepeatedTest(10) void C11_insertFaultRollsBackOnlyFailedRequestAndKeyCanRetry(RepetitionInfo info) throws Exception {
+        begin("C11",info); var target=resource(2); var fault=new AtomicBoolean(true);
+        doAnswer(call -> {
+            var key=(IdempotencyKey)call.getArgument(3);
+            if(key.value().equals("C11_fail") && fault.compareAndSet(true,false)) {
+                assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+                assertThat(events.all()).anySatisfy(e -> {
+                    assertThat(e.request()).isEqualTo("C11_fail"); assertThat(e.phase()).isEqualTo("decrement");
+                    assertThat(e.transaction()).isTrue(); assertThat(e.detail()).endsWith(":1");
+                });
+                event("injected-insert-fault","IllegalStateException after real decrement");
+                throw new IllegalStateException("C11 injected INSERT fault");
+            }
+            var stored=call.callRealMethod(); event("insert","stored"); return stored;
+        }).when(reservations).insert(any(),any(),any(),any(),any());
+        var responses=run(List.of(creation(target,"C11_fail"),creation(target,"C11_ok")));
+        assertThat(responses.getFirst().statusCode()).isEqualTo(500);
+        ReservationCreateIT.assertSafe(responses.getFirst().body());
+        assertThat(responses.getFirst().body()).doesNotContain("C11 injected INSERT fault");
+        assertThat(responses.get(1).statusCode()).isEqualTo(201);
+        assertThat(reservations.findByUserAndKey(TestData.USER_A_ID,"C11_fail")).isEmpty();
+        assertThat(reservations.findByUserAndKey(TestData.USER_A_ID,"C11_ok")).isPresent();
+        snapshot(target,1,1,1); event("before-retry",String.valueOf(lastSnapshot));
+        events.require("injected-insert-fault");
+        var retry=create(target,"USER_A","C11_fail"); assertThat(retry.statusCode()).isEqualTo(201);
+        assertThat(retry.headers().firstValue("Idempotent-Replayed")).contains("false");
+        snapshot(target,0,2,2); event("after-retry",String.valueOf(lastSnapshot)); report();
     }
 
     @Test void parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe() throws Exception {

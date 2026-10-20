@@ -1171,3 +1171,10 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 4종各10회 초기 실행 종료0/40건. C05 동일취소시각·복구호출1회·행유지, C06 두 허용결과와 품절시 같은 키 재시도, C09/C10 각10회는 두 요청 진입·비트랜잭션 대기·선행완료·해제·후행차감/복구 사건 순번을 단언했다. 순서 관측100%, 수량 불일치0.
 - Writer의 `changed == 1` 복구 방어만 `changed >= 0`으로 고의 변경한 C05: 종료1/10회 중9실패·1통과. 이미취소됨 조기 반환만 실행된 회차는 이 고의 결함을 통과할 수 있다. 실패9회에서는 중복 복구가0건을 반환하여500 또는 복구호출 수 위반을 탐지했다. 성공 회차로 실패를 덮지 않았고 원복했다. 제품의 실제 결함은 발견하지 않았다.
 - 원복 후 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C05*' --tests '*ReservationConcurrencyIT.C06*' --tests '*ReservationConcurrencyIT.C09*' --tests '*ReservationConcurrencyIT.C10*' --tests '*ReservationCancelIT' --tests '*ReservationOwnershipIT'`: 종료0/IT58(경쟁40+기존취소13/소유권5), 실패/오류/skip0,27초. 취소 후 생성재현·타인/ADMIN404도 기존회귀에서 유지했다.
+
+### US4 T029~T034: C11·실패 증거
+
+- 장애 주입 전 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C11*'`: 종료1/10회 모두 실패(예상500 대신201). 테스트/관측 지원 준비의 RED이며 제품 결함이라고 주장하지 않는다.
+- 지정 키 첫 INSERT에만 IllegalStateException을 주입하고 실제 차감1·활성트랜잭션을 확인했다. 모든 요청 종료 후 실패키없음·정상키1·잔여1, 같은 실패키 재시도201 후confirmed2/잔여0을 검사했다. 기존 롤백 제품 코드는 그대로다.
+- 추가 지원Unit은 작업 오류+다른작업 종료 실패가 겹칠 때 정리 예외가 원래 오류를 대체하는 문제를 탐지했다: `./gradlew test --tests '*ConcurrencyTestSupportTest'` 종료1/10중1실패. 최초 작업 오류에 종료 오류를 suppressed로 보존하도록 테스트 지원만 수정했다. 외부장벽 해제→취소/종료 순서 Unit도 추가했다.
+- `./gradlew test integrationTest --tests '*ReservationConcurrencyIT.C11*' --tests '*ReservationConcurrencyIT.parentSetup*'`: 종료0/Unit147(기존137+지원10)/IT11(C11반복10+fixture1), 실패/오류/skip0,10초. 미관측 경로·timeout·종료 실패를 성공으로 누락하지 않는다. 회차 증거는 최종 인수 JSON에 연결한다.
