@@ -1,0 +1,68 @@
+#-------------------------------------------------------------------------------#
+#               Qodana analysis is configured by qodana.yaml file               #
+#             https://www.jetbrains.com/help/qodana/qodana-yaml.html            #
+#-------------------------------------------------------------------------------#
+
+#################################################################################
+#              WARNING: Do not store sensitive information in this file,        #
+#               as its contents will be included in the Qodana report.          #
+#################################################################################
+version: "1.0"
+
+# JVM 린터(Java 25 / Gradle / Spring Boot 4.1.1 백엔드)
+linter: jetbrains/qodana-jvm:2026.2
+projectJDK: "25"
+
+# starter보다 넓은 권장 프로필: 버그 가능성, null 안전성, 동시성,
+# Spring 설정·빈 주입, 리소스 누수, 취약 의존성(VulnerableLibrariesLocal) 등을 포함한다.
+profile:
+  name: qodana.recommended
+
+# 프로젝트 특성상 추가로 켤 검사
+include:
+  # 의존성 라이선스 감사 (Boot BOM, Testcontainers, PIT, quicktheories 등)
+  - name: CheckDependencyLicenses
+  # 취약점이 알려진 의존성 탐지(SCA)
+  - name: VulnerableLibrariesLocal
+  # 트랜잭션 경계(Writer Bean) 보호: 자기 호출로 @Transactional 무효화 탐지
+  - name: SpringTransactionalMethodCallsInspection
+  # 예외를 삼키는 catch 블록 탐지 (실패 트랜잭션 안에서 예외를 삼키지 않는 규칙)
+  - name: EmptyCatchBlock
+  # Optional/Stream 결과 무시, 반환값 무시 등
+  - name: ResultOfMethodCallIgnored
+
+# 비활성화할 검사 / 분석 제외 경로
+exclude:
+  # 빌드 산출물, Gradle 래퍼, 문서·명세는 분석 대상이 아니다.
+  - name: All
+    paths:
+      - backend/build
+      - backend/gradle
+      - backend/HELP.md
+      - docs
+      - specs
+      - knowledge
+      - .agents
+  # Qodana 컨테이너에는 DB 데이터 소스가 연결되지 않으므로
+  # Flyway SQL의 스키마 해석 검사는 오탐이 된다. (PostgreSQL 검증은 Testcontainers IT가 담당)
+  - name: SqlNoDataSourceInspection
+  - name: SqlResolve
+  # 다국어 리소스를 사용하지 않는 API 백엔드이므로 i18n 경고는 제외
+  - name: HardCodedStringLiteral
+
+# Qodana 실행 전 의존성을 미리 받아 Gradle 동기화 실패를 줄인다. (CI/CD에서 적용)
+bootstrap: cd backend && ./gradlew --no-daemon dependencies > /dev/null
+
+# 품질 게이트: 조건을 넘으면 CI 실패
+failureConditions:
+  severityThresholds:
+    any: 0
+    critical: 0
+    high: 0
+  dependencyLicenses:
+    failOnProhibited: true
+    failOnUnknown: false
+  # 코드 커버리지는 Ultimate 이상 플랜 + JaCoCo 리포트 연동이 필요하다(현재 미구성).
+  # testCoverageThresholds:
+  #   fresh: 70
+  #   total: 50
