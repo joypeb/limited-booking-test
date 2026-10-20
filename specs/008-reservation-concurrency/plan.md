@@ -55,9 +55,10 @@ specs/008-reservation-concurrency/
   contracts/concurrency-contract.md
   quickstart.md
   checklists/requirements.md
+  tasks.md
 ```
 
-`tasks.md`는 다음 speckit-tasks에서 생성하며 이번에는 만들지 않는다.
+후속 speckit-tasks에서 [tasks.md](tasks.md)를 생성했다. 작업 생성과 실제 구현·실행 완료는 구분한다.
 
 ### Source Code (repository root)
 

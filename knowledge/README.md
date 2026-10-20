@@ -86,3 +86,5 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 - [7단계 명세 품질 검토](../specs/008-reservation-concurrency/checklists/requirements.md): 문서 품질 16개 항목을 검토했다. 실행 증거가 아니며 다음 작업은 구현 계획 작성이다.
 
 - [7단계 구현 계획](../specs/008-reservation-concurrency/plan.md): 11종 경쟁·강제 경로·실패 사례 각10회와 실제 HTTP/DB 관측·종료·정리 설계다. [조사](../specs/008-reservation-concurrency/research.md)·[데이터/검증 모델](../specs/008-reservation-concurrency/data-model.md)·[경쟁 계약](../specs/008-reservation-concurrency/contracts/concurrency-contract.md)·[검증 안내](../specs/008-reservation-concurrency/quickstart.md)를 작성했다. 설계 완료이며 신규 테스트 구현·실행은 후속이다. Wrapper 현재 파일9.8.0(사용자 변경)과 기존 실행9.7.1을 구분한다.
+
+- [7단계 작업 목록](../specs/008-reservation-concurrency/tasks.md): 공통 기반과 네 사용자 이야기·전체 인수의38개 작업을 생성했다. US1 4개·US2 7개·US3 7개·US4 6개·공통14개이며 지원 테스트 파일 작성2개만 병행 후보다. 모든 체크는 미완료이고11종110회 실행은 후속이다.
