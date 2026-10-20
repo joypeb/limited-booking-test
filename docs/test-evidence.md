@@ -1152,3 +1152,11 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 의존성 변경 후 관련 재검증: `./gradlew test integrationTest --tests '*ReservationCancelIT'` 종료0, Unit143·CancelIT13건 실패/오류/skip0. 초기 연결 실패 뒤 의존성 변경이 있어 재검증했고, timeout/기대값/테스트 코드는 완화하지 않았다. 재실행 통과가 최초 Docker/JDBC 연결 실패의 원인 규명이나 재발 방지를 뜻하지 않는다. 다른23 IT는 의존성 변경 전 통과 기록이다.
 - 추가 설정 메타데이터 JSON: String 프로퍼티3개 확인. 실제 비밀번호·기본값 없음. 소스 독립 리뷰: 요구 적합성/코드 품질에서 수정 필수 결함 없음. 최종 결과는 루트 실행 증거로 보완했다.
 - 미검증/미해결: Qodana CLI가 설치되지 않아 재검사 미실행, 경고 소멸 확정 불가. 전체 verify/Property/PIT/부하/외부CI 미실행. json-patch1.13·jackson-coreutils2.0은 공식 수정 버전·간접 취약 함수 도달성 미확정. main public은 Boot 탐지 호환성 때문에 유지. 다음 한 작업: Qodana 재검사로 잔여 지적을 확인하고 미해결 계약 검증기 의존성 대체를 별도 검증 대상으로 정한다.
+
+
+## 2026-10-20 / 사용자 제공 Qodana 재검사 후속
+
+- 사용자 보고 revision80e1fa0: 이전 수정 대상15건은 problems 목록에서 사라지고 기존 검토3건 및 새 LocalIdentityResolver 상수 조건1건이 보고됐다. 에이전트 직접 Qodana 실행과 구분한다.
+- LocalUserPrincipal의 null 불허 계약에 맞춰 resolver의 userId null 중복 조건만 제거했다. 인증 객체 null·미인증·Principal 타입 거부와 UUID 추출은 보존했다. 동작 보존 정리이므로 신규 기능 RED 테스트 대신 기존 보안·소유권 통합 검증을 사용했다.
+- backend에서 `./gradlew integrationTest --tests '*SecurityIT' --tests '*ReservationOwnershipIT'` 종료0, 총11건(Security6·Ownership5), 실패/오류/skip0, 11초. 고정 UUID 추출·null/외부 Principal 거부·실제 HTTP 인증/권한·소유권을 검증했다.
+- 기존 fix/qodana-findings에서 수행, 사용자 Wrapper 변경 보존. 관련 변경 diff 검토·공백 검사 수행. 전체 verify/Unit/부하/CVE 재현/Qodana 직접 실행은 이번 후속에서 미실행. 남은 main public 유지와 의존성2개 미해결은 [Qodana 검토](qodana-review.md)를 따른다. 다음 한 작업은 후속 커밋 Qodana 재검사다.

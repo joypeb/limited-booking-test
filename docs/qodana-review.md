@@ -42,3 +42,12 @@
 4. 루트: 메타데이터·문서·순차 Gradle 실행·최종 diff 검토. 공유 빌드·Git 작업은 병행하지 않는다.
 
 API·수량·SQL·인증 계약 변경이 없으므로 계획서·OpenAPI 기대값을 변경하지 않는다. Qodana 재실행 전에는 지적 소멸을 확정하지 않는다. 실제 실행 결과는 [검증 기록](test-evidence.md)에 기록한다.
+
+
+## 사용자 제공 재검사 결과: revision 80e1fa0
+
+사용자가 제공한 revision `80e1fa0f295bb5c2a1af2ed231dbdc22a4a6155b` 보고서는4건이다. 이전 수정 대상15건은 이번 problems 목록에 없으며, 이전에 남긴 main public·json-patch·jackson-coreutils3건은 계속 보고됐다. 이는 사용자 제공 보고서 대조 결과이고 에이전트가 Qodana를 직접 실행한 결과는 아니다.
+
+추가1건은 LocalIdentityResolver의 `principal.userId() == null`이다. 앞선 LocalUserPrincipal의 NullMarked가 userId의 null 불허 계약을 명확히 하면서 후속 호출자의 중복 검사를 드러냈다. 해당 조건만 제거하고 null Authentication·미인증·다른 Principal 거부는 유지한다. 기존 고정 계정 생성 경로에서 userId는 UUID 상수다. 새로운 기능·계약 변경이 없어 새 테스트 대신 기존 SecurityIT·ReservationOwnershipIT를 실행한다. 이 수정은 한 파일에 한정되어 추가 병행 구현은 하지 않는다.
+
+나머지3건은 위 판단을 유지한다. 의존성을 임의 제외하거나 전체 검사/품질 게이트를 완화하지 않았다. 다음 작업은 이 커밋을 대상으로 재검사하고, 계약 검증기 교체·패치를 별도 검증 대상으로 진행하는 것이다.
