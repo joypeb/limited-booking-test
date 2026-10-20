@@ -114,3 +114,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 2026-10-20 취소 수량 복구 연동
 
 [ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)에 `lockForUpdate`(대상 행 SELECT FOR UPDATE)와 `incrementIfBelowCapacity`(available<capacity 조건 +1)를 추가했다. 예약 Writer는 대상 잠금을 예약 상태 갱신보다 먼저 얻고 상태 변경1건일 때만 복구한다. 복구0건·예외는 상태와 수량을 전체 롤백한다. [ReservationCancelIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationCancelIT.java)의 실제 PostgreSQL·HTTP 검증과 단일 SELECT 보존식 검사로 확인했다. 중복 취소는 추가 복구하지 않는다. 실제 경쟁 반복은7단계 후속이다.
+
+
+### 7단계 경쟁 검증 연결 (2026-10-20)
+
+경쟁 종료 후 여러 대상의 capacity/available/전체예약수/확정수를 단일 LEFT JOIN 집계로 검사한다. C04 패자수량 원복, C01 초과예약 방지, C05 복구1회와 C11 실패차감 롤백을 실제 PostgreSQL/HTTP 반복으로 확인했다. ResourceRepository 제품 변경은 없고 조건 방어의 고의 변경은 탐지 후 원복했다. [경쟁IT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[실행증거](../../docs/test-evidence.md)·[회차기록](../../docs/concurrency-runs.json)을 따른다. 앞 절의 후속 표시는 각 과거 확인일의 상태다.

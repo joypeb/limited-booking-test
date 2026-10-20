@@ -1,6 +1,6 @@
 # 7단계 검증 실행 안내
 
-이 문서는 구현 후 사용할 안내다. 현재 신규 ReservationConcurrencyIT·동시성 지원은 미구현이므로 아래 경쟁 명령의 성공을 확인한 상태가 아니다.
+ReservationConcurrencyIT·동시성 지원·다중 snapshot을 구현하고 지정 인수 Unit147/IT111(경쟁110+fixture1)을 통과했다. 전체 회귀와 최종 결과는 [실행 증거](../../docs/test-evidence.md)·[회차 기록](../../docs/concurrency-runs.json)을 따른다.
 
 ## 준비
 
@@ -19,7 +19,7 @@ docker version
 
 Hikari maximumPoolSize10/connectionTimeout3000ms, DB read committed/lock_timeout2s/statement_timeout5s, UTF-8/UTC를 실제로 확인한다. RANDOM_PORT·동적 테스트 DB만 사용하며 reservations→resources 초기화는 이전 작업의 서버 종료를 확인한 후에만 한다.
 
-## 단계별 검증 (신규 시험 구현 후)
+## 단계별 검증
 
 한 대상씩 실패 탐지→최소 구현/정리→관련 재검증을 진행한다. 새 지원 Unit은 작성 후 지정 실행하고 실제 수를 기록한다.
 
@@ -40,10 +40,10 @@ Hikari maximumPoolSize10/connectionTimeout3000ms, DB read committed/lock_timeout
 
 ## 증거와 정리
 
-docs/test-evidence.md에 명령·종료 코드·실제 수·대상 commit·날짜·시간·이미지/digest·작업자/풀·연결 관측값·샘플 한계·반복별 상태·경로/순서 관측·최종 snapshot·미검증을 남긴다. 실제 버전은 docs/versions.md, 설계 변경은 docs/decisions.md에 기록한다. 현재 문서 작성 단계에서는 계획서 체크박스를 표시하지 않는다.
+docs/test-evidence.md에 명령·종료 코드·실제 수·대상 commit·날짜·시간·이미지/digest·작업자/풀·연결 관측값·샘플 한계·반복별 상태·경로/순서 관측·최종 snapshot·미검증을 남긴다. 실제 버전은 docs/versions.md, 설계 변경은 docs/decisions.md에 기록한다. 계획서 체크박스는 실제 실행 근거에 따라 갱신한다.
 
 매 회차 finally에서 모든 대기 해제→작업 종료·서버 in-flight0 확인→Spy/플래그 초기화→HTTP 종료 순서로 정리한다. 클래스 소유 컨텍스트와 컨테이너는 기존 DirtiesContext/종료 listener 규칙을 따른다. 정리 실패로 다음 회차를 진행하지 않고 개발 DB·volume을 지우지 않는다. 로컬 반복은 모든 실행 순서나 운영 성능의 증명이 아니다. 다음8단계에서 Redis 제한 도입 시 실제 HTTP 경쟁 경로를 유지하고10000건/60초·회차별 테스트 전용 키 초기화를 명시한다.
 
 ### 종료 실패 후 초기화 차단 (U1 보완)
 
-Executor·서버 요청·HTTP 클라이언트의 종료 확인 실패는 최초 원인을 클래스 단위 차단 상태에 보존한다. 회차마다 상태를 해제하지 않는다. ReservationApiTestSupport.setup의 첫 동작에 기본 무동작 보호 메서드를 두고 경쟁 클래스에서 재정의하여 부모 DB reset 전에 실패시킨다. 자식 BeforeEach 검사만으로 대체하지 않는다. 이후 회차는 reset·준비·요청 제출 각각0회이며 최초 실패 원인을 유지해야 한다. setup 차단으로 client가 없으면 cleanup은 null을 안전하게 처리하고 회차 소유 자원만 정리한다. JUnit 전체 중단에 의존하지 않고 후속 회차는 실패로 판정하며 skip이나 성공으로 숨기지 않는다. 실제 부모 setup 순서는 별도 상태를 소유한 테스트 fixture로 검증하고110회 경쟁 인수와 지원 검증 수를 구분한다. 이는 설계·후속 검증 기준이며 아직 실행하지 않았다.
+Executor·서버 요청·HTTP 클라이언트의 종료 확인 실패는 최초 원인을 클래스 단위 차단 상태에 보존한다. 회차마다 상태를 해제하지 않는다. ReservationApiTestSupport.setup의 첫 동작에 기본 무동작 보호 메서드를 두고 경쟁 클래스에서 재정의하여 부모 DB reset 전에 실패시킨다. 자식 BeforeEach 검사만으로 대체하지 않는다. 이후 회차는 reset·준비·요청 제출 각각0회이며 최초 실패 원인을 유지해야 한다. setup 차단으로 client가 없으면 cleanup은 null을 안전하게 처리하고 회차 소유 자원만 정리한다. JUnit 전체 중단에 의존하지 않고 후속 회차는 실패로 판정하며 skip이나 성공으로 숨기지 않는다. 실제 부모 setup 순서는 별도 상태를 소유한 테스트 fixture로 검증하고110회 경쟁 인수와 지원 검증 수를 구분한다. 해당 보호 검사·별도 fixture·null-client 정리를 구현하고 실행 검증했다.

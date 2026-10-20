@@ -73,3 +73,6 @@ Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존�
 ## 7단계 실행 폴더 확인 (2026-10-20)
 
 limited-booking-concurrency-plan/backend: `java --version` Corretto25.0.4+7-LTS, `./gradlew --version` Gradle9.7.1, macOS27.0.1/aarch64. `docker version` client/server29.8.2, Desktop4.95.0. 모두 종료0. 추적Wrapper 유지. 원래 checkout의 Wrapper9.8.0 및 build.gradle 사용자 변경은 옮기거나 수정하지 않았다. 발견 계약은 Unit *Test, 일반IT *IT, 클래스병렬없음·0건/실패/skip거부다.
+
+
+7단계 실행 확인: 실제 PostgreSQL `18.6 (Debian 18.6-1.pgdg12+2)`, UTF-8/UTC, READ COMMITTED·lock2s·statement5s·풀10/획득3000ms. 고정 이미지/digest는 ContainerTestSupport 재사용(새 의존성 해석/버전 변경 없음). 지정 Unit147/IT111 및 일반verify Unit147/IT253이 종료0이었다. ByteBuddy Unsafe/Gradle10 폐기 경고는 남아 있으며 향후 버전 호환성은 검증하지 않았다.

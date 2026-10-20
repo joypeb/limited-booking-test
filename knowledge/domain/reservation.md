@@ -64,8 +64,8 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | 규칙 | 사례 | 기대 결과 | 검증 상태 |
 | --- | --- | --- | --- |
 | reservation-001~003 | capacity=1 예약·재요청·취소·재요청·중복 취소 | 추가 예약 없음, 복구 1회, 수량식 유지 | ReservationOwnershipIT·ReservationCancelIT HTTP/DB 검증 |
-| reservation-002 | 마지막 1개 동일 키 / 다른 대상 동일 키 경쟁 | 한 성공 행 / 한 성공과 충돌, 패자 수량 롤백 | 후속 IT 예정 |
-| reservation-003 | 중복 취소·생성/취소 경쟁 | 동일 취소 시각·수량식 유지 | 후속 IT 예정 |
+| reservation-002 | 마지막 1개 동일 키 / 다른 대상 동일 키 경쟁 | 한 성공 행 / 한 성공과 충돌, 패자 수량 롤백 | ReservationConcurrencyIT C02~C10 실제 HTTP/DB 반복 검증 |
+| reservation-003 | 중복 취소·생성/취소 경쟁 | 동일 취소 시각·수량식 유지 | ReservationConcurrencyIT C02~C10 실제 HTTP/DB 반복 검증 |
 | 롤백 | UPDATE 뒤 INSERT 실패 | 행·수량 부분 반영 없음, 같은 키 재시도 | ReservationRollbackIT 실제 HTTP/DB 검증 |
 
 실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 5단계, 소유권·취소·롤백은 6단계에서 실행했다. 실제 경쟁 반복은 후속이다.
@@ -159,3 +159,10 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### U1 종료 실패 격리 설계 보완
 
 7단계 경쟁 테스트는 클래스 단위 최초 종료 실패 상태를 유지하고 부모 setup의 첫 보호 검사로 reset·준비·요청 제출을 차단하도록 [계획](../../specs/008-reservation-concurrency/plan.md)·[작업](../../specs/008-reservation-concurrency/tasks.md)을 보완했다. 기본 무동작 보호 검사와 null-client 정리로 기존 테스트 동작을 유지하며 다음 회차 세 작업0회·최초 원인 보존의 별도 fixture 검증을 예정한다. 문서 설계 보완이며 코드 구현·실행 증거는 후속이다.
+
+
+## 7단계 경쟁 검증 구현 연결 (2026-10-20)
+
+[ReservationConcurrencyIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 C01~C11 각10회를 실제 HTTP/Basic·PostgreSQL로 검증한다. C07은 차감0→트랜잭션 안 재조회, C03/C04/C08은 실제23505/정확한 제약명→Writer전체롤백→트랜잭션 밖 재조회로 구분한다. 동일키 최초201·Location·필드/UTC정밀도, 패자대상 복구, 중복취소 동일시각/복구1회, 취소후 최초생성재현 계약을 유지했다.
+
+C09/C10은 연결·잠금 보유 전 대기와 선행HTTP/별도DB확인으로 두 순서를 관측한다. C11은 지정키 차감 후 INSERT실패·전체롤백·같은키복구를 정상 경쟁키와 함께 검증한다. 제품후크·SQL·스키마·OpenAPI 변경 없음. 부모setup 첫 보호 검사가 최초종료실패 상태를 확인하고 다음 reset/준비/제출0회를 보장한다. 실제 부모setup fixture와 지원Unit10건을 연결하며 [실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 지정경로의 반복 증거이며 모든 실행순서/운영성능의 증명이 아니다. 다음은8단계다.

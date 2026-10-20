@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 실제 경쟁 반복·Redis 요청 제한은7~8단계 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. Redis 요청 제한은8단계 후속이다.
 
 ## 로컬 환경
 
@@ -62,12 +62,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit137 (기존116+생성 조정/분류21) |
-| `./gradlew verify` | Unit137+일반IT138 (기존92+생성28+조회·취소18) |
+| `./gradlew test` | Spring 없는 Unit147 (기존137+경쟁지원10) |
+| `./gradlew verify` | Unit147+일반IT253 (기존138+DB지원4+경쟁110+fixture1) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit137+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit137+일반IT138+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit137+일반IT138+Property3; 이번 단계 재실행 없음 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit147+지정IT3 (이번 단계 재실행 없음) |
+| `./gradlew verifyContract` | 구성상 Unit147+일반IT253+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit147+일반IT253+Property3; 이번 단계 재실행 없음 |
 | `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
@@ -83,7 +83,7 @@ XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/test
 
 Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
 
-도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성 쓰기 SQL·멱등 응답·전체 롤백을5단계에서 검증했다. 취소 쓰기·소유권·롤백은6단계에서 검증했다. 실제 경쟁 반복·요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
+도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성 쓰기 SQL·멱등 응답·전체 롤백을5단계에서 검증했다. 취소 쓰기·소유권·롤백은6단계에서 검증했다. 실제 경쟁 반복은7단계에서 검증했다. 요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
 
 최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합은 일반IT4/총13이며, 이후 종료 회귀로14건, PR 적대적 리뷰의 본문 정체 회귀로15건이 됐다.
 
@@ -162,4 +162,16 @@ cd backend
 ./gradlew verify
 ```
 
-취소와 수량1 복구는 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)의 단일 트랜잭션으로 커밋한다. 중복 취소는 시각·수량을 유지한다. 원래 생성 키의 재요청은 최초201/CONFIRMED를 재현하고 GET은 CANCELLED다. 지정IT18·일반verify(Unit137/IT138)·local CLI 11단계를 통과했다. [실행 증거](docs/test-evidence.md), [6단계 안내](specs/007-reservation-cancel/quickstart.md)를 참조한다. 다음은7단계 실제 경쟁 검증이다.
+취소와 수량1 복구는 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)의 단일 트랜잭션으로 커밋한다. 중복 취소는 시각·수량을 유지한다. 원래 생성 키의 재요청은 최초201/CONFIRMED를 재현하고 GET은 CANCELLED다. 지정IT18·일반verify(Unit137/IT138)·local CLI 11단계를 통과했다. [실행 증거](docs/test-evidence.md), [6단계 안내](specs/007-reservation-cancel/quickstart.md)를 참조한다. 이후7단계 경쟁 검증을 완료했으며 아래 기록을 참조한다.
+
+## 7단계 경쟁 정합성 검증
+
+[ReservationConcurrencyIT](backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 실제 Basic 인증·HTTP·격리 PostgreSQL에서 C01~C11 각10회를 실행한다. 수량10/요청100, 동일키10요청, 대상간 키충돌, 중복취소, 생성·취소 일반경쟁/두 강제순서, 차감후 INSERT실패를 검사한다. 지정 인수 Unit147·IT111(경쟁110+setup차단fixture1), 일반 verify Unit147·IT253이 통과했으며 [실행 증거](docs/test-evidence.md)·[회차 기록](docs/concurrency-runs.json)에서 조건과 결과를 확인한다.
+
+```sh
+cd backend
+./gradlew test integrationTest --tests '*ReservationConcurrencyIT'
+./gradlew verify
+```
+
+요청작업자 최대10·Hikari풀10/획득3000ms, 공통제한100건120초/그외30초, 장벽5초·HTTP9/10초·종료10초다. 표본 연결 최대는10ms 관측이며 운영 성능으로 일반화하지 않는다. 최초 종료 실패를 보존하여 다음 회차 DB초기화/준비/제출을 막는다. 제품/API/SQL 스키마 변경은 없고, 다음 작업은8단계 Redis 요청 제한이다. 업무 OpenAPI 자동대조·Property/PIT심화·부하·외부CI는 미검증이다.

@@ -1178,3 +1178,31 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 지정 키 첫 INSERT에만 IllegalStateException을 주입하고 실제 차감1·활성트랜잭션을 확인했다. 모든 요청 종료 후 실패키없음·정상키1·잔여1, 같은 실패키 재시도201 후confirmed2/잔여0을 검사했다. 기존 롤백 제품 코드는 그대로다.
 - 추가 지원Unit은 작업 오류+다른작업 종료 실패가 겹칠 때 정리 예외가 원래 오류를 대체하는 문제를 탐지했다: `./gradlew test --tests '*ConcurrencyTestSupportTest'` 종료1/10중1실패. 최초 작업 오류에 종료 오류를 suppressed로 보존하도록 테스트 지원만 수정했다. 외부장벽 해제→취소/종료 순서 Unit도 추가했다.
 - `./gradlew test integrationTest --tests '*ReservationConcurrencyIT.C11*' --tests '*ReservationConcurrencyIT.parentSetup*'`: 종료0/Unit147(기존137+지원10)/IT11(C11반복10+fixture1), 실패/오류/skip0,10초. 미관측 경로·timeout·종료 실패를 성공으로 누락하지 않는다. 회차 증거는 최종 인수 JSON에 연결한다.
+
+### 지정 전체 경쟁 인수 (T035 일부)
+
+`cd backend && ./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: 종료0,Unit147·일반IT111(경쟁110회+setup차단fixture1), 실패/오류/skip0,37초. 실제실행 listener와 XML 일치. 코드 기준373f95e, 날짜2026-10-20. 캐시통과 대신 test/integrationTest 모두 실행했다.
+
+[전체 회차 증거](concurrency-runs.json)는 XML system-out에서110회 전부 추출했다. 요청/결과 수·상태분포·소요시간·작업자·풀/표본·최종snapshot·경로횟수·강제경로사건·정리결과를 포함한다. 원본 전체요청 경로는 재실행 XML에서 확인한다. 준비요청은 C05/06/09/10 각1건(기존확정 생성), 재시도는 C06 품절회차·C10·C11 각1건이며 경쟁결과 수와 별개다. C05 GET, 혼합사례 GET과 DB 조회도 준비/사후 확인이다. seed는 사용하지 않았다.
+
+| 사례 | 반복 | 회차 시간 범위(ms) | active 연결 최대 표본 | 결과 |
+|---|---:|---:|---:|---|
+| C01 | 10 | 1001~1221 | 8 | 통과 |
+| C02 | 10 | 111~366 | 10 | 통과 |
+| C03 | 10 | 99~133 | 8 | 통과 |
+| C04 | 10 | 71~80 | 2 | 통과 |
+| C05 | 10 | 231~256 | 10 | 통과 |
+| C06 | 10 | 282~290 | 2 | 통과 |
+| C07 | 10 | 76~86 | 2 | 통과 |
+| C08 | 10 | 73~82 | 2 | 통과 |
+| C09 | 10 | 276~290 | 1 | 통과 |
+| C10 | 10 | 350~365 | 1 | 통과 |
+| C11 | 10 | 153~976 | 2 | 통과 |
+
+시간은 준비·사후검증 포함 회차시간이며 성능 SLA가 아니다. 표본 간격10ms, 풀10/획득3000ms; 표본 사이의 진짜피크는 미관측이다. 실제 DB18.6(Debian18.6-1.pgdg12+2), READ COMMITTED/lock2s/statement5s/UTC를 검사했다. PostgreSQL 고정digest/Java/Gradle/Docker는 버전문서와 JSON에 기록했다. 동적DB·port와 localhost HTTP만 사용했고 Redis는 시작하지 않았다. Executor종료·서버Service in-flight0·HTTP종료는110/110 확인했다. 정상 사례의401/429/503/500·결과누락은0이며 C11의 주입500만 지정예상결과다.
+
+### 최종 일반 회귀·문서 판정 (T035~T038)
+
+`cd backend && ./gradlew verify`: 종료0,1분40초,Unit147·일반IT253, 실패/오류/skip0. listener/XML 일치. IT253은 기존138+DatabaseSupportIT추가4+경쟁110+fixture1이며 Unit147은 기존137+경쟁지원10이다. 기존 SQL·소유권·엄격입력·인증·순차장애·시각 회귀도 실행됐다. Contract/Property/PIT심화·k6·Redis요청제한·외부CI는 실행하지 않았다. Gradle10/configuration cache 및 ByteBuddy Unsafe 경고의 후속 호환성은 미검증이며 버전을 변경해 숨기지 않았다.
+
+업무 제품코드·SQL·V1·OpenAPI는 시작6316e19와 동일하다. 본문/소유권/오류/성공재현 계약 보존을 대조했다. 테스트지원/경쟁IT·README/지식/실행안내를 연결하고 실제 통과 근거로만 작업/7단계 체크를 갱신했다. 확장훅 파일이 없어 before/after implement 등록훅은 없다. 외부병합·push·배포는 수행하지 않는다. 다음 한 작업은8단계 Redis 제한이다.

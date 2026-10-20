@@ -91,3 +91,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 ### PR #6 인코딩 취소 경로 검증 보완 (2026-10-20)
 
 원시 URI 접두사·접미사로 분기하는 취소 검증 필터는 MVC의 경로 디코딩과 차이가 있다. 신규 취소 Controller에서 매칭된 모든 경로의 캐시 본문0바이트를 다시 검사해 인코딩 경로도400/무변경을 보장한다. 인증·8KiB 상한 필터의 순서는 유지한다. ReservationCancelIT의 두 인코딩 경로 회귀가 실제 보안 필터와 HTTP·DB를 통과한다.
+
+
+### 7단계 경쟁 검증 연결 (2026-10-20)
+
+C01~C11 각10회는 실제 Authorization·Basic/BCrypt·보안 필터·Controller·Service를 통과한다. 내부 서비스 시험으로 대체하지 않았다. 타인/ADMIN404·취소후생성재현은 기존 소유권/취소회귀로 유지한다. 테스트 종료 관측은 Service 진입/퇴장과 HTTP작업/클라이언트 종료를 함께 확인한다. 후속 Redis 제한 도입 후에도 전체HTTP경로를 유지하고 경쟁전용10000건/60초·키초기화를 적용해야 한다. [경쟁IT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[실행증거](../../docs/test-evidence.md)·[회차기록](../../docs/concurrency-runs.json)을 따른다. 앞 절의 후속 표시는 각 과거 확인일의 상태다.

@@ -2,7 +2,7 @@
 
 **Input**: `specs/008-reservation-concurrency/`의 [명세](spec.md)·[계획](plan.md)·[조사](research.md)·[모델](data-model.md)·[계약](contracts/concurrency-contract.md)·[검증 안내](quickstart.md).
 
-**Prerequisites**: 설계 문서와 확정된 생성 성공/품절 두 순서를 유지한다. 작업 루트는 `/Users/joypeb/Desktop/projects/limited-booking-concurrency-plan`이며 경로는 이 루트 기준이다. 현재 문서는 작업 생성 결과이며 모든 구현·실행 작업은 미완료다.
+**Prerequisites**: 설계 문서와 확정된 생성 성공/품절 두 순서를 유지한다. 작업 루트는 `/Users/joypeb/Desktop/projects/limited-booking-concurrency-plan`이며 경로는 이 루트 기준이다. 2026-10-20 모든38개 작업을 수행했다. 실제 실행 근거는 docs/test-evidence.md와 docs/concurrency-runs.json을 따른다.
 
 **Tests**: 명세가 실제 경쟁 검증을 요구하므로 테스트를 포함한다. 기능은 테스트→의도한 실패 탐지→최소 수정→재검증 순서다. 기존 동작이 맞으면 추가 제품 변경 없이 고의 방어 훼손 탐지를 기록하고 반드시 원복한다. 컴파일 오류·미작성 관측 지원을 업무 RED로 취급하지 않는다.
 
@@ -80,10 +80,10 @@
 
 11종 인수와 회귀가 완료된 뒤에만 실행 완료 상태를 반영한다.
 
-- [ ] T035 backend에서 ./gradlew test integrationTest --tests '*ReservationConcurrencyIT' 및 ./gradlew verify를 수행하고 backend/build/test-results/integrationTest의 XML에서 신규 반복110회와 지원/기존 테스트 수·실패/오류/skip0을 구분해 docs/test-evidence.md에 기록한다. UP-TO-DATE만이면 필요한 지정 실행을 실제 수행하고 이유를 남긴다.
-- [ ] T036 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제 환경·명령/종료 코드·시간·경쟁 조건·seed 비사용·고의 결함/원복·관측 범위·미검증을 정리하고 speckit quickstart의 안내와 대조한다. 버전 변경이나 운영 성능을 추정하지 않는다.
-- [ ] T037 README.md·knowledge/README.md·knowledge/domain/reservation.md·knowledge/domain/resource.md·knowledge/domain/security.md와 specs/008-reservation-concurrency/quickstart.md를 실제 구현·실행에 맞게 연결한다. docs/openapi.yaml은 계약 보존을 검토하며 새 동작이 없으면 임의 변경하지 않는다.
-- [ ] T038 한정 수량 예약 백엔드 로컬 개발 계획.md의7단계와 specs/008-reservation-concurrency/tasks.md를 실제 통과 증거가 있는 항목만 완료 처리한다. 전체 diff·미원복 고의 결함·비밀정보·링크·형식·미검증을 점검하고 파일별 스테이징으로 커밋한다. 자동 병합·push·배포는 하지 않는다.
+- [X] T035 backend에서 ./gradlew test integrationTest --tests '*ReservationConcurrencyIT' 및 ./gradlew verify를 수행하고 backend/build/test-results/integrationTest의 XML에서 신규 반복110회와 지원/기존 테스트 수·실패/오류/skip0을 구분해 docs/test-evidence.md에 기록한다. UP-TO-DATE만이면 필요한 지정 실행을 실제 수행하고 이유를 남긴다.
+- [X] T036 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제 환경·명령/종료 코드·시간·경쟁 조건·seed 비사용·고의 결함/원복·관측 범위·미검증을 정리하고 speckit quickstart의 안내와 대조한다. 버전 변경이나 운영 성능을 추정하지 않는다.
+- [X] T037 README.md·knowledge/README.md·knowledge/domain/reservation.md·knowledge/domain/resource.md·knowledge/domain/security.md와 specs/008-reservation-concurrency/quickstart.md를 실제 구현·실행에 맞게 연결한다. docs/openapi.yaml은 계약 보존을 검토하며 새 동작이 없으면 임의 변경하지 않는다.
+- [X] T038 한정 수량 예약 백엔드 로컬 개발 계획.md의7단계와 specs/008-reservation-concurrency/tasks.md를 실제 통과 증거가 있는 항목만 완료 처리한다. 전체 diff·미원복 고의 결함·비밀정보·링크·형식·미검증을 점검하고 파일별 스테이징으로 커밋한다. 자동 병합·push·배포는 하지 않는다.
 
 ## Dependencies & Execution Order
 
