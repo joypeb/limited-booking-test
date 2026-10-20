@@ -1160,3 +1160,17 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - LocalUserPrincipal의 null 불허 계약에 맞춰 resolver의 userId null 중복 조건만 제거했다. 인증 객체 null·미인증·Principal 타입 거부와 UUID 추출은 보존했다. 동작 보존 정리이므로 신규 기능 RED 테스트 대신 기존 보안·소유권 통합 검증을 사용했다.
 - backend에서 `./gradlew integrationTest --tests '*SecurityIT' --tests '*ReservationOwnershipIT'` 종료0, 총11건(Security6·Ownership5), 실패/오류/skip0, 11초. 고정 UUID 추출·null/외부 Principal 거부·실제 HTTP 인증/권한·소유권을 검증했다.
 - 기존 fix/qodana-findings에서 수행, 사용자 Wrapper 변경 보존. 관련 변경 diff 검토·공백 검사 수행. 전체 verify/Unit/부하/CVE 재현/Qodana 직접 실행은 이번 후속에서 미실행. 남은 main public 유지와 의존성2개 미해결은 [Qodana 검토](qodana-review.md)를 따른다. 다음 한 작업은 후속 커밋 Qodana 재검사다.
+
+
+## 2026-10-20 / 잔여 Qodana3건 보안 수정 검증
+
+- 기준b4a40fd, 기존 fix/qodana-findings 브랜치. 사용자 Wrapper 변경 보존·제외. 기존 Corretto25.0.4/사용자 Gradle9.8.0 환경.
+- 사용자 보고의 json-patch1.13 및 jackson-coreutils2.0은 기존 테스트 의존성 그래프에 존재했다. 고정 명세/classpath YAML과 테스트 localhost HTTP 응답이 검증기 입력이다. 운영 공격 가능성을 입증한 것은 아니며 취약 모듈 제거를 보안 불변식으로 선택했다.
+- RED: `./gradlew verifyContractDependencies` 종료1, testCompileClasspath에서 두 취약 좌표를 실제 검출했다. 컴파일 오류나 문자열 소스 검사에 의한 실패가 아니다.
+- 공식 검색·배포 확인 후 core3.0.0/networknt로 전환 및 Swagger2 변환기 제외. `./gradlew verifyContractDependencies contractTest bootJar test` 종료0, 기존 Contract3·Unit143 실패/오류/skip0, bootJar main 자동 탐지·패키징 성공. 모든 Test는 동일 테스트 runtime을 사용한다.
+- 엔진 교체 호환성 보강: 실제 HTTP 응답의 잘못된 UUID/숫자 id/추가필드3건 추가. `./gradlew contractTest verifyContractDependencies` 종료0, Contract6건 실패/오류/skip0(정상·필수 id 누락·UUID 형식·타입·미정의필드·고정 업무 명세 참조 해석). 제품 API에 테스트 후크를 추가하지 않았다.
+- testRuntimeClasspath/runtimeClasspath 전체 dependencies 명령 각 종료0. graph 검사에서 json-patch/jackson-coreutils/Rhino 없음 확인, core3.0.0/networknt2.0.1/swagger-parser-v32.1.41 확인. verifyContractDependencies가 testCompileClasspath도 함께 검사한다. 원래 CVE의 strongest substitute는 취약 구현이 해석된 구성에 존재하지 않음을 확인하는 이 검사다. 공격성 무한자원 payload 실행은 불필요하여 수행하지 않았다.
+- main은 public 유지·단일 UnnecessaryModifier만 억제하여 실행 호환성 보존. Qodana 보안 경고 제외/기준선/품질 게이트 완화 없음. 이 문법 지적을 보안 수정으로 보고하지 않는다.
+- 미실행: Qodana 자체 재검사, 전체 verify/DB·Redis IT/Property/PIT/부하/외부CI. 업무 자동 HTTP 계약 전체로 확대하지 않는다. 최종 독립 후보 리뷰 결과는 아래 후속 기록을 따른다. 다음 한 작업은 이번 커밋 Qodana 재검사다.
+
+최종 독립 후보 리뷰: 읽기 전용 에이전트가 배포 POM/JAR·실제 호출·계약 테스트·Gradle 연결을 검토했고 구체적인 surviving bypass/회귀 결함을 발견하지 못했다. 리뷰어는 Gradle/Qodana를 실행하지 않았으며 테스트 결과는 위 루트 실행 기록을 근거로 한다. git diff --check 통과.

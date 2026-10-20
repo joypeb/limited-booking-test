@@ -51,3 +51,15 @@ API·수량·SQL·인증 계약 변경이 없으므로 계획서·OpenAPI 기대
 추가1건은 LocalIdentityResolver의 `principal.userId() == null`이다. 앞선 LocalUserPrincipal의 NullMarked가 userId의 null 불허 계약을 명확히 하면서 후속 호출자의 중복 검사를 드러냈다. 해당 조건만 제거하고 null Authentication·미인증·다른 Principal 거부는 유지한다. 기존 고정 계정 생성 경로에서 userId는 UUID 상수다. 새로운 기능·계약 변경이 없어 새 테스트 대신 기존 SecurityIT·ReservationOwnershipIT를 실행한다. 이 수정은 한 파일에 한정되어 추가 병행 구현은 하지 않는다.
 
 나머지3건은 위 판단을 유지한다. 의존성을 임의 제외하거나 전체 검사/품질 게이트를 완화하지 않았다. 다음 작업은 이 커밋을 대상으로 재검사하고, 계약 검증기 교체·패치를 별도 검증 대상으로 진행하는 것이다.
+
+
+## 잔여3건 해결 변경 (2026-10-20, b4a40fd 이후)
+
+사용자의 최신 지시로 공식 자료를 다시 검색했고 다음을 적용했다. 앞의 미해결·억제 미적용 판단은 당시 상태이며 이 절이 현재 판단이다.
+
+- 공식 Atlassian [3.0.0 마이그레이션](https://github.com/atlassian/openapi-request-validator/blob/master/RELEASE-NOTES.md)과 [배포 POM](https://repo.maven.apache.org/maven2/com/atlassian/oai/openapi-request-validator-core/3.0.0/openapi-request-validator-core-3.0.0.pom)을 확인하여 core3.0.0의 networknt 엔진으로 전환했다. 이는 취약 java-json-tools 스키마 엔진 경로를 제거한다.
+- 또 다른 유입 경로인 swagger-parser-v2-converter만 제외했다. ToolchainContractValidator는 classpath의 고정 OpenAPI3.0.3을 OpenAPIV3Parser.readContents로 읽으며 Swagger2 변환기를 호출하지 않는다. 직접 json-patch/coreutils만 제외하여 실행 중 ClassNotFoundException을 만드는 방식은 사용하지 않았다. 고정 OpenAPI·명세 참조·HTTP 필수값/형식/타입/추가필드 검증은 유지한다.
+- 보고된 취약 함수는 Copy/Move/Patch/merge, URL 로더, JSON pointer, BigDecimal 변환이다. 이번 해결은 개별 함수 패치가 아니라 두 모듈을 compile/runtime 그래프 전체에서 제거하는 방식이다. 운영 외부 입력에서 개별 취약 함수까지의 공격 가능성을 입증한 것은 아니지만 테스트 경로의 취약 라이브러리 자체를 없앴다. networknt·신규 파서에 다른 취약점이 전혀 없다고 보증하지 않는다.
+- verifyContractDependencies는 두 모듈 재유입을3개 구성에서 거부하며 contractTest 선행 태스크다. 변경 전 기존2.46.1에서 실제 두 모듈 검출로 실패했고 변경 후 성공했다.
+- main public 지적은 보안 취약점이 아니다. [Boot 공식 MainClassFinder](https://docs.spring.io/spring-boot/api/java/org/springframework/boot/loader/tools/MainClassFinder.html)는 public static main 탐지를 명시한다. 실행 호환성 때문에 메서드에만 SuppressWarnings("UnnecessaryModifier")를 적용하고 사유를 적었다. [JetBrains 공식 억제 안내](https://www.jetbrains.com/help/idea/disabling-and-enabling-inspections.html)에 따른 범위 지정이며 보안 검사는 억제하지 않는다. bootJar 자동 main 탐지와 패키징으로 호환성을 확인했다.
+- 계획서3.1·버전표·계약 프로브를 현재 도구와 맞췄다. 업무 API/OpenAPI3.0.3/수량/권한 계약 변경은 없다. Qodana 재실행 전 세 지적의 실제 소멸을 확정하지 않는다.

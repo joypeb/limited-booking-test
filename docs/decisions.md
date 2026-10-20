@@ -123,3 +123,8 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 - 공식 수정판이 확인된 Jackson2/Rhino는 테스트 구성에만 Boot BOM 보안 예외로 정렬한다. 수정판 미확인 json-patch/coreutils는 무조건 제외하지 않으며 잔여 위험으로 관리한다.
 - Java25 언어 차원의 public 생략 제안은 Spring Boot main 탐지 호환성을 위해 적용하지 않는다. 경고 억제는 추가하지 않았다.
 - 사용자 요청으로 독립 수정 파일을 병행 배정하고 공유 Gradle 실행과 Git은 순차 처리했다. 상세 근거와 검증은 [Qodana 검토](qodana-review.md)와 [증거](test-evidence.md)를 따른다.
+
+
+## 2026-10-20 잔여 Qodana3건 처리 결정
+
+공식 배포가 확인된 Atlassian openapi-request-validator-core3.0.0으로 전환해 networknt 엔진을 사용한다. 프로젝트는 OpenAPI3.0.3 전용이므로 Swagger2 변환기만 제외한다. 취약2개 모듈의 재유입을 Gradle 해석 그래프 검사로 거부하며 기존 필수 id·참조 해석 및 추가 UUID/타입/미정의필드 탐지로 기능 보존을 검증한다. Rhino도 유입 경로가 사라져 강제 버전을 제거했다. public main은 Boot 호환성을 유지하고 해당 문법 경고만 메서드에 좁게 억제한다. 상세 공식 근거는 [Qodana 검토](qodana-review.md)에 기록한다. 이전 미해결 기록을 이 결정으로 갱신한다.
