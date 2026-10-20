@@ -190,4 +190,27 @@ class ReservationCancelIT extends ReservationApiTestSupport {
         inventory(resource, 0, 2, 1);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "/api/reservations/{id}/%63ancel", "/api/%72eservations/{id}/cancel"
+    })
+    void encodedCancelPathsCannotBypassEmptyBodyContract(String template) throws Exception {
+        UUID resource = resource(1), id = confirmed(resource);
+        var response = request("POST", template.replace("{id}", id.toString()), "USER_A", "{}", null);
+        var current = JSON.readTree(get(id).body());
+        org.assertj.core.api.SoftAssertions.assertSoftly(soft -> {
+            soft.assertThat(response.statusCode()).as("비어 있지 않은 취소 본문").isEqualTo(400);
+            soft.assertThat(current.get("status").asString()).as("거부 후 예약 상태").isEqualTo("CONFIRMED");
+            soft.assertThat(current.get("cancelledAt").isNull()).as("거부 후 취소 시각").isTrue();
+            soft.assertThat(jdbc.queryForObject("SELECT available FROM resources WHERE id=?", Integer.class, resource))
+                    .as("거부 후 수량").isZero();
+        });
+        problem(response, 400, "INVALID_REQUEST");
+        inventory(resource, 0, 1, 1);
+        var valid = request("POST", template.replace("{id}", id.toString()), "USER_A", null, null);
+        assertThat(valid.statusCode()).isEqualTo(200);
+        assertThat(JSON.readTree(valid.body()).get("status").asString()).isEqualTo("CANCELLED");
+        inventory(resource, 1, 1, 0);
+    }
+
 }

@@ -64,3 +64,8 @@ Corretto25.0.4.7.1·Gradle9.7.1·Docker daemon29.8.2에서 동일 PostgreSQL18.6
 ### 6단계 조회·취소 실행 (2026-10-20)
 
 Corretto25.0.4+7-LTS·Gradle9.7.1·Boot4.1.1·Docker daemon29.8.2 및 기존 PostgreSQL18.6 고정 digest를 유지했다. 새 의존성·스키마 변경 없음. verify Unit137·일반IT136, local 프로필 curl11단계와 최종 DB 보존식 통과. 소유권/취소/복구 롤백까지 실제 HTTP·DB 검증하며 경쟁 반복·Redis 제한·심화·부하/외부CI는 후속이다. 세부는 [실행 증거](test-evidence.md)를 따른다.
+
+
+### PR6 적대적 리뷰 후 재검증 (2026-10-20)
+
+Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존성 변경 없이 인코딩 취소 경로의 본문 계약 회귀2건을 추가해 최종 verify Unit137·일반IT138 실패/오류/skip0을 확인했다. 앞선6단계 최초 인수137/136과 구분한다. 외부CI 성공을 의미하지 않는다.

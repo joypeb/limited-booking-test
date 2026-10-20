@@ -19,3 +19,6 @@
 | 품절 키 재시도 | 409 후 취소 → POST | 201 replayed=false, available 0 | FR-007 | Cancel |
 
 오류 본문에는 SQL·스택 트레이스·비밀번호가 없어야 한다.
+
+
+PR #6 회귀 보완: MVC가 같은 취소 Handler로 매칭하는 URL 인코딩 경로(`/api/reservations/{id}/%63ancel`, `/api/%72eservations/{id}/cancel`)에도 본문 없음 계약을 적용한다. 비어 있지 않은 본문은400 INVALID_REQUEST/상태·수량 불변이며, 빈 본문은 기존200 계약이다. 새 정책이 아닌 기존 FR-003·FR-004의 경로별 누락 보완이다.

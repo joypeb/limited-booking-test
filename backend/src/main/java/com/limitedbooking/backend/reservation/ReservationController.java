@@ -43,7 +43,12 @@ public class ReservationController {
 
     @PostMapping(value = "/{id}/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
     public ReservationView cancel(Authentication authentication,
-            @org.springframework.web.bind.annotation.PathVariable java.util.UUID id) {
+            @org.springframework.web.bind.annotation.PathVariable java.util.UUID id,
+            jakarta.servlet.http.HttpServletRequest request) {
+        // MVC가 디코딩해 매칭한 모든 경로에서 검사한다. raw URI 필터만으로는 인코딩 경로를 놓친다.
+        if (com.limitedbooking.backend.common.RequestBodyLimitFilter.getCachedBody(request).length != 0) {
+            throw new IllegalArgumentException("예약 취소 요청 본문은 비어 있어야 합니다.");
+        }
         return service.cancel(identity.userId(authentication), id);
     }
 

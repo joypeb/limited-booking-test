@@ -1124,3 +1124,18 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 미완료 범위: 이번 명세의 업무 구현·일반검증·CLI 인수는 완료했다. 실제 동시성 반복(7단계), Redis20/60초 및 장애(8단계), 자동 업무 계약·속성·PIT/부하/외부CI는 후속이다. 실제 취소 QueryTimeoutException은 테스트 주입으로만 검증했으며 DB 중단·실제 timeout 반복과 구분한다. 다음 한 작업은 7단계 경쟁 시나리오 명세·기대 결과 확정이다.
 
 최종 문서 검증: 변경 Markdown13개(공백·한글 경로 포함)의 로컬 링크 오류0, 작업32/32·미완료0, test/integrationTest XML 합계137/136·실패/오류/skip0을 대조했다. `git diff --check` 종료0. 최종 문서 수정 이후 backend 소스는 검증한 구현 커밋5b4019c와 동일하다. 사전·사후 `.specify/extensions.yml` 부재를 확인하여 확장 훅은 없다.
+
+
+## 2026-10-20 PR #6 적대적 리뷰와 계약 회귀 보완
+
+- 사용자 지시: `develop` 대상 GitHub PR 생성 → 적대적 코드 리뷰 → 문제 없을 때 결과 코멘트·병합. `git fetch origin`으로 대상 d5c05ee96859e773d040909f10a96b74696bf536을 확인하고 `git push -u origin feature/reservation-cancel`, `gh pr create --base develop --head feature/reservation-cancel --body-file ...`를 실행했다. [PR #6](https://github.com/joypeb/limited-booking-test/pull/6), 최초 head bf27a30a3de0b3b9276399f9aa4bf55bf58ed4d0. 작업 트리 clean, 초기 GitHub 체크 등록0, mergeState CLEAN이다. 원격 작업은 이번 최신 지시로 승인되었다.
+- 리뷰 절차: `review` 스킬의 SQL/수량·경쟁/소유권·타입/시각·계약 점검, 독립 적대적 검토 및 testing/maintainability·security/API/performance 전문 검토를 수행했다. Codex CLI0.163.0의 읽기 전용 적대적 exec와 `codex review --base origin/develop` 구조화 검토도 각각 종료0. 외부 리뷰 댓글은0이었다. 새 코드의 내부 사용자 영향과 실제 재현으로 판정했고 후속7·8단계 부재는 결함으로 세지 않았다.
+- 발견 P2/confidence9: 원시 `getRequestURI()` 접두사·접미사로 취소 본문을 검사하는 필터와 MVC 경로 디코딩 사이의 차이. `/api/reservations/{id}/%63ancel`, `/api/%72eservations/{id}/cancel`에 인증 소유자와 `{}` 본문을 보내면 필터를 우회하여 Controller가 취소를 실행했다. 독립 적대적·API/보안 리뷰와 Codex CLI가 같은 결함을 지적했다.
+- RED: `cd backend && ./gradlew integrationTest --tests '*ReservationCancelIT.encodedCancelPathsCannotBypassEmptyBodyContract'` 종료1, 파라미터2건 모두 실패. 두 경로 모두 기대400/실제200, 기대CONFIRMED/실제CANCELLED, cancelledAt null 위반, 기대available0/실제1을 실제 HTTP·PostgreSQL로 관측했다. 컴파일 성공 후 기능 실패이며 미인가 사용자 권한우회라고 과장하지 않는다. 소유자의 잘못된 요청을 잘못 처리한 계약 결함이다.
+- 수정: `ReservationController.cancel`이 Handler 선택 후 인증/상한 필터에서 전달한 캐시 본문을 직접 검사하고 비어 있지 않으면 Service 호출 전에 IllegalArgumentException→400 INVALID_REQUEST로 거부한다. 기존 raw 필터를 유지해 일반 요청 동작·검증 순서에 회귀를 만들지 않는다. 경로 자체를 금지하거나 OpenAPI/도메인 정책을 바꾸지 않는다.
+- GREEN: `./gradlew integrationTest --tests '*ReservationCancelIT' --tests '*ReservationOwnershipIT' --tests '*SecurityIT'` 종료0, 24건 실패/오류/skip0. 이후 같은 인코딩 경로의 빈 본문 정상200/CANCELLED/available1 회귀도 추가했다.
+- 최종 `./gradlew verify` 종료0, Unit137·일반IT138(기존120+Ownership5+Cancel13), 실패/오류/skip0. 실제70초. XML 합계도137/138로 대조했다. 추가된 파라미터2건은 본문{}400·CONFIRMED/null/available0 불변과 동일 경로 빈 본문200·정상복구를 함께 검증한다.
+- 수정 이후 최신 작업 트리의 Codex 구조화 리뷰는 수정이 필요한 추가 결함 없음으로 종료했다. 초기 적대적 결과의 P2는 위 RED→수정→GREEN/전체verify로 해소했다. 테스트/유지보수 전문 검토는 추가 발견 없음이며 소유권·잠금·롤백·시각·최초 응답 재현에서도 추가 확정 결함이 없다.
+- 계약 연결: 007 FR-003·FR-004와 계획서4.1·5.3의 기존 본문 없음/오류 무변경 요구를 확장 경로에도 적용한다. 기준 계획서·도메인 지식·계약 보조 문서·현재 테스트 수를 동기화했다. OpenAPI 정본·스키마·의존성 변경 없음.
+
+리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.

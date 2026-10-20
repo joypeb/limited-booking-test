@@ -4,7 +4,7 @@
 
 **입력**: `specs/007-reservation-cancel/spec.md`, 로컬 개발 계획 2~5절(5.3 취소 흐름)·7절 6단계.
 
-**상태**: Phase 0/1 설계와 전체 구현·검증을 완료했다(2026-10-20). 실제 브랜치는 `feature/reservation-cancel`이며 구현 커밋은 `5b4019c`다. 신규 OwnershipIT5·CancelIT11, 전체 Unit137·일반IT136과 local curl11단계를 통과했다. [실행 증거](../../docs/test-evidence.md)를 따른다. 아래 설계 시점 상태·예정 구조는 당시 기준이며 현재 구현은 소스와 실행 증거를 따른다.
+**상태**: Phase 0/1 설계와 전체 구현·검증을 완료했다(2026-10-20). 실제 브랜치는 `feature/reservation-cancel`이며 구현 커밋은 `5b4019c`다. 신규 OwnershipIT5·CancelIT13, 전체 Unit137·일반IT138과 local curl11단계를 통과했다. [실행 증거](../../docs/test-evidence.md)를 따른다. 아래 설계 시점 상태·예정 구조는 당시 기준이며 현재 구현은 소스와 실행 증거를 따른다.
 
 ## 요약
 

@@ -78,4 +78,4 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 
 - [명세](../specs/007-reservation-cancel/spec.md)·[계획](../specs/007-reservation-cancel/plan.md)·[작업](../specs/007-reservation-cancel/tasks.md): 소유자 조회·원자적 취소·중복 취소·복구 장애 롤백·취소 후 생성 재요청을 구현·검증했다.
 - [조사](../specs/007-reservation-cancel/research.md)·[값 모델](../specs/007-reservation-cancel/data-model.md)·[계약](../specs/007-reservation-cancel/contracts/reservation-cancel-contract.md)·[검증 안내](../specs/007-reservation-cancel/quickstart.md)·[명세 품질16개](../specs/007-reservation-cancel/checklists/requirements.md)를 연결한다. 체크리스트는 구현 완료 표시와 구분한다.
-- 신규 OwnershipIT5·CancelIT11, 최종 일반 verify Unit137·일반IT136 실패/오류/skip0. local 프로필 curl11단계와 최종 DB 보존식을 확인했다. 상세 실행·고의 변경 탐지는 [증거](../docs/test-evidence.md), 구현 연결은 [예약](domain/reservation.md)·[보안](domain/security.md)·[대상](domain/resource.md)을 따른다. 실제 경쟁 반복·Redis·심화·부하는 후속이다.
+- 신규 OwnershipIT5·CancelIT13, 최종 일반 verify Unit137·일반IT138 실패/오류/skip0. local 프로필 curl11단계와 최종 DB 보존식을 확인했다. 상세 실행·고의 변경 탐지는 [증거](../docs/test-evidence.md), 구현 연결은 [예약](domain/reservation.md)·[보안](domain/security.md)·[대상](domain/resource.md)을 따른다. 실제 경쟁 반복·Redis·심화·부하는 후속이다.

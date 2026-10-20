@@ -1,6 +1,6 @@
 # 검증 안내: 소유자의 예약 조회·취소
 
-> 아래는 재현 안내다. 2026-10-20 지정 Unit137/IT16·일반 verify Unit137/IT136·local curl11단계의 실제 통과 결과는 [실행 증거](../../docs/test-evidence.md)에 기록했다.
+> 아래는 재현 안내다. 2026-10-20 지정 Unit137/IT18·일반 verify Unit137/IT138·local curl11단계의 실제 통과 결과는 [실행 증거](../../docs/test-evidence.md)에 기록했다.
 
 ## 전제
 - Docker 실행 중(Testcontainers), Java 25, `backend/`에서 실행.

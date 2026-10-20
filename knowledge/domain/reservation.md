@@ -141,3 +141,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 [Writer](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)는 READ COMMITTED/SET LOCAL→소유자 조회→`CancellationDecision.ALREADY_CANCELLED` 조기 반환 또는 대상 FOR UPDATE→CONFIRMED 조건 상태UPDATE→1건일 때만 available<capacity 조건 복구→저장값 재조회 순서다. 복구0건은 내부 오류500과 전체 롤백이며 분류된 timeout은503이다. 취소 timestamp는 Clock UTC 마이크로초이며 응답은 DB 재조회 값이다.
 
 [OwnershipIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationOwnershipIT.java)·[CancelIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationCancelIT.java)는 실제 Basic HTTP/격리 PostgreSQL·수량 보존식으로 검증한다. 취소 복구 장애는 테스트 Spy에만 있으며 실제 상태 갱신 후 실패·롤백을 확인한다. 중복 취소, 대상 잠금 중 이미 취소된 분기, 낡은 CONFIRMED 조회 뒤 조건UPDATE0 분기를 구분한다. 실제 경쟁 반복은 7단계다. 세부 명령·고의 변경 탐지·실행 수는 [실행 증거](../../docs/test-evidence.md)의 6단계를 따른다.
+
+
+### PR #6 적대적 리뷰: 인코딩 경로의 취소 본문 (2026-10-20)
+
+취소 본문 검증은 raw URI 기반 보안 필터에만 의존하지 않는다. MVC가 디코딩한 경로로 Handler를 선택한 뒤 Controller에서도 `RequestBodyLimitFilter.getCachedBody`의 실제 바이트가0인지 검사하고 Service 호출 전에 거부한다. 따라서 `%63ancel` 또는 `%72eservations` 경로에도 비어 있지 않은 본문은400이며 상태·수량을 변경하지 않는다. 동일 경로의 빈 본문은 정상 취소한다. 두 경로의 실제 HTTP/DB 회귀를 추가했고, RED에서는200/CANCELLED/available1을 관측한 뒤 수정했다. API·도메인 규칙 변경 없이 기존 계약의 적용 누락을 고쳤다. [실행 증거](../../docs/test-evidence.md)의 PR6 리뷰 기록을 따른다.

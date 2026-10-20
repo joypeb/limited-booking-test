@@ -86,3 +86,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 ### 2026-10-20 조회·취소 소유권 검증
 
 `ReservationOwnershipIT`5건은 실제 Authorization·보안 필터·소유자 SQL을 통해 본인200, 타인/ADMIN/없는 예약404, 미인증401/WWW-Authenticate, 잘못된 UUID400, 인증 앞 취소8193바이트413과 상태·수량 무변경을 확인한다. `ReservationCancelIT`는8192 이하 비어 있지 않은 취소 본문400을 검사한다. Controller 전용 UUID 바인더는 축약형도400으로 거부한다. 고정 계약은 유지하며 [실행 증거](../../docs/test-evidence.md)를 따른다.
+
+
+### PR #6 인코딩 취소 경로 검증 보완 (2026-10-20)
+
+원시 URI 접두사·접미사로 분기하는 취소 검증 필터는 MVC의 경로 디코딩과 차이가 있다. 신규 취소 Controller에서 매칭된 모든 경로의 캐시 본문0바이트를 다시 검사해 인코딩 경로도400/무변경을 보장한다. 인증·8KiB 상한 필터의 순서는 유지한다. ReservationCancelIT의 두 인코딩 경로 회귀가 실제 보안 필터와 HTTP·DB를 통과한다.
