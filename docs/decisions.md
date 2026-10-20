@@ -114,3 +114,12 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 ## 2026-10-20 PR6 인코딩 취소 경로의 본문 검증
 
 적대적 리뷰에서 raw URI 필터와 디코딩된 MVC 경로 매칭 차이를 찾았다. `%63ancel`·`%72eservations` 경로와 `{}` 본문에서400 대신200·실제 CANCELLED/available1이 재현됐다. Controller의 취소 Handler 진입 시 상한 필터가 캐시한 실제 본문 바이트를 검사하도록 보완했다. 경로를 직접 디코딩하거나 허용 경로를 좁히는 별도 정책 대신, 매칭된 모든 취소 Handler에서 기존 본문 없음 계약을 보장한다. 인증·크기 상한·트랜잭션·OpenAPI 정책은 유지한다. 같은 인코딩 경로의 빈 본문 정상 취소도 회귀로 확인한다.
+
+
+## 2026-10-20 Qodana 지적 처리
+
+- null 계약은 패키지 전체 대신 record·재정의 메서드에 JSpecify NullMarked를 적용한다. nullable SQL accessor는 한 번 조회해 null이면 원래 예외를 던진다. 55P03 외 오류를503으로 감추지 않는다.
+- 기존 Value 설정 바인딩을 유지하고 추가 Spring 설정 메타데이터로 비밀번호 프로퍼티3개를 설명한다. 기본값·실제 비밀값을 넣지 않는다.
+- 공식 수정판이 확인된 Jackson2/Rhino는 테스트 구성에만 Boot BOM 보안 예외로 정렬한다. 수정판 미확인 json-patch/coreutils는 무조건 제외하지 않으며 잔여 위험으로 관리한다.
+- Java25 언어 차원의 public 생략 제안은 Spring Boot main 탐지 호환성을 위해 적용하지 않는다. 경고 억제는 추가하지 않았다.
+- 사용자 요청으로 독립 수정 파일을 병행 배정하고 공유 Gradle 실행과 Git은 순차 처리했다. 상세 근거와 검증은 [Qodana 검토](qodana-review.md)와 [증거](test-evidence.md)를 따른다.

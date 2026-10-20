@@ -163,3 +163,6 @@ cd backend
 ```
 
 취소와 수량1 복구는 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)의 단일 트랜잭션으로 커밋한다. 중복 취소는 시각·수량을 유지한다. 원래 생성 키의 재요청은 최초201/CONFIRMED를 재현하고 GET은 CANCELLED다. 지정IT18·일반verify(Unit137/IT138)·local CLI 11단계를 통과했다. [실행 증거](docs/test-evidence.md), [6단계 안내](specs/007-reservation-cancel/quickstart.md)를 참조한다. 다음은7단계 실제 경쟁 검증이다.
+
+
+Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [Qodana 검토 기록](docs/qodana-review.md), 실제 실행 결과와 한계는 [검증 기록](docs/test-evidence.md)을 참조한다.

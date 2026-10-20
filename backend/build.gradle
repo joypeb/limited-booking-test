@@ -39,6 +39,19 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// 계약 검증기의 전이 의존성 보안 예외를 테스트 classpath에만 적용한다.
+// Jackson 3 애플리케이션 런타임은 기존 Spring Boot BOM 관리를 유지한다.
+dependencyManagement {
+    configurations('testCompileClasspath', 'testRuntimeClasspath') {
+        imports {
+            mavenBom 'com.fasterxml.jackson:jackson-bom:2.21.8'
+        }
+        dependencies {
+            dependency 'org.mozilla:rhino:1.7.15.1'
+        }
+    }
+}
+
 tasks.withType(Test).configureEach {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath

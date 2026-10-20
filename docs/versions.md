@@ -69,3 +69,8 @@ Corretto25.0.4+7-LTS·Gradle9.7.1·Boot4.1.1·Docker daemon29.8.2 및 기존 Pos
 ### PR6 적대적 리뷰 후 재검증 (2026-10-20)
 
 Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존성 변경 없이 인코딩 취소 경로의 본문 계약 회귀2건을 추가해 최종 verify Unit137·일반IT138 실패/오류/skip0을 확인했다. 앞선6단계 최초 인수137/136과 구분한다. 외부CI 성공을 의미하지 않는다.
+
+
+## 2026-10-20 Qodana 보안 예외
+
+테스트 구성 testCompileClasspath/testRuntimeClasspath에만 Jackson2 BOM2.21.8(core/databind 및 관련 모듈2.21.8, annotations2.21)과 Rhino1.7.15.1을 적용했다. Gradle 실제 해석 및 Contract 프로브3건·bootJar로 최소 호환성을 확인했다. runtime Jackson3.1.5는 유지한다. Boot BOM 기본값의 보안 예외이며 근거/잔여 의존성은 [Qodana 검토](qodana-review.md), 실행 한계는 [증거](test-evidence.md)를 따른다. 실행 Gradle9.8.0은 작업 전 사용자 Wrapper 변경에 의한 것으로 이번 변경에서 Wrapper를 갱신한 것이 아니다.

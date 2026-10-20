@@ -1139,3 +1139,16 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 계약 연결: 007 FR-003·FR-004와 계획서4.1·5.3의 기존 본문 없음/오류 무변경 요구를 확장 경로에도 적용한다. 기준 계획서·도메인 지식·계약 보조 문서·현재 테스트 수를 동기화했다. OpenAPI 정본·스키마·의존성 변경 없음.
 
 리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.
+
+
+## 2026-10-20 / Qodana 지적 수정
+
+- 기준 HEAD `3cfabe7`, 보고 revision `3b26a2517e8111ee28d3af0e9fd90873d1e81b89`, 실제 생성 브랜치 `fix/qodana-findings`. 기존 사용자 Wrapper 변경(9.8.0)은 보존·커밋 제외한다.
+- 환경: Corretto 25.0.4+7-LTS, Gradle 9.8.0(사용자 기존 변경 적용), Docker Engine 29.8.2. 정확한 작업 시간은 미계측. 분류·근거·담당은 [Qodana 검토](qodana-review.md).
+- SQL null RED: `./gradlew test --tests com.limitedbooking.backend.common.ApiExceptionHandlerTest` 종료1, 6건 중 null SQLException 보존 사례 1실패, skip0. 기존 코드는 원래 예외 대신 NPE를 던졌다. 최소 null guard 후 GREEN 확인.
+- 최초 통합 명령: `./gradlew test integrationTest --tests '*SecurityIT' --tests '*ResourceApiIT' --tests '*ResourceRepositoryIT' --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT' --tests '*ApiExceptionHandlerTest'`. 종료1. test 태스크는 Unit143건 전체 통과. integrationTest 36건 중23통과/13실패/skip0. Security6·ResourceApi8·ResourceRepository4·Ownership5 통과. Cancel13은 Spring 컨텍스트 기동의 Flyway PostgreSQL 연결에서 SocketTimeoutException(Read timed out) 발생. 후속 메서드들은 컨텍스트 실패 임계값으로 실패했다. 기능 assertion 실패와 구분하며 초기 실패를 숨기지 않는다.
+- 의존성 해석: testRuntimeClasspath/runtimeClasspath 전체 dependencies 및 jackson-databind/rhino dependencyInsight 각 종료0. 경고5좌표는 테스트 경로에만 존재한다. 변경 후 Jackson2 core/databind/dataformat/datatype2.21.8·annotations2.21, Rhino1.7.15.1 선택 확인. runtimeClasspath는 기존 tools.jackson3.1.5 유지.
+- `./gradlew contractTest bootJar` 종료0. Contract 도구 프로브3건 실패/오류/skip0, bootJar 진입점 자동 탐지·패키징 성공. 업무 API 전체 계약 검사나 CVE 공격 재현은 아니다.
+- 의존성 변경 후 관련 재검증: `./gradlew test integrationTest --tests '*ReservationCancelIT'` 종료0, Unit143·CancelIT13건 실패/오류/skip0. 초기 연결 실패 뒤 의존성 변경이 있어 재검증했고, timeout/기대값/테스트 코드는 완화하지 않았다. 재실행 통과가 최초 Docker/JDBC 연결 실패의 원인 규명이나 재발 방지를 뜻하지 않는다. 다른23 IT는 의존성 변경 전 통과 기록이다.
+- 추가 설정 메타데이터 JSON: String 프로퍼티3개 확인. 실제 비밀번호·기본값 없음. 소스 독립 리뷰: 요구 적합성/코드 품질에서 수정 필수 결함 없음. 최종 결과는 루트 실행 증거로 보완했다.
+- 미검증/미해결: Qodana CLI가 설치되지 않아 재검사 미실행, 경고 소멸 확정 불가. 전체 verify/Property/PIT/부하/외부CI 미실행. json-patch1.13·jackson-coreutils2.0은 공식 수정 버전·간접 취약 함수 도달성 미확정. main public은 Boot 탐지 호환성 때문에 유지. 다음 한 작업: Qodana 재검사로 잔여 지적을 확인하고 미해결 계약 검증기 의존성 대체를 별도 검증 대상으로 정한다.
