@@ -1139,3 +1139,17 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 계약 연결: 007 FR-003·FR-004와 계획서4.1·5.3의 기존 본문 없음/오류 무변경 요구를 확장 경로에도 적용한다. 기준 계획서·도메인 지식·계약 보조 문서·현재 테스트 수를 동기화했다. OpenAPI 정본·스키마·의존성 변경 없음.
 
 리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.
+
+## 7단계 준비 (2026-10-20)
+
+- worktree limited-booking-concurrency-plan, branch docs/reservation-concurrency-spec, 시작6316e19. requirements16/16. 확장 훅 없음.
+- knowledge 규칙 전체·reservation/resource/security·계획서2~5절/7단계·고정OpenAPI와 C01~C11을 대조했다. 업무 계약/스키마/후속Redis는 변경하지 않는다.
+- `cd backend && ./gradlew test`: 종료0, Unit137 실패/오류/skip0. 지원 Unit/다중snapshot을 먼저 검증하며 실제 경쟁110회는 아직 미실행.
+
+### 공통 기반 T004~T010
+
+- `./gradlew test --tests '*ConcurrencyTestSupportTest'`: 종료1, 신규8/8 실패(빈 목록 반환·장벽 무동작·최초 원인 미보존 등 assertion 실패). 컴파일 성공 후 동작 실패를 확인했다.
+- 실행/공통deadline/예외수집/장벽/원인보존/종료 실패 차단 구현 후 `./gradlew test`: 종료0,145건(기존137+지원8), 실패/오류/skip0.
+- `./gradlew integrationTest --tests '*DatabaseSupportIT'`: 빈 snapshot 골격에서23건 중 신규4건 실패·종료1. 실제 DB에서 결과 집합 누락과 오류 미거부를 탐지했다. 단일LEFT JOIN 집계 구현 후23건·종료0.
+- `./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: Unit145·부모setup fixture1·종료0. 보호 검사 생략 고의 변경은 fixture1건 실패·종료1로 탐지 후 원복했다. 실제 DataSource 무호출(reset0), 준비0, 제출0, 최초 원인 보존과 null-client cleanup을 검증했다.
+- 최종 기반 게이트 `./gradlew test integrationTest --tests '*DatabaseSupportIT' --tests '*ReservationConcurrencyIT' --tests '*ReservationCreateIT'`: 종료0,Unit145·IT40(23+1+16), 실패/오류/skip0. 실행 지원은 최대10작업자, DB풀10/3000ms이며 10ms 연결 표본을 사용한다. 아직 업무 경쟁은 미실행.

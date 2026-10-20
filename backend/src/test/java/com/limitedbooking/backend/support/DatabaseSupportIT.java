@@ -125,6 +125,29 @@ class DatabaseSupportIT {
         assertThatThrownBy(()->new DatabaseAssertions(database.dataSource()).assertInventoryConserved(target))
                 .isInstanceOf(AssertionError.class).hasMessageContaining(target.toString());
     }
+    @ParameterizedTest @EnumSource(Mode.class)
+    void snapshotsMultipleResourcesIncludingEmptyAndMixedStates(Mode mode) {
+        database=databases.use(mode);
+        var empty=UUID.randomUUID(); var mixed=UUID.randomUUID();
+        directResource(empty,0,0); directResource(mixed,3,2);
+        directReservation(mixed,"CONFIRMED"); directReservation(mixed,"CANCELLED");
+        var snapshot=new DatabaseAssertions(database.dataSource()).snapshot(java.util.List.of(empty,mixed));
+        assertThat(snapshot).containsOnlyKeys(empty,mixed);
+        assertThat(snapshot.get(empty)).isEqualTo(new DatabaseAssertions.InventorySnapshot(empty,0,0,0,0));
+        assertThat(snapshot.get(mixed)).isEqualTo(new DatabaseAssertions.InventorySnapshot(mixed,3,2,2,1));
+    }
+    @ParameterizedTest @EnumSource(Mode.class)
+    void multiSnapshotRejectsMismatchMissingResourceAndEmptyInput(Mode mode) {
+        database=databases.use(mode);
+        var good=UUID.randomUUID(); var bad=UUID.randomUUID(); var missing=UUID.randomUUID();
+        directResource(good,1,1); directResource(bad,2,1);
+        var assertions=new DatabaseAssertions(database.dataSource());
+        assertThatThrownBy(()->assertions.snapshot(java.util.List.of(good,bad)))
+            .isInstanceOf(AssertionError.class).hasMessageContaining(bad.toString());
+        assertThatThrownBy(()->assertions.snapshot(java.util.List.of(good,missing)))
+            .isInstanceOf(AssertionError.class).hasMessageContaining(missing.toString());
+        assertThatThrownBy(()->assertions.snapshot(java.util.List.of())).isInstanceOf(IllegalArgumentException.class);
+    }
     void directData() {
         var target=UUID.randomUUID();directResource(target,10,9);directReservation(target,"CONFIRMED");directReservation(target,"CANCELLED");
     }
