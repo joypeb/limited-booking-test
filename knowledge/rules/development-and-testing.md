@@ -70,3 +70,5 @@
 ### 계약 도구 보안 의존성 (2026-10-20)
 
 현재 계약 도구는 openapi-request-validator-core3.0.0/networknt이며 고정 OpenAPI3.0.3을 직접 읽는다. Swagger2 변환 경로는 지원 범위 밖으로 제외했다. verifyContractDependencies가 취약 json-patch/jackson-coreutils의 compile·test runtime·app runtime 재유입을 거부하며 contractTest 전에 실행된다. 도구 교체 시 실제 HTTP 정상·필수값 누락·UUID·타입·미정의필드 거부와 업무 명세 참조 해석을 보존한다. 상세 실행은 docs/test-evidence.md를 따른다.
+
+verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성 edge도 거부한다. 해석 실패를 취약 모듈 부재로 판정하지 않으며, 정상·금지 모듈 재유입·존재하지 않는 의존성의 세 경로를 검증한다. 장애 주입은 테스트용 임시 init script로만 수행한다.

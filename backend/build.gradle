@@ -90,7 +90,14 @@ tasks.register('verifyContractDependencies') {
     doLast {
         def forbidden = ['json-patch', 'jackson-coreutils']
         ['testCompileClasspath', 'testRuntimeClasspath', 'runtimeClasspath'].each { name ->
-            def unsafe = configurations.getByName(name).incoming.resolutionResult.allComponents.findAll {
+            def resolution = configurations.getByName(name).incoming.resolutionResult
+            def unresolved = resolution.allDependencies.findAll {
+                it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
+            }
+            if (!unresolved.empty) {
+                throw new GradleException("${name}: 의존성 해석 실패: ${unresolved*.attempted}")
+            }
+            def unsafe = resolution.allComponents.findAll {
                 def module = it.moduleVersion
                 module != null && module.group == 'com.github.java-json-tools' && module.name in forbidden
             }

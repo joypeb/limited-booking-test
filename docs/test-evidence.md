@@ -1174,3 +1174,15 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 미실행: Qodana 자체 재검사, 전체 verify/DB·Redis IT/Property/PIT/부하/외부CI. 업무 자동 HTTP 계약 전체로 확대하지 않는다. 최종 독립 후보 리뷰 결과는 아래 후속 기록을 따른다. 다음 한 작업은 이번 커밋 Qodana 재검사다.
 
 최종 독립 후보 리뷰: 읽기 전용 에이전트가 배포 POM/JAR·실제 호출·계약 테스트·Gradle 연결을 검토했고 구체적인 surviving bypass/회귀 결함을 발견하지 못했다. 리뷰어는 Gradle/Qodana를 실행하지 않았으며 테스트 결과는 위 루트 실행 기록을 근거로 한다. git diff --check 통과.
+
+
+## 2026-10-21 / PR #8 적대적 리뷰·병합 전 검증
+
+- PR https://github.com/joypeb/limited-booking-test/pull/8, base develop3cfabe7, 최초 head3421ea3. 사용자가 Qodana 재검사 완료와 PR 생성·리뷰·수정 후 병합을 지시했다. 자체 Qodana 실행 결과로 바꾸어 기록하지 않는다.
+- 기존 Wrapper9.8.0 변경을 제외하고 별도 detached worktree에서 커밋된 Gradle9.7.1/Corretto25.0.4로 검증했다. `./gradlew verifyContract bootJar` 종료0, Unit143·일반IT138·Contract6 실패/오류/skip0, bootJar 성공(1분36초). 개발 DB가 아닌 기존 Testcontainers 격리 환경을 사용했다.
+- 독립 적대적 서브에이전트 및 별도 Codex CLI 읽기전용 리뷰에서 코드 호출·null계약·SQL오류·검증기 교체의 재현 가능한 제품 회귀는 발견하지 못했다. 서브에이전트가 제시한 미해결 의존성 그래프 가설은 루트가 추가 실험했다.
+- 발견P2: allComponents만 검사하는 gate는 unresolved edge를 놓쳐 단독 실행에서 성공할 수 있었다. 임시 Gradle init script로 testImplementation에 `com.github.java-json-tools:json-patch:0.0.0-qodana-missing`을 afterEvaluate에서 주입하고 `./gradlew --offline -I <임시init파일> verifyContractDependencies` 실행: 수정 전 종료0으로 잘못 통과했다. contractTest 자체의 classpath 해석은 별도로 실패하므로 실제 계약검사 우회와 구분한다.
+- 최소 수정:3개 구성의 resolution.allDependencies에서 UnresolvedDependencyResult를 검사하고 하나라도 있으면 실패한다. 동일 주입 재실행은 종료1 및 `의존성 해석 실패`로 기대대로 거부했다. 새 보안 검사는 발견된 상태를 fail closed 처리하며 정상 버전을 임의 낮추거나 테스트 skip하지 않았다.
+- 다른 실패 경로: 동일 init script의 버전을1.13으로 바꾸어 재유입시키면 종료1 및 두 취약 모듈 좌표가 포함된 `취약 계약 검증 의존성 재유입`으로 거부했다. 모든 장애 주입은 /tmp init script에만 두었고 저장소 의존성이나 최종 작업트리에 남기지 않았다.
+- 정상 대조: `./gradlew verifyContractDependencies contractTest bootJar` 종료0, Contract6건 실패/오류/skip0. 애플리케이션 코드 변경이 없는 gate 수정이므로 통과한 DB138건/Unit143건은 불필요하게 다시 실행하지 않았다. 이후 수정 범위 독립 재리뷰 결과는 PR 최종 댓글을 따른다.
+- 미검증: Property/PIT/부하/외부CI. 저장소에는 외부 status check가 구성되지 않았으며 로컬 검증과 혼동하지 않는다. 사용자 기존 Wrapper는 계속 별도로 보존한다.

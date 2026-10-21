@@ -63,3 +63,8 @@ API·수량·SQL·인증 계약 변경이 없으므로 계획서·OpenAPI 기대
 - verifyContractDependencies는 두 모듈 재유입을3개 구성에서 거부하며 contractTest 선행 태스크다. 변경 전 기존2.46.1에서 실제 두 모듈 검출로 실패했고 변경 후 성공했다.
 - main public 지적은 보안 취약점이 아니다. [Boot 공식 MainClassFinder](https://docs.spring.io/spring-boot/api/java/org/springframework/boot/loader/tools/MainClassFinder.html)는 public static main 탐지를 명시한다. 실행 호환성 때문에 메서드에만 SuppressWarnings("UnnecessaryModifier")를 적용하고 사유를 적었다. [JetBrains 공식 억제 안내](https://www.jetbrains.com/help/idea/disabling-and-enabling-inspections.html)에 따른 범위 지정이며 보안 검사는 억제하지 않는다. bootJar 자동 main 탐지와 패키징으로 호환성을 확인했다.
 - 계획서3.1·버전표·계약 프로브를 현재 도구와 맞췄다. 업무 API/OpenAPI3.0.3/수량/권한 계약 변경은 없다. Qodana 재실행 전 세 지적의 실제 소멸을 확정하지 않는다.
+
+
+## PR #8 적대적 리뷰 후 보완 (2026-10-21)
+
+의존성 gate 단독 명령은 해석되지 않은 edge도 실패시켜야 한다. 실제 없는 버전을 임시 주입해 기존 태스크의 잘못된 성공을 재현한 후 UnresolvedDependencyResult 검사를 추가했다. 정상·금지모듈 재유입·미해결 의존성 세 경로를 모두 실행 확인했다. 제품 코드에서 새 회귀는 발견되지 않았으며 실행 수와 재리뷰/병합 기록은 docs/test-evidence.md와 PR 댓글에서 구분한다.
