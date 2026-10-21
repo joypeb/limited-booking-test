@@ -1139,3 +1139,50 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 계약 연결: 007 FR-003·FR-004와 계획서4.1·5.3의 기존 본문 없음/오류 무변경 요구를 확장 경로에도 적용한다. 기준 계획서·도메인 지식·계약 보조 문서·현재 테스트 수를 동기화했다. OpenAPI 정본·스키마·의존성 변경 없음.
 
 리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.
+
+
+## 2026-10-20 / Qodana 지적 수정
+
+- 기준 HEAD `3cfabe7`, 보고 revision `3b26a2517e8111ee28d3af0e9fd90873d1e81b89`, 실제 생성 브랜치 `fix/qodana-findings`. 기존 사용자 Wrapper 변경(9.8.0)은 보존·커밋 제외한다.
+- 환경: Corretto 25.0.4+7-LTS, Gradle 9.8.0(사용자 기존 변경 적용), Docker Engine 29.8.2. 정확한 작업 시간은 미계측. 분류·근거·담당은 [Qodana 검토](qodana-review.md).
+- SQL null RED: `./gradlew test --tests com.limitedbooking.backend.common.ApiExceptionHandlerTest` 종료1, 6건 중 null SQLException 보존 사례 1실패, skip0. 기존 코드는 원래 예외 대신 NPE를 던졌다. 최소 null guard 후 GREEN 확인.
+- 최초 통합 명령: `./gradlew test integrationTest --tests '*SecurityIT' --tests '*ResourceApiIT' --tests '*ResourceRepositoryIT' --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT' --tests '*ApiExceptionHandlerTest'`. 종료1. test 태스크는 Unit143건 전체 통과. integrationTest 36건 중23통과/13실패/skip0. Security6·ResourceApi8·ResourceRepository4·Ownership5 통과. Cancel13은 Spring 컨텍스트 기동의 Flyway PostgreSQL 연결에서 SocketTimeoutException(Read timed out) 발생. 후속 메서드들은 컨텍스트 실패 임계값으로 실패했다. 기능 assertion 실패와 구분하며 초기 실패를 숨기지 않는다.
+- 의존성 해석: testRuntimeClasspath/runtimeClasspath 전체 dependencies 및 jackson-databind/rhino dependencyInsight 각 종료0. 경고5좌표는 테스트 경로에만 존재한다. 변경 후 Jackson2 core/databind/dataformat/datatype2.21.8·annotations2.21, Rhino1.7.15.1 선택 확인. runtimeClasspath는 기존 tools.jackson3.1.5 유지.
+- `./gradlew contractTest bootJar` 종료0. Contract 도구 프로브3건 실패/오류/skip0, bootJar 진입점 자동 탐지·패키징 성공. 업무 API 전체 계약 검사나 CVE 공격 재현은 아니다.
+- 의존성 변경 후 관련 재검증: `./gradlew test integrationTest --tests '*ReservationCancelIT'` 종료0, Unit143·CancelIT13건 실패/오류/skip0. 초기 연결 실패 뒤 의존성 변경이 있어 재검증했고, timeout/기대값/테스트 코드는 완화하지 않았다. 재실행 통과가 최초 Docker/JDBC 연결 실패의 원인 규명이나 재발 방지를 뜻하지 않는다. 다른23 IT는 의존성 변경 전 통과 기록이다.
+- 추가 설정 메타데이터 JSON: String 프로퍼티3개 확인. 실제 비밀번호·기본값 없음. 소스 독립 리뷰: 요구 적합성/코드 품질에서 수정 필수 결함 없음. 최종 결과는 루트 실행 증거로 보완했다.
+- 미검증/미해결: Qodana CLI가 설치되지 않아 재검사 미실행, 경고 소멸 확정 불가. 전체 verify/Property/PIT/부하/외부CI 미실행. json-patch1.13·jackson-coreutils2.0은 공식 수정 버전·간접 취약 함수 도달성 미확정. main public은 Boot 탐지 호환성 때문에 유지. 다음 한 작업: Qodana 재검사로 잔여 지적을 확인하고 미해결 계약 검증기 의존성 대체를 별도 검증 대상으로 정한다.
+
+
+## 2026-10-20 / 사용자 제공 Qodana 재검사 후속
+
+- 사용자 보고 revision80e1fa0: 이전 수정 대상15건은 problems 목록에서 사라지고 기존 검토3건 및 새 LocalIdentityResolver 상수 조건1건이 보고됐다. 에이전트 직접 Qodana 실행과 구분한다.
+- LocalUserPrincipal의 null 불허 계약에 맞춰 resolver의 userId null 중복 조건만 제거했다. 인증 객체 null·미인증·Principal 타입 거부와 UUID 추출은 보존했다. 동작 보존 정리이므로 신규 기능 RED 테스트 대신 기존 보안·소유권 통합 검증을 사용했다.
+- backend에서 `./gradlew integrationTest --tests '*SecurityIT' --tests '*ReservationOwnershipIT'` 종료0, 총11건(Security6·Ownership5), 실패/오류/skip0, 11초. 고정 UUID 추출·null/외부 Principal 거부·실제 HTTP 인증/권한·소유권을 검증했다.
+- 기존 fix/qodana-findings에서 수행, 사용자 Wrapper 변경 보존. 관련 변경 diff 검토·공백 검사 수행. 전체 verify/Unit/부하/CVE 재현/Qodana 직접 실행은 이번 후속에서 미실행. 남은 main public 유지와 의존성2개 미해결은 [Qodana 검토](qodana-review.md)를 따른다. 다음 한 작업은 후속 커밋 Qodana 재검사다.
+
+
+## 2026-10-20 / 잔여 Qodana3건 보안 수정 검증
+
+- 기준b4a40fd, 기존 fix/qodana-findings 브랜치. 사용자 Wrapper 변경 보존·제외. 기존 Corretto25.0.4/사용자 Gradle9.8.0 환경.
+- 사용자 보고의 json-patch1.13 및 jackson-coreutils2.0은 기존 테스트 의존성 그래프에 존재했다. 고정 명세/classpath YAML과 테스트 localhost HTTP 응답이 검증기 입력이다. 운영 공격 가능성을 입증한 것은 아니며 취약 모듈 제거를 보안 불변식으로 선택했다.
+- RED: `./gradlew verifyContractDependencies` 종료1, testCompileClasspath에서 두 취약 좌표를 실제 검출했다. 컴파일 오류나 문자열 소스 검사에 의한 실패가 아니다.
+- 공식 검색·배포 확인 후 core3.0.0/networknt로 전환 및 Swagger2 변환기 제외. `./gradlew verifyContractDependencies contractTest bootJar test` 종료0, 기존 Contract3·Unit143 실패/오류/skip0, bootJar main 자동 탐지·패키징 성공. 모든 Test는 동일 테스트 runtime을 사용한다.
+- 엔진 교체 호환성 보강: 실제 HTTP 응답의 잘못된 UUID/숫자 id/추가필드3건 추가. `./gradlew contractTest verifyContractDependencies` 종료0, Contract6건 실패/오류/skip0(정상·필수 id 누락·UUID 형식·타입·미정의필드·고정 업무 명세 참조 해석). 제품 API에 테스트 후크를 추가하지 않았다.
+- testRuntimeClasspath/runtimeClasspath 전체 dependencies 명령 각 종료0. graph 검사에서 json-patch/jackson-coreutils/Rhino 없음 확인, core3.0.0/networknt2.0.1/swagger-parser-v32.1.41 확인. verifyContractDependencies가 testCompileClasspath도 함께 검사한다. 원래 CVE의 strongest substitute는 취약 구현이 해석된 구성에 존재하지 않음을 확인하는 이 검사다. 공격성 무한자원 payload 실행은 불필요하여 수행하지 않았다.
+- main은 public 유지·단일 UnnecessaryModifier만 억제하여 실행 호환성 보존. Qodana 보안 경고 제외/기준선/품질 게이트 완화 없음. 이 문법 지적을 보안 수정으로 보고하지 않는다.
+- 미실행: Qodana 자체 재검사, 전체 verify/DB·Redis IT/Property/PIT/부하/외부CI. 업무 자동 HTTP 계약 전체로 확대하지 않는다. 최종 독립 후보 리뷰 결과는 아래 후속 기록을 따른다. 다음 한 작업은 이번 커밋 Qodana 재검사다.
+
+최종 독립 후보 리뷰: 읽기 전용 에이전트가 배포 POM/JAR·실제 호출·계약 테스트·Gradle 연결을 검토했고 구체적인 surviving bypass/회귀 결함을 발견하지 못했다. 리뷰어는 Gradle/Qodana를 실행하지 않았으며 테스트 결과는 위 루트 실행 기록을 근거로 한다. git diff --check 통과.
+
+
+## 2026-10-21 / PR #8 적대적 리뷰·병합 전 검증
+
+- PR https://github.com/joypeb/limited-booking-test/pull/8, base develop3cfabe7, 최초 head3421ea3. 사용자가 Qodana 재검사 완료와 PR 생성·리뷰·수정 후 병합을 지시했다. 자체 Qodana 실행 결과로 바꾸어 기록하지 않는다.
+- 기존 Wrapper9.8.0 변경을 제외하고 별도 detached worktree에서 커밋된 Gradle9.7.1/Corretto25.0.4로 검증했다. `./gradlew verifyContract bootJar` 종료0, Unit143·일반IT138·Contract6 실패/오류/skip0, bootJar 성공(1분36초). 개발 DB가 아닌 기존 Testcontainers 격리 환경을 사용했다.
+- 독립 적대적 서브에이전트 및 별도 Codex CLI 읽기전용 리뷰에서 코드 호출·null계약·SQL오류·검증기 교체의 재현 가능한 제품 회귀는 발견하지 못했다. 서브에이전트가 제시한 미해결 의존성 그래프 가설은 루트가 추가 실험했다.
+- 발견P2: allComponents만 검사하는 gate는 unresolved edge를 놓쳐 단독 실행에서 성공할 수 있었다. 임시 Gradle init script로 testImplementation에 `com.github.java-json-tools:json-patch:0.0.0-qodana-missing`을 afterEvaluate에서 주입하고 `./gradlew --offline -I <임시init파일> verifyContractDependencies` 실행: 수정 전 종료0으로 잘못 통과했다. contractTest 자체의 classpath 해석은 별도로 실패하므로 실제 계약검사 우회와 구분한다.
+- 최소 수정:3개 구성의 resolution.allDependencies에서 UnresolvedDependencyResult를 검사하고 하나라도 있으면 실패한다. 동일 주입 재실행은 종료1 및 `의존성 해석 실패`로 기대대로 거부했다. 새 보안 검사는 발견된 상태를 fail closed 처리하며 정상 버전을 임의 낮추거나 테스트 skip하지 않았다.
+- 다른 실패 경로: 동일 init script의 버전을1.13으로 바꾸어 재유입시키면 종료1 및 두 취약 모듈 좌표가 포함된 `취약 계약 검증 의존성 재유입`으로 거부했다. 모든 장애 주입은 /tmp init script에만 두었고 저장소 의존성이나 최종 작업트리에 남기지 않았다.
+- 정상 대조: `./gradlew verifyContractDependencies contractTest bootJar` 종료0, Contract6건 실패/오류/skip0. 애플리케이션 코드 변경이 없는 gate 수정이므로 통과한 DB138건/Unit143건은 불필요하게 다시 실행하지 않았다. 이후 수정 범위 독립 재리뷰 결과는 PR 최종 댓글을 따른다.
+- 미검증: Property/PIT/부하/외부CI. 저장소에는 외부 status check가 구성되지 않았으며 로컬 검증과 혼동하지 않는다. 사용자 기존 Wrapper는 계속 별도로 보존한다.

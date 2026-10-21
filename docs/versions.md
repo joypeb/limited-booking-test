@@ -18,7 +18,7 @@
 | Testcontainers | 2.0.5 | Boot BOM dependencyInsight·동적 PostgreSQL/Redis 실행·정리 확인 |
 | Flyway/JDBC | 12.4.0 / PostgreSQL42.7.13 | BOM dependencyInsight·시험 migration metadata/insert/select·실패 후 새 DB 재개 확인 |
 | QuickTheories | 0.26 | Java25/Jupiter6.0.3에서 실제101회·경계값·seed 축소재현·원복 확인 |
-| 계약 검증기 | swagger-request-validator-core2.46.1 | 실제 HTTP3건 및 UUID 훼손 탐지·원복, 업무 OpenAPI parse/ref 확인 |
+| 계약 검증기 | openapi-request-validator-core3.0.0 / networknt2.0.1 / swagger-parser-v32.1.41 | 실제 HTTP 계약 프로브6건·업무 OpenAPI parse/ref 확인. Swagger2 변환기 제외 |
 | PIT | Gradle plugin1.19.0 / engine1.22.1 / Jupiter지원1.2.3 | 순수 프로브 변이1개 생성·탐지, NO_COVERAGE0 |
 
 Boot BOM 관리 버전 override 없음. 심화 도구는 research.md의 첫 후보 조합으로 최소 실행을 통과했으며 Java/JUnit을 임의 하향하지 않았다. Gradle10 및 configuration cache 호환성은 미검증이다.
@@ -69,3 +69,13 @@ Corretto25.0.4+7-LTS·Gradle9.7.1·Boot4.1.1·Docker daemon29.8.2 및 기존 Pos
 ### PR6 적대적 리뷰 후 재검증 (2026-10-20)
 
 Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존성 변경 없이 인코딩 취소 경로의 본문 계약 회귀2건을 추가해 최종 verify Unit137·일반IT138 실패/오류/skip0을 확인했다. 앞선6단계 최초 인수137/136과 구분한다. 외부CI 성공을 의미하지 않는다.
+
+
+## 2026-10-20 Qodana 보안 예외
+
+테스트 구성 testCompileClasspath/testRuntimeClasspath에만 Jackson2 BOM2.21.8(core/databind 및 관련 모듈2.21.8, annotations2.21)과 Rhino1.7.15.1을 적용했다. Gradle 실제 해석 및 Contract 프로브3건·bootJar로 최소 호환성을 확인했다. runtime Jackson3.1.5는 유지한다. Boot BOM 기본값의 보안 예외이며 근거/잔여 의존성은 [Qodana 검토](qodana-review.md), 실행 한계는 [증거](test-evidence.md)를 따른다. 실행 Gradle9.8.0은 작업 전 사용자 Wrapper 변경에 의한 것으로 이번 변경에서 Wrapper를 갱신한 것이 아니다.
+
+
+## 잔여 보안 의존성 제거 후 현재 구성 (2026-10-20)
+
+Atlassian 공식3.0.0으로 전환하고 swagger-parser-v2-converter만 제외했다. Jackson2 BOM2.21.8은 유지한다. json-patch1.13·jackson-coreutils2.0 및 Rhino가 실제 테스트/실행 그래프에서 사라졌으므로 이전 Rhino 강제 버전 지정은 제거했다. 이전 보안 예외 절은 당시 기록이며 이 절이 현재 상태다. 취약 모듈 재유입 검사는 verifyContractDependencies로 testCompileClasspath/testRuntimeClasspath/runtimeClasspath를 확인하고 contractTest의 선행 조건으로 실행한다.

@@ -151,7 +151,8 @@ public class ApiExceptionHandler {
     public ResponseEntity<ProblemResponse> handleUncategorizedSql(
             org.springframework.jdbc.UncategorizedSQLException exception, HttpServletRequest request) {
         // 현재 드라이버/Spring 조합에서 잠금 timeout은 일반 SQL 예외로 전달된다.
-        if (!"55P03".equals(exception.getSQLException().getSQLState())) throw exception;
+        var sqlException = exception.getSQLException();
+        if (sqlException == null || !"55P03".equals(sqlException.getSQLState())) throw exception;
         return handleDependencyUnavailable(exception, request);
     }
 

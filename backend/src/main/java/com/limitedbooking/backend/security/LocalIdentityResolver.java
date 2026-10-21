@@ -11,8 +11,7 @@ public class LocalIdentityResolver {
     public UUID userId(Authentication authentication) {
         if (authentication == null
                 || !authentication.isAuthenticated()
-                || !(authentication.getPrincipal() instanceof SecurityConfig.LocalUserPrincipal principal)
-                || principal.userId() == null) {
+                || !(authentication.getPrincipal() instanceof SecurityConfig.LocalUserPrincipal principal)) {
             throw new InsufficientAuthenticationException("인증된 로컬 사용자 식별자가 없습니다.");
         }
         return principal.userId();
