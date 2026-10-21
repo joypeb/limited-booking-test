@@ -119,3 +119,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 7단계 경쟁 검증 연결 (2026-10-20)
 
 경쟁 종료 후 여러 대상의 capacity/available/전체예약수/확정수를 단일 LEFT JOIN 집계로 검사한다. C04 패자수량 원복, C01 초과예약 방지, C05 복구1회와 C11 실패차감 롤백을 실제 PostgreSQL/HTTP 반복으로 확인했다. ResourceRepository 제품 변경은 없고 조건 방어의 고의 변경은 탐지 후 원복했다. [경쟁IT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[실행증거](../../docs/test-evidence.md)·[회차기록](../../docs/concurrency-runs.json)을 따른다. 앞 절의 후속 표시는 각 과거 확인일의 상태다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.

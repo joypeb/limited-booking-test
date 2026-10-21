@@ -62,12 +62,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit147 (기존137+경쟁지원10) |
-| `./gradlew verify` | Unit147+일반IT253 (기존138+DB지원4+경쟁110+fixture1) |
+| `./gradlew test` | Spring 없는 Unit150 (기존137+경쟁지원13) |
+| `./gradlew verify` | Unit150+일반IT257 (기존138+DB지원4+경쟁110+fixture5) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit147+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit147+일반IT253+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit147+일반IT253+Property3; 이번 단계 재실행 없음 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit150+지정IT3 (이번 단계 재실행 없음) |
+| `./gradlew verifyContract` | 구성상 Unit150+일반IT257+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit150+일반IT257+Property3; 이번 단계 재실행 없음 |
 | `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
@@ -166,7 +166,7 @@ cd backend
 
 ## 7단계 경쟁 정합성 검증
 
-[ReservationConcurrencyIT](backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 실제 Basic 인증·HTTP·격리 PostgreSQL에서 C01~C11 각10회를 실행한다. 수량10/요청100, 동일키10요청, 대상간 키충돌, 중복취소, 생성·취소 일반경쟁/두 강제순서, 차감후 INSERT실패를 검사한다. 지정 인수 Unit147·IT111(경쟁110+setup차단fixture1), 일반 verify Unit147·IT253이 통과했으며 [실행 증거](docs/test-evidence.md)·[회차 기록](docs/concurrency-runs.json)에서 조건과 결과를 확인한다.
+[ReservationConcurrencyIT](backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 실제 Basic 인증·HTTP·격리 PostgreSQL에서 C01~C11 각10회를 실행한다. 수량10/요청100, 동일키10요청, 대상간 키충돌, 중복취소, 생성·취소 일반경쟁/두 강제순서, 차감후 INSERT실패를 검사한다. 지정 인수의 최종 수와 전체 회귀 결과는 아래 실행 증거에 기록하며 [실행 증거](docs/test-evidence.md)·[회차 기록](docs/concurrency-runs.json)에서 조건과 결과를 확인한다.
 
 ```sh
 cd backend
@@ -175,3 +175,8 @@ cd backend
 ```
 
 요청작업자 최대10·Hikari풀10/획득3000ms, 공통제한100건120초/그외30초, 장벽5초·HTTP9/10초·종료10초다. 표본 연결 최대는10ms 관측이며 운영 성능으로 일반화하지 않는다. 최초 종료 실패를 보존하여 다음 회차 DB초기화/준비/제출을 막는다. 제품/API/SQL 스키마 변경은 없고, 다음 작업은8단계 Redis 요청 제한이다. 업무 OpenAPI 자동대조·Property/PIT심화·부하·외부CI는 미검증이다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.

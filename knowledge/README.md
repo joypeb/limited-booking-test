@@ -95,3 +95,8 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 - [명세](../specs/008-reservation-concurrency/spec.md)·[계획](../specs/008-reservation-concurrency/plan.md)·[작업](../specs/008-reservation-concurrency/tasks.md)·[실행 안내](../specs/008-reservation-concurrency/quickstart.md): C01~C11 각10회 구현·지정 실행 검증을 완료했다. 과거 절의 경쟁 후속 표시는 당시 상태다.
 - [경쟁 IT](../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[유한 실행 지원](../backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupport.java)·[지원 Unit](../backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupportTest.java)·[다중 snapshot](../backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)·[DB 지원 IT](../backend/src/test/java/com/limitedbooking/backend/support/DatabaseSupportIT.java)를 연결한다.
 - 지정 인수 Unit147·경쟁110회+부모setup차단fixture1 통과. [실행 증거](../docs/test-evidence.md)·[회차 기록](../docs/concurrency-runs.json)은 전체 결과·DBsnapshot·경로/정리·관측 한계를 보관한다. 후속은 Redis·심화·부하이며 업무 계약은 유지한다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../docs/test-evidence.md)·[110회 기록](../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.

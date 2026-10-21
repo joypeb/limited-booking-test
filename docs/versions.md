@@ -76,3 +76,8 @@ limited-booking-concurrency-plan/backend: `java --version` Corretto25.0.4+7-LTS,
 
 
 7단계 실행 확인: 실제 PostgreSQL `18.6 (Debian 18.6-1.pgdg12+2)`, UTF-8/UTC, READ COMMITTED·lock2s·statement5s·풀10/획득3000ms. 고정 이미지/digest는 ContainerTestSupport 재사용(새 의존성 해석/버전 변경 없음). 지정 Unit147/IT111 및 일반verify Unit147/IT253이 종료0이었다. ByteBuddy Unsafe/Gradle10 폐기 경고는 남아 있으며 향후 버전 호환성은 검증하지 않았다.
+
+
+2026-10-21 최종 리뷰 보완 재실행: 동일 Java25.0.4/Gradle9.7.1/Boot4.1.1·PostgreSQL18.6 고정digest·DB/풀 설정을 유지했다. 지정 Unit149/IT115 및 최종verify Unit149/IT257 종료0. 지원Unit12·경쟁110회·fixture5를 구분한다. 신규 의존성/버전 변경은 없다.
+
+최종 checked예외 보완 뒤 `./gradlew verify`를 다시 실행했다: Unit150(기존137+지원13)/일반IT257, 종료0·실패/오류/skip0. 실행 환경과 버전은 동일하다.

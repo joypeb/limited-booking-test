@@ -29,7 +29,7 @@
 - [X] T006 backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupport.java에 실행·장벽·Future 수집·사건 기록·종료 지원을 최소 구현한다. 모델 제약 “회차별 독립 대상·키·관측기”, “제출 수와 결과 수 동일, 비밀번호·Authorization 원문 저장 금지”, “선조회/차감/INSERT 예외/재조회·커밋 완료 증거 구분”, “종료 확인 전 reset/다음 회차 금지”를 적용하고 지원 Unit을 실행한다. T004 이후 수행한다. 원자적으로 최초 종료 실패를 저장하고 보호 검사에서 다시 실패시키는 클래스 실행 범위의 차단 상태를 구현한다. 회차 초기화로 해제하지 않는다.
 - [X] T007 backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java에 다중 대상 capacity/available/totalCount/confirmedCount를 단일 LEFT JOIN 집계로 반환하는 snapshot을 구현한다. “0≤available≤capacity≤1000; available+CONFIRMED 수=capacity”를 검사하고 기존 단건 API를 보존한다. T005의 실제 DB 실패를 확인한 뒤 구현·재검증한다.
 - [X] T008 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java에 RANDOM_PORT·postgresOnly·실제 Basic HTTP·풀10/3000ms·UTC·회차별 준비/종료·장벽/Spy 초기화를 구성한다. 테스트 전체에 @Transactional을 붙이지 않고 준비는 요청 전에 커밋한다. 기존 reservation/ReservationApiTestSupport.java와 ContainerTestSupport를 재사용한다. backend/src/test/java/com/limitedbooking/backend/reservation/ReservationApiTestSupport.java의 부모 setup 첫 동작에 기본 무동작 protected 보호 검사를 추가하고 경쟁 클래스에서 재정의한다. 자식 @BeforeEach 대신 부모 reset 전에 검사한다. setup 차단으로 client가 없으면 부모 cleanup은 null을 처리하고 경쟁 cleanup은 해당 회차 소유 자원만 정리한다. 기존 테스트의 기본 동작은 유지한다.
-- [X] T009 backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupport.java와 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java에 장벽5초·HTTP9/10초·100건 회차120초/그 외30초·Executor/HTTP 종료 각10초·서버 in-flight0 확인10초를 연결한다. finally releaseAll→종료 확인→Spy 초기화→HTTP 종료, 정리 실패 suppressed 보존과 reset 금지를 적용한다. Hikari active 연결10ms 표본과 실제 풀/DB 설정 관측을 추가한다. Executor·서버·HTTP 종료 확인 중 하나라도 실패하면 최초 원인을 클래스 단위 차단 상태에 보존한다. 이후 setup은 reset·준비·요청 제출 전에 실패하고 상태는 회차 간 해제하지 않는다. JUnit 전체 중단에 의존하거나 후속 회차를 skip으로 숨기지 않는다.
+- [X] T009 backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupport.java와 backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java에 장벽5초·HTTP9/10초·100건 회차120초/그 외30초·Executor/HTTP 종료 각10초·서버 in-flight0 확인10초를 연결한다. finally releaseAll→Executor/서버/HTTP 종료 확인→차단 상태 확인→Spy 초기화, 정리 실패 suppressed 보존과 reset 금지를 적용한다. Hikari active 연결10ms 표본과 실제 풀/DB 설정 관측을 추가한다. Executor·서버·HTTP 종료 확인 중 하나라도 실패하면 최초 원인을 클래스 단위 차단 상태에 보존한다. 이후 setup은 reset·준비·요청 제출 전에 실패하고 상태는 회차 간 해제하지 않는다. JUnit 전체 중단에 의존하거나 후속 회차를 skip으로 숨기지 않는다.
 - [X] T010 지원 Unit·backend/src/test/java/com/limitedbooking/backend/support/DatabaseSupportIT.java와 공통 설정의 최소 실행을 수행하고 명령·종료 코드·실제 수·RED/GREEN·환경·정리 검증을 docs/test-evidence.md에 기록한다. 테스트0건/skip은 실패이며 이 게이트 전 업무 경쟁 사례를 진행하지 않는다.
 
 ## Phase 3: US1 — 한정 수량 초과 방지 (P1, MVP)
@@ -128,3 +128,10 @@ US2로 중복 생성·키 충돌·두 실제 복구 경로를, US3으로 취소1
 ### Completion and Evidence
 
 체크는 실제 작업·검증 후에만 표시한다. 실패 회차·Future 예외·제한 시간·작업 종료·서버 in-flight·관측 누락을 숨기지 않는다. 모든 서버/작업 종료 전 reset/Spy 초기화/다음 회차를 금지한다. 성공키 보존·실패키 재사용·UTC 정밀도·타인404·잠금 순서·DB timeout·풀 상한을 기존 계약대로 유지한다. Redis·심화·부하·외부CI는 후속이며 이번 결과로 완료를 주장하지 않는다.
+
+
+### 2026-10-21 최종 리뷰 반영
+
+종료 확인 전 초기화 금지 원칙을 우선하여 Executor·서버·HTTP 종료 확인과 기존 차단 상태 확인을 모두 통과한 뒤에만 Spy를 초기화한다. Service 진입 전의 서버 처리는 Service in-flight만으로 관측할 수 없으므로 전송 실패/timeout 등 요청 결과 예외도 최초 원인을 보존하고 다음 부모 setup을 차단한다. 후속 reset·준비·제출 금지는 종료 확인 실패 때와 동일하다. 이는 회차 격리 보완이며 제품/API/DB 계약 변경이 아니다.
+
+실행 함수가 종료 실패를 던져도 최초 오류·다른 작업 오류·수집한 전체 결과를 함께 보존한다. 생성 키와 호출별 고유 요청 식별자를 분리하고 UNIQUE 뒤 비트랜잭션 조회 및 C07의 차감0 뒤 트랜잭션 안 조회는 같은 요청 ID·후속 순번으로 연결한다. 보존 JSON에도 C07의 차감0/성공 재조회 사건을 남긴다. 추가 Unit/fixture 수는110회 반복과 별도로 실제 실행 기록을 따른다.

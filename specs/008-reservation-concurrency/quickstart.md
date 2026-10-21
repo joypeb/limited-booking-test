@@ -1,6 +1,6 @@
 # 7단계 검증 실행 안내
 
-ReservationConcurrencyIT·동시성 지원·다중 snapshot을 구현하고 지정 인수 Unit147/IT111(경쟁110+fixture1)을 통과했다. 전체 회귀와 최종 결과는 [실행 증거](../../docs/test-evidence.md)·[회차 기록](../../docs/concurrency-runs.json)을 따른다.
+ReservationConcurrencyIT·동시성 지원·다중 snapshot을 구현하고 지정 인수 Unit150/IT115(경쟁110+fixture5)을 통과했다. 전체 회귀와 최종 결과는 [실행 증거](../../docs/test-evidence.md)·[회차 기록](../../docs/concurrency-runs.json)을 따른다.
 
 ## 준비
 
@@ -42,8 +42,15 @@ Hikari maximumPoolSize10/connectionTimeout3000ms, DB read committed/lock_timeout
 
 docs/test-evidence.md에 명령·종료 코드·실제 수·대상 commit·날짜·시간·이미지/digest·작업자/풀·연결 관측값·샘플 한계·반복별 상태·경로/순서 관측·최종 snapshot·미검증을 남긴다. 실제 버전은 docs/versions.md, 설계 변경은 docs/decisions.md에 기록한다. 계획서 체크박스는 실제 실행 근거에 따라 갱신한다.
 
-매 회차 finally에서 모든 대기 해제→작업 종료·서버 in-flight0 확인→Spy/플래그 초기화→HTTP 종료 순서로 정리한다. 클래스 소유 컨텍스트와 컨테이너는 기존 DirtiesContext/종료 listener 규칙을 따른다. 정리 실패로 다음 회차를 진행하지 않고 개발 DB·volume을 지우지 않는다. 로컬 반복은 모든 실행 순서나 운영 성능의 증명이 아니다. 다음8단계에서 Redis 제한 도입 시 실제 HTTP 경쟁 경로를 유지하고10000건/60초·회차별 테스트 전용 키 초기화를 명시한다.
+매 회차 finally에서 모든 대기 해제→작업 종료·서버 in-flight0·HTTP 종료 확인→기존 차단 없음 확인→Spy/플래그 초기화 순서로 정리한다. 클래스 소유 컨텍스트와 컨테이너는 기존 DirtiesContext/종료 listener 규칙을 따른다. 정리 실패로 다음 회차를 진행하지 않고 개발 DB·volume을 지우지 않는다. 로컬 반복은 모든 실행 순서나 운영 성능의 증명이 아니다. 다음8단계에서 Redis 제한 도입 시 실제 HTTP 경쟁 경로를 유지하고10000건/60초·회차별 테스트 전용 키 초기화를 명시한다.
 
 ### 종료 실패 후 초기화 차단 (U1 보완)
 
 Executor·서버 요청·HTTP 클라이언트의 종료 확인 실패는 최초 원인을 클래스 단위 차단 상태에 보존한다. 회차마다 상태를 해제하지 않는다. ReservationApiTestSupport.setup의 첫 동작에 기본 무동작 보호 메서드를 두고 경쟁 클래스에서 재정의하여 부모 DB reset 전에 실패시킨다. 자식 BeforeEach 검사만으로 대체하지 않는다. 이후 회차는 reset·준비·요청 제출 각각0회이며 최초 실패 원인을 유지해야 한다. setup 차단으로 client가 없으면 cleanup은 null을 안전하게 처리하고 회차 소유 자원만 정리한다. JUnit 전체 중단에 의존하지 않고 후속 회차는 실패로 판정하며 skip이나 성공으로 숨기지 않는다. 실제 부모 setup 순서는 별도 상태를 소유한 테스트 fixture로 검증하고110회 경쟁 인수와 지원 검증 수를 구분한다. 해당 보호 검사·별도 fixture·null-client 정리를 구현하고 실행 검증했다.
+
+
+### 2026-10-21 최종 리뷰 반영
+
+종료 확인 전 초기화 금지 원칙을 우선하여 Executor·서버·HTTP 종료 확인과 기존 차단 상태 확인을 모두 통과한 뒤에만 Spy를 초기화한다. Service 진입 전의 서버 처리는 Service in-flight만으로 관측할 수 없으므로 전송 실패/timeout 등 요청 결과 예외도 최초 원인을 보존하고 다음 부모 setup을 차단한다. 후속 reset·준비·제출 금지는 종료 확인 실패 때와 동일하다. 이는 회차 격리 보완이며 제품/API/DB 계약 변경이 아니다.
+
+실행 함수가 종료 실패를 던져도 최초 오류·다른 작업 오류·수집한 전체 결과를 함께 보존한다. 생성 키와 호출별 고유 요청 식별자를 분리하고 UNIQUE 뒤 비트랜잭션 조회 및 C07의 차감0 뒤 트랜잭션 안 조회는 같은 요청 ID·후속 순번으로 연결한다. 보존 JSON에도 C07의 차감0/성공 재조회 사건을 남긴다. 추가 Unit/fixture 수는110회 반복과 별도로 실제 실행 기록을 따른다.

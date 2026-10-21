@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-20
 
-**Status**: Implemented — 경쟁110회·setup차단fixture1 및 일반 회귀 실행 검증 완료 (2026-10-20)
+**Status**: Implemented — 경쟁110회·지원fixture5 및 일반 회귀 실행 검증 완료 (2026-10-21)
 
 **Input**: User description: "한정 수량 예약 백엔드 로컬 개발 계획.md 7단계진행해"
 

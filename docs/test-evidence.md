@@ -1206,3 +1206,47 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 `cd backend && ./gradlew verify`: 종료0,1분40초,Unit147·일반IT253, 실패/오류/skip0. listener/XML 일치. IT253은 기존138+DatabaseSupportIT추가4+경쟁110+fixture1이며 Unit147은 기존137+경쟁지원10이다. 기존 SQL·소유권·엄격입력·인증·순차장애·시각 회귀도 실행됐다. Contract/Property/PIT심화·k6·Redis요청제한·외부CI는 실행하지 않았다. Gradle10/configuration cache 및 ByteBuddy Unsafe 경고의 후속 호환성은 미검증이며 버전을 변경해 숨기지 않았다.
 
 업무 제품코드·SQL·V1·OpenAPI는 시작6316e19와 동일하다. 본문/소유권/오류/성공재현 계약 보존을 대조했다. 테스트지원/경쟁IT·README/지식/실행안내를 연결하고 실제 통과 근거로만 작업/7단계 체크를 갱신했다. 확장훅 파일이 없어 before/after implement 등록훅은 없다. 외부병합·push·배포는 수행하지 않는다. 다음 한 작업은8단계 Redis 제한이다.
+
+
+## 2026-10-21 최종 독립 리뷰 보완·완료
+
+이전 검증147/253은2026-10-20 실행 기록이다. 아래 결과가 최종 수정본이며, 현재 [110회 JSON](concurrency-runs.json)은2026-10-21 재검증으로 갱신했다. 이전 JSON은2131539 커밋에 보존돼 있다. 테스트 소스 SHA-256도 현재 JSON에 기록했다.
+
+### 발견과 RED→GREEN
+
+- 종료 격리 Important: 실제 cleanup을 사용하는 별도 상태 fixture로 HTTP종료 전 reset, 이미 설정된 Executor종료 실패 무시, HTTP종료 실패 후 reset을 재현했다. `./gradlew integrationTest --tests '*ReservationConcurrencyIT.cleanupWaits*' --tests '*ReservationConcurrencyIT.executorTermination*' --tests '*ReservationConcurrencyIT.httpTermination*'`: 종료1/3건 모두 실패. Service진입 전 timeout 결과에서도 같은 문제를 확인한 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.transportFailure*'`: 종료1/1실패.
+- 다중 오류 보존 Important: A/B가 각각 실패하고 C가 종료되지 않는 지원Unit에서 두 번째 오류 유실을 확인했다. `./gradlew test --tests '*ConcurrencyTestSupportTest.retainsAll*'`: 종료1/1실패. 최초 오류를 유지하고 나머지 오류·timeout·정리오류·전체 결과를 suppressed/CollectedOutcomes로 보존한다. IT는 종료 예외에서도 전체 결과를 회수해 실패 회차에 기록한다.
+- 경로 증거의 요청ID 겹침은 정확한 요청별 입증에 영향을 주므로 필수 수정으로 재분류했다. 다른 요청 또는 잘못된 트랜잭션의 lookup이 있으면 경로 미관측으로 실패해야 한다. `./gradlew test --tests '*ConcurrencyTestSupportTest.pathWitness*'`: 종료1/1실패 후 고유 호출ID/정확한 요청·순번·트랜잭션 매칭으로 수정했다. C03의 호출ID10개가 모두 고유함을 반복마다 검사한다.
+- C07 보존 증거 누락도 회차 추적 요구에 따라 필수 보완했다. JSON에 실제 차감0 사건과 같은 요청ID·더 큰 순번의 활성 트랜잭션 성공lookup을 함께 저장하며10회 모두 추출 검사를 통과해야 한다.
+- 첫 보완 후 `./gradlew test integrationTest --tests '*ReservationConcurrencyIT.cleanupWaits*' --tests '*ReservationConcurrencyIT.executorTermination*' --tests '*ReservationConcurrencyIT.httpTermination*' --tests '*ReservationConcurrencyIT.transportFailure*'`: 종료0/Unit148·지원IT4. 이후 경로 보완을 포함한 `./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: 종료0/Unit149·IT115(경쟁110+지원fixture5),40초.
+
+### 1차 리뷰 보완 전체 회귀
+
+`cd backend && ./gradlew verify`: 종료0,1분53초. XML/listener 모두 Unit149·일반IT257, 실패/오류/skip0. Unit149=기존137+경쟁지원12, IT257=기존138+DB지원추가4+경쟁110+setup/정리지원fixture5. 요청 오류가 있어도 다음 회차를 reset하는 대신 같은 최초원인으로 실패시킨다. 기존 부모setup의 첫 보호 검사와 DataSource무호출 검증으로 DB reset0을 확인한다. 준비/제출0과 null-client 정리는 기존fixture를 유지한다.
+
+정리 순서는 장벽해제→작업종료→Service in-flight0/표본수집종료/HTTP종료→차단상태없음확인→Spy초기화다. Service 이전 서버 처리는 계수 범위 밖이므로 HTTP전송 실패·timeout 등 결과예외는 보수적으로 차단한다. 운영 서버 전체 요청 추적을 구현했다고 주장하지 않는다. 불확실한 요청이 없는 정상110회는 결과수집·종료·상태·수량 검사가 모두 통과했다.
+
+아래 표와 현재 JSON은 checked예외 보완 후 최종 재실행의110회다.
+
+| 사례 | 반복 | 회차 시간 범위(ms) | active 최대 표본 | 판정 |
+|---|---:|---:|---:|---|
+| C01 | 10 | 956~1518 | 9 | 통과 |
+| C02 | 10 | 106~275 | 8 | 통과 |
+| C03 | 10 | 98~119 | 8 | 통과 |
+| C04 | 10 | 77~80 | 2 | 통과 |
+| C05 | 10 | 237~296 | 9 | 통과 |
+| C06 | 10 | 279~294 | 2 | 통과 |
+| C07 | 10 | 73~80 | 2 | 통과 |
+| C08 | 10 | 78~82 | 2 | 통과 |
+| C09 | 10 | 284~342 | 1 | 통과 |
+| C10 | 10 | 350~387 | 1 | 통과 |
+| C11 | 10 | 160~171 | 2 | 통과 |
+
+전체 리뷰는 최초 사용량 제한 뒤 같은 리뷰어가 이어서 완료했다. 알려진4개 지적을 한 수정 pass로 처리했고 재리뷰는 실행하지 않았다. 미룬Minor는 없다. 업무제품·스키마·OpenAPI 변경0이며 외부병합·push·배포도 없다. 판단 유보인 별도제품보안감사·Redis·자동계약·Property/PIT/k6·외부CI/배포·전체스케줄·정확한피크·운영성능·JUnit내부예외결합표현은 이번 완료주장에 포함하지 않는다. 다음 한 작업은8단계 Redis 요청 제한이다.
+
+
+### checked 예외 보완 후 최종 완료 검증
+
+같은 다중 오류 보존 지적의 checked예외 경계를 추가 점검했다. 최초 작업이IOException으로 실패하고 종료 실패가 겹치면 원인은 래퍼의 cause에 보존되지만, 호출자가 받은 래퍼의 직접suppressed에 결과 묶음이 없었다. `./gradlew test --tests '*ConcurrencyTestSupportTest.checkedTask*'`: 종료1/1실패. 원인 체인을 유지하고 래퍼에도 CollectedOutcomes를 연결하여 IT의 결과 회수가 가능하도록 보완했다.
+
+최종 `cd backend && ./gradlew verify`: 종료0,1분48초,Unit150·일반IT257, 실패/오류/skip0. Unit150=기존137+경쟁지원13이며 IT257=기존138+DB지원추가4+경쟁110+지원fixture5다. 현재 JSON은 이 실행의110회와 테스트 소스SHA를 담고 있다. 38/38작업·링크·코드블록·C07 같은요청 차감0/tx재조회10회·민감헤더 미포함·제품/계약diff0·after_implement 등록훅없음을 확인했다. 이후 변경은 문서·기록 동기화뿐이다.

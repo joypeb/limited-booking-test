@@ -96,3 +96,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 ### 7단계 경쟁 검증 연결 (2026-10-20)
 
 C01~C11 각10회는 실제 Authorization·Basic/BCrypt·보안 필터·Controller·Service를 통과한다. 내부 서비스 시험으로 대체하지 않았다. 타인/ADMIN404·취소후생성재현은 기존 소유권/취소회귀로 유지한다. 테스트 종료 관측은 Service 진입/퇴장과 HTTP작업/클라이언트 종료를 함께 확인한다. 후속 Redis 제한 도입 후에도 전체HTTP경로를 유지하고 경쟁전용10000건/60초·키초기화를 적용해야 한다. [경쟁IT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[실행증거](../../docs/test-evidence.md)·[회차기록](../../docs/concurrency-runs.json)을 따른다. 앞 절의 후속 표시는 각 과거 확인일의 상태다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.

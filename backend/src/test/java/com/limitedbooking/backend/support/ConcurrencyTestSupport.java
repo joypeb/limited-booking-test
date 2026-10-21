@@ -68,19 +68,36 @@ public final class ConcurrencyTestSupport {
                 state.stop(cleanup); primary=preserve(primary != null ? primary : outcomes.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().orElse(null),cleanup);
             } catch (RuntimeException cleanup) { state.stop(cleanup); primary=preserve(primary != null ? primary : outcomes.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().orElse(null),cleanup); }
         }
+        if (primary != null) {
+            for (var outcome : outcomes) if (outcome.failure()!=null) preserve(primary,outcome.failure());
+            primary.addSuppressed(new CollectedOutcomes(outcomes));
+        }
         if (primary instanceof Error error) throw error;
         if (primary instanceof RuntimeException failure) throw failure;
-        if (primary != null) throw new IllegalStateException("경쟁 실행/정리 실패", primary);
+        if (primary != null) {
+            var wrapped=new IllegalStateException("경쟁 실행/정리 실패",primary);
+            wrapped.addSuppressed(new CollectedOutcomes(outcomes));
+            throw wrapped;
+        }
         return List.copyOf(outcomes);
+    }
+    public static final class CollectedOutcomes extends Exception {
+        private final List<? extends Outcome<?>> outcomes;
+        CollectedOutcomes(List<? extends Outcome<?>> outcomes) {
+            super("수집한 전체 작업 결과: " + outcomes.size());
+            this.outcomes=List.copyOf(outcomes);
+        }
+        public List<? extends Outcome<?>> outcomes() { return outcomes; }
     }
     public static Throwable preserve(Throwable original, Throwable cleanup) {
         if (original==null) return cleanup;
-        if (original!=cleanup) original.addSuppressed(cleanup);
+        if (original!=cleanup && Arrays.stream(original.getSuppressed()).noneMatch(e -> e==cleanup)) original.addSuppressed(cleanup);
         return original;
     }
     public static final class StopState {
         private final AtomicReference<Throwable> first = new AtomicReference<>();
         public void stop(Throwable cause) { first.compareAndSet(null,Objects.requireNonNull(cause)); }
+        public boolean stopped() { return first.get()!=null; }
         public void check() {
             if (first.get()!=null) throw new IllegalStateException("최초 종료 실패: 다음 회차 금지",first.get());
         }
@@ -112,6 +129,11 @@ public final class ConcurrencyTestSupport {
             entries.add(new Event(entries.size()+1,phase,request,tx,detail));
         }
         public synchronized List<Event> all() { return List.copyOf(entries); }
+        public synchronized Event requireAfter(String phase, String request, boolean transaction, long boundary) {
+            return entries.stream().filter(e -> e.phase().equals(phase) && e.request().equals(request)
+                    && e.transaction()==transaction && e.sequence()>boundary).findFirst()
+                    .orElseThrow(()->new AssertionError("미관측 path="+phase+" request="+request+" after="+boundary));
+        }
         public synchronized Event require(String phase) {
             return entries.stream().filter(e -> e.phase().equals(phase)).findFirst()
                 .orElseThrow(() -> new AssertionError("미관측 path="+phase));

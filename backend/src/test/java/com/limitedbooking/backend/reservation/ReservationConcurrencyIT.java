@@ -46,6 +46,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     final Events events=new Events();
     final List<Gate> gates=new CopyOnWriteArrayList<>();
     final ThreadLocal<String> requestId=new ThreadLocal<>();
+    final AtomicInteger requestSequence=new AtomicInteger();
     final AtomicBoolean settingsChecked=new AtomicBoolean();
     ScheduledExecutorService sampler;
     boolean observed;
@@ -56,7 +57,8 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     List<Outcome<HttpResponse<String>>> results;
     Map<UUID,DatabaseAssertions.InventorySnapshot> lastSnapshot;
 
-    @Override protected void beforeDatabaseReset() { STOP.check(); }
+    StopState stopState() { return STOP; }
+    @Override protected void beforeDatabaseReset() { stopState().check(); }
     @BeforeEach void observe() {
         observed=true;
         doAnswer(call -> track(call, "create", ((IdempotencyKey)call.getArgument(2)).value()))
@@ -97,7 +99,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
                 ((HikariDataSource)dataSource).getHikariPoolMXBean().getActiveConnections(),Math::max),0,10,TimeUnit.MILLISECONDS);
     }
     Object track(org.mockito.invocation.InvocationOnMock call,String operation,String id) throws Throwable {
-        inFlight.incrementAndGet(); requestId.set(id); event(operation+"-enter",id);
+        inFlight.incrementAndGet(); requestId.set(operation+":"+id+"#"+requestSequence.incrementAndGet()); event(operation+"-enter",id);
         try { return call.callRealMethod(); }
         finally { event(operation+"-exit",id); requestId.remove(); inFlight.decrementAndGet(); }
     }
@@ -116,15 +118,11 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         if(!observed) return;
         Throwable failure=null;
         releaseAll();
-        try { quiescent(); } catch(Throwable error) { STOP.stop(error); failure=error; }
-        if(sampler!=null) {
-            sampler.shutdownNow();
-            try { if(!sampler.awaitTermination(10,TimeUnit.SECONDS)) throw new IllegalStateException("sampler 종료 실패"); }
-            catch(Throwable error) { STOP.stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
-        }
-        // 종료가 확인되지 않으면 Spring 자동 Spy reset도 비활성화하여 다음 회차의 오염을 막는다.
-        if(failure==null) reset(service,reservations,resources);
-        try { super.cleanup(); client=null; } catch(Throwable error) { STOP.stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
+        try { quiescent(); } catch(Throwable error) { stopState().stop(error); failure=error; }
+        try { stopSampler(); } catch(Throwable error) { stopState().stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
+        try { closeHttp(); } catch(Throwable error) { stopState().stop(error); failure=ConcurrencyTestSupport.preserve(failure,error); }
+        // Executor의 과거 종료 실패·HTTP 실패까지 모두 확인한 뒤에만 Spy를 초기화한다.
+        if(failure==null && !stopState().stopped()) resetSpies();
         if(results!=null && !reported) {
             System.out.println("FAILED-RUN case="+caseId+" repetition="+repetition+" outcomes="+results+" snapshot="+lastSnapshot);
             System.out.println("PATH case="+caseId+" repetition="+repetition+" events="+events.all());
@@ -133,15 +131,83 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         if(failure instanceof Exception error) throw error;
         if(failure instanceof Error error) throw error;
     }
+    void resetSpies() { reset(service,reservations,resources); }
+    void closeHttp() throws Exception { super.cleanup(); client=null; }
+    void stopSampler() throws Exception {
+        if(sampler!=null) {
+            sampler.shutdownNow();
+            if(!sampler.awaitTermination(10,TimeUnit.SECONDS)) throw new IllegalStateException("sampler 종료 실패");
+        }
+    }
+    static class CleanupFixture extends ReservationConcurrencyIT {
+        final StopState ownState=new StopState();
+        final List<String> order=new ArrayList<>();
+        RuntimeException httpFailure;
+        CleanupFixture() { observed=true; }
+        @Override StopState stopState() { return ownState; }
+        @Override void quiescent() { order.add("server"); }
+        @Override void stopSampler() { order.add("sampler"); }
+        @Override void closeHttp() { order.add("http"); if(httpFailure!=null) throw httpFailure; }
+        @Override void resetSpies() { order.add("reset"); }
+    }
+    @Test void cleanupWaitsForHttpTerminationBeforeResettingSpies() throws Exception {
+        var fixture=new CleanupFixture(); fixture.cleanup();
+        assertThat(fixture.order.indexOf("reset")).isGreaterThan(fixture.order.indexOf("http"));
+    }
+    @Test void executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle() throws Exception {
+        var fixture=new CleanupFixture(); var first=new IllegalStateException("executor termination");
+        fixture.ownState.stop(first); fixture.dataSource=mock(javax.sql.DataSource.class); fixture.cleanup();
+        assertThat(fixture.order).doesNotContain("reset").contains("http");
+        assertThatThrownBy(fixture::setup).hasCause(first);
+        verifyNoInteractions(fixture.dataSource);
+    }
+    @Test void httpTerminationFailurePreventsSpyResetAndBlocksNextSetup() {
+        var fixture=new CleanupFixture(); var first=new IllegalStateException("http termination");
+        fixture.httpFailure=first; fixture.dataSource=mock(javax.sql.DataSource.class);
+        assertThatThrownBy(fixture::cleanup).isSameAs(first);
+        assertThat(fixture.order).doesNotContain("reset");
+        assertThatThrownBy(fixture::setup).hasCause(first);
+        verifyNoInteractions(fixture.dataSource);
+    }
+
     void begin(String id,RepetitionInfo info) { caseId=id; repetition=info.getCurrentRepetition(); started=System.nanoTime(); }
     List<HttpResponse<String>> run(List<Callable<HttpResponse<String>>> jobs) throws Exception {
-        var runner=new ConcurrencyTestSupport(STOP);
-        results=runner.run(jobs,Duration.ofSeconds(jobs.size()==100?120:30),this::releaseAll);
-        try { quiescent(); } catch(Exception failure) { STOP.stop(failure); throw failure; }
+        var runner=new ConcurrencyTestSupport(stopState());
+        try {
+            results=runner.run(jobs,Duration.ofSeconds(jobs.size()==100?120:30),this::releaseAll);
+        } catch(RuntimeException | Error failure) {
+            for(var diagnostic:failure.getSuppressed()) {
+                if(diagnostic instanceof CollectedOutcomes collected) {
+                    // 이 runner에 제출한 작업은 모두 HttpResponse<String> 작업이다.
+                    @SuppressWarnings("unchecked")
+                    var recovered=(List<Outcome<HttpResponse<String>>>)(List<?>)collected.outcomes();
+                    results=recovered;
+                }
+            }
+            throw failure;
+        }
+        try { quiescent(); } catch(Exception failure) { stopState().stop(failure); throw failure; }
         assertThat(runner.terminated()).isTrue();
-        assertThat(results).hasSize(jobs.size()).allSatisfy(r -> assertThat(r.failure()).isNull());
+        assertThat(results).hasSize(jobs.size());
+        completedRequests();
         return results.stream().map(Outcome::value).toList();
     }
+    void completedRequests() {
+        // 전송 실패는 Service 진입 전 서버 요청의 부재를 증명하지 못한다.
+        results.stream().map(Outcome::failure).filter(Objects::nonNull).findFirst().ifPresent(stopState()::stop);
+        assertThat(results).allSatisfy(r -> assertThat(r.failure()).isNull());
+    }
+    @Test void transportFailureBeforeServiceEntryBlocksResetAndNextSetup() throws Exception {
+        var fixture=new CleanupFixture(); var timeout=new java.net.http.HttpTimeoutException("before Service");
+        fixture.results=List.of(new Outcome<>(null,timeout)); fixture.dataSource=mock(javax.sql.DataSource.class);
+        assertThat(fixture.inFlight).hasValue(0);
+        assertThatThrownBy(fixture::completedRequests).isInstanceOf(AssertionError.class);
+        fixture.cleanup();
+        assertThat(fixture.order).doesNotContain("reset");
+        assertThatThrownBy(fixture::setup).hasCause(timeout);
+        verifyNoInteractions(fixture.dataSource);
+    }
+
     Callable<HttpResponse<String>> creation(UUID id,String key) { return () -> create(id,"USER_A",key); }
     List<Callable<HttpResponse<String>>> same(UUID id,String key,int count) {
         return IntStream.range(0,count).mapToObj(i -> creation(id,key)).toList();
@@ -213,11 +279,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         var unique=events.require("unique");
         assertThat(unique.transaction()).isTrue();
         assertThat(unique.detail()).isEqualTo("23505/uq_reservations_user_key");
-        assertThat(events.all()).anySatisfy(e -> {
-            assertThat(e.phase()).isEqualTo("lookup"); assertThat(e.request()).isEqualTo(unique.request());
-            assertThat(e.sequence()).isGreaterThan(unique.sequence()); assertThat(e.transaction()).isFalse();
-            assertThat(e.detail()).isEqualTo("present");
-        });
+        assertThat(events.requireAfter("lookup",unique.request(),false,unique.sequence()).detail()).isEqualTo("present");
         assertThat(events.all().stream().filter(e->e.phase().equals("first-empty"))).hasSize(2);
     }
     @RepeatedTest(10) void C02_lastOneSameKeyTenRequests(RepetitionInfo info) throws Exception {
@@ -228,6 +290,8 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     @RepeatedTest(10) void C03_sufficientStockSameKeyUniqueRollback(RepetitionInfo info) throws Exception {
         begin("C03",info); var target=resource(10); firstTwoEmpty("C03");
         identical(run(same(target,"C03",10)),10); uniqueThenOutsideLookup();
+        assertThat(events.all().stream().filter(e->e.phase().equals("create-enter"))
+                .map(Event::request).distinct()).hasSize(10);
         snapshot(target,9,1,1); report();
     }
     @RepeatedTest(10) void C04_differentResourcesSameKeyRollsBackLoser(RepetitionInfo info) throws Exception {
@@ -248,10 +312,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         identical(run(same(target,"C07",2)),2);
         var zero=events.all().stream().filter(e->e.phase().equals("decrement")&&e.detail().endsWith(":0")).findFirst().orElseThrow();
         assertThat(zero.transaction()).isTrue();
-        assertThat(events.all()).anySatisfy(e -> {
-            assertThat(e.request()).isEqualTo(zero.request()); assertThat(e.sequence()).isGreaterThan(zero.sequence());
-            assertThat(e.phase()).isEqualTo("lookup"); assertThat(e.transaction()).isTrue(); assertThat(e.detail()).isEqualTo("present");
-        });
+        assertThat(events.requireAfter("lookup",zero.request(),true,zero.sequence()).detail()).isEqualTo("present");
         assertThat(events.all().stream().filter(e->e.phase().equals("first-empty"))).hasSize(2);
         snapshot(target,0,1,1); report();
     }
@@ -333,7 +394,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         assertThat(events.require("cancel-committed").sequence()).isGreaterThan(events.require("create-wait").sequence());
         assertThat(events.require("create-released").sequence()).isGreaterThan(events.require("cancel-committed").sequence());
         assertThat(events.all()).anySatisfy(e -> {
-            assertThat(e.phase()).isEqualTo("decrement"); assertThat(e.request()).isEqualTo("C09");
+            assertThat(e.phase()).isEqualTo("decrement"); assertThat(e.request()).startsWith("create:C09#");
             assertThat(e.sequence()).isGreaterThan(events.require("create-released").sequence()); assertThat(e.detail()).endsWith(":1");
         });
         mixedResult(target,old,responses,true,"C09"); report();
@@ -341,7 +402,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     @RepeatedTest(10) void C10_soldOutCompletesBeforeCancellationRestore(RepetitionInfo info) throws Exception {
         begin("C10",info); var target=resource(1); var old=confirmed(target); var wait=gate(1);
         doAnswer(call -> {
-            inFlight.incrementAndGet(); requestId.set(old.toString()); event("cancel-enter",old.toString());
+            inFlight.incrementAndGet(); requestId.set("cancel:"+old+"#"+requestSequence.incrementAndGet()); event("cancel-enter",old.toString());
             try {
                 assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
                 event("cancel-wait","no transaction"); wait.awaitRelease(); event("cancel-released","after sold out");
@@ -365,7 +426,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
             if(key.value().equals("C11_fail") && fault.compareAndSet(true,false)) {
                 assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
                 assertThat(events.all()).anySatisfy(e -> {
-                    assertThat(e.request()).isEqualTo("C11_fail"); assertThat(e.phase()).isEqualTo("decrement");
+                    assertThat(e.request()).startsWith("create:C11_fail#"); assertThat(e.phase()).isEqualTo("decrement");
                     assertThat(e.transaction()).isTrue(); assertThat(e.detail()).endsWith(":1");
                 });
                 event("injected-insert-fault","IllegalStateException after real decrement");

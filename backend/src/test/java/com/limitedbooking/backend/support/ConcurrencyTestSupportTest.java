@@ -103,8 +103,54 @@ class ConcurrencyTestSupportTest {
                 return 1;
             }),Duration.ofMillis(100)));
             assertThat(thrown).isSameAs(original);
-            assertThat(thrown.getSuppressed()).singleElement().isInstanceOf(IllegalStateException.class);
+            assertThat(thrown.getSuppressed()).anySatisfy(error -> assertThat(error).isInstanceOf(IllegalStateException.class));
             assertThatThrownBy(state::check).hasCauseInstanceOf(IllegalStateException.class);
+        } finally { release.countDown(); }
+    }
+    @Test void retainsAllTaskFailuresAndResultsWhenExecutorCannotTerminate() {
+        var release=new CountDownLatch(1); var state=new ConcurrencyTestSupport.StopState();
+        var first=new IllegalArgumentException("first job"); var second=new IllegalStateException("second job");
+        try {
+            var failure=catchThrowable(() -> new ConcurrencyTestSupport(state,Duration.ofMillis(20)).run(
+                List.of(() -> { throw first; }, () -> { throw second; }, () -> {
+                    while(release.getCount()>0) { try { release.await(); } catch(InterruptedException ignored) { } }
+                    return 3;
+                }),Duration.ofMillis(100)));
+            assertThat(failure).isSameAs(first);
+            assertThat(failure.getSuppressed()).contains(second);
+            var report=Arrays.stream(failure.getSuppressed()).filter(e -> e instanceof ConcurrencyTestSupport.CollectedOutcomes)
+                    .map(e -> (ConcurrencyTestSupport.CollectedOutcomes)e).findFirst().orElseThrow();
+            assertThat(report.outcomes()).hasSize(3);
+            assertThat(report.outcomes().get(0).failure()).isSameAs(first);
+            assertThat(report.outcomes().get(1).failure()).isSameAs(second);
+            assertThat(report.outcomes().get(2).failure()).isInstanceOf(TimeoutException.class);
+        } finally { release.countDown(); }
+    }
+    @Test void pathWitnessMustBelongToSameRequestAfterBoundaryWithExpectedTransaction() {
+        var events=new ConcurrencyTestSupport.Events();
+        events.add("lookup","other",false,"present");
+        events.add("unique","failed-request",true,"23505/uq_reservations_user_key");
+        events.add("lookup","other",false,"present");
+        assertThatThrownBy(()->events.requireAfter("lookup","failed-request",false,2)).isInstanceOf(AssertionError.class);
+        events.add("lookup","failed-request",true,"present");
+        assertThatThrownBy(()->events.requireAfter("lookup","failed-request",false,2)).isInstanceOf(AssertionError.class);
+        events.add("lookup","failed-request",false,"present");
+        assertThat(events.requireAfter("lookup","failed-request",false,2).sequence()).isEqualTo(5);
+    }
+    @Test void checkedTaskFailureExposesCollectedResultsOnThrownWrapper() {
+        var release=new CountDownLatch(1); var state=new ConcurrencyTestSupport.StopState();
+        var original=new java.io.IOException("transport failure");
+        try {
+            var thrown=catchThrowable(() -> new ConcurrencyTestSupport(state,Duration.ofMillis(20)).run(
+                    List.of(() -> { throw original; }, () -> {
+                        while(release.getCount()>0) { try { release.await(); } catch(InterruptedException ignored) { } }
+                        return 2;
+                    }),Duration.ofMillis(100)));
+            assertThat(thrown).isInstanceOf(IllegalStateException.class).hasCause(original);
+            assertThat(thrown.getSuppressed()).anySatisfy(diagnostic -> {
+                assertThat(diagnostic).isInstanceOf(ConcurrencyTestSupport.CollectedOutcomes.class);
+                assertThat(((ConcurrencyTestSupport.CollectedOutcomes)diagnostic).outcomes()).hasSize(2);
+            });
         } finally { release.countDown(); }
     }
 }

@@ -166,3 +166,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 [ReservationConcurrencyIT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 C01~C11 각10회를 실제 HTTP/Basic·PostgreSQL로 검증한다. C07은 차감0→트랜잭션 안 재조회, C03/C04/C08은 실제23505/정확한 제약명→Writer전체롤백→트랜잭션 밖 재조회로 구분한다. 동일키 최초201·Location·필드/UTC정밀도, 패자대상 복구, 중복취소 동일시각/복구1회, 취소후 최초생성재현 계약을 유지했다.
 
 C09/C10은 연결·잠금 보유 전 대기와 선행HTTP/별도DB확인으로 두 순서를 관측한다. C11은 지정키 차감 후 INSERT실패·전체롤백·같은키복구를 정상 경쟁키와 함께 검증한다. 제품후크·SQL·스키마·OpenAPI 변경 없음. 부모setup 첫 보호 검사가 최초종료실패 상태를 확인하고 다음 reset/준비/제출0회를 보장한다. 실제 부모setup fixture와 지원Unit10건을 연결하며 [실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 지정경로의 반복 증거이며 모든 실행순서/운영성능의 증명이 아니다. 다음은8단계다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
