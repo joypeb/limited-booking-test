@@ -142,3 +142,12 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 ## 2026-10-20 잔여 Qodana3건 처리 결정
 
 공식 배포가 확인된 Atlassian openapi-request-validator-core3.0.0으로 전환해 networknt 엔진을 사용한다. 프로젝트는 OpenAPI3.0.3 전용이므로 Swagger2 변환기만 제외한다. 취약2개 모듈의 재유입을 Gradle 해석 그래프 검사로 거부하며 기존 필수 id·참조 해석 및 추가 UUID/타입/미정의필드 탐지로 기능 보존을 검증한다. Rhino도 유입 경로가 사라져 강제 버전을 제거했다. public main은 Boot 호환성을 유지하고 해당 문법 경고만 메서드에 좁게 억제한다. 상세 공식 근거는 [Qodana 검토](qodana-review.md)에 기록한다. 이전 미해결 기록을 이 결정으로 갱신한다.
+
+
+## 2026-10-21 / 테스트 PostgreSQL의 비TLS 연결 모드 명시
+
+- 대상은 `ContainerTestSupport`가 생성·소유하는 로컬 Testcontainers PostgreSQL뿐이다. 고정 이미지의 `SHOW ssl`은 off였고 TLS 인증서도 구성하지 않는다. pgJDBC의 기본 sslmode는 prefer여서 기존에는 SSLRequest→N을 거쳐 평문 연결했다. [공식 연결 옵션](https://jdbc.postgresql.org/documentation/use/)과 [SSL 모드 설명](https://jdbc.postgresql.org/documentation/ssl/)을 확인했다.
+- 테스트 JDBC URL에 `sslmode=disable`을 명시해 이미 평문인 fixture의 연결 방식을 일치시킨다. 이 URL은 컨테이너 준비 확인·직접 JDBC·Flyway·Spring/Hikari가 공유한다. 앱 기본/local 설정·외부 DB·인증서 검증 정책은 변경하지 않는다.
+- 이는 최초08P01의 비정상 응답 발생원을 규명한 수정이 아니라 해당 테스트에서 불필요한 SSL 협상 경로를 제거하는 제한된 대응이다. 수정 전 관측 전체 검증과 새 컨테이너5개/SSLRequest250건도 정상이라 최초 실패를 재현했다고 주장하지 않는다. 정상 재실행을 근본 원인 해결의 증거로 삼지 않는다.
+- 대안인 timeout 증가·무조건 재시도·SQLSTATE08P01 무시·버전 변경은 근거가 없어 적용하지 않았다. TLS 연결 자체는 이번 fixture의 검증 범위가 아니며 향후 TLS를 시험하려면 서버 인증서와 클라이언트 검증을 별도 설계한다.
+- Ruling: 최초 실패 원인은 미확정 상태로 보존하고 fixture의 비TLS 계약만 명시한다. 이 판단이 틀리면 협상 이후의 다른 연결 오류는 여전히 발생할 수 있으며, 그런 실패는 기존 검증 게이트에서 그대로 실패한다.

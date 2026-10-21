@@ -90,3 +90,8 @@ limited-booking-concurrency-plan/backend: `java --version` Corretto25.0.4+7-LTS,
 ## 잔여 보안 의존성 제거 후 현재 구성 (2026-10-20)
 
 Atlassian 공식3.0.0으로 전환하고 swagger-parser-v2-converter만 제외했다. Jackson2 BOM2.21.8은 유지한다. json-patch1.13·jackson-coreutils2.0 및 Rhino가 실제 테스트/실행 그래프에서 사라졌으므로 이전 Rhino 강제 버전 지정은 제거했다. 이전 보안 예외 절은 당시 기록이며 이 절이 현재 상태다. 취약 모듈 재유입 검사는 verifyContractDependencies로 testCompileClasspath/testRuntimeClasspath/runtimeClasspath를 확인하고 contractTest의 선행 조건으로 실행한다.
+
+
+## 2026-10-21 테스트 PostgreSQL 연결 모드
+
+도구·라이브러리·이미지 버전은 유지했다. ContainerTestSupport가 소유하는 ssl=off Testcontainers PostgreSQL URL에만 `sslmode=disable`을 명시한다. 실제 서버 설정·비TLS 연결과 앱 기동은 DatabaseSupportIT/BackendApplicationIT에서 확인하며 [결정](decisions.md)·[실행 및 관측 한계](test-evidence.md)를 따른다. 앱 기본/local 설정이나 외부 DB의 TLS 정책 변경은 아니다.

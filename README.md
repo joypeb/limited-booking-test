@@ -58,7 +58,7 @@ commit 전 오류는 rollback하고 연결을 닫는다. commit 응답 유실은
 
 ## 테스트 실행
 
-backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능한 Docker가 추가로 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다.
+backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능한 Docker가 추가로 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다. 테스트 소유 PostgreSQL은 TLS를 구성하지 않으며 JDBC URL에 `sslmode=disable`을 명시한다. 앱 기본/local 설정이나 외부 DB의 TLS 정책에는 적용하지 않는다.
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
@@ -186,4 +186,4 @@ Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [
 계약 검증 의존성 보안 확인은 backend/에서 `./gradlew verifyContractDependencies`로 실행한다. `contractTest`에도 이 검사가 선행한다. 고정 OpenAPI3.0.3 지원을 유지하며 Swagger2 변환기는 포함하지 않는다.
 
 
-PR 게시 직전 최신 develop 통합 검증은 Unit156·일반IT257 중 기존 앱 기동1건 실패로 전체 통과 상태가 아니다. 경쟁115건과 별도 Contract6·보안 의존성 검사·bootJar는 통과했다. SSL 협상 연결 실패의 상세·미확정 원인은 [최신 실행 기록](docs/test-evidence.md)을 참조한다.
+PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 SSL 협상08P01로 실패했다. 이후 테스트 소유 비TLS PostgreSQL URL에 `sslmode=disable`을 명시하고 관측 도구 없이 `verifyContract build`를 실행해 Unit156·일반IT257·Contract6 전부 통과했다. 최초 비정상 응답의 발생원은 여전히 미확정이며, 이번 대응의 범위와 한계는 [최신 실행 기록](docs/test-evidence.md)을 참조한다.

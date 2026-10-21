@@ -23,12 +23,23 @@ class DatabaseSupportIT {
 
     @Test void connectsToOwnedPostgresWithoutStartingRedis() throws Exception {
         var support = ContainerTestSupport.postgresOnly();
-        try (support; var connection = DriverManager.getConnection(support.postgres.getJdbcUrl(),
-                support.postgres.getUsername(), support.postgres.getPassword());
-             var statement = connection.createStatement();
-             var rows = statement.executeQuery("SELECT current_database()")) {
-            assertThat(rows.next()).isTrue();
-            assertThat(rows.getString(1)).isEqualTo(support.postgres.getDatabaseName());
+        try (support) {
+            var properties = org.postgresql.Driver.parseURL(support.postgres.getJdbcUrl(), null);
+            assertThat(properties).isNotNull();
+            assertThat(org.postgresql.PGProperty.SSL_MODE.getOrDefault(properties)).isEqualTo("disable");
+            try (var connection = DriverManager.getConnection(support.postgres.getJdbcUrl(),
+                    support.postgres.getUsername(), support.postgres.getPassword());
+                 var statement = connection.createStatement();
+                 var rows = statement.executeQuery("""
+                         SELECT current_database(), current_setting('ssl'),
+                                (SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid())
+                         """)) {
+                assertThat(rows.next()).isTrue();
+                assertThat(rows.getString(1)).isEqualTo(support.postgres.getDatabaseName());
+                assertThat(rows.getString(2)).isEqualTo("off");
+                assertThat(rows.getBoolean(3)).isFalse();
+                assertThat(rows.wasNull()).isFalse();
+            }
             assertThat(support.postgres.getMappedPort(5432)).isNotEqualTo(5432);
             assertThat(support.redis.getContainerId()).isNull();
         }
