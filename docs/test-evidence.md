@@ -1140,6 +1140,125 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 
 리뷰 후 미해결 발견0. 최종 커밋 push 후 PR head SHA를 재확인하고 결과 코멘트를 남겨 merge commit 방식으로 병합한다. 이 문단은 병합 전 판정·절차이며 실제 병합 완료 증거는 GitHub PR의 merge 메타데이터/리뷰 코멘트를 따른다. 외부 CI는 등록된 체크가 없어 성공으로 주장하지 않는다. 실제 경쟁 반복·Redis·업무 자동 계약/속성/PIT·부하는 여전히 후속이다.
 
+## 7단계 준비 (2026-10-20)
+
+- worktree limited-booking-concurrency-plan, branch docs/reservation-concurrency-spec, 시작6316e19. requirements16/16. 확장 훅 없음.
+- knowledge 규칙 전체·reservation/resource/security·계획서2~5절/7단계·고정OpenAPI와 C01~C11을 대조했다. 업무 계약/스키마/후속Redis는 변경하지 않는다.
+- `cd backend && ./gradlew test`: 종료0, Unit137 실패/오류/skip0. 지원 Unit/다중snapshot을 먼저 검증하며 실제 경쟁110회는 아직 미실행.
+
+### 공통 기반 T004~T010
+
+- `./gradlew test --tests '*ConcurrencyTestSupportTest'`: 종료1, 신규8/8 실패(빈 목록 반환·장벽 무동작·최초 원인 미보존 등 assertion 실패). 컴파일 성공 후 동작 실패를 확인했다.
+- 실행/공통deadline/예외수집/장벽/원인보존/종료 실패 차단 구현 후 `./gradlew test`: 종료0,145건(기존137+지원8), 실패/오류/skip0.
+- `./gradlew integrationTest --tests '*DatabaseSupportIT'`: 빈 snapshot 골격에서23건 중 신규4건 실패·종료1. 실제 DB에서 결과 집합 누락과 오류 미거부를 탐지했다. 단일LEFT JOIN 집계 구현 후23건·종료0.
+- `./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: Unit145·부모setup fixture1·종료0. 보호 검사 생략 고의 변경은 fixture1건 실패·종료1로 탐지 후 원복했다. 실제 DataSource 무호출(reset0), 준비0, 제출0, 최초 원인 보존과 null-client cleanup을 검증했다.
+- 최종 기반 게이트 `./gradlew test integrationTest --tests '*DatabaseSupportIT' --tests '*ReservationConcurrencyIT' --tests '*ReservationCreateIT'`: 종료0,Unit145·IT40(23+1+16), 실패/오류/skip0. 실행 지원은 최대10작업자, DB풀10/3000ms이며 10ms 연결 표본을 사용한다. 아직 업무 경쟁은 미실행.
+
+### US1 T011~T014: C01
+
+- `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*'`: 종료0, 반복10/10. 매회 capacity10/요청100/작업자10,201×10·409/SOLD_OUT×90,total/confirmed10·available0. 모든 Future 수집/Executor 종료/서버0/HTTP 종료를 검사했다.
+- 기존 제품 구현은 통과했다. ResourceRepository의 `available > 0`만 고의 제거: 동일 명령 종료1,10/10 실패. DB CHECK가 음수 차감을 거부하여 예상 품절90 대신500이 발생하는 것을 HTTP 분포가 탐지했다. 즉시 원복했고 제품 코드는 변경하지 않았다.
+- 원복 후 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C01*' --tests '*ReservationCreateIT'`: 종료0,IT26(C01반복10+기존16), 실패/오류/skip0. 22초. 각 회차의 수량과 연결 표본은 최종 전체 인수 기록에 합친다. 표본은 정확한 연결 피크/운영 성능 증거가 아니다.
+
+### US2 T015~T021: C02/C03/C04/C07/C08
+
+- 각10회(총50회) 실제 HTTP·DB 초기 실행: 종료0. C02/03 동일값10건·false1/true9·1행·잔여0/9, C04 대상별 차감1·실제23505/uq_reservations_user_key·승자1행/잔여0·패자0행/잔여1, C07 차감0 뒤 활성 트랜잭션 성공 재조회, C08 두 차감1 뒤 UNIQUE·롤백 후 비트랜잭션 성공 재조회를 모두 관측했다. 최초 실제 빈 선조회 두 개만 트랜잭션 밖에서 기다린다.
+- Service의 대상 UUID 비교만 고의 제거한 C04 실행: 종료1,10/10 실패(201이2개여서 단일 성공/충돌 계약 위반). 즉시 원복했다. 기존 제품 결함은 발견하지 않아 제품 변경 없음.
+- 원복 후 위5종 각10회 + `IdempotencyIT`5 + `ReservationRollbackIT`7: `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C02*' --tests '*ReservationConcurrencyIT.C03*' --tests '*ReservationConcurrencyIT.C04*' --tests '*ReservationConcurrencyIT.C07*' --tests '*ReservationConcurrencyIT.C08*' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT'`, 종료0/IT62/실패·오류·skip0,27초. 저장UTC마이크로초·Location·JSON필드 일치와 실패키 복구 회귀 유지.
+
+### US3 T022~T028: C05/C06/C09/C10
+
+- 4종各10회 초기 실행 종료0/40건. C05 동일취소시각·복구호출1회·행유지, C06 두 허용결과와 품절시 같은 키 재시도, C09/C10 각10회는 두 요청 진입·비트랜잭션 대기·선행완료·해제·후행차감/복구 사건 순번을 단언했다. 순서 관측100%, 수량 불일치0.
+- Writer의 `changed == 1` 복구 방어만 `changed >= 0`으로 고의 변경한 C05: 종료1/10회 중9실패·1통과. 이미취소됨 조기 반환만 실행된 회차는 이 고의 결함을 통과할 수 있다. 실패9회에서는 중복 복구가0건을 반환하여500 또는 복구호출 수 위반을 탐지했다. 성공 회차로 실패를 덮지 않았고 원복했다. 제품의 실제 결함은 발견하지 않았다.
+- 원복 후 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C05*' --tests '*ReservationConcurrencyIT.C06*' --tests '*ReservationConcurrencyIT.C09*' --tests '*ReservationConcurrencyIT.C10*' --tests '*ReservationCancelIT' --tests '*ReservationOwnershipIT'`: 종료0/IT58(경쟁40+기존취소13/소유권5), 실패/오류/skip0,27초. 취소 후 생성재현·타인/ADMIN404도 기존회귀에서 유지했다.
+
+### US4 T029~T034: C11·실패 증거
+
+- 장애 주입 전 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.C11*'`: 종료1/10회 모두 실패(예상500 대신201). 테스트/관측 지원 준비의 RED이며 제품 결함이라고 주장하지 않는다.
+- 지정 키 첫 INSERT에만 IllegalStateException을 주입하고 실제 차감1·활성트랜잭션을 확인했다. 모든 요청 종료 후 실패키없음·정상키1·잔여1, 같은 실패키 재시도201 후confirmed2/잔여0을 검사했다. 기존 롤백 제품 코드는 그대로다.
+- 추가 지원Unit은 작업 오류+다른작업 종료 실패가 겹칠 때 정리 예외가 원래 오류를 대체하는 문제를 탐지했다: `./gradlew test --tests '*ConcurrencyTestSupportTest'` 종료1/10중1실패. 최초 작업 오류에 종료 오류를 suppressed로 보존하도록 테스트 지원만 수정했다. 외부장벽 해제→취소/종료 순서 Unit도 추가했다.
+- `./gradlew test integrationTest --tests '*ReservationConcurrencyIT.C11*' --tests '*ReservationConcurrencyIT.parentSetup*'`: 종료0/Unit147(기존137+지원10)/IT11(C11반복10+fixture1), 실패/오류/skip0,10초. 미관측 경로·timeout·종료 실패를 성공으로 누락하지 않는다. 회차 증거는 최종 인수 JSON에 연결한다.
+
+### 지정 전체 경쟁 인수 (T035 일부)
+
+`cd backend && ./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: 종료0,Unit147·일반IT111(경쟁110회+setup차단fixture1), 실패/오류/skip0,37초. 실제실행 listener와 XML 일치. 코드 기준373f95e, 날짜2026-10-20. 캐시통과 대신 test/integrationTest 모두 실행했다.
+
+[전체 회차 증거](concurrency-runs.json)는 XML system-out에서110회 전부 추출했다. 요청/결과 수·상태분포·소요시간·작업자·풀/표본·최종snapshot·경로횟수·강제경로사건·정리결과를 포함한다. 원본 전체요청 경로는 재실행 XML에서 확인한다. 준비요청은 C05/06/09/10 각1건(기존확정 생성), 재시도는 C06 품절회차·C10·C11 각1건이며 경쟁결과 수와 별개다. C05 GET, 혼합사례 GET과 DB 조회도 준비/사후 확인이다. seed는 사용하지 않았다.
+
+| 사례 | 반복 | 회차 시간 범위(ms) | active 연결 최대 표본 | 결과 |
+|---|---:|---:|---:|---|
+| C01 | 10 | 1001~1221 | 8 | 통과 |
+| C02 | 10 | 111~366 | 10 | 통과 |
+| C03 | 10 | 99~133 | 8 | 통과 |
+| C04 | 10 | 71~80 | 2 | 통과 |
+| C05 | 10 | 231~256 | 10 | 통과 |
+| C06 | 10 | 282~290 | 2 | 통과 |
+| C07 | 10 | 76~86 | 2 | 통과 |
+| C08 | 10 | 73~82 | 2 | 통과 |
+| C09 | 10 | 276~290 | 1 | 통과 |
+| C10 | 10 | 350~365 | 1 | 통과 |
+| C11 | 10 | 153~976 | 2 | 통과 |
+
+시간은 준비·사후검증 포함 회차시간이며 성능 SLA가 아니다. 표본 간격10ms, 풀10/획득3000ms; 표본 사이의 진짜피크는 미관측이다. 실제 DB18.6(Debian18.6-1.pgdg12+2), READ COMMITTED/lock2s/statement5s/UTC를 검사했다. PostgreSQL 고정digest/Java/Gradle/Docker는 버전문서와 JSON에 기록했다. 동적DB·port와 localhost HTTP만 사용했고 Redis는 시작하지 않았다. Executor종료·서버Service in-flight0·HTTP종료는110/110 확인했다. 정상 사례의401/429/503/500·결과누락은0이며 C11의 주입500만 지정예상결과다.
+
+### 최종 일반 회귀·문서 판정 (T035~T038)
+
+`cd backend && ./gradlew verify`: 종료0,1분40초,Unit147·일반IT253, 실패/오류/skip0. listener/XML 일치. IT253은 기존138+DatabaseSupportIT추가4+경쟁110+fixture1이며 Unit147은 기존137+경쟁지원10이다. 기존 SQL·소유권·엄격입력·인증·순차장애·시각 회귀도 실행됐다. Contract/Property/PIT심화·k6·Redis요청제한·외부CI는 실행하지 않았다. Gradle10/configuration cache 및 ByteBuddy Unsafe 경고의 후속 호환성은 미검증이며 버전을 변경해 숨기지 않았다.
+
+업무 제품코드·SQL·V1·OpenAPI는 시작6316e19와 동일하다. 본문/소유권/오류/성공재현 계약 보존을 대조했다. 테스트지원/경쟁IT·README/지식/실행안내를 연결하고 실제 통과 근거로만 작업/7단계 체크를 갱신했다. 확장훅 파일이 없어 before/after implement 등록훅은 없다. 외부병합·push·배포는 수행하지 않는다. 다음 한 작업은8단계 Redis 제한이다.
+
+
+## 2026-10-21 최종 독립 리뷰 보완·완료
+
+이전 검증147/253은2026-10-20 실행 기록이다. 아래 결과가 최종 수정본이며, 현재 [110회 JSON](concurrency-runs.json)은2026-10-21 재검증으로 갱신했다. 이전 JSON은2131539 커밋에 보존돼 있다. 테스트 소스 SHA-256도 현재 JSON에 기록했다.
+
+### 발견과 RED→GREEN
+
+- 종료 격리 Important: 실제 cleanup을 사용하는 별도 상태 fixture로 HTTP종료 전 reset, 이미 설정된 Executor종료 실패 무시, HTTP종료 실패 후 reset을 재현했다. `./gradlew integrationTest --tests '*ReservationConcurrencyIT.cleanupWaits*' --tests '*ReservationConcurrencyIT.executorTermination*' --tests '*ReservationConcurrencyIT.httpTermination*'`: 종료1/3건 모두 실패. Service진입 전 timeout 결과에서도 같은 문제를 확인한 `./gradlew integrationTest --tests '*ReservationConcurrencyIT.transportFailure*'`: 종료1/1실패.
+- 다중 오류 보존 Important: A/B가 각각 실패하고 C가 종료되지 않는 지원Unit에서 두 번째 오류 유실을 확인했다. `./gradlew test --tests '*ConcurrencyTestSupportTest.retainsAll*'`: 종료1/1실패. 최초 오류를 유지하고 나머지 오류·timeout·정리오류·전체 결과를 suppressed/CollectedOutcomes로 보존한다. IT는 종료 예외에서도 전체 결과를 회수해 실패 회차에 기록한다.
+- 경로 증거의 요청ID 겹침은 정확한 요청별 입증에 영향을 주므로 필수 수정으로 재분류했다. 다른 요청 또는 잘못된 트랜잭션의 lookup이 있으면 경로 미관측으로 실패해야 한다. `./gradlew test --tests '*ConcurrencyTestSupportTest.pathWitness*'`: 종료1/1실패 후 고유 호출ID/정확한 요청·순번·트랜잭션 매칭으로 수정했다. C03의 호출ID10개가 모두 고유함을 반복마다 검사한다.
+- C07 보존 증거 누락도 회차 추적 요구에 따라 필수 보완했다. JSON에 실제 차감0 사건과 같은 요청ID·더 큰 순번의 활성 트랜잭션 성공lookup을 함께 저장하며10회 모두 추출 검사를 통과해야 한다.
+- 첫 보완 후 `./gradlew test integrationTest --tests '*ReservationConcurrencyIT.cleanupWaits*' --tests '*ReservationConcurrencyIT.executorTermination*' --tests '*ReservationConcurrencyIT.httpTermination*' --tests '*ReservationConcurrencyIT.transportFailure*'`: 종료0/Unit148·지원IT4. 이후 경로 보완을 포함한 `./gradlew test integrationTest --tests '*ReservationConcurrencyIT'`: 종료0/Unit149·IT115(경쟁110+지원fixture5),40초.
+
+### 1차 리뷰 보완 전체 회귀
+
+`cd backend && ./gradlew verify`: 종료0,1분53초. XML/listener 모두 Unit149·일반IT257, 실패/오류/skip0. Unit149=기존137+경쟁지원12, IT257=기존138+DB지원추가4+경쟁110+setup/정리지원fixture5. 요청 오류가 있어도 다음 회차를 reset하는 대신 같은 최초원인으로 실패시킨다. 기존 부모setup의 첫 보호 검사와 DataSource무호출 검증으로 DB reset0을 확인한다. 준비/제출0과 null-client 정리는 기존fixture를 유지한다.
+
+정리 순서는 장벽해제→작업종료→Service in-flight0/표본수집종료/HTTP종료→차단상태없음확인→Spy초기화다. Service 이전 서버 처리는 계수 범위 밖이므로 HTTP전송 실패·timeout 등 결과예외는 보수적으로 차단한다. 운영 서버 전체 요청 추적을 구현했다고 주장하지 않는다. 불확실한 요청이 없는 정상110회는 결과수집·종료·상태·수량 검사가 모두 통과했다.
+
+아래 표와 현재 JSON은 checked예외 보완 후 최종 재실행의110회다.
+
+| 사례 | 반복 | 회차 시간 범위(ms) | active 최대 표본 | 판정 |
+|---|---:|---:|---:|---|
+| C01 | 10 | 956~1518 | 9 | 통과 |
+| C02 | 10 | 106~275 | 8 | 통과 |
+| C03 | 10 | 98~119 | 8 | 통과 |
+| C04 | 10 | 77~80 | 2 | 통과 |
+| C05 | 10 | 237~296 | 9 | 통과 |
+| C06 | 10 | 279~294 | 2 | 통과 |
+| C07 | 10 | 73~80 | 2 | 통과 |
+| C08 | 10 | 78~82 | 2 | 통과 |
+| C09 | 10 | 284~342 | 1 | 통과 |
+| C10 | 10 | 350~387 | 1 | 통과 |
+| C11 | 10 | 160~171 | 2 | 통과 |
+
+전체 리뷰는 최초 사용량 제한 뒤 같은 리뷰어가 이어서 완료했다. 알려진4개 지적을 한 수정 pass로 처리했고 재리뷰는 실행하지 않았다. 미룬Minor는 없다. 업무제품·스키마·OpenAPI 변경0이며 외부병합·push·배포도 없다. 판단 유보인 별도제품보안감사·Redis·자동계약·Property/PIT/k6·외부CI/배포·전체스케줄·정확한피크·운영성능·JUnit내부예외결합표현은 이번 완료주장에 포함하지 않는다. 다음 한 작업은8단계 Redis 요청 제한이다.
+
+
+### checked 예외 보완 후 최종 완료 검증
+
+같은 다중 오류 보존 지적의 checked예외 경계를 추가 점검했다. 최초 작업이IOException으로 실패하고 종료 실패가 겹치면 원인은 래퍼의 cause에 보존되지만, 호출자가 받은 래퍼의 직접suppressed에 결과 묶음이 없었다. `./gradlew test --tests '*ConcurrencyTestSupportTest.checkedTask*'`: 종료1/1실패. 원인 체인을 유지하고 래퍼에도 CollectedOutcomes를 연결하여 IT의 결과 회수가 가능하도록 보완했다.
+
+최종 `cd backend && ./gradlew verify`: 종료0,1분48초,Unit150·일반IT257, 실패/오류/skip0. Unit150=기존137+경쟁지원13이며 IT257=기존138+DB지원추가4+경쟁110+지원fixture5다. 현재 JSON은 이 실행의110회와 테스트 소스SHA를 담고 있다. 38/38작업·링크·코드블록·C07 같은요청 차감0/tx재조회10회·민감헤더 미포함·제품/계약diff0·after_implement 등록훅없음을 확인했다. 이후 변경은 문서·기록 동기화뿐이다.
+
+
+## 2026-10-21 develop 대상 PR 게시 전 검증
+
+- 사용자 지시: 현재 개발 내용을develop에 병합하기 위한PR 생성. 대상은origin/develop(3cfabe7)이며 기본브랜치main을 대상으로 삼지 않았다.
+- `git fetch origin` 뒤 작업브랜치에 `git merge origin/develop --no-edit`를 수행했다. 충돌 없이52ff9e2를 생성했으며 유입된 차이는qodana.yaml1개다. 별도fix/qodana-findings의 미커밋/미병합 변경은 포함하지 않았다.
+- 병합본에서 `cd backend && ./gradlew verify build`: 종료0,2분7초. Unit150·일반IT257, 실패/오류/skip0을listener/XML로 대조했다. bootJar/assemble/check/build도통과했다. 테스트소스SHA·110회기록·38작업완료는유지된다.
+- 새읽기전용pre-landing/적대적리뷰는52ff9e2 기준 새P1차단문제없음. STOP·HTTP종료후reset·다중오류/checked래퍼·고유ID·C07기록을재확인했다. 비차단후속: 전송오류차단은경쟁Future결과에적용되며, 준비/사후재시도의직접HTTP호출까지공통경계보호를넓히는것은추가보완여지다. 현재실행에서해당문제가관측됐다는증거는없다.
+- 제품코드·V1·OpenAPI·의존성·앱버전의origin/develop대비변경0. 이작업은테스트/문서PR이며별도릴리스VERSION/CHANGELOG체계를새로도입하지않았다. 외부CI성공이나develop병합/배포성공을주장하지않는다.
 
 ## 2026-10-20 / Qodana 지적 수정
 
@@ -1186,3 +1305,45 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 다른 실패 경로: 동일 init script의 버전을1.13으로 바꾸어 재유입시키면 종료1 및 두 취약 모듈 좌표가 포함된 `취약 계약 검증 의존성 재유입`으로 거부했다. 모든 장애 주입은 /tmp init script에만 두었고 저장소 의존성이나 최종 작업트리에 남기지 않았다.
 - 정상 대조: `./gradlew verifyContractDependencies contractTest bootJar` 종료0, Contract6건 실패/오류/skip0. 애플리케이션 코드 변경이 없는 gate 수정이므로 통과한 DB138건/Unit143건은 불필요하게 다시 실행하지 않았다. 이후 수정 범위 독립 재리뷰 결과는 PR 최종 댓글을 따른다.
 - 미검증: Property/PIT/부하/외부CI. 저장소에는 외부 status check가 구성되지 않았으며 로컬 검증과 혼동하지 않는다. 사용자 기존 Wrapper는 계속 별도로 보존한다.
+
+
+## 2026-10-21 PR 게시 직전 develop 추가 갱신과 미해결 실행 실패
+
+게시 직전origin/develop이3cfabe7에서312b2a7(PR8,Qodana보완)로전진했다. 그대로게시하지않고51aa964로추가병합했다. README·decisions·test-evidence·versions·security의충돌5개는양쪽독립추가절을모두보존했다. 경쟁테스트/지원코드와그소스SHA는변경하지않았다. 제품/스키마/의존성은새develop과같으며, 이PR이그변경을새로도입한것은아니다.
+
+- 최신통합본 `cd backend && ./gradlew verifyContract build`: 종료1,1분49초. Unit156/156통과,일반IT257중256통과/1실패,오류/skip0. 실패는기존BackendApplicationIT.contextLoadsAndHealthRespondsOverHttp의Flyway DB연결/앱기동이며 HTTP기능assertion에진입하지못했다. 경쟁115건(110회+fixture5)은모두통과했다.
+- 확인한경계:컨테이너기동로그뒤Hikari/Flyway의pgJDBC42.7.13 ConnectionFactoryImpl.enableSSL:717에서SQLSTATE08P01과“SSL 연결을 설정하는 동안 오류가 발생했습니다.”가발생했다. 로컬캐시sources.jar를대조하면SSL협상응답이N/E/S가아닌분기다. 실제응답바이트·전달경로및근본원인은관측되지않아Docker문제나코드회귀로단정하지않는다. 과거별도Qodana실행의Read timed out과도같은원인이라고주장하지않는다.
+- BackendApplicationIT/ContainerTestSupport/application.yaml은직전통과본과동일하며, 실패를skip·기대값완화·timeout/버전변경·반복통과로숨기지않았다. 최초실패는이기록에유지한다.
+- 실패로미실행된계약/보안/패키징범위를별도수행했다: `./backend/gradlew -p backend verifyContractDependencies contractTest bootJar` 종료0,Contract6/6실패오류skip0·보안의존성게이트통과·패키징성공. 이것을전체verifyContract/build성공으로표현하지않는다.
+- PR은이상태를명시한draft로게시하고develop병합은수행하지않는다. 최신기준의앱기동실패는미해결이며후속조사대상이다. 이전3cfabe7대상의verify build150/257통과와현재312b2a7대상의실패를구분한다.
+
+
+### PR 게시 결과
+
+사용자 지시로 [PR9](https://github.com/joypeb/limited-booking-test/pull/9)를 develop 대상으로 draft 게시했다. head는 docs/reservation-concurrency-spec이며 최신기준의 기존앱기동IT1실패·근본원인미확정과 Unit156/Contract6/경쟁115통과를 본문에 구분했다. develop 병합·배포·외부workflow수동실행은 수행하지 않았다.
+
+
+## 2026-10-21 / 기존 앱 기동 실패의 제한된 진단
+
+- 대상은 PR9 head `df683d4`이며 작업 소스·의존성·SSL 설정·timeout은 변경하지 않았다. 개발/검증 및 환경/기록 규칙, 기존 기동 IT와 컨테이너 지원 코드를 대조했다. 이전 전체 검증의 `08P01` 실패는 위 기록대로 미해결이다.
+- pgJDBC42.7.13의 `ConnectionFactoryImpl.enableSSL`은 응답 N/E/S 외 바이트에서 해당 오류를 던진다. `PGStream.receiveChar`는 EOF를 별도 예외로 처리하므로 이 기록을 단순 EOF/연결 timeout이라고 해석할 근거도 없다. 공식 소스: https://github.com/pgjdbc/pgjdbc/blob/REL42.7.13/pgjdbc/src/main/java/org/postgresql/core/v3/ConnectionFactoryImpl.java
+- 임시 `/tmp/limited-booking-ssl-diagnostic/SslProbeSocketFactory.java`는 표준 Socket을 사용하면서 각 연결의 첫 서버 바이트만 출력한다. 비밀번호·후속 인증 payload는 기록하지 않았다. 외부 Gradle init script로 진단 클래스와 Hikari `data-source-properties.socketFactory`만 주입했다. 첫 시도는 프로젝트 설정에 classpath 추가가 덮여 진단 클래스 ClassNotFound/08006으로 종료1이었다. 원래08P01 재현으로 세지 않는다. 주입 시점을 projectsEvaluated로 바로잡고 한 번 진단 실행했다.
+- `cd backend && ./gradlew -I /tmp/limited-booking-ssl-diagnostic/init.gradle integrationTest --tests com.limitedbooking.backend.BackendApplicationIT`: 종료0, 6초, IT1건 실패/오류/skip0. 첫 서버 바이트 관측은 모두78(N)이었고 앱 기동과 HTTP health assertion을 통과했다. 로그와 관측 XML은 같은 임시 디렉터리에 보관한다. 진단 Socket 사용은 관측 조건 차이이므로 원래 환경의 무조건적인 정상성을 증명하지 않는다.
+- 한계: 원래 실패 당시 바이트·서버 로그를 소급 확보하지 못했다. 기존 integrationTest XML 출력은 지정 실행 결과로 갱신되었으며, 전체257건 실행 증거로 재사용하지 않는다. 최초 전체 실패 명령 로그 `/tmp/limited-booking-pr-final-verify.log`와 위 실행 기록은 유지한다. 임시 경로는 장기 보관 아티팩트가 아니다.
+- 결론: 지정 진단에서는 재현되지 않았으며 근본 원인은 여전히 미확정이다. SSL 비활성화·재시도 추가·timeout 증가는 적용하지 않았다. 전체 verifyContract/build를 다시 통과했다고 주장하지 않으며 PR9는 draft를 유지한다. 다음 조사는 실패 시점 SSL 응답 바이트와 해당 컨테이너 PostgreSQL 로그의 동시 확보다.
+
+
+## 2026-10-21 / 테스트 소유 PostgreSQL의 SSL 협상 경로 제거
+
+- 작업 기준 `a50ffc6`(develop312b2a7 통합). 사용자 요청에 따라 연결 실패를 추가 조사하고 테스트 환경에 한정한 대응을 적용했다. Java25.0.4·Gradle9.7.1·Boot4.1.1·pgJDBC42.7.13·Testcontainers2.0.5·PostgreSQL18.6 고정digest·Docker29.8.2를 유지했다. 개발 Compose DB/volume과 사용자 Wrapper 변경은 건드리지 않았다.
+- 실행 계획: (1) 협상 바이트·새 컨테이너 초기 응답 관측, (2) 테스트 fixture의 비TLS 모드 명시와 실제 DB 회귀 확인, (3) 관측 도구 없는 전체 검증·독립 리뷰·기록·PR 반영. 제품 계약을 바꾸지 않으며 이번 대응과 원인 규명을 구분한다.
+- 수정 전 진단: `cd backend && ./gradlew -I /tmp/limited-booking-ssl-diagnostic/init.gradle verifyContract build` 종료0,1분45초. Unit156·일반IT257·Contract6 실패/오류/skip0, 보안 의존성 게이트·build 통과. 관측 SocketFactory는 외부 init script로 Hikari에만 주입했고 BackendApplicationIT의 각 연결 첫서버바이트10건은 모두78(N)이었다. 정상 실행은 최초08P01 원인 해결의 근거가 아니다.
+- 초기 연결 분리: 임시 ColdStartProbe로 동일 고정 이미지의 독립 Testcontainers5개를 순차 생성하고 각50연결/작업자10개에서 SSLRequest(길이8/코드80877103)를 전송했다. 요청250개 전부78(N), 각 `SHOW ssl`은 off였다. Socket 연결/읽기3초·Future10초 상한을 사용하고 각 시험의 컨테이너만 종료했다. 컨테이너 로그는 `/tmp/limited-booking-ssl-diagnostic/cold-postgres-0.log`~`cold-postgres-4.log`에 보관했다. 실패나 비정상 바이트는 재현되지 않았다.
+- 확인된 구성: 서버는 TLS 인증서 없는 ssl=off fixture인데 JDBC URL에는 sslmode가 없어 드라이버 기본 prefer의 SSLRequest→N을 거쳐 평문으로 연결했다. 최초 비정상 바이트 발생원은 여전히 미확정이다. 실패 감추기용 재시도·skip·timeout 증가·버전 변경은 적용하지 않았다.
+- RED: DatabaseSupportIT.connectsToOwnedPostgresWithoutStartingRedis에 URL의 명시disable과 실제 DB의 서버ssl=off/연결ssl=false 검사를 추가했다. `./backend/gradlew -p backend integrationTest --tests 'com.limitedbooking.backend.support.DatabaseSupportIT.connectsToOwnedPostgresWithoutStartingRedis'` 종료1,7초,1건실패/오류skip0. 실패는 `expected disable but was null`(기존 URL에 모드 없음)이다. 원래08P01을 재현한 테스트로 해석하지 않는다. 최초 루트의 잘못된 `./gradlew` 명령은 파일 없음/종료127이었으며 RED로 세지 않았다.
+- 최소 변경: ContainerTestSupport의 PostgreSQL URL에 withUrlParam(sslmode,disable)만 추가했다. 컨테이너 준비 확인·직접 JDBC·Flyway·Spring/Hikari가 동일 URL을 쓴다. 기존 앱 기본/local 설정·제품 코드·스키마·OpenAPI는 유지했다. TLS가 원래 없던 로컬 테스트에만 적용하며 외부 DB에 이 설정을 일반화하지 않는다.
+- GREEN: 같은 외부 관측 init script로 위 DB지원1건과 BackendApplicationIT1건을 지정 실행했다. 종료0,10초,2건실패/오류/skip0. 실제 current_database는 소유DB, current_setting(ssl)=off, pg_stat_ssl의 해당pid ssl=false(non-null)를 확인했다. 앱 기동/health200·UP·details비노출도 통과했다. 앱 연결의 첫서버바이트10건은 모두82(R,Authentication)로 바뀌어 SSLRequest 경로를 건너뛰는 것을 확인했다.
+- 진단 소스·로그·원래 결과 사본은 `/tmp/limited-booking-ssl-diagnostic/` 아래이며 장기 보관은 보장하지 않는다. 최종 전체 검증은 외부 init script와 관측 SocketFactory 없이 실행한다.
+- 최종 정상 경로: `cd backend && ./gradlew verifyContract build`(실제 실행은 동등한 루트의 `./backend/gradlew -p backend verifyContract build`), 종료0,1분45초. Unit156·일반IT257·Contract6 전부 실패/오류/skip0, listener/XML 수 일치, verifyContractDependencies와build 통과. BackendApplicationIT XML에 관측 SocketFactory 출력이 없어 외부 도구 없이 실행한 결과임을 대조했다. 경쟁115건을 포함하며 Property/PIT/k6/외부CI는 이번에 실행하지 않았다. 소유 컨테이너 종료 후 원래 개발 Compose2개만 남았다.
+- 결론: 테스트 환경의 SSL 협상 경로 제거와 현재 전체 검증은 확인했다. 최초 비정상 응답의 발생원은 미확정으로 보존하며 근본 원인 해결·운영 TLS 검증으로 주장하지 않는다. PR9에 대응·검증·한계를 반영하고 draft는 유지한다.
+- 최종 독립 리뷰: 읽기 전용 리뷰어가 a50ffc6 대비 최종 diff·고정 Testcontainers/pgJDBC 소스·저장된 N→R 관측·현재 XML을 대조했고 수정이 필요한 결함을 발견하지 못했다. 리뷰어는 파일 수정·Gradle 실행을 하지 않았다. 적용 판단은 테스트 소유 비TLS fixture의 연결 설정 명시뿐이며, 최초 비정상 응답 발생원이 다른 경로에도 영향을 주면 향후 연결 실패가 계속 발생할 수 있다. 미룬 경미한 지적은 없다. git diff --check 통과.

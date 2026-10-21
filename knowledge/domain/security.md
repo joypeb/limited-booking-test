@@ -93,6 +93,15 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 원시 URI 접두사·접미사로 분기하는 취소 검증 필터는 MVC의 경로 디코딩과 차이가 있다. 신규 취소 Controller에서 매칭된 모든 경로의 캐시 본문0바이트를 다시 검사해 인코딩 경로도400/무변경을 보장한다. 인증·8KiB 상한 필터의 순서는 유지한다. ReservationCancelIT의 두 인코딩 경로 회귀가 실제 보안 필터와 HTTP·DB를 통과한다.
 
 
+### 7단계 경쟁 검증 연결 (2026-10-20)
+
+C01~C11 각10회는 실제 Authorization·Basic/BCrypt·보안 필터·Controller·Service를 통과한다. 내부 서비스 시험으로 대체하지 않았다. 타인/ADMIN404·취소후생성재현은 기존 소유권/취소회귀로 유지한다. 테스트 종료 관측은 Service 진입/퇴장과 HTTP작업/클라이언트 종료를 함께 확인한다. 후속 Redis 제한 도입 후에도 전체HTTP경로를 유지하고 경쟁전용10000건/60초·키초기화를 적용해야 한다. [경쟁IT](../../backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)·[실행증거](../../docs/test-evidence.md)·[회차기록](../../docs/concurrency-runs.json)을 따른다. 앞 절의 후속 표시는 각 과거 확인일의 상태다.
+
+
+### 2026-10-21 최종 리뷰 보완 확인
+
+최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
 ### Qodana null 계약과 설정 설명 (2026-10-20)
 
 LocalUserPrincipal과 필터 doFilterInternal은 상위 Spring JSpecify null 불허 계약을 좁은 범위의 NullMarked로 명시한다. UserDetailsService의 username은 null 불허이므로 알려지지 않은 비-null 사용자명만 기존 인증 실패로 처리한다. 추가 Spring 설정 메타데이터는 reservation.security 비밀번호3개의 타입·설명만 제공하며 환경 변수/Value 바인딩은 유지한다. SQL 예외의 nullable SQLException이 없거나 미분류 SQLSTATE이면 원래 오류를 다시 던지고55P03만 기존503으로 처리한다. [Qodana 분류](../../docs/qodana-review.md)·[실행 증거](../../docs/test-evidence.md)를 참고하며 Qodana 자체 재검사는 미실행이다.

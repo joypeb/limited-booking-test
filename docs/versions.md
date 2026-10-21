@@ -70,6 +70,17 @@ Corretto25.0.4+7-LTS·Gradle9.7.1·Boot4.1.1·Docker daemon29.8.2 및 기존 Pos
 
 Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존성 변경 없이 인코딩 취소 경로의 본문 계약 회귀2건을 추가해 최종 verify Unit137·일반IT138 실패/오류/skip0을 확인했다. 앞선6단계 최초 인수137/136과 구분한다. 외부CI 성공을 의미하지 않는다.
 
+## 7단계 실행 폴더 확인 (2026-10-20)
+
+limited-booking-concurrency-plan/backend: `java --version` Corretto25.0.4+7-LTS, `./gradlew --version` Gradle9.7.1, macOS27.0.1/aarch64. `docker version` client/server29.8.2, Desktop4.95.0. 모두 종료0. 추적Wrapper 유지. 원래 checkout의 Wrapper9.8.0 및 build.gradle 사용자 변경은 옮기거나 수정하지 않았다. 발견 계약은 Unit *Test, 일반IT *IT, 클래스병렬없음·0건/실패/skip거부다.
+
+
+7단계 실행 확인: 실제 PostgreSQL `18.6 (Debian 18.6-1.pgdg12+2)`, UTF-8/UTC, READ COMMITTED·lock2s·statement5s·풀10/획득3000ms. 고정 이미지/digest는 ContainerTestSupport 재사용(새 의존성 해석/버전 변경 없음). 지정 Unit147/IT111 및 일반verify Unit147/IT253이 종료0이었다. ByteBuddy Unsafe/Gradle10 폐기 경고는 남아 있으며 향후 버전 호환성은 검증하지 않았다.
+
+
+2026-10-21 최종 리뷰 보완 재실행: 동일 Java25.0.4/Gradle9.7.1/Boot4.1.1·PostgreSQL18.6 고정digest·DB/풀 설정을 유지했다. 지정 Unit149/IT115 및 최종verify Unit149/IT257 종료0. 지원Unit12·경쟁110회·fixture5를 구분한다. 신규 의존성/버전 변경은 없다.
+
+최종 checked예외 보완 뒤 `./gradlew verify`를 다시 실행했다: Unit150(기존137+지원13)/일반IT257, 종료0·실패/오류/skip0. 실행 환경과 버전은 동일하다.
 
 ## 2026-10-20 Qodana 보안 예외
 
@@ -79,3 +90,8 @@ Codex CLI0.163.0의 읽기 전용 리뷰 실행을 확인했다. 버전·의존�
 ## 잔여 보안 의존성 제거 후 현재 구성 (2026-10-20)
 
 Atlassian 공식3.0.0으로 전환하고 swagger-parser-v2-converter만 제외했다. Jackson2 BOM2.21.8은 유지한다. json-patch1.13·jackson-coreutils2.0 및 Rhino가 실제 테스트/실행 그래프에서 사라졌으므로 이전 Rhino 강제 버전 지정은 제거했다. 이전 보안 예외 절은 당시 기록이며 이 절이 현재 상태다. 취약 모듈 재유입 검사는 verifyContractDependencies로 testCompileClasspath/testRuntimeClasspath/runtimeClasspath를 확인하고 contractTest의 선행 조건으로 실행한다.
+
+
+## 2026-10-21 테스트 PostgreSQL 연결 모드
+
+도구·라이브러리·이미지 버전은 유지했다. ContainerTestSupport가 소유하는 ssl=off Testcontainers PostgreSQL URL에만 `sslmode=disable`을 명시한다. 실제 서버 설정·비TLS 연결과 앱 기동은 DatabaseSupportIT/BackendApplicationIT에서 확인하며 [결정](decisions.md)·[실행 및 관측 한계](test-evidence.md)를 따른다. 앱 기본/local 설정이나 외부 DB의 TLS 정책 변경은 아니다.

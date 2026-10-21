@@ -22,7 +22,10 @@ abstract class ReservationApiTestSupport {
     TestData data;
     HttpClient client;
 
+    protected void beforeDatabaseReset() { }
+
     @BeforeEach void setup() {
+        beforeDatabaseReset();
         data = new TestData(dataSource);
         data.reset();
         jdbc = new JdbcTemplate(dataSource);
@@ -31,7 +34,7 @@ abstract class ReservationApiTestSupport {
         assertThat(pool.getMaximumPoolSize()).isEqualTo(10);
         assertThat(pool.getConnectionTimeout()).isEqualTo(3000);
     }
-    @AfterEach void cleanup() throws Exception { HttpClientTestSupport.close(client); }
+    @AfterEach void cleanup() throws Exception { if (client != null) HttpClientTestSupport.close(client); }
 
     UUID resource(int capacity) {
         UUID id = UUID.randomUUID();

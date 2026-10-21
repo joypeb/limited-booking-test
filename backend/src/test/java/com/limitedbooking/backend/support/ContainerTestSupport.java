@@ -14,6 +14,8 @@ public final class ContainerTestSupport implements AutoCloseable {
     public final PostgreSQLContainer postgres = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres"))
             .withDatabaseName("toolchain_" + UUID.randomUUID().toString().replace("-", ""))
             .withUsername("toolchain").withPassword(UUID.randomUUID().toString())
+            // TLS를 제공하지 않는 테스트 소유 DB: 기본 prefer의 불필요한 SSLRequest를 보내지 않는다.
+            .withUrlParam("sslmode", "disable")
             .withStartupTimeout(Duration.ofSeconds(120));
     public final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse(REDIS_IMAGE))
             .withExposedPorts(6379).withStartupTimeout(Duration.ofSeconds(120));

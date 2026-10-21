@@ -1,0 +1,4774 @@
+{
+  "command": "cd backend && ./gradlew verify",
+  "exitCode": 0,
+  "baseCommit": "2131539 with review fixes; source hashes identify tested files",
+  "sourceSha256": {
+    "backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java": "1de007fa4ec26d643dcd9ae04d5e0959216487d43abbeec2785e5f56465ef9be",
+    "backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupport.java": "a3aab6a9b70c19c7132e8c194443ebb7b89be674f02f789e8e24dc0274de60df",
+    "backend/src/test/java/com/limitedbooking/backend/support/ConcurrencyTestSupportTest.java": "a50320c5610823355158934be2e9d5342bf5250f6b90ed5281eaf93b7bb1139b"
+  },
+  "date": "2026-10-21",
+  "unitTests": 150,
+  "integrationTests": 257,
+  "concurrencyClassTests": 115,
+  "repeatedAcceptanceTests": 110,
+  "supportFixtures": 5,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seed": "not used; deterministic scenarios plus real scheduling",
+  "databaseSettings": [
+    "read committed/2s/5s/18.6 (Debian 18.6-1.pgdg12+2)"
+  ],
+  "environment": {
+    "java": "Corretto25.0.4+7-LTS",
+    "gradle": "9.7.1",
+    "boot": "4.1.1",
+    "docker": "29.8.2",
+    "postgresImage": "postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c",
+    "timezone": "UTC",
+    "poolMax": 10,
+    "connectionTimeoutMs": 3000,
+    "activeSampleIntervalMs": 10,
+    "redis": "not started"
+  },
+  "source": "JUnit XML system-out; exact-request lookup witnesses retained for UNIQUE and C07 UPDATE0; per-request full paths in regenerated XML",
+  "runs": [
+    {
+      "case": "C02",
+      "repetition": 1,
+      "result": "RUN case=C02 repetition=1 requests=10 results=10 elapsedMs=275 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={d2bd970c-27e2-4359-9119-3e28b2ceb48d=InventorySnapshot[resourceId=d2bd970c-27e2-4359-9119-3e28b2ceb48d, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 12,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 2,
+      "result": "RUN case=C02 repetition=2 requests=10 results=10 elapsedMs=145 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={201:ok=10} snapshot={0f0eec62-fcaa-4fdb-80f9-a1b6564a8f30=InventorySnapshot[resourceId=0f0eec62-fcaa-4fdb-80f9-a1b6564a8f30, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 18,
+        "settings": 1,
+        "decrement": 9,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 3,
+      "result": "RUN case=C02 repetition=3 requests=10 results=10 elapsedMs=111 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={201:ok=10} snapshot={b12787e9-abd0-4249-9cd3-39e4fcfb0dc1=InventorySnapshot[resourceId=b12787e9-abd0-4249-9cd3-39e4fcfb0dc1, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 18,
+        "settings": 1,
+        "decrement": 9,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 4,
+      "result": "RUN case=C02 repetition=4 requests=10 results=10 elapsedMs=138 workers=10 pool=10/3000ms activeSampleMax=7 sampleMs=10 server=0 distribution={201:ok=10} snapshot={25f72569-5c86-4427-ab93-2a8f798019b0=InventorySnapshot[resourceId=25f72569-5c86-4427-ab93-2a8f798019b0, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 17,
+        "settings": 1,
+        "decrement": 8,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 5,
+      "result": "RUN case=C02 repetition=5 requests=10 results=10 elapsedMs=119 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={777fd49d-4aa0-41a4-803a-d8a5005f3adf=InventorySnapshot[resourceId=777fd49d-4aa0-41a4-803a-d8a5005f3adf, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 13,
+        "settings": 1,
+        "decrement": 4,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 6,
+      "result": "RUN case=C02 repetition=6 requests=10 results=10 elapsedMs=146 workers=10 pool=10/3000ms activeSampleMax=7 sampleMs=10 server=0 distribution={201:ok=10} snapshot={f7f49c94-77a0-4695-b0ef-6fb5ba73bfe5=InventorySnapshot[resourceId=f7f49c94-77a0-4695-b0ef-6fb5ba73bfe5, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 16,
+        "settings": 1,
+        "decrement": 7,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 7,
+      "result": "RUN case=C02 repetition=7 requests=10 results=10 elapsedMs=122 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={460e1a12-82e2-47af-9fa2-340090c11107=InventorySnapshot[resourceId=460e1a12-82e2-47af-9fa2-340090c11107, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 15,
+        "settings": 1,
+        "decrement": 6,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 8,
+      "result": "RUN case=C02 repetition=8 requests=10 results=10 elapsedMs=131 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={bc94671a-354e-4ac1-a29a-93c01a9ac20b=InventorySnapshot[resourceId=bc94671a-354e-4ac1-a29a-93c01a9ac20b, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 12,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 9,
+      "result": "RUN case=C02 repetition=9 requests=10 results=10 elapsedMs=110 workers=10 pool=10/3000ms activeSampleMax=5 sampleMs=10 server=0 distribution={201:ok=10} snapshot={6f638e30-c4c7-44b3-ad96-374e8ed7737c=InventorySnapshot[resourceId=6f638e30-c4c7-44b3-ad96-374e8ed7737c, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 16,
+        "settings": 1,
+        "decrement": 7,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C02",
+      "repetition": 10,
+      "result": "RUN case=C02 repetition=10 requests=10 results=10 elapsedMs=106 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={d304d414-3d69-49d2-b15d-f2dbe017c617=InventorySnapshot[resourceId=d304d414-3d69-49d2-b15d-f2dbe017c617, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 12,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 1,
+        "create-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C02 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 1,
+      "result": "RUN case=C11 repetition=1 requests=2 results=2 elapsedMs=165 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={666082d2-3ff8-48c3-b05f-945a31897824=InventorySnapshot[resourceId=666082d2-3ff8-48c3-b05f-945a31897824, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#1",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{666082d2-3ff8-48c3-b05f-945a31897824=InventorySnapshot[resourceId=666082d2-3ff8-48c3-b05f-945a31897824, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{666082d2-3ff8-48c3-b05f-945a31897824=InventorySnapshot[resourceId=666082d2-3ff8-48c3-b05f-945a31897824, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 2,
+      "result": "RUN case=C11 repetition=2 requests=2 results=2 elapsedMs=161 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={e268da13-2354-4284-a199-2008ed02b402=InventorySnapshot[resourceId=e268da13-2354-4284-a199-2008ed02b402, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#2",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{e268da13-2354-4284-a199-2008ed02b402=InventorySnapshot[resourceId=e268da13-2354-4284-a199-2008ed02b402, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{e268da13-2354-4284-a199-2008ed02b402=InventorySnapshot[resourceId=e268da13-2354-4284-a199-2008ed02b402, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 3,
+      "result": "RUN case=C11 repetition=3 requests=2 results=2 elapsedMs=166 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={01ced289-9145-47bf-84ee-b03cc2e21bb2=InventorySnapshot[resourceId=01ced289-9145-47bf-84ee-b03cc2e21bb2, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#2",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{01ced289-9145-47bf-84ee-b03cc2e21bb2=InventorySnapshot[resourceId=01ced289-9145-47bf-84ee-b03cc2e21bb2, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{01ced289-9145-47bf-84ee-b03cc2e21bb2=InventorySnapshot[resourceId=01ced289-9145-47bf-84ee-b03cc2e21bb2, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 4,
+      "result": "RUN case=C11 repetition=4 requests=2 results=2 elapsedMs=162 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={9b83f347-b967-4b3a-925a-a30edb692b18=InventorySnapshot[resourceId=9b83f347-b967-4b3a-925a-a30edb692b18, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "injected-insert-fault": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 10,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#2",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{9b83f347-b967-4b3a-925a-a30edb692b18=InventorySnapshot[resourceId=9b83f347-b967-4b3a-925a-a30edb692b18, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{9b83f347-b967-4b3a-925a-a30edb692b18=InventorySnapshot[resourceId=9b83f347-b967-4b3a-925a-a30edb692b18, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 5,
+      "result": "RUN case=C11 repetition=5 requests=2 results=2 elapsedMs=166 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={ab7adf05-8245-4de8-b793-15cc89648dbc=InventorySnapshot[resourceId=ab7adf05-8245-4de8-b793-15cc89648dbc, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#2",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ab7adf05-8245-4de8-b793-15cc89648dbc=InventorySnapshot[resourceId=ab7adf05-8245-4de8-b793-15cc89648dbc, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ab7adf05-8245-4de8-b793-15cc89648dbc=InventorySnapshot[resourceId=ab7adf05-8245-4de8-b793-15cc89648dbc, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 6,
+      "result": "RUN case=C11 repetition=6 requests=2 results=2 elapsedMs=161 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={9e986098-0ab2-42ad-b472-b92a8c9cc8dd=InventorySnapshot[resourceId=9e986098-0ab2-42ad-b472-b92a8c9cc8dd, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#1",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{9e986098-0ab2-42ad-b472-b92a8c9cc8dd=InventorySnapshot[resourceId=9e986098-0ab2-42ad-b472-b92a8c9cc8dd, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{9e986098-0ab2-42ad-b472-b92a8c9cc8dd=InventorySnapshot[resourceId=9e986098-0ab2-42ad-b472-b92a8c9cc8dd, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 7,
+      "result": "RUN case=C11 repetition=7 requests=2 results=2 elapsedMs=171 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={cab99514-8978-4da2-b766-372914040775=InventorySnapshot[resourceId=cab99514-8978-4da2-b766-372914040775, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#1",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{cab99514-8978-4da2-b766-372914040775=InventorySnapshot[resourceId=cab99514-8978-4da2-b766-372914040775, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{cab99514-8978-4da2-b766-372914040775=InventorySnapshot[resourceId=cab99514-8978-4da2-b766-372914040775, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 8,
+      "result": "RUN case=C11 repetition=8 requests=2 results=2 elapsedMs=163 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={c68cd11b-9dd9-4dfc-a1e0-45633756c9b8=InventorySnapshot[resourceId=c68cd11b-9dd9-4dfc-a1e0-45633756c9b8, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "injected-insert-fault": 1,
+        "create-exit": 3,
+        "insert": 2,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 7,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#1",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{c68cd11b-9dd9-4dfc-a1e0-45633756c9b8=InventorySnapshot[resourceId=c68cd11b-9dd9-4dfc-a1e0-45633756c9b8, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{c68cd11b-9dd9-4dfc-a1e0-45633756c9b8=InventorySnapshot[resourceId=c68cd11b-9dd9-4dfc-a1e0-45633756c9b8, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 9,
+      "result": "RUN case=C11 repetition=9 requests=2 results=2 elapsedMs=160 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={68db1e3d-8ba4-4a8d-b81b-037f840b60aa=InventorySnapshot[resourceId=68db1e3d-8ba4-4a8d-b81b-037f840b60aa, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "injected-insert-fault": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 10,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#2",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{68db1e3d-8ba4-4a8d-b81b-037f840b60aa=InventorySnapshot[resourceId=68db1e3d-8ba4-4a8d-b81b-037f840b60aa, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{68db1e3d-8ba4-4a8d-b81b-037f840b60aa=InventorySnapshot[resourceId=68db1e3d-8ba4-4a8d-b81b-037f840b60aa, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C11",
+      "repetition": 10,
+      "result": "RUN case=C11 repetition=10 requests=2 results=2 elapsedMs=169 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={500:ok=1, 201:ok=1} snapshot={dcab3e7f-2a14-47fb-aeaf-9011eecd20e2=InventorySnapshot[resourceId=dcab3e7f-2a14-47fb-aeaf-9011eecd20e2, capacity=2, available=0, totalCount=2, confirmedCount=2]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "injected-insert-fault": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 10,
+          "phase": "injected-insert-fault",
+          "request": "create:C11_fail#1",
+          "transaction": true,
+          "detail": "IllegalStateException after real decrement"
+        },
+        {
+          "sequence": 14,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{dcab3e7f-2a14-47fb-aeaf-9011eecd20e2=InventorySnapshot[resourceId=dcab3e7f-2a14-47fb-aeaf-9011eecd20e2, capacity=2, available=1, totalCount=1, confirmedCount=1]}"
+        },
+        {
+          "sequence": 20,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{dcab3e7f-2a14-47fb-aeaf-9011eecd20e2=InventorySnapshot[resourceId=dcab3e7f-2a14-47fb-aeaf-9011eecd20e2, capacity=2, available=0, totalCount=2, confirmedCount=2]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C11 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 1,
+      "result": "RUN case=C01 repetition=1 requests=100 results=100 elapsedMs=1518 workers=10 pool=10/3000ms activeSampleMax=7 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={ff892492-dc0a-4be5-82cf-4cb6d64f83a9=InventorySnapshot[resourceId=ff892492-dc0a-4be5-82cf-4cb6d64f83a9, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 2,
+      "result": "RUN case=C01 repetition=2 requests=100 results=100 elapsedMs=1068 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={f8d1d876-03ae-4f00-8f2d-b2f70c025b28=InventorySnapshot[resourceId=f8d1d876-03ae-4f00-8f2d-b2f70c025b28, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 3,
+      "result": "RUN case=C01 repetition=3 requests=100 results=100 elapsedMs=980 workers=10 pool=10/3000ms activeSampleMax=9 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={13370968-146d-4af0-b52d-361619b10871=InventorySnapshot[resourceId=13370968-146d-4af0-b52d-361619b10871, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 4,
+      "result": "RUN case=C01 repetition=4 requests=100 results=100 elapsedMs=1008 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={9ce967f7-cb33-4e83-b857-e752192639ab=InventorySnapshot[resourceId=9ce967f7-cb33-4e83-b857-e752192639ab, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 5,
+      "result": "RUN case=C01 repetition=5 requests=100 results=100 elapsedMs=1004 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={9d9a144b-4a43-440d-b355-2e0eed52c4d8=InventorySnapshot[resourceId=9d9a144b-4a43-440d-b355-2e0eed52c4d8, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 6,
+      "result": "RUN case=C01 repetition=6 requests=100 results=100 elapsedMs=964 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={678e4fd5-81bc-48c6-a4d5-27cbb04db81d=InventorySnapshot[resourceId=678e4fd5-81bc-48c6-a4d5-27cbb04db81d, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 7,
+      "result": "RUN case=C01 repetition=7 requests=100 results=100 elapsedMs=975 workers=10 pool=10/3000ms activeSampleMax=5 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={c9d515a0-a5a1-4d57-8b3e-b07ed9180b53=InventorySnapshot[resourceId=c9d515a0-a5a1-4d57-8b3e-b07ed9180b53, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 8,
+      "result": "RUN case=C01 repetition=8 requests=100 results=100 elapsedMs=997 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={234e95e9-a53b-476f-a92b-451ce71ae93e=InventorySnapshot[resourceId=234e95e9-a53b-476f-a92b-451ce71ae93e, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 9,
+      "result": "RUN case=C01 repetition=9 requests=100 results=100 elapsedMs=1023 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={47e74b93-ae17-4c8c-8b32-0150299ce253=InventorySnapshot[resourceId=47e74b93-ae17-4c8c-8b32-0150299ce253, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C01",
+      "repetition": 10,
+      "result": "RUN case=C01 repetition=10 requests=100 results=100 elapsedMs=956 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={409:SOLD_OUT=90, 201:ok=10} snapshot={ddb0d79b-7cd1-42b6-bc36-5aa0127e6960=InventorySnapshot[resourceId=ddb0d79b-7cd1-42b6-bc36-5aa0127e6960, capacity=10, available=0, totalCount=10, confirmedCount=10]}",
+      "phaseCounts": {
+        "create-enter": 100,
+        "lookup": 190,
+        "settings": 1,
+        "decrement": 100,
+        "insert": 10,
+        "create-exit": 100
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C01 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 1,
+      "result": "RUN case=C08 repetition=1 requests=2 results=2 elapsedMs=82 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={78ac1d75-cef7-4b9c-acac-df1204418111=InventorySnapshot[resourceId=78ac1d75-cef7-4b9c-acac-df1204418111, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 2,
+      "result": "RUN case=C08 repetition=2 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={cc9d6fc5-7e2e-436e-a7e9-87f387d9f926=InventorySnapshot[resourceId=cc9d6fc5-7e2e-436e-a7e9-87f387d9f926, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 3,
+      "result": "RUN case=C08 repetition=3 requests=2 results=2 elapsedMs=81 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={d1c03221-9c0d-4ca7-b50f-0e006476ec61=InventorySnapshot[resourceId=d1c03221-9c0d-4ca7-b50f-0e006476ec61, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 4,
+      "result": "RUN case=C08 repetition=4 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={c0b69acc-ddb7-4a33-a591-a494a9c84037=InventorySnapshot[resourceId=c0b69acc-ddb7-4a33-a591-a494a9c84037, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 5,
+      "result": "RUN case=C08 repetition=5 requests=2 results=2 elapsedMs=81 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={a3f0c4f4-cd25-47f7-b8e0-c2ff70b7703b=InventorySnapshot[resourceId=a3f0c4f4-cd25-47f7-b8e0-c2ff70b7703b, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 6,
+      "result": "RUN case=C08 repetition=6 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={2985f98a-8840-419d-9a81-4889ecd7c59a=InventorySnapshot[resourceId=2985f98a-8840-419d-9a81-4889ecd7c59a, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 7,
+      "result": "RUN case=C08 repetition=7 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={d513241e-d6ca-4270-afe5-3b76146daba6=InventorySnapshot[resourceId=d513241e-d6ca-4270-afe5-3b76146daba6, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 8,
+      "result": "RUN case=C08 repetition=8 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={131f2c12-75e8-431b-a9c3-7a8d0e08766c=InventorySnapshot[resourceId=131f2c12-75e8-431b-a9c3-7a8d0e08766c, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 9,
+      "result": "RUN case=C08 repetition=9 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={625d265e-05ea-4331-a36e-1be0a7785785=InventorySnapshot[resourceId=625d265e-05ea-4331-a36e-1be0a7785785, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C08",
+      "repetition": 10,
+      "result": "RUN case=C08 repetition=10 requests=2 results=2 elapsedMs=82 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={3f765907-b9c9-4c9c-ad99-65223c91fb6c=InventorySnapshot[resourceId=3f765907-b9c9-4c9c-ad99-65223c91fb6c, capacity=2, available=1, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C08#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C08#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C08#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C08 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 1,
+      "result": "RUN case=C07 repetition=1 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={6decb2db-cfde-4c54-9fb2-155dfd383590=InventorySnapshot[resourceId=6decb2db-cfde-4c54-9fb2-155dfd383590, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "6decb2db-cfde-4c54-9fb2-155dfd383590:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 2,
+      "result": "RUN case=C07 repetition=2 requests=2 results=2 elapsedMs=73 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={b8bc2a6e-c1a4-43ee-8e46-405e389bc547=InventorySnapshot[resourceId=b8bc2a6e-c1a4-43ee-8e46-405e389bc547, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "b8bc2a6e-c1a4-43ee-8e46-405e389bc547:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 3,
+      "result": "RUN case=C07 repetition=3 requests=2 results=2 elapsedMs=73 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={c17efe2c-4b28-4c90-9323-61c6765da812=InventorySnapshot[resourceId=c17efe2c-4b28-4c90-9323-61c6765da812, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "c17efe2c-4b28-4c90-9323-61c6765da812:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 4,
+      "result": "RUN case=C07 repetition=4 requests=2 results=2 elapsedMs=77 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={78c2492b-d642-4643-aedd-3ed47531d4bf=InventorySnapshot[resourceId=78c2492b-d642-4643-aedd-3ed47531d4bf, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "78c2492b-d642-4643-aedd-3ed47531d4bf:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 5,
+      "result": "RUN case=C07 repetition=5 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={090c028e-8eb6-4091-a78e-33bf2dcc1ccd=InventorySnapshot[resourceId=090c028e-8eb6-4091-a78e-33bf2dcc1ccd, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "090c028e-8eb6-4091-a78e-33bf2dcc1ccd:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 6,
+      "result": "RUN case=C07 repetition=6 requests=2 results=2 elapsedMs=77 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={db588e74-eaa3-43fe-b46a-067290e634f3=InventorySnapshot[resourceId=db588e74-eaa3-43fe-b46a-067290e634f3, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "db588e74-eaa3-43fe-b46a-067290e634f3:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 7,
+      "result": "RUN case=C07 repetition=7 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={b96cf75f-004d-4b7b-82e0-708c2d071c0d=InventorySnapshot[resourceId=b96cf75f-004d-4b7b-82e0-708c2d071c0d, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "b96cf75f-004d-4b7b-82e0-708c2d071c0d:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 8,
+      "result": "RUN case=C07 repetition=8 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={51e46e1c-9589-4c05-9c0a-9c13a6df2ea8=InventorySnapshot[resourceId=51e46e1c-9589-4c05-9c0a-9c13a6df2ea8, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "51e46e1c-9589-4c05-9c0a-9c13a6df2ea8:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 9,
+      "result": "RUN case=C07 repetition=9 requests=2 results=2 elapsedMs=76 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={38e3b3c2-2642-4d5a-aaa2-60d159eec629=InventorySnapshot[resourceId=38e3b3c2-2642-4d5a-aaa2-60d159eec629, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "38e3b3c2-2642-4d5a-aaa2-60d159eec629:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#2",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C07",
+      "repetition": 10,
+      "result": "RUN case=C07 repetition=10 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=2} snapshot={5790ea53-e4fb-45ec-aa5b-e55a8ee9083e=InventorySnapshot[resourceId=5790ea53-e4fb-45ec-aa5b-e55a8ee9083e, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C07#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C07#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 11,
+          "phase": "decrement",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "5790ea53-e4fb-45ec-aa5b-e55a8ee9083e:0"
+        },
+        {
+          "sequence": 12,
+          "phase": "lookup",
+          "request": "create:C07#1",
+          "transaction": true,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C07 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 1,
+      "result": "RUN case=C06 repetition=1 requests=2 results=2 elapsedMs=285 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={eb910130-7702-4b2d-bfc4-a3c567edf8ab=InventorySnapshot[resourceId=eb910130-7702-4b2d-bfc4-a3c567edf8ab, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{eb910130-7702-4b2d-bfc4-a3c567edf8ab=InventorySnapshot[resourceId=eb910130-7702-4b2d-bfc4-a3c567edf8ab, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{eb910130-7702-4b2d-bfc4-a3c567edf8ab=InventorySnapshot[resourceId=eb910130-7702-4b2d-bfc4-a3c567edf8ab, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 2,
+      "result": "RUN case=C06 repetition=2 requests=2 results=2 elapsedMs=294 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={8767e5f3-3438-4407-a46a-60307737b517=InventorySnapshot[resourceId=8767e5f3-3438-4407-a46a-60307737b517, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{8767e5f3-3438-4407-a46a-60307737b517=InventorySnapshot[resourceId=8767e5f3-3438-4407-a46a-60307737b517, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{8767e5f3-3438-4407-a46a-60307737b517=InventorySnapshot[resourceId=8767e5f3-3438-4407-a46a-60307737b517, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 3,
+      "result": "RUN case=C06 repetition=3 requests=2 results=2 elapsedMs=280 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={2f48b70f-c315-4c6b-ae64-da68e6b688c2=InventorySnapshot[resourceId=2f48b70f-c315-4c6b-ae64-da68e6b688c2, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2f48b70f-c315-4c6b-ae64-da68e6b688c2=InventorySnapshot[resourceId=2f48b70f-c315-4c6b-ae64-da68e6b688c2, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2f48b70f-c315-4c6b-ae64-da68e6b688c2=InventorySnapshot[resourceId=2f48b70f-c315-4c6b-ae64-da68e6b688c2, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 4,
+      "result": "RUN case=C06 repetition=4 requests=2 results=2 elapsedMs=289 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={cb27353a-77e8-4106-8b36-d4a8c577aff1=InventorySnapshot[resourceId=cb27353a-77e8-4106-8b36-d4a8c577aff1, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{cb27353a-77e8-4106-8b36-d4a8c577aff1=InventorySnapshot[resourceId=cb27353a-77e8-4106-8b36-d4a8c577aff1, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{cb27353a-77e8-4106-8b36-d4a8c577aff1=InventorySnapshot[resourceId=cb27353a-77e8-4106-8b36-d4a8c577aff1, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 5,
+      "result": "RUN case=C06 repetition=5 requests=2 results=2 elapsedMs=279 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={14ec21b4-e19a-4fbc-97b4-570789a3c5f7=InventorySnapshot[resourceId=14ec21b4-e19a-4fbc-97b4-570789a3c5f7, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{14ec21b4-e19a-4fbc-97b4-570789a3c5f7=InventorySnapshot[resourceId=14ec21b4-e19a-4fbc-97b4-570789a3c5f7, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{14ec21b4-e19a-4fbc-97b4-570789a3c5f7=InventorySnapshot[resourceId=14ec21b4-e19a-4fbc-97b4-570789a3c5f7, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 6,
+      "result": "RUN case=C06 repetition=6 requests=2 results=2 elapsedMs=286 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={e0843a92-7e2e-4680-bcfc-9daa50dbf268=InventorySnapshot[resourceId=e0843a92-7e2e-4680-bcfc-9daa50dbf268, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{e0843a92-7e2e-4680-bcfc-9daa50dbf268=InventorySnapshot[resourceId=e0843a92-7e2e-4680-bcfc-9daa50dbf268, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{e0843a92-7e2e-4680-bcfc-9daa50dbf268=InventorySnapshot[resourceId=e0843a92-7e2e-4680-bcfc-9daa50dbf268, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 7,
+      "result": "RUN case=C06 repetition=7 requests=2 results=2 elapsedMs=284 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={b4d152c7-b9a8-4b33-9286-de72d23ba24e=InventorySnapshot[resourceId=b4d152c7-b9a8-4b33-9286-de72d23ba24e, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{b4d152c7-b9a8-4b33-9286-de72d23ba24e=InventorySnapshot[resourceId=b4d152c7-b9a8-4b33-9286-de72d23ba24e, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{b4d152c7-b9a8-4b33-9286-de72d23ba24e=InventorySnapshot[resourceId=b4d152c7-b9a8-4b33-9286-de72d23ba24e, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 8,
+      "result": "RUN case=C06 repetition=8 requests=2 results=2 elapsedMs=280 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={bcf05a9d-43e5-4526-878a-f348ccd09bee=InventorySnapshot[resourceId=bcf05a9d-43e5-4526-878a-f348ccd09bee, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{bcf05a9d-43e5-4526-878a-f348ccd09bee=InventorySnapshot[resourceId=bcf05a9d-43e5-4526-878a-f348ccd09bee, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{bcf05a9d-43e5-4526-878a-f348ccd09bee=InventorySnapshot[resourceId=bcf05a9d-43e5-4526-878a-f348ccd09bee, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 9,
+      "result": "RUN case=C06 repetition=9 requests=2 results=2 elapsedMs=282 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={2df1bc1d-4565-44d1-a91a-078ff390c422=InventorySnapshot[resourceId=2df1bc1d-4565-44d1-a91a-078ff390c422, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2df1bc1d-4565-44d1-a91a-078ff390c422=InventorySnapshot[resourceId=2df1bc1d-4565-44d1-a91a-078ff390c422, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2df1bc1d-4565-44d1-a91a-078ff390c422=InventorySnapshot[resourceId=2df1bc1d-4565-44d1-a91a-078ff390c422, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C06",
+      "repetition": 10,
+      "result": "RUN case=C06 repetition=10 requests=2 results=2 elapsedMs=289 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={896f1edf-7672-438c-b0e6-3fea657fa8a2=InventorySnapshot[resourceId=896f1edf-7672-438c-b0e6-3fea657fa8a2, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 16,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{896f1edf-7672-438c-b0e6-3fea657fa8a2=InventorySnapshot[resourceId=896f1edf-7672-438c-b0e6-3fea657fa8a2, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 23,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{896f1edf-7672-438c-b0e6-3fea657fa8a2=InventorySnapshot[resourceId=896f1edf-7672-438c-b0e6-3fea657fa8a2, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C06 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 1,
+      "result": "RUN case=C10 repetition=1 requests=2 results=2 elapsedMs=353 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f=InventorySnapshot[resourceId=ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:a2014442-639e-4c59-b3b4-919d3fbaf568#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:a2014442-639e-4c59-b3b4-919d3fbaf568#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f=InventorySnapshot[resourceId=ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f=InventorySnapshot[resourceId=ecae52b5-73fc-41cf-93f1-1d79ceeb4a5f, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 2,
+      "result": "RUN case=C10 repetition=2 requests=2 results=2 elapsedMs=350 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={6b44aad4-aa9d-4f24-8cfd-3cb76d79de46=InventorySnapshot[resourceId=6b44aad4-aa9d-4f24-8cfd-3cb76d79de46, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:2845dd1f-f801-46d3-8dc2-a94ea987d0d6#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:2845dd1f-f801-46d3-8dc2-a94ea987d0d6#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{6b44aad4-aa9d-4f24-8cfd-3cb76d79de46=InventorySnapshot[resourceId=6b44aad4-aa9d-4f24-8cfd-3cb76d79de46, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{6b44aad4-aa9d-4f24-8cfd-3cb76d79de46=InventorySnapshot[resourceId=6b44aad4-aa9d-4f24-8cfd-3cb76d79de46, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 3,
+      "result": "RUN case=C10 repetition=3 requests=2 results=2 elapsedMs=356 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={5daf4593-bb22-4490-bce4-16d38da353ab=InventorySnapshot[resourceId=5daf4593-bb22-4490-bce4-16d38da353ab, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:cf10a036-aa06-4278-bc2e-ead6415a8eb7#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:cf10a036-aa06-4278-bc2e-ead6415a8eb7#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{5daf4593-bb22-4490-bce4-16d38da353ab=InventorySnapshot[resourceId=5daf4593-bb22-4490-bce4-16d38da353ab, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{5daf4593-bb22-4490-bce4-16d38da353ab=InventorySnapshot[resourceId=5daf4593-bb22-4490-bce4-16d38da353ab, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 4,
+      "result": "RUN case=C10 repetition=4 requests=2 results=2 elapsedMs=375 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={7da231b9-c221-4193-8503-e0365c7d22d4=InventorySnapshot[resourceId=7da231b9-c221-4193-8503-e0365c7d22d4, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:f8a123b2-5e32-46dc-a5b9-afa6de88caef#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:f8a123b2-5e32-46dc-a5b9-afa6de88caef#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{7da231b9-c221-4193-8503-e0365c7d22d4=InventorySnapshot[resourceId=7da231b9-c221-4193-8503-e0365c7d22d4, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{7da231b9-c221-4193-8503-e0365c7d22d4=InventorySnapshot[resourceId=7da231b9-c221-4193-8503-e0365c7d22d4, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 5,
+      "result": "RUN case=C10 repetition=5 requests=2 results=2 elapsedMs=387 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={f52e9d66-0a82-4499-9428-ffe5bc82ab32=InventorySnapshot[resourceId=f52e9d66-0a82-4499-9428-ffe5bc82ab32, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:c5220f7d-951a-4935-9aa3-1041a7e7df35#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:c5220f7d-951a-4935-9aa3-1041a7e7df35#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{f52e9d66-0a82-4499-9428-ffe5bc82ab32=InventorySnapshot[resourceId=f52e9d66-0a82-4499-9428-ffe5bc82ab32, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{f52e9d66-0a82-4499-9428-ffe5bc82ab32=InventorySnapshot[resourceId=f52e9d66-0a82-4499-9428-ffe5bc82ab32, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 6,
+      "result": "RUN case=C10 repetition=6 requests=2 results=2 elapsedMs=356 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={a7c87fda-f5ae-4816-aff3-c5a3326c58eb=InventorySnapshot[resourceId=a7c87fda-f5ae-4816-aff3-c5a3326c58eb, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:d789194f-f817-4276-ac99-7a1e93b0c8f0#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:d789194f-f817-4276-ac99-7a1e93b0c8f0#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{a7c87fda-f5ae-4816-aff3-c5a3326c58eb=InventorySnapshot[resourceId=a7c87fda-f5ae-4816-aff3-c5a3326c58eb, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{a7c87fda-f5ae-4816-aff3-c5a3326c58eb=InventorySnapshot[resourceId=a7c87fda-f5ae-4816-aff3-c5a3326c58eb, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 7,
+      "result": "RUN case=C10 repetition=7 requests=2 results=2 elapsedMs=357 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={2a793f24-240e-4742-9f12-822853f91a7f=InventorySnapshot[resourceId=2a793f24-240e-4742-9f12-822853f91a7f, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:2a3e055f-c374-40e5-b406-adad98d22943#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:2a3e055f-c374-40e5-b406-adad98d22943#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2a793f24-240e-4742-9f12-822853f91a7f=InventorySnapshot[resourceId=2a793f24-240e-4742-9f12-822853f91a7f, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2a793f24-240e-4742-9f12-822853f91a7f=InventorySnapshot[resourceId=2a793f24-240e-4742-9f12-822853f91a7f, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 8,
+      "result": "RUN case=C10 repetition=8 requests=2 results=2 elapsedMs=370 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={963043a3-8f84-4bc6-bab2-32f7cd6547cf=InventorySnapshot[resourceId=963043a3-8f84-4bc6-bab2-32f7cd6547cf, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:5bf7aa57-27c8-4a09-afd0-ef9345b5eca6#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:5bf7aa57-27c8-4a09-afd0-ef9345b5eca6#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{963043a3-8f84-4bc6-bab2-32f7cd6547cf=InventorySnapshot[resourceId=963043a3-8f84-4bc6-bab2-32f7cd6547cf, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{963043a3-8f84-4bc6-bab2-32f7cd6547cf=InventorySnapshot[resourceId=963043a3-8f84-4bc6-bab2-32f7cd6547cf, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 9,
+      "result": "RUN case=C10 repetition=9 requests=2 results=2 elapsedMs=351 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={c6e1dbe9-413d-400b-b865-16545c11136f=InventorySnapshot[resourceId=c6e1dbe9-413d-400b-b865-16545c11136f, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:1f980e70-a199-4b36-9b29-03e033ddb278#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:1f980e70-a199-4b36-9b29-03e033ddb278#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{c6e1dbe9-413d-400b-b865-16545c11136f=InventorySnapshot[resourceId=c6e1dbe9-413d-400b-b865-16545c11136f, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{c6e1dbe9-413d-400b-b865-16545c11136f=InventorySnapshot[resourceId=c6e1dbe9-413d-400b-b865-16545c11136f, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C10",
+      "repetition": 10,
+      "result": "RUN case=C10 repetition=10 requests=2 results=2 elapsedMs=369 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 409:SOLD_OUT=1} snapshot={ae80ea1a-efd7-45b8-b8b6-d14428f28b3b=InventorySnapshot[resourceId=ae80ea1a-efd7-45b8-b8b6-d14428f28b3b, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 3,
+        "lookup": 5,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 2,
+        "create-exit": 3,
+        "cancel-enter": 1,
+        "cancel-wait": 1,
+        "sold-out-completed": 1,
+        "cancel-released": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "before-retry": 1,
+        "after-retry": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 8,
+          "phase": "cancel-wait",
+          "request": "cancel:22be5a6f-642d-4f57-8096-f30140c782e1#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "sold-out-completed",
+          "request": "client",
+          "transaction": false,
+          "detail": "409/SOLD_OUT"
+        },
+        {
+          "sequence": 15,
+          "phase": "cancel-released",
+          "request": "cancel:22be5a6f-642d-4f57-8096-f30140c782e1#2",
+          "transaction": false,
+          "detail": "after sold out"
+        },
+        {
+          "sequence": 19,
+          "phase": "before-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ae80ea1a-efd7-45b8-b8b6-d14428f28b3b=InventorySnapshot[resourceId=ae80ea1a-efd7-45b8-b8b6-d14428f28b3b, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 26,
+          "phase": "after-retry",
+          "request": "client",
+          "transaction": false,
+          "detail": "{ae80ea1a-efd7-45b8-b8b6-d14428f28b3b=InventorySnapshot[resourceId=ae80ea1a-efd7-45b8-b8b6-d14428f28b3b, capacity=1, available=0, totalCount=2, confirmedCount=1]}"
+        }
+      ],
+      "cleanup": "CLEANUP case=C10 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 1,
+      "result": "RUN case=C03 repetition=1 requests=10 results=10 elapsedMs=118 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={201:ok=10} snapshot={bb0032e7-9d41-4151-810f-af470d22354a=InventorySnapshot[resourceId=bb0032e7-9d41-4151-810f-af470d22354a, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 14,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 5,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 4
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 23,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 24,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 28,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 31,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 32,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 37,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 40,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 2,
+      "result": "RUN case=C03 repetition=2 requests=10 results=10 elapsedMs=119 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={201:ok=10} snapshot={c4fbd4ea-6855-49a9-babc-eb0d3335b701=InventorySnapshot[resourceId=c4fbd4ea-6855-49a9-babc-eb0d3335b701, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 12,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 3,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 2
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 24,
+          "phase": "unique",
+          "request": "create:C03#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 26,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 28,
+          "phase": "lookup",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 32,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 3,
+      "result": "RUN case=C03 repetition=3 requests=10 results=10 elapsedMs=101 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={201:ok=10} snapshot={5d492362-6c17-43cb-95a7-1c2d805fd601=InventorySnapshot[resourceId=5d492362-6c17-43cb-95a7-1c2d805fd601, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 18,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 9,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 8
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 27,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 29,
+          "phase": "unique",
+          "request": "create:C03#9",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 30,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 33,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 34,
+          "phase": "lookup",
+          "request": "create:C03#9",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 37,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 38,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 44,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 45,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 48,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 49,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 52,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 53,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 55,
+          "phase": "unique",
+          "request": "create:C03#8",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 56,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 58,
+          "phase": "lookup",
+          "request": "create:C03#8",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 4,
+      "result": "RUN case=C03 repetition=4 requests=10 results=10 elapsedMs=100 workers=10 pool=10/3000ms activeSampleMax=6 sampleMs=10 server=0 distribution={201:ok=10} snapshot={7f18f208-7699-44c0-b535-d695bf252a28=InventorySnapshot[resourceId=7f18f208-7699-44c0-b535-d695bf252a28, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 17,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 8,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 7
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 26,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 29,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 31,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 35,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 38,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 39,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 42,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 43,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 46,
+          "phase": "unique",
+          "request": "create:C03#8",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 47,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 49,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 50,
+          "phase": "lookup",
+          "request": "create:C03#8",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 53,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 5,
+      "result": "RUN case=C03 repetition=5 requests=10 results=10 elapsedMs=98 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={201:ok=10} snapshot={99fdaa99-b288-410f-9269-ee91f9c10ec1=InventorySnapshot[resourceId=99fdaa99-b288-410f-9269-ee91f9c10ec1, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 16,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 7,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 6
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 23,
+          "phase": "unique",
+          "request": "create:C03#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 26,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 27,
+          "phase": "lookup",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 32,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 33,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 35,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 37,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 39,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 41,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 43,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 44,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 46,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 6,
+      "result": "RUN case=C03 repetition=6 requests=10 results=10 elapsedMs=99 workers=10 pool=10/3000ms activeSampleMax=6 sampleMs=10 server=0 distribution={201:ok=10} snapshot={6d3e1cea-cd4d-450a-8f95-d0a6336a22ee=InventorySnapshot[resourceId=6d3e1cea-cd4d-450a-8f95-d0a6336a22ee, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 16,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 7,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 6
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 7,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 23,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 24,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 26,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 28,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 30,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 35,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 40,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 41,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 43,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 44,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 46,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 7,
+      "result": "RUN case=C03 repetition=7 requests=10 results=10 elapsedMs=104 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={201:ok=10} snapshot={08e6a07c-0711-4a8b-8358-f456b628b2e7=InventorySnapshot[resourceId=08e6a07c-0711-4a8b-8358-f456b628b2e7, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 17,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 8,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 7
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 25,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 27,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 28,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 31,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 32,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "unique",
+          "request": "create:C03#8",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 36,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 38,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 40,
+          "phase": "lookup",
+          "request": "create:C03#8",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 43,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 45,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 46,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 47,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 49,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 8,
+      "result": "RUN case=C03 repetition=8 requests=10 results=10 elapsedMs=106 workers=10 pool=10/3000ms activeSampleMax=6 sampleMs=10 server=0 distribution={201:ok=10} snapshot={ac7c0542-cf78-485d-810c-d484cf910b59=InventorySnapshot[resourceId=ac7c0542-cf78-485d-810c-d484cf910b59, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 16,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 7,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 6
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 7,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 24,
+          "phase": "unique",
+          "request": "create:C03#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 29,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 32,
+          "phase": "lookup",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 35,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 36,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 39,
+          "phase": "unique",
+          "request": "create:C03#6",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 40,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 43,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 45,
+          "phase": "lookup",
+          "request": "create:C03#6",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 47,
+          "phase": "unique",
+          "request": "create:C03#7",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 50,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 52,
+          "phase": "lookup",
+          "request": "create:C03#7",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 9,
+      "result": "RUN case=C03 repetition=9 requests=10 results=10 elapsedMs=100 workers=10 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={201:ok=10} snapshot={daedfad3-b99a-4e39-8dde-f8764e5ab58b=InventorySnapshot[resourceId=daedfad3-b99a-4e39-8dde-f8764e5ab58b, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 14,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 5,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 4
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 23,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 29,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 31,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 35,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 37,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 38,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 41,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C03",
+      "repetition": 10,
+      "result": "RUN case=C03 repetition=10 requests=10 results=10 elapsedMs=99 workers=10 pool=10/3000ms activeSampleMax=6 sampleMs=10 server=0 distribution={201:ok=10} snapshot={2dfeac33-2967-4a3b-bf39-c90c1740b800=InventorySnapshot[resourceId=2dfeac33-2967-4a3b-bf39-c90c1740b800, capacity=10, available=9, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 10,
+        "lookup": 14,
+        "first-empty": 2,
+        "settings": 1,
+        "decrement": 5,
+        "insert": 1,
+        "create-exit": 10,
+        "unique": 4
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 3,
+          "phase": "first-empty",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C03#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 25,
+          "phase": "unique",
+          "request": "create:C03#3",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 27,
+          "phase": "unique",
+          "request": "create:C03#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 29,
+          "phase": "lookup",
+          "request": "create:C03#3",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 34,
+          "phase": "lookup",
+          "request": "create:C03#1",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 36,
+          "phase": "unique",
+          "request": "create:C03#4",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 38,
+          "phase": "unique",
+          "request": "create:C03#5",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 41,
+          "phase": "lookup",
+          "request": "create:C03#4",
+          "transaction": false,
+          "detail": "present"
+        },
+        {
+          "sequence": 43,
+          "phase": "lookup",
+          "request": "create:C03#5",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C03 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 1,
+      "result": "RUN case=C04 repetition=1 requests=2 results=2 elapsedMs=77 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={24d943df-6451-4fbf-a66d-a8ea38185a96=InventorySnapshot[resourceId=24d943df-6451-4fbf-a66d-a8ea38185a96, capacity=1, available=1, totalCount=0, confirmedCount=0], ba5dd70d-0c46-4fd9-ab76-cefe28cf3019=InventorySnapshot[resourceId=ba5dd70d-0c46-4fd9-ab76-cefe28cf3019, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 2,
+      "result": "RUN case=C04 repetition=2 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={3f824273-52f9-4651-ab3a-07f32a1dd5ee=InventorySnapshot[resourceId=3f824273-52f9-4651-ab3a-07f32a1dd5ee, capacity=1, available=0, totalCount=1, confirmedCount=1], 5c878933-6acb-478c-846f-528590f9b2da=InventorySnapshot[resourceId=5c878933-6acb-478c-846f-528590f9b2da, capacity=1, available=1, totalCount=0, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 3,
+      "result": "RUN case=C04 repetition=3 requests=2 results=2 elapsedMs=77 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={41bc5f14-9a39-484d-bd2f-bebb0f916f68=InventorySnapshot[resourceId=41bc5f14-9a39-484d-bd2f-bebb0f916f68, capacity=1, available=1, totalCount=0, confirmedCount=0], a37c7644-928a-4504-9581-8e3d8c180eda=InventorySnapshot[resourceId=a37c7644-928a-4504-9581-8e3d8c180eda, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 4,
+      "result": "RUN case=C04 repetition=4 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={46e29d69-1c76-4ff9-b648-f1ed2cb8ea11=InventorySnapshot[resourceId=46e29d69-1c76-4ff9-b648-f1ed2cb8ea11, capacity=1, available=0, totalCount=1, confirmedCount=1], d2994186-18de-4ed7-81e3-203e19e86461=InventorySnapshot[resourceId=d2994186-18de-4ed7-81e3-203e19e86461, capacity=1, available=1, totalCount=0, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 5,
+      "result": "RUN case=C04 repetition=5 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={420ee679-1902-4191-be2d-ad99cfcf0002=InventorySnapshot[resourceId=420ee679-1902-4191-be2d-ad99cfcf0002, capacity=1, available=1, totalCount=0, confirmedCount=0], a465492c-45bd-4368-bf79-67909b946717=InventorySnapshot[resourceId=a465492c-45bd-4368-bf79-67909b946717, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 6,
+      "result": "RUN case=C04 repetition=6 requests=2 results=2 elapsedMs=80 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={6b364e34-4a47-4527-8e67-129d6e2206d9=InventorySnapshot[resourceId=6b364e34-4a47-4527-8e67-129d6e2206d9, capacity=1, available=0, totalCount=1, confirmedCount=1], e1d75cbb-05b0-48b1-aa5f-74cf514d4122=InventorySnapshot[resourceId=e1d75cbb-05b0-48b1-aa5f-74cf514d4122, capacity=1, available=1, totalCount=0, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 7,
+      "result": "RUN case=C04 repetition=7 requests=2 results=2 elapsedMs=77 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={7d48ba65-e483-4cf3-abad-0d58dedb3179=InventorySnapshot[resourceId=7d48ba65-e483-4cf3-abad-0d58dedb3179, capacity=1, available=1, totalCount=0, confirmedCount=0], bad0dabd-4f9d-481f-8a13-2d57c7152e1b=InventorySnapshot[resourceId=bad0dabd-4f9d-481f-8a13-2d57c7152e1b, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 8,
+      "result": "RUN case=C04 repetition=8 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={984e6184-1a83-417f-b1a1-955619eed0a5=InventorySnapshot[resourceId=984e6184-1a83-417f-b1a1-955619eed0a5, capacity=1, available=0, totalCount=1, confirmedCount=1], b2789d1d-dd54-4d8f-a3e4-ed326b535f57=InventorySnapshot[resourceId=b2789d1d-dd54-4d8f-a3e4-ed326b535f57, capacity=1, available=1, totalCount=0, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#1",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 9,
+      "result": "RUN case=C04 repetition=9 requests=2 results=2 elapsedMs=79 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={6b6d3f63-b5ac-4a54-8cd2-8e112857b459=InventorySnapshot[resourceId=6b6d3f63-b5ac-4a54-8cd2-8e112857b459, capacity=1, available=1, totalCount=0, confirmedCount=0], dd539a8b-f527-4e09-8781-08ecba1a1afc=InventorySnapshot[resourceId=dd539a8b-f527-4e09-8781-08ecba1a1afc, capacity=1, available=0, totalCount=1, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 4,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C04",
+      "repetition": 10,
+      "result": "RUN case=C04 repetition=10 requests=2 results=2 elapsedMs=78 workers=2 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={409:IDEMPOTENCY_CONFLICT=1, 201:ok=1} snapshot={02875d85-29b6-4f71-8634-e93b8bd529e2=InventorySnapshot[resourceId=02875d85-29b6-4f71-8634-e93b8bd529e2, capacity=1, available=0, totalCount=1, confirmedCount=1], cdedaf95-c763-43c7-9fa6-d2eb8a4c552f=InventorySnapshot[resourceId=cdedaf95-c763-43c7-9fa6-d2eb8a4c552f, capacity=1, available=1, totalCount=0, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 3,
+        "first-empty": 2,
+        "decrement": 2,
+        "insert": 1,
+        "create-exit": 2,
+        "settings": 1,
+        "unique": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 5,
+          "phase": "first-empty",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 6,
+          "phase": "first-empty",
+          "request": "create:C04#1",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 12,
+          "phase": "unique",
+          "request": "create:C04#2",
+          "transaction": true,
+          "detail": "23505/uq_reservations_user_key"
+        },
+        {
+          "sequence": 13,
+          "phase": "lookup",
+          "request": "create:C04#2",
+          "transaction": false,
+          "detail": "present"
+        }
+      ],
+      "cleanup": "CLEANUP case=C04 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 1,
+      "result": "RUN case=C09 repetition=1 requests=2 results=2 elapsedMs=309 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={5019f539-5d49-4db7-af2b-ffa513f64624=InventorySnapshot[resourceId=5019f539-5d49-4db7-af2b-ffa513f64624, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{5019f539-5d49-4db7-af2b-ffa513f64624=InventorySnapshot[resourceId=5019f539-5d49-4db7-af2b-ffa513f64624, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 2,
+      "result": "RUN case=C09 repetition=2 requests=2 results=2 elapsedMs=297 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={d6edf74e-01a4-4781-afae-188420183ea8=InventorySnapshot[resourceId=d6edf74e-01a4-4781-afae-188420183ea8, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{d6edf74e-01a4-4781-afae-188420183ea8=InventorySnapshot[resourceId=d6edf74e-01a4-4781-afae-188420183ea8, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 3,
+      "result": "RUN case=C09 repetition=3 requests=2 results=2 elapsedMs=302 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={0d9dd1cb-2999-47f6-9c45-9e7431389a5b=InventorySnapshot[resourceId=0d9dd1cb-2999-47f6-9c45-9e7431389a5b, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{0d9dd1cb-2999-47f6-9c45-9e7431389a5b=InventorySnapshot[resourceId=0d9dd1cb-2999-47f6-9c45-9e7431389a5b, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 4,
+      "result": "RUN case=C09 repetition=4 requests=2 results=2 elapsedMs=284 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={3360e3ae-2065-401f-89e1-21f61639dedb=InventorySnapshot[resourceId=3360e3ae-2065-401f-89e1-21f61639dedb, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{3360e3ae-2065-401f-89e1-21f61639dedb=InventorySnapshot[resourceId=3360e3ae-2065-401f-89e1-21f61639dedb, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 5,
+      "result": "RUN case=C09 repetition=5 requests=2 results=2 elapsedMs=301 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={2dda2a08-42b7-4433-9d58-b843d1c2188f=InventorySnapshot[resourceId=2dda2a08-42b7-4433-9d58-b843d1c2188f, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{2dda2a08-42b7-4433-9d58-b843d1c2188f=InventorySnapshot[resourceId=2dda2a08-42b7-4433-9d58-b843d1c2188f, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 6,
+      "result": "RUN case=C09 repetition=6 requests=2 results=2 elapsedMs=308 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={f9cb3f35-8ca2-4510-8a29-3ac50e50d458=InventorySnapshot[resourceId=f9cb3f35-8ca2-4510-8a29-3ac50e50d458, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{f9cb3f35-8ca2-4510-8a29-3ac50e50d458=InventorySnapshot[resourceId=f9cb3f35-8ca2-4510-8a29-3ac50e50d458, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 7,
+      "result": "RUN case=C09 repetition=7 requests=2 results=2 elapsedMs=294 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={0f214c69-339b-47a4-b3ed-50d5b55d6d9f=InventorySnapshot[resourceId=0f214c69-339b-47a4-b3ed-50d5b55d6d9f, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{0f214c69-339b-47a4-b3ed-50d5b55d6d9f=InventorySnapshot[resourceId=0f214c69-339b-47a4-b3ed-50d5b55d6d9f, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 8,
+      "result": "RUN case=C09 repetition=8 requests=2 results=2 elapsedMs=342 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={3f67a8e5-72c9-4c53-a51b-b35167f170a0=InventorySnapshot[resourceId=3f67a8e5-72c9-4c53-a51b-b35167f170a0, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{3f67a8e5-72c9-4c53-a51b-b35167f170a0=InventorySnapshot[resourceId=3f67a8e5-72c9-4c53-a51b-b35167f170a0, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 9,
+      "result": "RUN case=C09 repetition=9 requests=2 results=2 elapsedMs=307 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={3461132c-8745-4317-8c2e-0c8d9773c7a8=InventorySnapshot[resourceId=3461132c-8745-4317-8c2e-0c8d9773c7a8, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{3461132c-8745-4317-8c2e-0c8d9773c7a8=InventorySnapshot[resourceId=3461132c-8745-4317-8c2e-0c8d9773c7a8, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C09",
+      "repetition": 10,
+      "result": "RUN case=C09 repetition=10 requests=2 results=2 elapsedMs=300 workers=2 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=1, 201:ok=1} snapshot={00f4a982-0f41-4ea2-bee1-b162e1c9678c=InventorySnapshot[resourceId=00f4a982-0f41-4ea2-bee1-b162e1c9678c, capacity=1, available=0, totalCount=2, confirmedCount=1]}",
+      "phaseCounts": {
+        "create-enter": 2,
+        "lookup": 2,
+        "settings": 1,
+        "decrement": 2,
+        "insert": 2,
+        "create-exit": 2,
+        "create-wait": 1,
+        "cancel-enter": 1,
+        "cancel-update": 1,
+        "restore": 1,
+        "cancel-exit": 1,
+        "cancel-committed": 1,
+        "create-released": 1
+      },
+      "pathWitnesses": [
+        {
+          "sequence": 9,
+          "phase": "create-wait",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "no transaction"
+        },
+        {
+          "sequence": 14,
+          "phase": "cancel-committed",
+          "request": "client",
+          "transaction": false,
+          "detail": "{00f4a982-0f41-4ea2-bee1-b162e1c9678c=InventorySnapshot[resourceId=00f4a982-0f41-4ea2-bee1-b162e1c9678c, capacity=1, available=1, totalCount=1, confirmedCount=0]}"
+        },
+        {
+          "sequence": 15,
+          "phase": "create-released",
+          "request": "create:C09#2",
+          "transaction": false,
+          "detail": "after cancel commit"
+        }
+      ],
+      "cleanup": "CLEANUP case=C09 repetition=10 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 1,
+      "result": "RUN case=C05 repetition=1 requests=10 results=10 elapsedMs=277 workers=10 pool=10/3000ms activeSampleMax=9 sampleMs=10 server=0 distribution={200:ok=10} snapshot={12132b6f-6562-4549-a586-184e61946455=InventorySnapshot[resourceId=12132b6f-6562-4549-a586-184e61946455, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 8,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=1 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 2,
+      "result": "RUN case=C05 repetition=2 requests=10 results=10 elapsedMs=251 workers=10 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=10} snapshot={4a278e89-a376-4956-baa9-681483273607=InventorySnapshot[resourceId=4a278e89-a376-4956-baa9-681483273607, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 6,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=2 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 3,
+      "result": "RUN case=C05 repetition=3 requests=10 results=10 elapsedMs=283 workers=10 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=10} snapshot={53b98677-493a-4665-ac0e-ab84601db7ef=InventorySnapshot[resourceId=53b98677-493a-4665-ac0e-ab84601db7ef, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 2,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=3 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 4,
+      "result": "RUN case=C05 repetition=4 requests=10 results=10 elapsedMs=267 workers=10 pool=10/3000ms activeSampleMax=2 sampleMs=10 server=0 distribution={200:ok=10} snapshot={c8ff4bb0-0609-4fc0-bae5-c5d62973e743=InventorySnapshot[resourceId=c8ff4bb0-0609-4fc0-bae5-c5d62973e743, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 3,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=4 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 5,
+      "result": "RUN case=C05 repetition=5 requests=10 results=10 elapsedMs=242 workers=10 pool=10/3000ms activeSampleMax=8 sampleMs=10 server=0 distribution={200:ok=10} snapshot={ca37cc2f-f4ca-4d6e-ac16-49bf85215490=InventorySnapshot[resourceId=ca37cc2f-f4ca-4d6e-ac16-49bf85215490, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 6,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=5 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 6,
+      "result": "RUN case=C05 repetition=6 requests=10 results=10 elapsedMs=296 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={200:ok=10} snapshot={e52b07f9-f039-45fa-8bf8-dc3d5c2db420=InventorySnapshot[resourceId=e52b07f9-f039-45fa-8bf8-dc3d5c2db420, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 5,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=6 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 7,
+      "result": "RUN case=C05 repetition=7 requests=10 results=10 elapsedMs=252 workers=10 pool=10/3000ms activeSampleMax=4 sampleMs=10 server=0 distribution={200:ok=10} snapshot={e826d80f-6d2b-4a99-a131-23a4b5bcae7d=InventorySnapshot[resourceId=e826d80f-6d2b-4a99-a131-23a4b5bcae7d, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 6,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=7 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 8,
+      "result": "RUN case=C05 repetition=8 requests=10 results=10 elapsedMs=237 workers=10 pool=10/3000ms activeSampleMax=7 sampleMs=10 server=0 distribution={200:ok=10} snapshot={690a5d34-75a8-427c-a574-b44789415a2b=InventorySnapshot[resourceId=690a5d34-75a8-427c-a574-b44789415a2b, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 4,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=8 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 9,
+      "result": "RUN case=C05 repetition=9 requests=10 results=10 elapsedMs=237 workers=10 pool=10/3000ms activeSampleMax=1 sampleMs=10 server=0 distribution={200:ok=10} snapshot={281411bf-0fee-449c-b4a5-96a5f30280ea=InventorySnapshot[resourceId=281411bf-0fee-449c-b4a5-96a5f30280ea, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 3,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=9 server=0 http=true failure=none"
+    },
+    {
+      "case": "C05",
+      "repetition": 10,
+      "result": "RUN case=C05 repetition=10 requests=10 results=10 elapsedMs=256 workers=10 pool=10/3000ms activeSampleMax=3 sampleMs=10 server=0 distribution={200:ok=10} snapshot={1112b361-e6b1-464c-a83d-a57eee2e31d5=InventorySnapshot[resourceId=1112b361-e6b1-464c-a83d-a57eee2e31d5, capacity=1, available=1, totalCount=1, confirmedCount=0]}",
+      "phaseCounts": {
+        "create-enter": 1,
+        "lookup": 1,
+        "settings": 1,
+        "decrement": 1,
+        "insert": 1,
+        "create-exit": 1,
+        "cancel-enter": 10,
+        "cancel-update": 3,
+        "restore": 1,
+        "cancel-exit": 10
+      },
+      "pathWitnesses": [],
+      "cleanup": "CLEANUP case=C05 repetition=10 server=0 http=true failure=none"
+    }
+  ]
+}
