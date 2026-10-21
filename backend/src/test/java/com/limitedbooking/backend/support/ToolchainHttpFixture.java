@@ -13,10 +13,13 @@ public final class ToolchainHttpFixture implements AutoCloseable {
     private final ExecutorService executor=Executors.newFixedThreadPool(1);
     private final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
     public ToolchainHttpFixture(boolean missingId) throws Exception {
+        this(missingId ? "{}" : "{\"id\":\"00000000-0000-0000-0000-000000000073\"}");
+    }
+    public ToolchainHttpFixture(String responseBody) throws Exception {
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         server.setExecutor(executor);
         server.createContext("/toolchain/probe",exchange->{
-            byte[] body=(missingId ? "{}" : "{\"id\":\"00000000-0000-0000-0000-000000000073\"}").getBytes(StandardCharsets.UTF_8);
+            byte[] body=responseBody.getBytes(StandardCharsets.UTF_8);
             try(exchange) {
                 exchange.getResponseHeaders().set("Content-Type","application/json");
                 exchange.sendResponseHeaders(200,body.length);

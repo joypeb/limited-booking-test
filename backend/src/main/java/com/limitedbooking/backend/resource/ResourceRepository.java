@@ -64,7 +64,6 @@ public class ResourceRepository {
                 """, params, (rs, rowNumber) -> new ResourceView(
                 rs.getObject("id", UUID.class), rs.getString("name"),
                 rs.getInt("capacity"), rs.getInt("available")));
-        ResourceView inserted = DataAccessUtils.requiredSingleResult(rows);
-        return inserted;
+        return DataAccessUtils.requiredSingleResult(rows);
     }
 }

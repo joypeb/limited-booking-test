@@ -4,10 +4,27 @@ import com.limitedbooking.backend.support.ToolchainHttpFixture;
 import com.limitedbooking.backend.support.ToolchainContractValidator;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("contract")
 class ToolchainContractIT {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"id\":\"not-a-uuid\"}",
+            "{\"id\":73}",
+            "{\"id\":\"00000000-0000-0000-0000-000000000073\",\"extra\":true}"
+    })
+    void invalidFormatTypeAndAdditionalPropertyAreRejected(String body) throws Exception {
+        try (var fixture = new ToolchainHttpFixture(body)) {
+            var exchange = fixture.get();
+            var report = ToolchainContractValidator.load("toolchain-smoke.openapi.yaml")
+                    .validate(exchange.request(), exchange.response());
+            assertThat(exchange.response().statusCode()).isEqualTo(200);
+            assertThat(report.hasErrors()).as("잘못된 응답 거부: %s", body).isTrue();
+        }
+    }
     @Test void normalActualHttpResponseSatisfiesRequiredIdContract() throws Exception {
         try(var fixture=new ToolchainHttpFixture(false)) {
             var exchange=fixture.get();

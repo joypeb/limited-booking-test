@@ -101,3 +101,10 @@ C01~C11 각10회는 실제 Authorization·Basic/BCrypt·보안 필터·Controlle
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+### Qodana null 계약과 설정 설명 (2026-10-20)
+
+LocalUserPrincipal과 필터 doFilterInternal은 상위 Spring JSpecify null 불허 계약을 좁은 범위의 NullMarked로 명시한다. UserDetailsService의 username은 null 불허이므로 알려지지 않은 비-null 사용자명만 기존 인증 실패로 처리한다. 추가 Spring 설정 메타데이터는 reservation.security 비밀번호3개의 타입·설명만 제공하며 환경 변수/Value 바인딩은 유지한다. SQL 예외의 nullable SQLException이 없거나 미분류 SQLSTATE이면 원래 오류를 다시 던지고55P03만 기존503으로 처리한다. [Qodana 분류](../../docs/qodana-review.md)·[실행 증거](../../docs/test-evidence.md)를 참고하며 Qodana 자체 재검사는 미실행이다.
+
+
+사용자 제공 Qodana 재검사(revision80e1fa0)에서 LocalIdentityResolver의 userId null 분기가 항상 false로 확인되어 해당 중복 조건만 제거했다. null Authentication·미인증·다른 Principal 거부와 고정 UUID 사용은 유지한다. NullMarked는 정적 계약이며 런타임 null 검사 코드를 자동 생성하는 기능은 아니다. 고정 계정 생성 경로에서 계약을 지키는 것을 전제로 한다.

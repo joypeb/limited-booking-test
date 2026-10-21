@@ -35,8 +35,22 @@ dependencies {
     testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.quicktheories:quicktheories:0.26'
-    testImplementation 'com.atlassian.oai:swagger-request-validator-core:2.46.1'
+    testImplementation('com.atlassian.oai:openapi-request-validator-core:3.0.0') {
+        // 고정 OpenAPI 3.0.3을 OpenAPIV3Parser로 읽으므로 Swagger 2 변환기는 사용하지 않는다.
+        // 이 레거시 경로가 json-patch/jackson-coreutils를 다시 유입시킨다.
+        exclude group: 'io.swagger.parser.v3', module: 'swagger-parser-v2-converter'
+    }
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 계약 검증기의 전이 의존성 보안 예외를 테스트 classpath에만 적용한다.
+// Jackson 3 애플리케이션 런타임은 기존 Spring Boot BOM 관리를 유지한다.
+dependencyManagement {
+    configurations('testCompileClasspath', 'testRuntimeClasspath') {
+        imports {
+            mavenBom 'com.fasterxml.jackson:jackson-bom:2.21.8'
+        }
+    }
 }
 
 tasks.withType(Test).configureEach {
@@ -69,6 +83,31 @@ tasks.register('contractTest', Test) {
     useJUnitPlatform { includeTags 'contract' }
     shouldRunAfter tasks.integrationTest
 }
+
+// 취약 모듈의 재유입을 실제 해석된 그래프에서 차단한다.
+tasks.register('verifyContractDependencies') {
+    group = 'verification'
+    doLast {
+        def forbidden = ['json-patch', 'jackson-coreutils']
+        ['testCompileClasspath', 'testRuntimeClasspath', 'runtimeClasspath'].each { name ->
+            def resolution = configurations.getByName(name).incoming.resolutionResult
+            def unresolved = resolution.allDependencies.findAll {
+                it instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult
+            }
+            if (!unresolved.empty) {
+                throw new GradleException("${name}: 의존성 해석 실패: ${unresolved*.attempted}")
+            }
+            def unsafe = resolution.allComponents.findAll {
+                def module = it.moduleVersion
+                module != null && module.group == 'com.github.java-json-tools' && module.name in forbidden
+            }
+            if (!unsafe.empty) {
+                throw new GradleException("${name}: 취약 계약 검증 의존성 재유입: ${unsafe*.moduleVersion}")
+            }
+        }
+    }
+}
+tasks.named('contractTest') { dependsOn tasks.named('verifyContractDependencies') }
 
 tasks.register('propertyTest', Test) {
     group = 'verification'

@@ -65,3 +65,10 @@
 ### CHK022: 2단계 준비·초기화의 SQL 실패 인수
 
 정상 연결에서의 고의 SQL 실패는 업무 V1·초기화의 롤백 요구사항으로 검증한다. 실제 V1의 테스트 전용 실패 사본은 업무 DDL 전체 롤백·V1 성공 이력0건을 요구하고 실패 DB 증거/종료 후 새 소유 DB에서 원본으로 재개한다. 초기화의 두 DELETE는 중간 실패에도 전체 롤백해 기존 양쪽 행/값·구조·이력을 보존하고, 장애 제거 후 같은 DB의 새 트랜잭션으로 명시적 재요청한다. 실패 주입은 테스트에만 둔다. 관측 불가능한 상태를 롤백 통과로 추정하지 않는다. 연결 단절/프로세스 중단은11단계다. 상세 계약·시험 이름은 [003 저장 계약](../../specs/003-define-db-schema/contracts/persistence-contract.md)의 CHK022 절을 따른다. 2단계 SchemaIT·DatabaseSupportIT에서 실행 검증했으며 [증거](../../docs/test-evidence.md)를 따른다. 업무 Writer·HTTP·경쟁 인수는 후속이다.
+
+
+### 계약 도구 보안 의존성 (2026-10-20)
+
+현재 계약 도구는 openapi-request-validator-core3.0.0/networknt이며 고정 OpenAPI3.0.3을 직접 읽는다. Swagger2 변환 경로는 지원 범위 밖으로 제외했다. verifyContractDependencies가 취약 json-patch/jackson-coreutils의 compile·test runtime·app runtime 재유입을 거부하며 contractTest 전에 실행된다. 도구 교체 시 실제 HTTP 정상·필수값 누락·UUID·타입·미정의필드 거부와 업무 명세 참조 해석을 보존한다. 상세 실행은 docs/test-evidence.md를 따른다.
+
+verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성 edge도 거부한다. 해석 실패를 취약 모듈 부재로 판정하지 않으며, 정상·금지 모듈 재유입·존재하지 않는 의존성의 세 경로를 검증한다. 장애 주입은 테스트용 임시 init script로만 수행한다.

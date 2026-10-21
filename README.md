@@ -180,3 +180,7 @@ cd backend
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [Qodana 검토 기록](docs/qodana-review.md), 실제 실행 결과와 한계는 [검증 기록](docs/test-evidence.md)을 참조한다.
+
+계약 검증 의존성 보안 확인은 backend/에서 `./gradlew verifyContractDependencies`로 실행한다. `contractTest`에도 이 검사가 선행한다. 고정 OpenAPI3.0.3 지원을 유지하며 Swagger2 변환기는 포함하지 않는다.
