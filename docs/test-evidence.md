@@ -1316,3 +1316,8 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - BackendApplicationIT/ContainerTestSupport/application.yaml은직전통과본과동일하며, 실패를skip·기대값완화·timeout/버전변경·반복통과로숨기지않았다. 최초실패는이기록에유지한다.
 - 실패로미실행된계약/보안/패키징범위를별도수행했다: `./backend/gradlew -p backend verifyContractDependencies contractTest bootJar` 종료0,Contract6/6실패오류skip0·보안의존성게이트통과·패키징성공. 이것을전체verifyContract/build성공으로표현하지않는다.
 - PR은이상태를명시한draft로게시하고develop병합은수행하지않는다. 최신기준의앱기동실패는미해결이며후속조사대상이다. 이전3cfabe7대상의verify build150/257통과와현재312b2a7대상의실패를구분한다.
+
+
+### PR 게시 결과
+
+사용자 지시로 [PR9](https://github.com/joypeb/limited-booking-test/pull/9)를 develop 대상으로 draft 게시했다. head는 docs/reservation-concurrency-spec이며 최신기준의 기존앱기동IT1실패·근본원인미확정과 Unit156/Contract6/경쟁115통과를 본문에 구분했다. develop 병합·배포·외부workflow수동실행은 수행하지 않았다.

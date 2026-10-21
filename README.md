@@ -66,7 +66,7 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 | `./gradlew verify` | Unit156+일반IT257 (기존138+DB지원4+경쟁110+fixture5) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
 | `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit156+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit156+일반IT257+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyContract` | 구성상 Unit156+일반IT257+Contract6; 이번 단계 재실행 없음 |
 | `./gradlew verifyProperty` | 구성상 Unit156+일반IT257+Property3; 이번 단계 재실행 없음 |
 | `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
