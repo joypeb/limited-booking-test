@@ -1250,3 +1250,12 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 같은 다중 오류 보존 지적의 checked예외 경계를 추가 점검했다. 최초 작업이IOException으로 실패하고 종료 실패가 겹치면 원인은 래퍼의 cause에 보존되지만, 호출자가 받은 래퍼의 직접suppressed에 결과 묶음이 없었다. `./gradlew test --tests '*ConcurrencyTestSupportTest.checkedTask*'`: 종료1/1실패. 원인 체인을 유지하고 래퍼에도 CollectedOutcomes를 연결하여 IT의 결과 회수가 가능하도록 보완했다.
 
 최종 `cd backend && ./gradlew verify`: 종료0,1분48초,Unit150·일반IT257, 실패/오류/skip0. Unit150=기존137+경쟁지원13이며 IT257=기존138+DB지원추가4+경쟁110+지원fixture5다. 현재 JSON은 이 실행의110회와 테스트 소스SHA를 담고 있다. 38/38작업·링크·코드블록·C07 같은요청 차감0/tx재조회10회·민감헤더 미포함·제품/계약diff0·after_implement 등록훅없음을 확인했다. 이후 변경은 문서·기록 동기화뿐이다.
+
+
+## 2026-10-21 develop 대상 PR 게시 전 검증
+
+- 사용자 지시: 현재 개발 내용을develop에 병합하기 위한PR 생성. 대상은origin/develop(3cfabe7)이며 기본브랜치main을 대상으로 삼지 않았다.
+- `git fetch origin` 뒤 작업브랜치에 `git merge origin/develop --no-edit`를 수행했다. 충돌 없이52ff9e2를 생성했으며 유입된 차이는qodana.yaml1개다. 별도fix/qodana-findings의 미커밋/미병합 변경은 포함하지 않았다.
+- 병합본에서 `cd backend && ./gradlew verify build`: 종료0,2분7초. Unit150·일반IT257, 실패/오류/skip0을listener/XML로 대조했다. bootJar/assemble/check/build도통과했다. 테스트소스SHA·110회기록·38작업완료는유지된다.
+- 새읽기전용pre-landing/적대적리뷰는52ff9e2 기준 새P1차단문제없음. STOP·HTTP종료후reset·다중오류/checked래퍼·고유ID·C07기록을재확인했다. 비차단후속: 전송오류차단은경쟁Future결과에적용되며, 준비/사후재시도의직접HTTP호출까지공통경계보호를넓히는것은추가보완여지다. 현재실행에서해당문제가관측됐다는증거는없다.
+- 제품코드·V1·OpenAPI·의존성·앱버전의origin/develop대비변경0. 이작업은테스트/문서PR이며별도릴리스VERSION/CHANGELOG체계를새로도입하지않았다. 외부CI성공이나develop병합/배포성공을주장하지않는다.
