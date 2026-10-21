@@ -62,12 +62,12 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit150 (기존137+경쟁지원13) |
-| `./gradlew verify` | Unit150+일반IT257 (기존138+DB지원4+경쟁110+fixture5) |
+| `./gradlew test` | Spring 없는 Unit156 (기존143+경쟁지원13) |
+| `./gradlew verify` | Unit156+일반IT257 (기존138+DB지원4+경쟁110+fixture5) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit150+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit150+일반IT257+Contract3; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit150+일반IT257+Property3; 이번 단계 재실행 없음 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit156+지정IT3 (이번 단계 재실행 없음) |
+| `./gradlew verifyContract` | 구성상 Unit156+일반IT257+Contract3; 이번 단계 재실행 없음 |
+| `./gradlew verifyProperty` | 구성상 Unit156+일반IT257+Property3; 이번 단계 재실행 없음 |
 | `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
@@ -184,3 +184,6 @@ cd backend
 Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [Qodana 검토 기록](docs/qodana-review.md), 실제 실행 결과와 한계는 [검증 기록](docs/test-evidence.md)을 참조한다.
 
 계약 검증 의존성 보안 확인은 backend/에서 `./gradlew verifyContractDependencies`로 실행한다. `contractTest`에도 이 검사가 선행한다. 고정 OpenAPI3.0.3 지원을 유지하며 Swagger2 변환기는 포함하지 않는다.
+
+
+PR 게시 직전 최신 develop 통합 검증은 Unit156·일반IT257 중 기존 앱 기동1건 실패로 전체 통과 상태가 아니다. 경쟁115건과 별도 Contract6·보안 의존성 검사·bootJar는 통과했다. SSL 협상 연결 실패의 상세·미확정 원인은 [최신 실행 기록](docs/test-evidence.md)을 참조한다.

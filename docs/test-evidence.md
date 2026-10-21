@@ -1305,3 +1305,14 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 다른 실패 경로: 동일 init script의 버전을1.13으로 바꾸어 재유입시키면 종료1 및 두 취약 모듈 좌표가 포함된 `취약 계약 검증 의존성 재유입`으로 거부했다. 모든 장애 주입은 /tmp init script에만 두었고 저장소 의존성이나 최종 작업트리에 남기지 않았다.
 - 정상 대조: `./gradlew verifyContractDependencies contractTest bootJar` 종료0, Contract6건 실패/오류/skip0. 애플리케이션 코드 변경이 없는 gate 수정이므로 통과한 DB138건/Unit143건은 불필요하게 다시 실행하지 않았다. 이후 수정 범위 독립 재리뷰 결과는 PR 최종 댓글을 따른다.
 - 미검증: Property/PIT/부하/외부CI. 저장소에는 외부 status check가 구성되지 않았으며 로컬 검증과 혼동하지 않는다. 사용자 기존 Wrapper는 계속 별도로 보존한다.
+
+
+## 2026-10-21 PR 게시 직전 develop 추가 갱신과 미해결 실행 실패
+
+게시 직전origin/develop이3cfabe7에서312b2a7(PR8,Qodana보완)로전진했다. 그대로게시하지않고51aa964로추가병합했다. README·decisions·test-evidence·versions·security의충돌5개는양쪽독립추가절을모두보존했다. 경쟁테스트/지원코드와그소스SHA는변경하지않았다. 제품/스키마/의존성은새develop과같으며, 이PR이그변경을새로도입한것은아니다.
+
+- 최신통합본 `cd backend && ./gradlew verifyContract build`: 종료1,1분49초. Unit156/156통과,일반IT257중256통과/1실패,오류/skip0. 실패는기존BackendApplicationIT.contextLoadsAndHealthRespondsOverHttp의Flyway DB연결/앱기동이며 HTTP기능assertion에진입하지못했다. 경쟁115건(110회+fixture5)은모두통과했다.
+- 확인한경계:컨테이너기동로그뒤Hikari/Flyway의pgJDBC42.7.13 ConnectionFactoryImpl.enableSSL:717에서SQLSTATE08P01과“SSL 연결을 설정하는 동안 오류가 발생했습니다.”가발생했다. 로컬캐시sources.jar를대조하면SSL협상응답이N/E/S가아닌분기다. 실제응답바이트·전달경로및근본원인은관측되지않아Docker문제나코드회귀로단정하지않는다. 과거별도Qodana실행의Read timed out과도같은원인이라고주장하지않는다.
+- BackendApplicationIT/ContainerTestSupport/application.yaml은직전통과본과동일하며, 실패를skip·기대값완화·timeout/버전변경·반복통과로숨기지않았다. 최초실패는이기록에유지한다.
+- 실패로미실행된계약/보안/패키징범위를별도수행했다: `./backend/gradlew -p backend verifyContractDependencies contractTest bootJar` 종료0,Contract6/6실패오류skip0·보안의존성게이트통과·패키징성공. 이것을전체verifyContract/build성공으로표현하지않는다.
+- PR은이상태를명시한draft로게시하고develop병합은수행하지않는다. 최신기준의앱기동실패는미해결이며후속조사대상이다. 이전3cfabe7대상의verify build150/257통과와현재312b2a7대상의실패를구분한다.
