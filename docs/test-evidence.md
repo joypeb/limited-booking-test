@@ -1321,3 +1321,13 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 ### PR 게시 결과
 
 사용자 지시로 [PR9](https://github.com/joypeb/limited-booking-test/pull/9)를 develop 대상으로 draft 게시했다. head는 docs/reservation-concurrency-spec이며 최신기준의 기존앱기동IT1실패·근본원인미확정과 Unit156/Contract6/경쟁115통과를 본문에 구분했다. develop 병합·배포·외부workflow수동실행은 수행하지 않았다.
+
+
+## 2026-10-21 / 기존 앱 기동 실패의 제한된 진단
+
+- 대상은 PR9 head `df683d4`이며 작업 소스·의존성·SSL 설정·timeout은 변경하지 않았다. 개발/검증 및 환경/기록 규칙, 기존 기동 IT와 컨테이너 지원 코드를 대조했다. 이전 전체 검증의 `08P01` 실패는 위 기록대로 미해결이다.
+- pgJDBC42.7.13의 `ConnectionFactoryImpl.enableSSL`은 응답 N/E/S 외 바이트에서 해당 오류를 던진다. `PGStream.receiveChar`는 EOF를 별도 예외로 처리하므로 이 기록을 단순 EOF/연결 timeout이라고 해석할 근거도 없다. 공식 소스: https://github.com/pgjdbc/pgjdbc/blob/REL42.7.13/pgjdbc/src/main/java/org/postgresql/core/v3/ConnectionFactoryImpl.java
+- 임시 `/tmp/limited-booking-ssl-diagnostic/SslProbeSocketFactory.java`는 표준 Socket을 사용하면서 각 연결의 첫 서버 바이트만 출력한다. 비밀번호·후속 인증 payload는 기록하지 않았다. 외부 Gradle init script로 진단 클래스와 Hikari `data-source-properties.socketFactory`만 주입했다. 첫 시도는 프로젝트 설정에 classpath 추가가 덮여 진단 클래스 ClassNotFound/08006으로 종료1이었다. 원래08P01 재현으로 세지 않는다. 주입 시점을 projectsEvaluated로 바로잡고 한 번 진단 실행했다.
+- `cd backend && ./gradlew -I /tmp/limited-booking-ssl-diagnostic/init.gradle integrationTest --tests com.limitedbooking.backend.BackendApplicationIT`: 종료0, 6초, IT1건 실패/오류/skip0. 첫 서버 바이트 관측은 모두78(N)이었고 앱 기동과 HTTP health assertion을 통과했다. 로그와 관측 XML은 같은 임시 디렉터리에 보관한다. 진단 Socket 사용은 관측 조건 차이이므로 원래 환경의 무조건적인 정상성을 증명하지 않는다.
+- 한계: 원래 실패 당시 바이트·서버 로그를 소급 확보하지 못했다. 기존 integrationTest XML 출력은 지정 실행 결과로 갱신되었으며, 전체257건 실행 증거로 재사용하지 않는다. 최초 전체 실패 명령 로그 `/tmp/limited-booking-pr-final-verify.log`와 위 실행 기록은 유지한다. 임시 경로는 장기 보관 아티팩트가 아니다.
+- 결론: 지정 진단에서는 재현되지 않았으며 근본 원인은 여전히 미확정이다. SSL 비활성화·재시도 추가·timeout 증가는 적용하지 않았다. 전체 verifyContract/build를 다시 통과했다고 주장하지 않으며 PR9는 draft를 유지한다. 다음 조사는 실패 시점 SSL 응답 바이트와 해당 컨테이너 PostgreSQL 로그의 동시 확보다.
