@@ -58,4 +58,4 @@
 
 ### 2026-10-22 US2 필터 체인 적용
 
-실제체인의 순서는 본문상한→Basic→Authorization→RateLimitFilter→CancelRequestValidationFilter→DispatcherServlet이다. 두 후속필터는 서블릿자동등록하지 않으며 MVC기본 PathPatternRequestMatcher를 쓴다. 인코딩경로·ERROR dispatch·8KiB바이트상한·429표준6필드/판정PTTL헤더를 RateLimitApiIT37건으로 지정인수했다. US3장애503·US4기존회귀·최종게이트는 후속이다.
+실제체인의 순서는 본문상한→Basic→Authorization→RateLimitFilter→CancelRequestValidationFilter→DispatcherServlet이다. 두 후속필터는 서블릿자동등록하지 않으며 MVC기본 PathPatternRequestMatcher를 쓴다. 인코딩경로·ERROR dispatch·8KiB바이트상한·429표준6필드/판정PTTL헤더를 RateLimitApiIT37건으로 지정인수했다. US3실제장애503·DB보호/독립API는추가인수했고 US4기존회귀·최종게이트는후속이다.

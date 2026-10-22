@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반과 US2 실제 HTTP 제한 필터·37건 인수를 완료했다. US3 장애·분류와 US4 기존 회귀·최종 게이트는 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반과 US2 실제 HTTP 제한 필터·37건 인수를 완료했다. US3 좁은503분류·실제장애/복구·DB롤백·TTL독립도 지정 인수했다. US4 기존 회귀·최종 게이트는 후속이다.
 
 ## 로컬 환경
 
@@ -208,3 +208,10 @@ Security 체인에 인가→RateLimitFilter→취소 검증 순서를 연결했�
 `backend/`에서 `./gradlew integrationTest --tests '*RateLimitApiIT'` 종료0·37건·실패/오류/skip0. 기본동시40건은201 20건·429 20건/count40, 모든종료 뒤 DB available20/CONFIRMED20이었다. [실행 증거](docs/test-evidence.md)·[작업 상태](specs/009-redis-rate-limit/tasks.md)를 따른다.
 
 US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분류/실제장애·기존postgresOnly 시험전환/110회·최종build/verify/의존성은 아직 미완료다. Qodana는 사용자지정 미완료 후속이다.
+
+
+## 8단계 US3 실제 장애 인수 (2026-10-22)
+
+확인된 Redis 연결·명령timeout·WRONGTYPE·정형OOM만503으로변환한다. 직렬화/스크립트/미분류결함·후속chain오류는그대로전파하고인터럽트를복원한다. 실제CLIENT PAUSE1000 WRITE·기존연결중단·첫접속전중단·WRONGTYPE·maxmemory/noeviction OOM,DB의실제5초statement timeout과전체롤백/카운트유지·기본60초TTL뒤성공키재현을인수했다.
+
+관련Unit37건통과,OOM보완을포함한US3전체장애12건+US2회귀37건의49건지정인수를실제통과했다. 각실행의명령/XML수·한계는 [실행증거](docs/test-evidence.md)에구분했다. 전체verify/빌드·기존110회는아직실행하지않았으며 US3 오케스트레이터 중간검토를 기다린다. Qodana는미실행후속범위다.

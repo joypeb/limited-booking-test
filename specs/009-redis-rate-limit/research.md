@@ -32,7 +32,7 @@ POST 생성 정확 경로와 POST `/api/reservations/{id}/cancel`에 PathPattern
 
 **Rationale**: 설치 Lettuce7.5.2.RELEASE·SDR4.1.1의 LettuceExceptionConverter는 명령 timeout을 QueryTimeoutException, transport 연결 오류를 RedisConnectionFailureException으로 변환한다. 연결 획득 래퍼가 RuntimeException을 넓게 감쌀 수 있으므로 알려진 transport/timeout 원인까지 확인하고 인증·설정·프로그램 결함을 혼동하지 않는다. DataAccessException/RedisSystemException/RuntimeException 전체 catch→503을 금지한다.
 
-명령 실행 오류(예: 실제 Redis WRONGTYPE)는 검증된 RedisCommandExecutionException 원인이 있는 의존성 실행 실패로 구별해503을 반환할 수 있으나, Lua 문법/없는 명령/직렬화/잘못된 응답 등 구현 결함은500으로 탐지한다. 원인·오류별 분류표를 Unit으로 고정하고 실제 WRONGTYPE IT로 오류 경로를 확인한다. RedisSystemException이라는 wrapper만으로 판단하지 않는다. 인터럽트는 보존·전파하며 의존성 실패로 일괄 숨기지 않는다. 500의 새 업무 code는 만들지 않는다.
+명령 실행 오류(예: 실제 Redis WRONGTYPE·정형OOM)는 검증된 RedisCommandExecutionException 원인이 있는 의존성 실행 실패로 구별해503을 반환할 수 있으나, Lua 문법/없는 명령/직렬화/잘못된 응답 등 구현 결함은500으로 탐지한다. 원인·오류별 분류표를 Unit으로 고정하고 실제 WRONGTYPE·maxmemory/noeviction OOM IT로 오류 경로를 확인한다. RedisSystemException이라는 wrapper만으로 판단하지 않는다. 인터럽트는 보존·전파하며 의존성 실패로 일괄 숨기지 않는다. 500의 새 업무 code는 만들지 않는다.
 
 **Alternatives considered**: 모든 Redis 예외를503으로 감추거나 장애를 허용으로 대체하는 방식 제외. command timeout만으로 TCP 접속 대기 상한을 주장하지 않는다. HTTP 전체200ms 보장도 하지 않는다.
 
@@ -69,3 +69,10 @@ HTTP 요청9초, pause1000ms, 관리 명령3초, 복구PING 최대5초, 서버 i
 **Rationale**: 최초 설계의 정적검사 요구 이후 사용자가 실행을 나중으로 명시해 범위를 조정했다. 현재 CLI·이미지·QODANA_TOKEN 미확보·미실행이며 이번 기능·경쟁·장애·빌드·verify·의존성·독립리뷰 게이트는 유지한다. 사용자 토큰을 문서/로그에 쓰지 않는다.
 
 **Alternatives considered**: 게이트 완화/린터 임의교체/미실행 성공처리 제외. 실행 명령은 확보된 정식 경로가 확인된 뒤 기록하며 존재하지 않는 Gradle qodana 태스크를 안내하지 않는다.
+
+
+## 7. US3 중간검토 보완: 메모리 상한 거부 (2026-10-22)
+
+Redis의[Lua 저메모리 동작](https://redis.io/docs/latest/develop/programmability/eval-intro/#execution-under-low-memory-conditions)과[noeviction 정책](https://redis.io/docs/latest/develop/reference/eviction/)은 메모리 상한으로 올바른 스크립트 쓰기도 거부될 수 있음을 설명한다. 이는 FR007의 의존성 장애이며 프로그램 결함으로 취급하지 않는다.
+
+소유Redis8.10.2에서원래maxmemory/policy를보존한뒤1/noeviction으로실제생성/취소/성공키재전송의HTTP500 RED를확인했다. 설치Lettuce7.5.2는별도OOM예외가아닌RedisCommandExecutionException을반환했고SDR4.1.1은RedisSystemException으로감쌌다. 검증된메시지는 `OOM command not allowed when used memory > 'maxmemory'.` 뒤script위치가붙는형태다. 해당정형접두사와타입만503으로추가하며임의OOM문구·직렬화가감싼OOM·그외미확인명령오류는전파한다. 생성/취소/재전송503·전체DBsnapshot동일·독립API·설정원복·복구201 GREEN을확인했다. CONFIG변경은소유시험컨테이너에만적용하며제품정책/토폴로지를확장하지않는다. 실제명령·수·근거는 [실행증거](../../docs/test-evidence.md)를따른다.

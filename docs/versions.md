@@ -103,3 +103,7 @@ Corretto25.0.4+7-LTS / Wrapper9.7.1 / DockerEngine29.8.2 실제 명령 종료0. 
 US1 실제 인수: 일반Unit169/RedisIT5 통과. runtimeClasspath 해석은 Framework7.0.9·Security7.1.1·DataRedis4.1.1·Lettuce7.5.2.RELEASE이며 RedisIT 런타임 출력 DataRedis4.1.1·Lettuce7.5.2.RELEASE/5728917·서버Redis8.10.2 확인. 명령/연결 timeout200ms 적용. Testcontainers2.0.5 BOM 조합으로 고정 PG/Redis 컨테이너 기동·종료했으나 이 인수에서 PG 업무 연결은 미검증이다. HTTP/장애/최종검증은 후속.
 
 US2 지정HTTP 인수37건(2026-10-22): US1과 같은 JDK25.0.4/Wrapper9.7.1/Boot4.1.1·고정PG18.6/Redis8.10.2·BOM 유지, 신규의존성 없음. 실제동적PG연결/Flyway·SQL READ COMMITTED/2s/5s·풀10/3000ms·UTF-8/UTC와 Redis연결/명령200ms를 검사했다. 전체빌드/verify/의존성게이트는 후속이다. Qodana는 사용자지정미완료후속(문서4895488)이다.
+
+US3(2026-10-22): 기존Corretto25.0.4/Wrapper9.7.1/Boot4.1.1·PG18.6/Redis8.10.2·SDR4.1.1/Lettuce7.5.2.RELEASE를유지하고신규의존성없음. 실제PG/Redis장애·새동적포트별도컨텍스트·기본Redis명령/연결200ms·DB2s/5s를인수했다. 관리전용접속/명령3초·복구PING5초·종료future각10초는시험정리상한이며앱timeout정책변경이아니다. 관련Unit37/전체지정IT49및영향재검증의명령별수는docs/test-evidence.md를따른다. 일반전체Unit/verify/build·US4기존110회는미실행이다.
+
+US3 OOM보완최종: 같은버전에서RedisSystemException→RedisCommandExecutionException의정형OOM을실제확인했다. 소유Redis설정원복후최종관련Unit37/지정IT49(장애12+US2회귀37) 통과,실패/오류/skip0. 일반전체verify/build·US4기존110회는여전히미실행이다.

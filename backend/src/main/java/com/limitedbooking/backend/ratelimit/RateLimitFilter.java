@@ -32,7 +32,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)
             throws ServletException,IOException {
         var user=identity.userId(SecurityContextHolder.getContext().getAuthentication());
-        var decision=limiter.check(user);
+        RateLimitDecision decision;
+        try { decision=limiter.check(user); }
+        catch(RuntimeException failure) {
+            if(!dependencyFailure(failure))throw failure;
+            ApiExceptionHandler.writeProblem(request,response,HttpStatus.SERVICE_UNAVAILABLE,
+                    "의존 서비스를 사용할 수 없습니다","잠시 후 다시 요청하세요.","DEPENDENCY_UNAVAILABLE");
+            return;
+        }
         if(!decision.allowed()) {
             response.setHeader("Retry-After",Long.toString(decision.retryAfterSeconds()));
             ApiExceptionHandler.writeProblem(request,response,HttpStatus.TOO_MANY_REQUESTS,
@@ -41,4 +48,38 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         chain.doFilter(request,response);
     }
+    /** 래퍼 이름만으로 판단하지 않는다. 인터럽트는 복원하고 원래 예외를 전파한다. */
+    private static boolean dependencyFailure(Throwable failure) {
+        var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable,Boolean>());
+        Throwable root=failure;
+        boolean implementationFailure=false;
+        for(Throwable cause=failure;cause!=null;cause=cause.getCause()) {
+            if(!seen.add(cause))return false;
+            if(cause instanceof InterruptedException || cause instanceof io.lettuce.core.RedisCommandInterruptedException) {
+                Thread.currentThread().interrupt();return false;
+            }
+            if(cause instanceof org.springframework.data.redis.serializer.SerializationException)implementationFailure=true;
+            if(cause instanceof io.lettuce.core.RedisCommandExecutionException command
+                    && !dependencyCommand(command))implementationFailure=true;
+            root=cause;
+        }
+        if(Thread.currentThread().isInterrupted() || implementationFailure)return false;
+        if(root instanceof io.lettuce.core.RedisCommandExecutionException command)return dependencyCommand(command);
+        return root instanceof io.lettuce.core.RedisCommandTimeoutException
+                || root instanceof java.util.concurrent.TimeoutException
+                || root instanceof io.lettuce.core.RedisConnectionException
+                || root instanceof java.net.ConnectException
+                || root instanceof java.net.SocketException
+                || root instanceof java.net.SocketTimeoutException
+                || root instanceof java.net.UnknownHostException
+                || root instanceof java.nio.channels.ClosedChannelException
+                || root instanceof io.netty.channel.ChannelException;
+    }
+
+    private static boolean dependencyCommand(io.lettuce.core.RedisCommandExecutionException command) {
+        String message=command.getMessage();
+        return message!=null && (message.startsWith("WRONGTYPE ")
+                || message.startsWith("OOM command not allowed when used memory > 'maxmemory'."));
+    }
+
 }

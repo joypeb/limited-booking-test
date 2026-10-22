@@ -176,3 +176,8 @@ C09/C10은 연결·잠금 보유 전 대기와 선행HTTP/별도DB확인으로 �
 ### 2026-10-22 US2 Redis 제한 HTTP 연결
 
 생성·취소 합산20/60초가 실제HTTP에 연결됐다. 성공키 재전송·중복취소·취소후 최초CONFIRMED 재현도 각1회 집계하며 초과429에서는 Controller/Service/TX0·모든행/시각/키/수량snapshot동일을 검증했다. 기존Writer/SQL·스키마·성공/소유권 계약은 유지한다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US3 실제 장애·복구 인수
+
+Redis거부의생성/취소/성공키재전송은503·전체행snapshot동일이다. 제한통과뒤실제수량차감후pg_sleep6→기본statement timeout5초로DB503/전체롤백/count1을확인했고같은키복구201/count2였다. 기본Redis창이실제만료돼도성공예약키/최초생성응답은보존된다. [RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[공통관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행증거](../../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종전체게이트는후속이며 US3 오케스트레이터 중간검토 대기다.

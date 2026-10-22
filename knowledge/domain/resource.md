@@ -129,3 +129,8 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 2026-10-22 US2 Redis 제한 HTTP 연결
 
 예약HTTP의 기본40건 경쟁에서201정확20·429정확20,모든작업/HTTP/서버 종료 후 단일SELECT의 capacity40/available20/CONFIRMED20을 확인했다. 독립resource GET200·ADMIN POST201은 제한스크립트0이며 수량/대상SQL과입력규칙은변경하지 않았다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US3 실제 장애·복구 인수
+
+정상PG의GET대상/GET소유예약/ADMIN대상생성은실제Redis지연/중단/OOM중각200/200/201·제한스크립트0이었다. 거부요청의대상/예약모든행snapshot동일과DBtimeout의전체롤백·복구후수량보존을확인했다. 업무수량SQL/스키마는변경하지않았다. [RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[공통관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행증거](../../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종전체게이트는후속이며 US3 오케스트레이터 중간검토 대기다.

@@ -1409,3 +1409,44 @@ US1 100d392 오케스트레이터 독립검토 통과 후 동일 담당이 재�
 - T004~T006의 US2 필요 기반을 공통 RateLimitHttpTestSupport에 완성했다. RedisFailureIT는 T023 후속에서 이 기반을 재사용하며 현재 파일/실행이 존재한다고 표시하지 않는다. 업무SQL/스키마/OpenAPI 정상·오류 기대값은 변경하지 않았다. 기존 postgresOnly HTTP 전환·전체verify를 미리 실행하지 않았다.
 - Qodana 범위 조정 문서커밋4895488: 사용자2026-10-22 “나중에 할거야” 지시로 T037은 미완료 후속이며 이번 완료/PR/병합 게이트에서 제외한다. 미실행은 통과가 아니다. 앞선 US1 기록의 필수blocker 표시는 당시 지시이며 현재 범위는 이 지시로 대체한다.
 - 다음 한 작업: US2 커밋의 오케스트레이터 독립 중간검토 후 후속 지시를 받는다. T021~T038(Qodana만 별도후속), 실제장애·기존회귀110회·최종build/verify/의존성·전체독립리뷰는 미완료다.
+
+
+### 2026-10-22 US3 T021 분류RED
+
+US2 84b3ef7의 오케스트레이터 독립검토 통과 후 공식 사전조건·작업트리·승인된009/knowledge/설치SDR4.1.1 LettuceExceptionConverter·Lettuce7.5.2 예외를 대조했다. `./gradlew test --tests '*RateLimitFilterTest'` 종료1·16건/실패6/오류0/skip0. 확인된연결/명령timeout/WRONGTYPE5종은 기존필터가503으로변환하지못하고, 인터럽트1종은플래그미복원으로실패했다. 내부결함9종·후속chain예외1종은기존전파로통과했다.
+
+T022 최초GREEN: 같은분류Unit명령 종료0·16건/실패·오류·skip0. T023~T026 최초 실제인수: `./gradlew test --tests '*RateLimitFilterTest' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` 종료0·Unit16/IT46(실제장애9+US2회귀37)·실패/오류/skip0,1분33초. 실제예외·경과는 후속 최종기록과 구분한다.
+
+분류보강RED: 직렬화예외가 전송원인을 포함해도 내부결함으로 전파해야 하는 사례를 추가했다. `./gradlew test --tests '*RateLimitFilterTest' --tests '*RateLimitHttpLifecycleTest'` 종료1·19건/실패1/오류0/skip0. 원인만 보는 초기분류가 SerializationException(ConnectException)을503으로감춰 실패했다. 지원fixture2건은 모든정리오류보존·전송불확실뒤Redis/DBreset·준비·제출0을 통과했다.
+
+### US3 T022~T028 최종 인수와 한계 (2026-10-22)
+
+| 실제 명령(backend/) | 종료 | 실제 발견·실패/오류/skip | 조건·범위 |
+| --- | --- | --- | --- |
+| `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` | 0 | Unit32/IT46, 모두0/0/0 | 직렬화결함 우선전파 수정 뒤 전체US3 9건+US2회귀37건,1분27초 |
+| `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT.actualWritePauseTimesOutEachOperationWithoutChangingBusinessState' --tests '*RedisFailureIT.independentApisRemainAvailableDuringWritePause' --tests '*RateLimitApiIT'` | 0 | Unit32/IT41, 모두0/0/0 | 관리연결close/shutdown각10초 future 상한·복구HTTP201 보강 영향4건+US2회귀37건,18초 |
+| `./gradlew test --tests '*RateLimit*Test'` | 0 | Unit33,0/0/0 | 실제관측 RedisSystemException→RedisException→SocketException 원인을 분류표에 추가;분류18+종료fixture2+기존순수13 |
+| `./gradlew integrationTest --tests '*RedisFailureIT.actualWrongTypeRejectsAllWritesWithoutChangingBusinessState'` | 0 | IT1,0/0/0 | WRONGTYPE finally의 원래/정리오류 보존·종료실패뒤키삭제차단 보강 영향 사례만 재검증 |
+
+- 전체46건 당시 XML: ExistingConnectionRedisFailureIT1(6.045초),FirstConnectionRedisFailureIT1(2.011초),RedisFailureIT7(68.317초),RateLimitApiIT37(8.278초), 실패/오류/skip0. 해당XML들은 후속지정실행 덮어쓰기 전 `/private/tmp/009-us3-full46-xml/`에 실행자료로 보관했고 요약은 이 문서에 보존한다. build 산출물/임시XML은커밋하지 않는다. 이후영향시험41건의 XML은 RedisFailureIT4(2.97초)+RateLimitApiIT37(11.891초), 마지막지정XML은WRONGTYPE1건이다. 서로다른명령의 발견수를 합쳐 한 번의 실행수로 표시하지 않는다.
+- 실제 CLIENT PAUSE: 앱200ms와 독립적인3초관리연결에서, 각HTTP의 인증완료뒤실제limiter진입 시 `CLIENT PAUSE 1000 WRITE` OK를 확인해 인증지연이pause를소진하지않도록 했다. 제품후크는없고 실제Bean spy의 테스트전용관측이다. 생성/취소/성공키재전송 각각 QueryTimeoutException→RedisCommandTimeoutException·503을 확인했다. 보강실행 limiter경과207/203/206ms(HTTP전체200ms보장은아님). Controller/Service/TX0·전체대상/예약모든컬럼snapshot동일이다.
+- finally의별도관리연결CLIENT UNPAUSE·PING최대5초,관리명령/접속3초,관리connection.closeAsync와client.shutdownAsync의get각10초를 적용했다. 모든정리오류를preserve하고 정리실패는StopState에보존해다음초기화를차단한다. 복구PONG 뒤앱HTTP생성201도3사례모두확인했다. HTTP9초/전체10초·서버in-flight10초·HTTPclient종료10초를유지했고추가작업executor는만들지않았다. queued명령의실행은불확실하며 실제복구뒤count0/1/1을관측했다. 이를0으로고정하거나DECR보상하지않는다.
+- 기존연결은실제PING완료후소유Redis를stop했다. 관측원인은첫인수의 RedisSystemException→RedisException→SocketException(60/1/1ms) 또는최종전체인수의 QueryTimeoutException→RedisCommandTimeoutException(223/206/206ms)이었다. 재연결/큐상태에따라다르며한형태를보장하지않는다. 별도첫접속컨텍스트는소유포트를확보하고Redis를중단한뒤앱컨텍스트를생성했고resetRedis를하지않았다. 실제 RedisConnectionFailureException→RedisConnectionException→AnnotatedConnectException→ConnectException(1ms수준),3쓰기모두503이었다. 죽은소유동적포트를명시하며개발Redis로fallback하지않는다. 재기동포트를이전ApplicationContext에재사용하지않았다.
+- 실제WRONGTYPE는소유사용자제한키를리스트로준비해Redis가반환한 RedisSystemException→RedisCommandExecutionException의WRONGTYPE접두사를검증했다. 생성/취소/성공키재전송503·후속진입/TX0·전체snapshot동일,키정리후새생성201을확인했다. Lua문법/없는명령·직렬화·깨진응답·일반RuntimeException·auth/config결함은Unit에서원래예외전파를고정하고 US2후속내부500/ERROR dispatch회귀를유지했다.
+- 지연과두중단컨텍스트의정상PG에서GET대상200·GET소유예약200·ADMIN대상생성201을확인했고limiter/Redis script-attempt0이었다. 503은공통writeProblem의6필드/code·민감정보비노출이다. 정상503은HTTP전송예외가아니며STOP는false임을검사했다.
+- DB실패는테스트전용ReservationRepository spy에서실제수량차감0을관측한뒤 `SELECT pg_sleep(6)`을실행했다. 기존SET LOCAL statement_timeout5초가실제로발생해DB503·tx-rollback1·전체행snapshot동일·Rediscount1을확인했다. 실패주입은한번만하며같은생성키재요청201/count2·성공키1행·최종수량보존을확인했다. Writer/Service/업무SQL/스키마는변경하지않았다.
+- 성공키TTL독립은기본20/60000ms를유지해최대65초/200ms polling으로실제제한키만료를기다렸다.60197ms뒤에도예약전체snapshot동일,같은키201/Replay=true/Location/JSON동일·새창count1이었다. 짧은창이나키수명조작으로대체하지않았다.
+- 순수지원fixture2건은정리서버오류+HTTP종료오류를모두보존하고첫StopState원인유지·다음Redis/DBreset/준비/제출0을mock호출0으로확인했다. 별도전송불확실IOException fixture도원인보존·다음동작0을확인했다. 이는지원코드탐지시험이며실제Redis장애9건을mock으로대체한것이아니다. 인터럽트Unit은플래그복원·원래예외전파후시험스레드상태를정리했다.
+- 새정책·버전/제한값변경·skip·무한재시도없음. 분류호출범위는limiter.check만이며후속chain예외는catch밖이다. 역직렬화/스크립트/내부결함은503으로일괄숨기지않는다.
+- 미완료: US4 T029~T034 기존postgresOnly HTTP전환·110회/부모fixture, T035~T036/T038 최종문서/전체build+verify+의존성·독립리뷰. 이번명령은일반전체Unit/IT나최종전체빌드가아니다. Qodana T037은사용자지정미완료후속(4895488)이며이번gate제외를유지한다. docs/concurrency-runs.json은변경하지않았다. 다음한작업은US3커밋의오케스트레이터중간검토다.
+
+### US3 중간 코드검토 보완 — 실제 noeviction OOM RED
+
+오케스트레이터가현재WRONGTYPE이외의모든RedisCommandExecutionException을내부결함으로전파하는분류에서메모리부족거부가빠졌음을지적했다. 코드리뷰수용절차로공식[Lua저메모리동작](https://redis.io/docs/latest/develop/programmability/eval-intro/#execution-under-low-memory-conditions)·[noeviction](https://redis.io/docs/latest/develop/reference/eviction/)과설치Lettuce예외를대조했다. 실제`./gradlew integrationTest --tests '*RedisFailureIT.actualNoEvictionOomRejectsWritesAndRestoresOriginalConfiguration'` 종료1·3건/실패3/오류0/skip0. 소유Redis의원래maxmemory=0/policy=noeviction을보존한뒤maxmemory1/noeviction에서생성·취소·성공키재전송은모두HTTP500이었다. 실제원인은RedisSystemException→RedisCommandExecutionException의 `OOM command not allowed when used memory > 'maxmemory'. script: 218b0e0a17530b3260b642d96184f36dbbfacc98, on @user_script:1.`이었다. 별도OOM타입은아니었다. RED에서도각finally가원래0/noeviction원복·조회확인을완료했다. DB전체snapshot은동일했다.
+
+### US3 OOM 보완 최종 GREEN — 현재 구현 인수
+
+- OOM분류Unit RED: `./gradlew test --tests '*RateLimitFilterTest'` 종료1·22건/실패2/오류0/skip0. 알려진bare/script-suffix OOM만503으로추가하며임의OOM문구와직렬화가감싼OOM은원래예외로전파하는경계를고정했다.
+- 최종명령: `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` 종료0·관련Unit37/지정IT49,실패/오류/skip0,1분30초. 현재XML은분류22+종료fixture2+기존순수13=Unit37,기존연결중단1(2.949초)+첫접속전중단1(2.023초)+RedisFailureIT10(73.771초)+US2회귀37(8.539초)=IT49이며listener와일치한다. 앞선46/41/1건은보강전단계별실행이며최종전체지정인수수와혼동하지않는다.
+- 실제OOM3사례(생성/취소/성공키재전송)는각503·Controller/Service/TX0·전체DBsnapshot동일이었다. RedisSystemException→RedisCommandExecutionException의확인된정형OOM응답만503이며본문은OOM/maxmemory를노출하지않는다. 각OOM중정상PG의독립GET2종200·ADMIN resourcePOST201은limiter/script-attempt0이었다. 각finally가원래maxmemory=0/policy=noeviction을정확히원복·재조회확인했고,원복후앱HTTP생성201·최종수량보존을확인했다. 원복/정리오류는원래오류와함께보존하고StopState로다음reset을차단한다. 메모리/정책CONFIG는소유시험Redis만변경하며재현을위해전역캐시초기화나제품정책변경을하지않았다.
+- 최종전체인수의기본TTL실제만료60141ms·성공키재현201/count1,실제pause·두중단·WRONGTYPE·실제DBtimeout/복구·US2HTTP500보호도함께통과했다. 전체stage8완료가아니며 US4 기존110회·최종일반build/verify/의존성·독립리뷰는미완료다. Qodana사용자지정후속을유지한다.

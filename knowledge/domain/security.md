@@ -113,3 +113,8 @@ LocalUserPrincipal과 필터 doFilterInternal은 상위 Spring JSpecify null 불
 ### 2026-10-22 US2 Redis 제한 HTTP 연결
 
 SecurityConfig가 RateLimitFilter·명명된 CancelRequestValidationFilter를 체인에서만 소유하며 인가→제한→취소검증 순서를 명시한다. MVC기본 PathPatternRequestMatcher로 인코딩/잘못된UUID도 집계하고 Controller 본문 방어를 유지한다. 미인증401·실제8KiB초과413은 Redis스크립트0, ERROR dispatch1회에도 집계1회를 실제HTTP로 확인했다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US3 실제 장애·복구 인수
+
+limiter.check 안의확인된Redis의존성만503으로변환하고후속chain은catch밖에유지한다. 실제지연/중단/WRONGTYPE/OOM의503은Controller/Service/TX0·전체행snapshot동일이며기존후속내부500/ERROR dispatch회귀를유지했다. 인터럽트는Unit에서복원·전파를확인했다. [RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[공통관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행증거](../../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종전체게이트는후속이며 US3 오케스트레이터 중간검토 대기다.

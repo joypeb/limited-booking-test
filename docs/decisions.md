@@ -165,3 +165,11 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 ### 2026-10-22 US2 인증 뒤 입력 검증 전 제한
 
 RateLimitFilter와 명명된 CancelRequestValidationFilter는 SecurityConfig가 체인에서만 소유한다. 인가→제한→취소검증을 명시하고 PathPatternRequestMatcher로 MVC와 같은 디코딩 경로를 매칭해 잘못된UUID·인코딩 경로도 집계한다. Controller의 본문 방어는 유지한다. Redis 예외 분류는 US3 후속이므로 이번 필터는 광범위catch로 내부결함/후속체인을503으로 바꾸지 않는다. 실제HTTP37건 인수·요청별스크립트/PTTL/Controller/Service/TX/종료 관측·전체행snapshot을 [증거](test-evidence.md)에 기록했다. 기존 postgresOnly 전환은 US4 후속이다.
+
+
+### 2026-10-22 US3 좁은 Redis 분류와 실제 장애 수단
+
+Spring래퍼전체를503으로분류하지않고limiter.check 안의확인된원인을검사한다. 전송·명령timeout·실제WRONGTYPE·정형OOM는의존성실패이며직렬화(전송원인포함)·미확인명령/스크립트·미분류내부결함은전파한다. 인터럽트는복원하고후속chain은catch밖이다. 기본200ms·20/60000ms는유지했다. 실제CLIENT PAUSE는인증완료후테스트spy의limiter진입에서관리연결OK를확인해각요청의timeout을입증한다. 앱과독립인관리연결3초/복구PING5초/종료future각10초를사용한다. 실제timeout후count0/1모두가능하므로보상하지않는다. 중단시험은기존연결/첫접속전중단을각소유컨테이너/컨텍스트로분리해동적포트재사용을피했다. 기본60초실제만료로성공키독립을확인했다. [실행근거](test-evidence.md)와[009작업](../specs/009-redis-rate-limit/tasks.md)을따른다.
+
+
+US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 GREEN으로보완했다. Redis8.10.2 noeviction/maxmemory거부의정형메시지와RedisCommandExecutionException타입을확인했고해당형태만추가했다. 공식근거와실제SDK형태는[009조사](../specs/009-redis-rate-limit/research.md),기능실행/설정원복/회귀37·장애12·Unit37 근거는[실행증거](test-evidence.md)를따른다.

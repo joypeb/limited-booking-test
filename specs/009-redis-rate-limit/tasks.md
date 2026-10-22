@@ -8,7 +8,7 @@
 
 `- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 신규 파일은 예정이며 기존 코드 재사용이 우선이다.
 
-이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T020의 구현·지정 인수를 완료했고 US2 커밋 후 오케스트레이터 중간검토를 기다린다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT` 실제 장애·예외 분류는 T021~T028 후속이며 아직 작성·실행하지 않았다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 T029~T034 후속이다.
+이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T028의 구현·지정 인수를 완료했고 US3 커밋 후 오케스트레이터 중간검토를 기다린다. US2(84b3ef7)도 독립검토를 통과했다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT`와 별도 기존연결/첫연결 중단 컨텍스트의 실제 장애12건·분류/종료지원 Unit을 구현·인수했다. 실제HTTP 공통 기반은 세 컨텍스트가 재사용한다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 T029~T034 후속이다.
 
 후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
@@ -65,14 +65,14 @@
 **목표**: Redis 장애에 쓰기503, 독립 API 유지, Redis 이후 DB TX와 실패 카운트 유지.
 **독립 인수**: 시험 소유 Redis의 명령 지연·연결 단절·실제 WRONGTYPE 및 정상 PG에서의 DB 실패를 재현하고 쓰기/재요청503·무변경·독립200/200/201·복구를 확인한다.
 
-- [ ] T021 [US3] test/ratelimit/RateLimitFilterTest.java에 research.md의 실제 예외 원인 분류표를 고정해 연결/명령timeout/검증된 WRONGTYPE은503, Lua문법/없는명령/직렬화/깨진응답/일반 RuntimeException은500 탐지, 인터럽트 보존·전파를 RED로 검증한다. wrapper 타입만의 광범위 DataAccessException/RedisSystemException catch를 허용하지 않는다.
-- [ ] T022 [US3] main/ratelimit/RateLimitFilter.java·main/ratelimit/RedisRateLimiter.java에서 Redis호출 영역의 확인된 의존성 실패만 공통503으로 연결하고 T021 GREEN을 확인한다. 후속 filterChain 내부결함까지503으로 감싸지 않고 새500 업무code·허용대체·무제한재시도를 추가하지 않는다.
-- [ ] T023 [US3] test/ratelimit/RedisFailureIT.java에 관리연결 CLIENT PAUSE 1000 WRITE의 OK 후 실제 HTTP 생성/취소/성공키재요청을 보내 명령200ms timeout·503·Controller/Service/TX0·전체업무 snapshot 동일을 확인한다. timeout 뒤 Lua수행/count불확실성을 허용하되 DB무변경은 반드시 검사한다.
-- [ ] T024 [US3] test/ratelimit/RedisFailureIT.java에 기존연결 후 소유Redis중단·첫접속 전 중단을 별도 컨텍스트로 구성하고 생성/취소/기존키503 및 실제 리스트타입 제한키 WRONGTYPE503을 검증한다. 재기동 동적포트는 새ApplicationContext로 반영하며 mock예외만으로 장애인수를 대체하지 않는다.
-- [ ] T025 [US3] test/ratelimit/RedisFailureIT.java에서 Redis중단/지연 중 정상PG의 GET resource200·GET 소유예약200·ADMIN POST resource201과 Redis호출0을 확인한다.429/503의 problem+json 표준필드/code·민감정보비노출·재요청무변경도 대조한다.
-- [ ] T026 [US3] test/ratelimit/RedisFailureIT.java에 제한허용 후 테스트전용 실제 SQL/잠금 실패를 주입해 DB503·전체롤백·Redis count유지, 장애해제 후 같은생성키 count+1/201을 검증한다. 요청별 사건으로 limiter시점 TX비활성·허용완료 뒤 TX시작·거부때업무진입0을 확인하고 성공키보존과 TTL독립을 검증한다. 기존 Writer/SQL 계약을 변경하지 않는다.
-- [ ] T027 [US3] test/ratelimit/RedisFailureIT.java의 finally에서 독립관리 CLIENT UNPAUSE(관리명령3초)·최대5초PING·서버in-flight/HTTP/executor 각각10초 종료와 HTTP요청9초 상한을 보장한다. 최초오류·정리오류를 모두 보존하고 종료/전송실패 후 다음 DB/Redis reset·준비·제출을 차단하는 assertion을 작성해 탐지한다.
-- [ ] T028 [US3] test/ratelimit/RedisFailureIT.java 지정 실행과 관련 Unit을 인수하고 docs/test-evidence.md에 실제 예외/경과·200ms적용값·장애조건·복구/종료결과·카운트불확실성·미검증을 기록한다. 실패 시 최소재현을 찾고 mock/skip/반복실행으로 통과시키지 않는다.
+- [X] T021 [US3] test/ratelimit/RateLimitFilterTest.java에 research.md의 실제 예외 원인 분류표를 고정해 연결/명령timeout/검증된 WRONGTYPE·정형OOM은503, Lua문법/없는명령/직렬화/깨진응답/일반 RuntimeException은500 탐지, 인터럽트 보존·전파를 RED로 검증한다. wrapper 타입만의 광범위 DataAccessException/RedisSystemException catch를 허용하지 않는다.
+- [X] T022 [US3] main/ratelimit/RateLimitFilter.java·main/ratelimit/RedisRateLimiter.java에서 Redis호출 영역의 확인된 의존성 실패만 공통503으로 연결하고 T021 GREEN을 확인한다. 후속 filterChain 내부결함까지503으로 감싸지 않고 새500 업무code·허용대체·무제한재시도를 추가하지 않는다.
+- [X] T023 [US3] test/ratelimit/RedisFailureIT.java에 관리연결 CLIENT PAUSE 1000 WRITE의 OK 후 실제 HTTP 생성/취소/성공키재요청을 보내 명령200ms timeout·503·Controller/Service/TX0·전체업무 snapshot 동일을 확인한다. timeout 뒤 Lua수행/count불확실성을 허용하되 DB무변경은 반드시 검사한다.
+- [X] T024 [US3] test/ratelimit/RedisFailureIT.java에 기존연결 후 소유Redis중단·첫접속 전 중단을 별도 컨텍스트로 구성하고 생성/취소/기존키503 및 실제 리스트타입 제한키 WRONGTYPE503을 검증한다. 소유Redis의원래maxmemory/policy를보존하고maxmemory1/noeviction OOM500 RED→알려진OOM503 GREEN·DB무변경·독립API·복구를검증하며finally에서두설정을원복한다. 재기동 동적포트는 새ApplicationContext로 반영하며 mock예외만으로 장애인수를 대체하지 않는다.
+- [X] T025 [US3] test/ratelimit/RedisFailureIT.java에서 Redis중단/지연 중 정상PG의 GET resource200·GET 소유예약200·ADMIN POST resource201과 Redis호출0을 확인한다.429/503의 problem+json 표준필드/code·민감정보비노출·재요청무변경도 대조한다.
+- [X] T026 [US3] test/ratelimit/RedisFailureIT.java에 제한허용 후 테스트전용 실제 SQL/잠금 실패를 주입해 DB503·전체롤백·Redis count유지, 장애해제 후 같은생성키 count+1/201을 검증한다. 요청별 사건으로 limiter시점 TX비활성·허용완료 뒤 TX시작·거부때업무진입0을 확인하고 성공키보존과 TTL독립을 검증한다. 기존 Writer/SQL 계약을 변경하지 않는다.
+- [X] T027 [US3] test/ratelimit/RedisFailureIT.java의 finally에서 독립관리 CLIENT UNPAUSE(관리명령3초)·최대5초PING·서버in-flight/HTTP/executor 각각10초 종료와 HTTP요청9초 상한을 보장한다. 최초오류·정리오류를 모두 보존하고 종료/전송실패 후 다음 DB/Redis reset·준비·제출을 차단하는 assertion을 작성해 탐지한다.
+- [X] T028 [US3] test/ratelimit/RedisFailureIT.java 지정 실행과 관련 Unit을 인수하고 docs/test-evidence.md에 실제 예외/경과·200ms적용값·장애조건·복구/종료결과·카운트불확실성·미검증을 기록한다. 실패 시 최소재현을 찾고 mock/skip/반복실행으로 통과시키지 않는다.
 
 **완료 조건**: `./gradlew integrationTest --tests '*RedisFailureIT'` 및 분류Unit 발견>=1·실패/오류/skip0. 실제 장애/DB 보호와 독립 API를 각각 확인하고 정리 실패는 인수 실패다.
 

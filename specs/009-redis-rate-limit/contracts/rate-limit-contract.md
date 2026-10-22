@@ -27,7 +27,7 @@ Lua KEYS[1]은 사용자 제한 키, ARGV[1]은 양수 창 밀리초. 한 실행
 | --- | --- | --- |
 | count1~20 | 기존 성공/실패 응답 계약 | 후속검증·서비스로 진행 |
 | count21이상 | 429 RATE_LIMITED, Retry-After=max(1,ceil(pttl/1000)) | Controller/Service/TX0 |
-| 확인된 Redis 연결/명령timeout/의존성 실행 실패 | 503 DEPENDENCY_UNAVAILABLE | Controller/Service/TX0 |
+| 확인된 Redis 연결/명령timeout/WRONGTYPE/정형OOM 의존성 실행 실패 | 503 DEPENDENCY_UNAVAILABLE | Controller/Service/TX0 |
 | 분류되지 않은 내부결함·스크립트/직렬화 결함 | 500 탐지 | 성공/429/503으로 은폐금지 |
 
 429/503은 공통 ApiExceptionHandler.writeProblem으로 application/problem+json 및 type/title/status/detail/instance/code를 제공한다. 민감정보·SQL·stack을 노출하지 않는다.429 이외에 Retry-After를 새 계약으로 추가하지 않는다. 성공201 Location·Idempotent-Replayed·최초 CONFIRMED 재현, GET현재 CANCELLED, 중복취소 동일 cancelledAt, 소유자404는 기존대로다.

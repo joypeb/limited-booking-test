@@ -50,6 +50,8 @@ abstract class RateLimitHttpTestSupport {
         volatile long scriptTtl;
         volatile long contentLength;
         volatile String transferEncoding;
+        volatile Throwable redisFailure;
+        volatile long limiterNanos;
         long count(String phase) { return events.stream().filter(e->e.phase().equals(phase)).count(); }
     }
     record Reply(int status, Map<String,List<String>> headers, String body, Trace trace) {
@@ -112,16 +114,19 @@ abstract class RateLimitHttpTestSupport {
     TestData data;
     RateLimitTestSupport keys;
     HttpClient client;
+    Runnable beforeLimiter=()->{};
+    boolean resetRedisBeforeTest(){return true;}
+    ConcurrencyTestSupport.StopState stopState(){return STOP;}
     final AtomicBoolean failService=new AtomicBoolean();
     static void event(String phase) {
         var trace=CURRENT.get();
         if(trace!=null)trace.events.add(new Event(phase,TransactionSynchronizationManager.isActualTransactionActive()));
     }
     @BeforeEach void setupHttp() {
-        STOP.check();
+        stopState().check();
         assertThat(IN_FLIGHT.get()).isZero();
         TRACES.clear();
-        keys=new RateLimitTestSupport(redis);keys.reset();
+        keys=new RateLimitTestSupport(redis);if(resetRedisBeforeTest())keys.reset();
         data=new TestData(dataSource);data.reset();jdbc=new JdbcTemplate(dataSource);
         client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         var pool=(com.zaxxer.hikari.HikariDataSource)dataSource;
@@ -131,11 +136,14 @@ abstract class RateLimitHttpTestSupport {
         assertThat(redisFactory.getClientConfiguration().getCommandTimeout()).isEqualTo(Duration.ofMillis(200));
         assertThat(redisFactory.getClientConfiguration().getClientOptions().orElseThrow().getSocketOptions()
                 .getConnectTimeout()).isEqualTo(Duration.ofMillis(200));
-        doAnswer(call->{var result=(List<?>)call.callRealMethod();var trace=CURRENT.get();
+        doAnswer(call->{event("script-attempt");var result=(List<?>)call.callRealMethod();var trace=CURRENT.get();
             if(trace!=null){event("script");trace.scriptCount=(Long)result.get(0);trace.scriptTtl=(Long)result.get(1);}
             return result;}).when(redis).execute(any(org.springframework.data.redis.core.script.RedisScript.class),anyList(),any(Object[].class));
-        doAnswer(call->{event("limiter-start");var result=(RateLimitDecision)call.callRealMethod();
-            event(result.allowed()?"allowed":"denied");return result;}).when(limiter).check(any());
+        doAnswer(call->{event("limiter-start");beforeLimiter.run();long started=System.nanoTime();
+            try{var result=(RateLimitDecision)call.callRealMethod();event(result.allowed()?"allowed":"denied");return result;}
+            catch(Throwable failure){var trace=CURRENT.get();if(trace!=null)trace.redisFailure=failure;event("redis-failure");throw failure;}
+            finally{var trace=CURRENT.get();if(trace!=null)trace.limiterNanos=System.nanoTime()-started;}
+        }).when(limiter).check(any());
         doAnswer(call->{event("controller");return call.callRealMethod();}).when(controller).create(any(),anyString(),any());
         doAnswer(call->{event("controller");return call.callRealMethod();}).when(controller).cancel(any(),any(),any());
         doAnswer(call->{event("service");if(failService.get())throw new IllegalStateException("시험 후속 내부 결함");
@@ -144,6 +152,7 @@ abstract class RateLimitHttpTestSupport {
         transactionManager.setTransactionExecutionListeners(List.of(new TransactionExecutionListener() {
             @Override public void beforeBegin(TransactionExecution transaction) { event("tx-before"); }
             @Override public void afterBegin(TransactionExecution transaction,Throwable failure) { event("tx-start"); }
+            @Override public void afterRollback(TransactionExecution transaction,Throwable failure) { event("tx-rollback"); }
         }));
         doAnswer(call->{event("sql");
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
@@ -161,17 +170,17 @@ abstract class RateLimitHttpTestSupport {
     void closeHttp() throws Exception { if(client!=null){HttpClientTestSupport.close(client);client=null;} }
     @AfterEach void cleanupHttp() throws Exception {
         Throwable failure=null;
-        try{quiescent();}catch(Throwable error){failure=error;STOP.stop(error);}
-        try{closeHttp();}catch(Throwable error){failure=ConcurrencyTestSupport.preserve(failure,error);STOP.stop(error);}
-        if(failure==null && !STOP.stopped())transactionManager.setTransactionExecutionListeners(List.of());
+        try{quiescent();}catch(Throwable error){failure=error;stopState().stop(error);}
+        try{closeHttp();}catch(Throwable error){failure=ConcurrencyTestSupport.preserve(failure,error);stopState().stop(error);}
+        if(failure==null && !stopState().stopped())transactionManager.setTransactionExecutionListeners(List.of());
         if(failure instanceof Exception error)throw error;
         if(failure instanceof Error error)throw error;
     }
     UUID resource(int capacity) {
-        var id=UUID.randomUUID();data.resource(id,"제한 시험",capacity,capacity,Instant.EPOCH);return id;
+        stopState().check();var id=UUID.randomUUID();data.resource(id,"제한 시험",capacity,capacity,Instant.EPOCH);return id;
     }
     UUID seed(UUID resource,UUID owner,String key) {
-        var id=UUID.randomUUID();
+        stopState().check();var id=UUID.randomUUID();
         jdbc.update("UPDATE resources SET available=available-1 WHERE id=?",resource);
         data.reservation(new StoredReservation(id,resource,owner,key,ReservationStatus.CONFIRMED,Instant.EPOCH,null));
         return id;
@@ -182,12 +191,12 @@ abstract class RateLimitHttpTestSupport {
         long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(10);
         Trace trace;
         while(((trace=TRACES.get(id))==null || !trace.complete) && System.nanoTime()<deadline)Thread.sleep(5);
-        if(trace==null || !trace.complete){var failure=new IllegalStateException("요청 종료 미확인 "+id);STOP.stop(failure);throw failure;}
+        if(trace==null || !trace.complete){var failure=new IllegalStateException("요청 종료 미확인 "+id);stopState().stop(failure);throw failure;}
         return trace;
     }
     Reply send(String method,String path,String authorization,String body,String key,String type,
             boolean unknownLength,Map<String,String> extra) throws Exception {
-        STOP.check();String id="http-"+SEQUENCE.incrementAndGet();
+        stopState().check();String id="http-"+SEQUENCE.incrementAndGet();
         var builder=HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+path)).timeout(Duration.ofSeconds(9))
                 .version(HttpClient.Version.HTTP_1_1).header("X-Test-Request-Id",id);
         if(authorization!=null)builder.header("Authorization",authorization);
@@ -200,7 +209,7 @@ abstract class RateLimitHttpTestSupport {
         try {
             var response=HttpClientTestSupport.send(client,builder.method(method,publisher).build());
             return new Reply(response.statusCode(),response.headers().map(),response.body(),awaitTrace(id));
-        } catch(Exception failure){STOP.stop(failure);throw failure;}
+        } catch(Exception failure){stopState().stop(failure);throw failure;}
     }
     Reply write(String path,String body,String key) throws Exception {
         return send("POST",path,auth("USER_A"),body,key,"application/json",false,Map.of());
@@ -249,5 +258,6 @@ abstract class RateLimitHttpTestSupport {
     }
     void notCounted(Reply response) {
         assertThat(response.trace().count("limiter-start")).isZero();assertThat(response.trace().count("script")).isZero();
+        assertThat(response.trace().count("script-attempt")).isZero();
     }
 }
