@@ -8,7 +8,7 @@
 
 8단계의 한 검증 대상은 인증된 예약 쓰기의 Redis 원자적 고정 창 제한과 기존 예약 정합성 보존이다. Lua의 한 실행으로 INCR·최초 PEXPIRE·PTTL을 처리하고 기본 20회/60000ms, 명령 timeout 200ms를 유지한다. 보안 체인에서 인증/인가 뒤·취소 입력 검증 앞에 제한을 배치한다. PostgreSQL 업무 SQL·스키마·트랜잭션은 변경하지 않는다.
 
-이 문서는 승인된 설계와 구현 추적의 기준이다. 2026-10-22 US1 limiter/Lua·판정/설정 Unit·실제 Redis IT의 구현·독립검토를 마쳤다. 이어 US2 보안 체인 필터와 실제 HTTP 관측·37건 인수를 완료했고 독립검토를 통과했다. US3 좁은503분류·실제장애12건·DB롤백/TTL독립·종료보호까지 인수해 T028 오케스트레이터 중간검토를 기다린다. [작업 상태](tasks.md)와 [실행 증거](../../docs/test-evidence.md)를 따른다. 기존 회귀·최종 게이트는 미완료다. [조사](research.md), [데이터 모델](data-model.md), [계약](contracts/rate-limit-contract.md), [검증 안내](quickstart.md)를 함께 읽는다.
+이 문서는 승인된 설계와 구현 추적의 기준이다. 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. US1~US3는 오케스트레이터 중간검토를 통과했고 US4/최종은 후속 독립검토 대상이다. [작업 상태](tasks.md)·[실행 근거](../../docs/test-evidence.md)·[조사](research.md)·[데이터 모델](data-model.md)·[계약](contracts/rate-limit-contract.md)·[검증 안내](quickstart.md)를 함께 읽는다.
 
 ## Technical Context
 

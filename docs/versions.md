@@ -1,6 +1,6 @@
 # 환경과 도구 버전
 
-2026-10-13 실행, 2026-10-14 최종 기록 정리. 작업 브랜치는 `chore/setup-test-toolchain`이다. **후보 → 설치/취득됨 → 버전 확인됨 → 해당 최소 사례 실행 확인됨**을 구분하며 아래 표는 현재 확인 상태다. 업무 API·SQL·경쟁·부하 호환성은 미검증이다.
+2026-10-13 실행, 2026-10-14 최종 기록 정리. 작업 브랜치는 `chore/setup-test-toolchain`이다. **후보 → 설치/취득됨 → 버전 확인됨 → 해당 최소 사례 실행 확인됨**을 구분하며 아래 표는 당시 확인 상태다. 업무 API·SQL·경쟁·부하 호환성은 미검증이다.
 
 | 항목 | 실제 확인 | 상태·최소 실행 범위 |
 |---|---|---|
@@ -107,3 +107,8 @@ US2 지정HTTP 인수37건(2026-10-22): US1과 같은 JDK25.0.4/Wrapper9.7.1/Boo
 US3(2026-10-22): 기존Corretto25.0.4/Wrapper9.7.1/Boot4.1.1·PG18.6/Redis8.10.2·SDR4.1.1/Lettuce7.5.2.RELEASE를유지하고신규의존성없음. 실제PG/Redis장애·새동적포트별도컨텍스트·기본Redis명령/연결200ms·DB2s/5s를인수했다. 관리전용접속/명령3초·복구PING5초·종료future각10초는시험정리상한이며앱timeout정책변경이아니다. 관련Unit37/전체지정IT49및영향재검증의명령별수는docs/test-evidence.md를따른다. 일반전체Unit/verify/build·US4기존110회는미실행이다.
 
 US3 OOM보완최종: 같은버전에서RedisSystemException→RedisCommandExecutionException의정형OOM을실제확인했다. 소유Redis설정원복후최종관련Unit37/지정IT49(장애12+US2회귀37) 통과,실패/오류/skip0. 일반전체verify/build·US4기존110회는여전히미실행이다.
+
+
+### 2026-10-22 8단계 최종 실행 환경
+
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. Corretto25.0.4+7-LTS·Wrapper9.7.1·Boot4.1.1·Framework7.0.9/Security7.1.1/SDR4.1.1/Lettuce7.5.2.RELEASE·Testcontainers2.0.5·Docker29.8.2·고정PG18.6/Redis8.10.2 digest를 유지했다. 신규의존성/버전변경없음. 풀10/획득3000ms·READ COMMITTED/lock2s/statement5s·Redis기본20/60000ms/명령접속200ms 실제값을검사했다. 위 과거 중간인수의 미실행 표시는 당시기록이다.

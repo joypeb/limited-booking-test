@@ -1,6 +1,6 @@
 # 요청 제한 인터페이스·HTTP 계약
 
-설계 계약이며 구현은 후속이다. 고정 [OpenAPI3.0.3](../../../docs/openapi.yaml)와 [명세 FR001~015](../spec.md)를 유지한다. 신규 공개 API는 없다.
+설계 계약을 구현·실행 인수했다. 현재37개 작업 완료·Qodana T037 사용자후속이며 실제 수와 범위는 [실행 근거](../../../docs/test-evidence.md)를 따른다. 고정 [OpenAPI3.0.3](../../../docs/openapi.yaml)와 [명세 FR001~015](../spec.md)를 유지한다. 신규 공개 API는 없다.
 
 ## Java/Redis 경계
 

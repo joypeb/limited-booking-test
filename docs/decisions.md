@@ -173,3 +173,11 @@ Spring래퍼전체를503으로분류하지않고limiter.check 안의확인된원
 
 
 US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 GREEN으로보완했다. Redis8.10.2 noeviction/maxmemory거부의정형메시지와RedisCommandExecutionException타입을확인했고해당형태만추가했다. 공식근거와실제SDK형태는[009조사](../specs/009-redis-rate-limit/research.md),기능실행/설정원복/회귀37·장애12·Unit37 근거는[실행증거](test-evidence.md)를따른다.
+
+
+## 8단계 기존 HTTP와 종료보호를 유지하는 최종 인수 (2026-10-22)
+
+- 선택: 예약/보안 HTTP는 실제 Redis와 소유키 초기화를 쓰고 경쟁만10000/60초로 분리한다. 부모setup 첫 StopState검사 전 Redis/DB를 접근하지 않는다. 순수DB/ResourceAPI는 Redis를 강제하지 않는다.
+- 이유: 기존 성공·실패·수량·멱등성 기대값을 유지하며 제한 연결의 회귀와 종료 불확실 후 데이터 초기화0을 증명한다. 혼재한 취소 입력 사례만 ResourceApiIT에서 SecurityIT로 옮겼다.
+- 대안: 429/503로 업무기대값 대체·제한mock·FLUSHALL·내부서비스대체·순서검사 전에 reset을 수행하는 방식은 제외했다.
+- 결과·한계: 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했고 과거 superpowers 기준/실행증거는 보존한다. 운영성능/모든 경쟁순서의 증명이 아니며 업무전체 자동계약/Property/PIT·부하·외부CI는 후속이다.

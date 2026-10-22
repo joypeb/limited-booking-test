@@ -1,6 +1,6 @@
 # 데이터·판정 모델
 
-이 문서는 설계이며 아직 신규 구현·실행 증거는 없다. 기준은 [명세](spec.md)와 [계약](contracts/rate-limit-contract.md)이다.
+이 문서는 설계 모델이며 구현·최종실행 인수까지 완료했다. 실제 증거와 수는 [실행 기록](../../docs/test-evidence.md)을 따른다. 기준은 [명세](spec.md)와 [계약](contracts/rate-limit-contract.md)이다.
 
 ## 사용자별 쓰기 창
 

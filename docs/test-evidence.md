@@ -1,6 +1,6 @@
 # 0단계 계약·사례 문서 검토 기록
 
-**현재 상태:** 0단계 문서·학습 인수 완료, 작업27/27 완료. T025는 질의·보완 설명 뒤 사용자의 명시적 확인/완료 지시로 처리했다. 최초 답변의 오류와 확인 방식의 한계는 맨 아래 T025 기록에 남겼다. 이전 대기/부분 완료 상태는 당시 이력이다. 실제 기능 실행 검증은 여전히 미실행이다.
+**0단계 당시 상태:** 0단계 문서·학습 인수 완료, 작업27/27 완료. T025는 질의·보완 설명 뒤 사용자의 명시적 확인/완료 지시로 처리했다. 최초 답변의 오류와 확인 방식의 한계는 맨 아래 T025 기록에 남겼다. 이전 대기/부분 완료 상태는 당시 이력이다. 실제 기능 실행 검증은 여전히 미실행이다.
 
 ## 범위와 실행 환경
 
@@ -1469,3 +1469,20 @@ US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수�
 - C01~C11 각10회는 기존 실제 HTTP·Basic·제한필터·업무서비스·DB 경로를 통과했다. 요청수=결과수, 예상밖429/503 0, 종료 뒤 단일SQL InventorySnapshot과 중복키0, 모든수량보존을 확인했다. 모든110회 CLEANUP은 server0/http=true/failure=none이다. C07의 정확한 요청ID별 UPDATE0→조회present와 UNIQUE 롤백 경로·고유ID·관측을 유지했다. 기존100요청120초/그외30초·gate5초·HTTP9초·종료10초·풀10/획득3000ms와10ms표본을 변경하지 않았다.
 - `docs/concurrency-runs.json`은 이번 지정 실행의 실제110회 RUN/phaseCounts/정확한경로증인/경로hash/CLEANUP·실행소스SHA256으로 재생성했다. 7단계 기록은 Git 이력과 과거 실행 증거로 보존한다. 최종 단일 그래프가 끝나면 그 실행의 실제110회 기록으로 갱신한다.
 - 로그: `/private/tmp/009-us4-order-red.log`, `/private/tmp/009-us4-order-green.log`, `/private/tmp/009-us4-regression.log`, `/private/tmp/009-us4-input-regression.log`. Qodana T037은 미실행 사용자후속이고 이번 게이트 제외다. 다음은 T035/T036/T038 문서·최종단일그래프 인수다.
+
+
+## 8단계 최종 구현·실행 인수 (2026-10-22)
+
+**현재 상태:** T001~T036/T038 37개 완료, Qodana T037만 사용자지정 미실행 후속이다. US1~US3는 오케스트레이터 중간검토를 통과했고 US4 및 최종 커밋의 독립검토·PR·병합은 후속 오케스트레이터가 수행한다. 아래 실행 인수는 그 검토/병합을 수행했다는 뜻이 아니다. 이번8단계 절차는 최신 사용자 지시의 Spec Kit(specify/plan/tasks/analyze/implement)를 적용했으며 계획서/헌법의 역사적 superpowers 기준과 과거날짜 실행증거는 보존한다.
+
+- 명령: `cd backend && ./gradlew build verify verifyContractDependencies`, 검증 코드 기준 `45c0db0`. 종료0, `BUILD SUCCESSFUL in 3m 12s`, 12 actionable tasks(9 executed/3 up-to-date). 최종 test/integrationTest는 현재 실행했으며 공유 Unit test 태스크는 그래프에서1회다. 도구 경고는 기존 Gradle10 비호환 deprecated 기능 및 ByteBuddy Unsafe 경고이며 실패·skip·continue-on-error로 감추지 않았다.
+- listener/XML 일치: Unit193(13 XML)·일반IT312(20 XML), 각각 실패0/오류0/skip0. IT는 기존 업무/DB/지원258 + RedisRateLimitIT5 + RateLimitApiIT37 + 실제장애12(기존연결1/첫연결1/RedisFailureIT10)다. 기존 업무/지원에는 경쟁115(반복110+종료fixture5), Security7·Resource8, Create16·Idempotency5·Rollback7·Ownership5·Cancel13 등이 포함된다. 발견0·실패·skip을 거부하는 기존 Gradle listener/XML 게이트를 통과했다.
+- 실제장애12건에서 pause1000 WRITE·명령200ms/연결200ms·기존연결중단·첫연결전중단·WRONGTYPE·정형OOM3·실제DB timeout/롤백·성공키TTL독립을 재검증했다. 정상PG의 독립API·거부시업무진입0/전체snapshot동일·원복finally/유한복구·모든종료·정리오류보존·다음reset차단을 유지했다. 최종 RedisFailureIT10은69.782초였다.
+- 최종 경쟁110회(클래스115건,31.811초)는 매회 소유키reset1·10000/60000ms·접속/명령200ms, HTTP 요청수=결과수·예상밖429/503 0·모든종료뒤 단일SQL 수량snapshot·고유ID별C07 UPDATE0/UNIQUE witness를 유지했다. 110 CLEANUP 모두 server0/http=true/failure=none이다. 기본제한 HTTP37은8.760초였으며 기본20/60초 정책을 올리지 않았다.
+- `docs/concurrency-runs.json`을 최종 실행 XML의 실제110회로 갱신했다. sourceSha256 5개를 현재 파일과 모두 대조해 일치했다. 앞선 US4 지정167건은 당시 실행소스/archivedXML 기록이며 커밋전 fixture 선언 정리 이후의 동일소스 실행으로 주장하지 않는다. 이번 최종 실행이 정리된 현재 소스를 검증했다. 이전7단계/지정 회차 기록은 Git 이력과 위 날짜별 증거로 구분한다.
+- 빌드 산출물: `backend/build/libs/backend-0.0.1-SNAPSHOT.jar` 44,156,613 bytes, SHA256 `ccfd488d3c081238d99c2709a65d687dba9b927f2c073ebc030b6599d9c08fa9`; plain JAR65,335 bytes, SHA256 `90eda6530127dcdd280341d34a7f9860c61c2b073e338cd1479845cb846e6724`. 실행JAR에 RateLimitDecision/Properties/Filter/RedisRateLimiter와 `redis/rate-limit.lua` 포함을 ZIP목록으로 확인했다. 산출물은 커밋하지 않는다.
+- `verifyContractDependencies` 실행·종료0: testCompileClasspath/testRuntimeClasspath/runtimeClasspath의 해석실패0 및 금지 `com.github.java-json-tools:json-patch/jackson-coreutils` 재유입0을 기존 게이트로 확인했다. 이는9단계 업무전체 자동OpenAPI검증을 실행했다는 뜻이 아니다.
+- 고정 OpenAPI3.0.3의 생성/취소429·503, Retry-After와 RATE_LIMITED/DEPENDENCY_UNAVAILABLE, 성공201/200·Location·Replay·소유권404를 실제제품/HTTP시험과 대조했다. 계약·업무SQL/스키마를 바꾸지 않았다. 최신 계획서 상단 현재요약과8단계10개체크, README/knowledge/009설계·작업·버전·결정을 실제결과에 맞췄다. 과거 날짜의 Unit137/150/169 및 IT138/257/지정수는 해당 시점 증거로 보존한다.
+- 로그: `/private/tmp/009-final-build-verify.log`; XML: `backend/build/test-results/test/`·`backend/build/test-results/integrationTest/`, 임시보존 `/private/tmp/009-final-xml/`. JSON은 커밋된 재현가능 요약이며 임시로그/XML은 로컬 실행자료다. seed없음(지정사례+실제스케줄링), workers최대10·풀10/3000ms·10ms연결표본·UTF-8/UTC·동적PG/Redis를 유지했다. 운영규모 성능이나 모든경쟁순서의 증명으로 일반화하지 않는다.
+- 남은 범위: Qodana 미실행(사용자2026-10-22 “나중에 할거야”, 범위조정4895488)·오케스트레이터 최종독립리뷰/PR/merge. Qodana JVM2026.2/Java25/recommended/any0/라이선스 설정을 유지하며 통과·지적0으로 기록하지 않는다. 업무전체 자동계약/Property/PIT심화·k6부하·외부CI는 다음계획단계다. push/PR/merge·외부workflow는 수행하지 않았다.
+- 최종 문서검사: 변경문서의 로컬링크439개 존재, 009 작업37개 완료/T037만미완료, 계획서8단계10/10, 회차JSON110개·현재소스SHA2565개 일치, `git diff --check` 통과. 내장 명세품질 체크리스트는 읽기전용으로16/16 PASS를 확인했다. `.specify/extensions.yml`이 없어 implement 전후 훅 대상없음. 최종 실행 뒤 변경은 이 문서동기화/회차요약뿐이며 제품/시험/Gradle 코드는 바꾸지 않았다.

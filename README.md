@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반과 US2 실제 HTTP 제한 필터·37건 인수를 완료했다. US3 좁은503분류·실제장애/복구·DB롤백·TTL독립도 지정 인수했다. US4 기존 회귀·최종 게이트는 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 Redis limiter/Lua·HTTP 제한·실제 장애·기존 회귀와 최종 빌드/verify/의존성 검사를 완료했다.
 
 ## 로컬 환경
 
@@ -215,3 +215,10 @@ US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분�
 확인된 Redis 연결·명령timeout·WRONGTYPE·정형OOM만503으로변환한다. 직렬화/스크립트/미분류결함·후속chain오류는그대로전파하고인터럽트를복원한다. 실제CLIENT PAUSE1000 WRITE·기존연결중단·첫접속전중단·WRONGTYPE·maxmemory/noeviction OOM,DB의실제5초statement timeout과전체롤백/카운트유지·기본60초TTL뒤성공키재현을인수했다.
 
 관련Unit37건통과,OOM보완을포함한US3전체장애12건+US2회귀37건의49건지정인수를실제통과했다. 각실행의명령/XML수·한계는 [실행증거](docs/test-evidence.md)에구분했다. 전체verify/빌드·기존110회는아직실행하지않았으며 US3 오케스트레이터 중간검토를 기다린다. Qodana는미실행후속범위다.
+
+
+## 8단계 최종 구현 인수 (2026-10-22)
+
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다.
+
+부모 setup은 첫 StopState 검사 뒤에만 소유 Redis 키와 DB를 초기화한다. 기본 정책과 성공/소유권/취소/수량 계약을 유지하며 기존 HTTP를 실제 Redis로 전환했다. 순수 대상 API/DB 시험은 Redis 없이 검증한다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)를 따른다. 위 날짜별 중간 인수의 후속·대기 표시는 해당 시점 기록이다. 이번 절차는 최신 사용자 지시의 Spec Kit를 적용했다.

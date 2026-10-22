@@ -29,3 +29,8 @@
 ### 현재 연결과 검증 범위 (2026-10-22)
 
 US1 limiter/Lua와 US2 실제HTTP필터를 구현·인수했다. 필터는 SecurityConfig 체인만 소유하며 인가 뒤·명명된 취소검증 앞에 둔다. MVC와 같은 parsed path 매칭으로 인코딩 경로도 집계한다. US3에서확인된Redis의존성503분류·실제장애12건·DB롤백/TTL독립·종료보호를인수했다. 분류범위는limiter.check뿐이며직렬화/스크립트/미분류내부결함과후속chain오류를503으로감추지않는다. 인터럽트를복원·전파한다. 상세 상태와 근거는 [009작업](../../specs/009-redis-rate-limit/tasks.md)·[실행증거](../../docs/test-evidence.md)를 따른다.
+
+
+### 2026-10-22 최종 적용 확인
+
+기본20/60000ms·만료전용3/1000ms·경쟁전용10000/60000ms·연결/명령200ms를 유지한다. 기존HTTP 회귀·경쟁110회·종료 후 다음Redis/DB reset0을 인수했다. `build verify verifyContractDependencies`의 실제 수·결과는 [실행 근거](../../docs/test-evidence.md)를 따른다. Qodana T037은 사용자지정 미실행 후속이다. 오케스트레이터 최종검토는 별도다.

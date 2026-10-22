@@ -58,4 +58,9 @@
 
 ### 2026-10-22 US2 필터 체인 적용
 
-실제체인의 순서는 본문상한→Basic→Authorization→RateLimitFilter→CancelRequestValidationFilter→DispatcherServlet이다. 두 후속필터는 서블릿자동등록하지 않으며 MVC기본 PathPatternRequestMatcher를 쓴다. 인코딩경로·ERROR dispatch·8KiB바이트상한·429표준6필드/판정PTTL헤더를 RateLimitApiIT37건으로 지정인수했다. US3실제장애503·DB보호/독립API는추가인수했고 US4기존회귀·최종게이트는후속이다.
+실제체인의 순서는 본문상한→Basic→Authorization→RateLimitFilter→CancelRequestValidationFilter→DispatcherServlet이다. 두 후속필터는 서블릿자동등록하지 않으며 MVC기본 PathPatternRequestMatcher를 쓴다. 인코딩경로·ERROR dispatch·8KiB바이트상한·429표준6필드/판정PTTL헤더를 RateLimitApiIT37건으로 지정인수했다. US3실제장애503·DB보호/독립API는추가인수했고 US4기존회귀·최종게이트도실행인수했다.
+
+
+### 2026-10-22 최종 적용 확인
+
+기본20/60000ms·만료전용3/1000ms·경쟁전용10000/60000ms·연결/명령200ms를 유지한다. 기존HTTP 회귀·경쟁110회·종료 후 다음Redis/DB reset0을 인수했다. `build verify verifyContractDependencies`의 실제 수·결과는 [실행 근거](../../docs/test-evidence.md)를 따른다. Qodana T037은 사용자지정 미실행 후속이다. 오케스트레이터 최종검토는 별도다.

@@ -1,6 +1,6 @@
 # 구현 후 검증 안내
 
-2026-10-22 US1~US3 구현과 지정 인수를 완료했다. RedisRateLimitIT5·순수 판정/설정 Unit13·RateLimitApiIT37은 실제 존재·통과했다. US3 실제장애12건·분류/종료지원과 관련Unit37건을 지정 인수했다. 관리정리·복구보강 영향4건+US2회귀37건, WRONGTYPE정리1건도 별도 통과했다. 기존시험전환/110회·최종 전체 게이트는 후속 인수다. US3 오케스트레이터 중간검토를 기다리며 전체 구현 완료를 뜻하지 않는다. 모델은 [data-model](data-model.md), 정확한 응답은 [계약](contracts/rate-limit-contract.md), 장애근거는 [research](research.md)를 따른다.
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. [데이터 모델](data-model.md)·[계약](contracts/rate-limit-contract.md)·[조사](research.md)·[실행 근거](../../docs/test-evidence.md)를 따른다.
 
 ## 준비
 

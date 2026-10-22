@@ -4,7 +4,10 @@
 
 - 예정·구현 패키지: `com.limitedbooking.backend.security` 및 공통 웹 경계 `com.limitedbooking.backend.common`. 작성·확인일: 2026-10-13, 4단계 구현·검증일: 2026-10-17.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절·7절 4단계, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md), [4단계 명세](../../specs/005-auth-resource-api/spec.md).
-- 설계: 기존 확정 규칙. 구현·테스트: 4단계 로컬 Basic 인증·고정 UUID Principal(`SecurityConfig`·`LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 공통 `application/problem+json` 오류 응답(`ApiExceptionHandler`), 취소 비어 있지 않은 본문/잘못된 UUID `400` 검증 구현 완료. 실행 검증: `SecurityIT`(6건)·`ResourceApiIT`(8건) 및 `./gradlew verify` 통과. 예약 소유권 조회/취소(`security-001`)는6단계 HTTP/DB 검증을 완료했고 Redis 쓰기 제한은8단계 후속이다.
+- 설계: 기존 확정 규칙. 구현·테스트: 4단계 로컬 Basic 인증·고정 UUID Principal(`SecurityConfig`·`LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 공통 `application/problem+json` 오류 응답(`ApiExceptionHandler`), 취소 비어 있지 않은 본문/잘못된 UUID `400` 검증 구현 완료. 실행 검증: `SecurityIT`(6건)·`ResourceApiIT`(8건) 및 `./gradlew verify` 통과. 예약 소유권 조회/취소(`security-001`)는6단계 HTTP/DB 검증을 완료했고 Redis 쓰기 제한도8단계 구현·검증을 완료했다.
+
+
+**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -54,7 +57,7 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 | security-002 | 미인증+8193바이트(일반/chunked/길이 헤더 생략) / 상한 이하 미인증 / 8192바이트 재사용 | 413 / 401과 인증 헤더 / 본문 재사용 | `SecurityIT`·`ResourceApiIT` 실행 검증 완료 (Redis 제한은 8단계 후속) |
 | security-003 | 임의 X-User-Id 무시·본문 `userId` 400·비밀번호 오류 401·무세션·민감정보 비노출 | UUID 신뢰 안 함·400·401·`JSESSIONID` 미생성 | `SecurityIT`·`ResourceApiIT` 실행 검증 완료 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 예약 소유권은6단계 구현·검증 완료, Redis 요청 제한은8단계 후속이다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 예약 소유권은6단계 구현·검증 완료, Redis 요청 제한도8단계 검증 완료다.
 
 ## 8. 구현 연결과 변경 영향
 
@@ -63,8 +66,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 | 앱 골격·시계 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java)·[ClockConfig](../../backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java) | 구현·실행 검증됨 |
 | 로컬 인증·권한·고정 UUID 추출 | [SecurityConfig](../../backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)·[LocalIdentityResolver](../../backend/src/main/java/com/limitedbooking/backend/security/LocalIdentityResolver.java) | 구현·실행 검증됨 |
 | 인증 앞단 8KiB 제한·공통 오류·엄격 JSON | [RequestBodyLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/common/RequestBodyLimitFilter.java)·[ApiExceptionHandler](../../backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java) | 구현·실행 검증됨 |
-| 실제 HTTP 보안·오류 통합 테스트 | [SecurityIT](../../backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 (`SecurityIT` 6건, `ResourceApiIT` 8건) |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 4단계 로컬 인증·예약 대상 API 실제 HTTP 검증 완료; 5단계 생성 인증 연동 완료; 소유권6단계 검증 완료; 제한8단계 후속 |
+| 실제 HTTP 보안·오류 통합 테스트 | [SecurityIT](../../backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 (`SecurityIT` 7건, `ResourceApiIT` 8건) |
+| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 4단계 로컬 인증·예약 대상 API 실제 HTTP 검증 완료; 5단계 생성 인증 연동 완료; 소유권6단계 검증 완료; 제한8단계 검증 완료 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -72,8 +75,8 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| 예약 소유권 조회·취소 (`security-001`) | 타인/관리자/없는 예약404와 거부 시 상태 불변 검증 완료 | 후속 경쟁·요청 제한 검증 |
-| Redis 예약 쓰기 제한 필터 미구현 | 인증 뒤 요청 제한 단계 미검증 | 8단계 Redis 고정 창 요청 제한 구현 시 보안 필터 체인 뒤에 연결 |
+| 예약 소유권 조회·취소 (`security-001`) | 타인/관리자/없는 예약404와 거부 시 상태 불변 검증 완료 | 경쟁·요청 제한 검증 완료; 최종 독립검토 |
+| Redis 예약 쓰기 제한 필터 | 인증/인가 뒤·취소검증 앞 연결과 실제 장애 검증 완료 | 오케스트레이터 최종검토 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.
 
@@ -118,3 +121,8 @@ SecurityConfig가 RateLimitFilter·명명된 CancelRequestValidationFilter를 �
 ### 2026-10-22 US3 실제 장애·복구 인수
 
 limiter.check 안의확인된Redis의존성만503으로변환하고후속chain은catch밖에유지한다. 실제지연/중단/WRONGTYPE/OOM의503은Controller/Service/TX0·전체행snapshot동일이며기존후속내부500/ERROR dispatch회귀를유지했다. 인터럽트는Unit에서복원·전파를확인했다. [RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[공통관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행증거](../../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종전체게이트는후속이며 US3 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US4 회귀·최종 인수
+
+기존 HTTP는 기본20/60초·실제 Redis를 사용하고 사례별 ADMIN/A/B 소유키만 초기화한다. 경쟁은 별도10000/60초로110회 모두 실제 HTTP·Redis·DB를 통과하며 최종 단일SQL 수량 snapshot과 종료를 확인했다. 부모 setup 첫 보호검사 전에는 Redis/DB를 접근하지 않으며 종료/전송불확실 fixture에서 reset0을 검증했다. 취소 입력 검증은 SecurityIT, 순수 대상 API는 postgresOnly ResourceApiIT에 둔다. 업무 SQL/스키마·성공/소유권/취소·OpenAPI 계약은 유지한다. [증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다.

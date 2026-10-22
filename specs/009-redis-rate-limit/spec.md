@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-22
 
-**Status**: US1~US3 구현·지정 인수 완료, 오케스트레이터 중간검토 대기(전체 미완료)
+**Status**: 구현·최종 실행 인수 완료(37개 완료·Qodana T037 사용자후속)
 
 **Input**: 계획서 7절 8단계 전체 범위에 대해 기본 정책을 유지하는 명세를 작성한다. 인증된 예약 생성·취소의 사용자별 고정 창 제한, 원자적 집계, 만료, 장애 거부, 업무 데이터 보호와 기존 HTTP·경쟁 검증의 회귀를 포함한다.
 
-**현재 인계 상태(2026-10-22)**: T001~T028 완료. US1·US2 독립검토 후 좁은503분류·실제장애12건·기본TTL독립·DB롤백·종료차단을 인수했다. US4 기존 HTTP/110회 회귀·최종 빌드/verify/의존성은 미완료다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 아래 요구사항은 계속 인수 기준이며, 최초 작성 당시의 미구현 표현은 [작업 목록](tasks.md)·[실행 증거](../../docs/test-evidence.md)의 현재 상태와 구분한다.
+**현재 인계 상태(2026-10-22)**: 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 아래 요구사항은 실행 인수 기준이며 최초 작성 당시 미구현 표현은 당시 이력이다. [작업 목록](tasks.md)·[실행 근거](../../docs/test-evidence.md)를 따른다.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -137,7 +137,7 @@
 
 - 기준은 [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절·7절 8단계, [요청 제한 규칙](../../knowledge/rules/rate-limit.md), [API·보안 규칙](../../knowledge/rules/api-and-security.md) 및 ratelimit/reservation/security/resource 도메인 문서다. 새 업무 정책이나 미확정 정책의 기본값을 추가하지 않았다.
 - 기존 인증·본문 제한·예약/대상 API·DB 제약·경쟁 시험을 재사용한다. [008 명세](../008-reservation-concurrency/spec.md)의 완료 범위를 다시 구현하지 않고 제한 연결 영향만 회귀 검증한다.
-- 2026-10-22 코드 대조: ratelimit 제품 패키지·Lua·업무 제한 시험은 아직 없다. `application-local.yaml`에는 Redis timeout 200ms가 이미 있다. SecurityConfig에는 인증 뒤 취소 본문·UUID 검증이 있어 순서 연결의 영향 대상이다.
-- ContainerTestSupport는 실제 PostgreSQL+Redis 실행 및 `postgresOnly()`를 지원하지만 ResourceApiIT·SecurityIT·예약 HTTP IT·ReservationConcurrencyIT는 현재 후자를 쓴다. 기존 경쟁은 실제 HTTP 경로를 사용하고 있으므로 이를 내부 서비스 시험으로 낮추지 않는다.
+- 명세 작성 당시(2026-10-22) 코드 대조: ratelimit 제품 패키지·Lua·업무 제한 시험은 아직 없다. `application-local.yaml`에는 Redis timeout 200ms가 이미 있다. SecurityConfig에는 인증 뒤 취소 본문·UUID 검증이 있어 순서 연결의 영향 대상이다.
+- 명세 작성 당시 ContainerTestSupport는 실제 PostgreSQL+Redis 실행 및 `postgresOnly()`를 지원하지만 ResourceApiIT·SecurityIT·예약 HTTP IT·ReservationConcurrencyIT는 당시 후자를 썼다. 기존 경쟁은 실제 HTTP 경로를 사용하고 있으므로 이를 내부 서비스 시험으로 낮추지 않는다.
 - 검증은 테스트 소유 동적 포트·격리 DB/Redis 키를 사용하며 로컬 개발 데이터나 무관한 키를 초기화하지 않는다. 실제 장애 시험은 기본 timeout을 유지한다. 짧은 만료 창과 높은 경쟁 한도는 해당 검증에만 적용한다.
-- 이 명세는 구현·기능 시험 실행 증거가 아니다. 현재 단계에서는 코드·SQL·OpenAPI·기준 정책을 변경하지 않으며 다음 단계는 명세 검토 후 plan이다.
+- 이 명세 자체는 실행 증거가 아니다. 최초 작성 뒤 Spec Kit plan/tasks/analyze/implement를 진행했으며 현재 구현·실행 인수는 위 상태와 증거 문서로 확인한다.

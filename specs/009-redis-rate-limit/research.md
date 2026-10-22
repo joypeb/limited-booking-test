@@ -54,7 +54,7 @@ HTTP 요청9초, pause1000ms, 관리 명령3초, 복구PING 최대5초, 서버 i
 
 ## 5. 기존 시험 전환과 증거
 
-**Decision**: 예약 쓰기가 있는 ReservationCreateIT/IdempotencyIT/ReservationRollbackIT/ReservationOwnershipIT/ReservationCancelIT/ReservationConcurrencyIT·SecurityIT의 실제 요청을 확인해 PG+Redis로 전환한다. ResourceApiIT는 대상 API만 호출하는 경우 postgresOnly를 유지할 수 있고 독립성 회귀가 된다. 순수 Repository/Schema/DB 시험에는 Redis를 강제하지 않는다.
+**Decision**: 예약 쓰기가 있는 ReservationCreateIT/IdempotencyIT/ReservationRollbackIT/ReservationOwnershipIT/ReservationCancelIT/ReservationConcurrencyIT·SecurityIT의 실제 요청을 확인해 PG+Redis로 전환한다. ResourceApiIT는 실제로 취소 입력 검증도 포함했으므로 그 부분을 Redis가 연결된 SecurityIT로 옮겼다. 대상 API만 남은 ResourceApiIT는 postgresOnly로 독립성 회귀를 유지했다. 순수 Repository/Schema/DB 시험에는 Redis를 강제하지 않는다.
 
 기존 HTTP 사례별로 사용한 키만 DEL한다. ReservationApiTestSupport.setup의 beforeDatabaseReset 보호검사를 가장 먼저 유지하고 그 뒤 DB/Redis 초기화와 준비를 한다. fixture의 mock DataSource/미주입 Redis 정리도 기존 지원fixture와 충돌하지 않게 실제 reset 횟수로 검사한다. concurrency는10000/60000ms를 명시·검사하고 110회 각 시작 전 ADMIN/A/B 테스트 소유 키만 제거한다. FLUSHALL은 금지한다. 원래 상태/응답/경로 assertion을429 기대값으로 바꾸지 않는다.
 
@@ -62,7 +62,7 @@ HTTP 요청9초, pause1000ms, 관리 명령3초, 복구PING 최대5초, 서버 i
 
 **Alternatives considered**: Redis mock/영구제한해제/기본 제한 시험의 높은 한도/내부Service로 HTTP대체 제외. 전체 테스트 공통 Redis 강제도 순수DB 경계를 해치므로 제외.
 
-## 6. 정적검사와 미해결 실행 환경
+## 6. 정적검사와 사용자 후속 실행 환경
 
 **Decision**: 사용자2026-10-22 “나중에 할거야” 지시로 Qodana는 후속 범위다. T037을 미완료 후속으로 유지하되 이번 완료·PR·병합 게이트에서 제외한다. 기존 qodana.yaml의 jetbrains/qodana-jvm:2026.2, Java25, recommended·any0/라이선스 조건을 유지한다. 설정이나 품질 기준은 바꾸지 않으며 미실행을 통과로 기록하지 않는다.
 
@@ -76,3 +76,8 @@ HTTP 요청9초, pause1000ms, 관리 명령3초, 복구PING 최대5초, 서버 i
 Redis의[Lua 저메모리 동작](https://redis.io/docs/latest/develop/programmability/eval-intro/#execution-under-low-memory-conditions)과[noeviction 정책](https://redis.io/docs/latest/develop/reference/eviction/)은 메모리 상한으로 올바른 스크립트 쓰기도 거부될 수 있음을 설명한다. 이는 FR007의 의존성 장애이며 프로그램 결함으로 취급하지 않는다.
 
 소유Redis8.10.2에서원래maxmemory/policy를보존한뒤1/noeviction으로실제생성/취소/성공키재전송의HTTP500 RED를확인했다. 설치Lettuce7.5.2는별도OOM예외가아닌RedisCommandExecutionException을반환했고SDR4.1.1은RedisSystemException으로감쌌다. 검증된메시지는 `OOM command not allowed when used memory > 'maxmemory'.` 뒤script위치가붙는형태다. 해당정형접두사와타입만503으로추가하며임의OOM문구·직렬화가감싼OOM·그외미확인명령오류는전파한다. 생성/취소/재전송503·전체DBsnapshot동일·독립API·설정원복·복구201 GREEN을확인했다. CONFIG변경은소유시험컨테이너에만적용하며제품정책/토폴로지를확장하지않는다. 실제명령·수·근거는 [실행증거](../../docs/test-evidence.md)를따른다.
+
+
+## 8. 최종 구현 대조 (2026-10-22)
+
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 필터는 Bean 자동등록 대신 SecurityConfig에서만 인스턴스를 생성한다. 기존 종료보호의 Redis reset 순서 변이 RED4·원복 GREEN과 실제110회 기록을 인수했다. 업무SQL/스키마·고정OpenAPI 계약·기술버전을 유지하며 구현 절차는 최신 사용자 지시의 Spec Kit다. [실행 근거](../../docs/test-evidence.md)를 따른다.

@@ -2,13 +2,13 @@
 
 **Input**: `specs/009-redis-rate-limit/`의 승인된 spec.md·plan.md·research.md·data-model.md·contracts/rate-limit-contract.md·quickstart.md.
 **Prerequisites**: AGENTS.md, knowledge/README.md·rules 전체·ratelimit/security/reservation/resource 도메인, 기준 계획서 2~5절·7절 8단계, .specify/memory/constitution.md.
-**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 체크는 실제 구현·실행 근거에 따라 갱신한다. 2026-10-22 US4 인수 후 최종 게이트 전 상태는 아래와 같다.
+**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 체크는 실제 구현·실행 근거에 따라 갱신한다. 2026-10-22 최종 실행 인수 상태는 아래와 같다.
 
 ## 형식·경로·범위
 
-`- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 신규 파일은 예정이며 기존 코드 재사용이 우선이다.
+`- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 최초 작업생성 당시 신규파일은 예정이었으며 현재 구현·실행 근거를 아래 체크와 증거 문서로 추적한다.
 
-이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T034의 구현·지정 인수를 완료했고 US3(2adadb2)까지 오케스트레이터 독립검토를 통과했다. US2(84b3ef7)도 독립검토를 통과했다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT`와 별도 기존연결/첫연결 중단 컨텍스트의 실제 장애12건·분류/종료지원 Unit을 구현·인수했다. 실제HTTP 공통 기반은 세 컨텍스트가 재사용한다. US4 기존 HTTP fixture 전환·110회·종료 reset0 연결도 지정 인수했다. 최종 T035/T036/T038은 후속이다.
+이 목록은 생성 후 `speckit-implement`로 실행했다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T034의 구현·지정 인수를 완료했고 US3(2adadb2)까지 오케스트레이터 독립검토를 통과했다. US2(84b3ef7)도 독립검토를 통과했다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT`와 별도 기존연결/첫연결 중단 컨텍스트의 실제 장애12건·분류/종료지원 Unit을 구현·인수했다. 실제HTTP 공통 기반은 세 컨텍스트가 재사용한다. US4 기존 HTTP fixture 전환·110회·종료 reset0 연결도 지정 인수했다. 최종 T035/T036/T038도 인수해 총37개 완료했다. 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다.
 
 후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
@@ -18,7 +18,7 @@
 
 - [X] T001 AGENTS.md·knowledge/README.md·knowledge/rules/ 전체·관련 4도메인·기준 계획서 2~5절/8단계·009 설계 전체를 실제 코드와 대조하고 `git rev-parse --show-toplevel`·HEAD·브랜치·기존 변경을 확인해 범위/재사용 목록을 docs/test-evidence.md에 기록한다. feature/redis-rate-limit을 유지하고 사용자 변경을 보존한다.
 - [X] T002 backend/gradle/wrapper/gradle-wrapper.properties·backend/build.gradle·test/support/ContainerTestSupport.java를 대조해 Java25/Wrapper9.7.1/Boot4.1.1·실제 BOM·PG18.6/Redis8.10.2 고정 digest·Testcontainers2.0.5와 Docker 가용성을 확인하고 docs/versions.md에 실행 확인값과 미검증을 구분한다. 버전 하향·신규 의존성 추가부터 하지 않는다.
-- [X] T003 qodana.yaml의 JVM2026.2·Java25·recommended·any:0·라이선스 게이트를 확인하고 정식 실행 경로/CLI·이미지·인증 확보 상태를 docs/test-evidence.md에 기록한다. 현재 인증 미확보·미실행이며 오케스트레이터의 확보 결과를 기다리는 필수 완료 의존성이다. 토큰을 출력하거나 게이트를 완화하지 않는다.
+- [X] T003 qodana.yaml의 JVM2026.2·Java25·recommended·any:0·라이선스 게이트를 확인하고 정식 실행 경로/CLI·이미지·인증 확보 상태를 docs/test-evidence.md에 기록한다. 인증 미확보·미실행을 기록했고 이후 사용자2026-10-22 지시로 T037만 후속 이관했다. 이번 완료·PR·병합 필수게이트는 아니다. 토큰을 출력하거나 게이트를 완화하지 않는다.
 
 **완료 조건**: 현재 코드/도구/변경 소유권이 확인되고 외부 실행 의존성이 기록됨. T003의 확인 자체는 Qodana 통과가 아니다.
 
@@ -92,10 +92,10 @@
 
 ## Phase 7: Polish — 전체 필수 게이트와 기록
 
-- [ ] T035 README.md·knowledge/README.md·knowledge/domain/ratelimit.md·security.md·reservation.md·resource.md·관련 knowledge/rules/rate-limit.md·api-and-security.md를 실제구현/검증 상태에 동기화하고 기준 계획서의8단계 체크를 실행근거가 있는 항목만 갱신한다. docs/openapi.yaml의 기존429/503/Retry-After·성공/소유권 계약을 대조하며 불필요한 계약변경을 하지 않는다.
-- [ ] T036 specs/009-redis-rate-limit/quickstart.md와 실제구현을 대조해 backend/에서 `./gradlew build verify verifyContractDependencies`를 순차 단일명령으로 실행하고 build산출물·일반Unit/IT 발견수·실패/오류/skip0·기존의존성gate 결과/종료코드를 docs/test-evidence.md에 기록한다. 공유test는 한 번만 실행하고0건/skip을 통과로 보지 않는다. 실패나새변경이 없으면 전체실행을 반복하지 않는다.
+- [X] T035 README.md·knowledge/README.md·knowledge/domain/ratelimit.md·security.md·reservation.md·resource.md·관련 knowledge/rules/rate-limit.md·api-and-security.md를 실제구현/검증 상태에 동기화하고 기준 계획서의8단계 체크를 실행근거가 있는 항목만 갱신한다. docs/openapi.yaml의 기존429/503/Retry-After·성공/소유권 계약을 대조하며 불필요한 계약변경을 하지 않는다.
+- [X] T036 specs/009-redis-rate-limit/quickstart.md와 실제구현을 대조해 backend/에서 `./gradlew build verify verifyContractDependencies`를 순차 단일명령으로 실행하고 build산출물·일반Unit/IT 발견수·실패/오류/skip0·기존의존성gate 결과/종료코드를 docs/test-evidence.md에 기록한다. 공유test는 한 번만 실행하고0건/skip을 통과로 보지 않는다. 실패나새변경이 없으면 전체실행을 반복하지 않는다.
 - [ ] T037 qodana.yaml의 정식확보 실행경로로 Qodana JVM2026.2를 실제실행해 recommended·any:0·라이선스 조건을 확인하고 명령/종료코드/분석결과를 docs/test-evidence.md·docs/qodana-review.md에 기록한다. 사용자2026-10-22 지시로 실행은 후속 범위다. 현재 인증미확보·미실행이며 이 작업만 미완료로 유지하고 이번 완료·PR·병합 게이트에서는 제외한다. 존재하지않는 Gradle태스크를 안내하지 않는다.
-- [ ] T038 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제버전·RED/GREEN·각지정/최종명령·제한값·장애/정리조건·110회·미검증을 정리하고 specs/009-redis-rate-limit/tasks.md·spec.md·plan.md의 추적/완료상태와 링크를 대조한다. 기능/경쟁/장애/빌드/verify/의존성 필수게이트가 모두통과한 경우에만 전체완료를 보고하고 핵심Lua/필터/테스트와 다음한작업을 제시한다. 목록 생성 에이전트는 커밋·push·PR·외부CI를 수행하지 않는다. 후속 오케스트레이터는 사용자 승인 범위에서 목적별 커밋과 검증 완료 후 단일 develop PR을 진행하고, 지정 프로필의 독립 최종 SHA 리뷰·필수 게이트·보호 조건을 모두 충족한 뒤 merge한다. Qodana T037은 사용자지정 미완료 후속으로 별도 보고하며 이번 완료·PR·병합을 막지 않는다. 나머지 필수검증 완료 전 PR을 생성하지 않는다.
+- [X] T038 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제버전·RED/GREEN·각지정/최종명령·제한값·장애/정리조건·110회·미검증을 정리하고 specs/009-redis-rate-limit/tasks.md·spec.md·plan.md의 추적/완료상태와 링크를 대조한다. 기능/경쟁/장애/빌드/verify/의존성 필수게이트가 모두통과한 경우에만 전체완료를 보고하고 핵심Lua/필터/테스트와 다음한작업을 제시한다. 목록 생성 에이전트는 커밋·push·PR·외부CI를 수행하지 않는다. 후속 오케스트레이터는 사용자 승인 범위에서 목적별 커밋과 검증 완료 후 단일 develop PR을 진행하고, 지정 프로필의 독립 최종 SHA 리뷰·필수 게이트·보호 조건을 모두 충족한 뒤 merge한다. Qodana T037은 사용자지정 미완료 후속으로 별도 보고하며 이번 완료·PR·병합을 막지 않는다. 나머지 필수검증 완료 전 PR을 생성하지 않는다.
 
 ## 의존성·실행 순서
 
