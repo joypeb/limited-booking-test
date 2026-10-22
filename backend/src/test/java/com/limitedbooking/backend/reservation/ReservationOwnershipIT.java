@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ReservationOwnershipIT extends ReservationApiTestSupport {
-    static final ContainerTestSupport containers = ContainerTestSupport.postgresOnly();
+    static final ContainerTestSupport containers = new ContainerTestSupport();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p) {
         containers.registerLocalAuthAndDatabaseProperties(p);
         p.add("spring.datasource.hikari.maximum-pool-size", () -> 10);

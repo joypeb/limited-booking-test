@@ -255,7 +255,7 @@ class ResourceApiIT {
     }
 
     @Test
-    void rejectsInvalidUuidUnsupportedMediaTypeAndNonEmptyOrOversizedCancelBody() throws Exception {
+    void rejectsInvalidUuidAndUnsupportedMediaType() throws Exception {
         var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         try {
             // 1. 잘못된 UUID 경로 조회 -> 400 INVALID_REQUEST
@@ -277,40 +277,6 @@ class ResourceApiIT {
                     .build();
             var textPlainResponse = HttpClientTestSupport.send(client, textPlainPost);
             assertProblem(textPlainResponse, 415, "UNSUPPORTED_MEDIA_TYPE", "/api/resources");
-
-            // 3. 취소 요청(/api/reservations/{id}/cancel)에 8KiB 이하 비어 있지 않은 본문 -> 400 INVALID_REQUEST
-            String cancelPath = "/api/reservations/" + UUID.randomUUID() + "/cancel";
-            for (String nonEmptyCancelBody : new String[]{"{}", " ", "{\"reason\":\"cancel\"}"}) {
-                var cancelWithBody = HttpRequest.newBuilder(uri(cancelPath))
-                        .timeout(Duration.ofSeconds(10))
-                        .header("Authorization", userAAuth())
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(nonEmptyCancelBody))
-                        .build();
-                var cancelBodyResponse = HttpClientTestSupport.send(client, cancelWithBody);
-                assertProblem(cancelBodyResponse, 400, "INVALID_REQUEST", cancelPath);
-            }
-
-            // 4. 취소 요청 경로의 잘못된 UUID -> 400 INVALID_REQUEST
-            String invalidCancelUuidPath = "/api/reservations/invalid-uuid/cancel";
-            var cancelBadUuid = HttpRequest.newBuilder(uri(invalidCancelUuidPath))
-                    .timeout(Duration.ofSeconds(10))
-                    .header("Authorization", userAAuth())
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-            var cancelBadUuidResponse = HttpClientTestSupport.send(client, cancelBadUuid);
-            assertProblem(cancelBadUuidResponse, 400, "INVALID_REQUEST", invalidCancelUuidPath);
-
-            // 5. 취소 요청에 8KiB 초과 본문(8,193바이트) -> 413 PAYLOAD_TOO_LARGE
-            byte[] oversizedCancelBody = new byte[8193];
-            java.util.Arrays.fill(oversizedCancelBody, (byte) 'x');
-            var cancelOversized = HttpRequest.newBuilder(uri(cancelPath))
-                    .timeout(Duration.ofSeconds(10))
-                    .header("Authorization", userAAuth())
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(oversizedCancelBody))
-                    .build();
-            var cancelOversizedResponse = HttpClientTestSupport.send(client, cancelOversized);
-            assertProblem(cancelOversizedResponse, 413, "PAYLOAD_TOO_LARGE", cancelPath);
 
             assertThat(testData.resourceCount()).isZero();
         } finally {

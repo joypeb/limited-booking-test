@@ -2,13 +2,13 @@
 
 **Input**: `specs/009-redis-rate-limit/`의 승인된 spec.md·plan.md·research.md·data-model.md·contracts/rate-limit-contract.md·quickstart.md.
 **Prerequisites**: AGENTS.md, knowledge/README.md·rules 전체·ratelimit/security/reservation/resource 도메인, 기준 계획서 2~5절·7절 8단계, .specify/memory/constitution.md.
-**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 체크는 실제 구현·실행 근거에 따라 갱신한다. 2026-10-22 US1 중간검토 인계 상태는 아래와 같다.
+**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 체크는 실제 구현·실행 근거에 따라 갱신한다. 2026-10-22 US4 인수 후 최종 게이트 전 상태는 아래와 같다.
 
 ## 형식·경로·범위
 
 `- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 신규 파일은 예정이며 기존 코드 재사용이 우선이다.
 
-이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T028의 구현·지정 인수를 완료했고 US3 커밋 후 오케스트레이터 중간검토를 기다린다. US2(84b3ef7)도 독립검토를 통과했다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT`와 별도 기존연결/첫연결 중단 컨텍스트의 실제 장애12건·분류/종료지원 Unit을 구현·인수했다. 실제HTTP 공통 기반은 세 컨텍스트가 재사용한다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 T029~T034 후속이다.
+이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T034의 구현·지정 인수를 완료했고 US3(2adadb2)까지 오케스트레이터 독립검토를 통과했다. US2(84b3ef7)도 독립검토를 통과했다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT`와 별도 기존연결/첫연결 중단 컨텍스트의 실제 장애12건·분류/종료지원 Unit을 구현·인수했다. 실제HTTP 공통 기반은 세 컨텍스트가 재사용한다. US4 기존 HTTP fixture 전환·110회·종료 reset0 연결도 지정 인수했다. 최종 T035/T036/T038은 후속이다.
 
 후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
@@ -81,12 +81,12 @@
 **목표**: Redis를 연결해도 원래 검증하던 예약 계약·110회 경쟁·종료 보호를 유지한다.
 **독립 인수**: 기본제한 전용시험과 분리해 영향받는 기존 HTTP와 경쟁10000/60000ms·C01~C11 각10회 및 지원fixture를 실행한다. 이전 Unit150/IT257은 과거 기준이며 이번 수로 복사하지 않는다.
 
-- [ ] T029 [US4] test/reservation/ReservationConcurrencyIT.java와 기존 종료보호fixture에 Redis reset spy/관측을 추가해 종료실패·전송불확실 뒤 부모setup의 첫 보호검사보다 reset이 앞서면 실패하도록 RED를 작성한다. fixture 정확 위치는 기존 파일 내 탐색해 재사용하며 새로운 경쟁 실행기를 만들지 않는다.
-- [ ] T030 [US4] test/reservation/ReservationApiTestSupport.java·test/support/RateLimitTestSupport.java에서 beforeDatabaseReset을 첫 동작으로 유지한 뒤 소유키/DB초기화를 수행한다. 미주입 Redis·mock DataSource 지원fixture도 실제 reset횟수로 검사하며 T029 GREEN을 확인한다. 중단된작업 뒤 초기화는0이어야 한다.
-- [ ] T031 [US4] test/reservation/ReservationCreateIT.java·IdempotencyIT.java·ReservationRollbackIT.java·ReservationOwnershipIT.java·ReservationCancelIT.java 및 test/security/SecurityIT.java의 실제 요청을 확인해 영향받는 postgresOnly fixture만 PG+Redis로 전환하고 사례별 소유키격리/적용값 검사를 연결한다. test/resource/ResourceApiIT.java와 순수DB 시험은 쓰기가 없으면 postgresOnly를 유지한다. 원래 HTTP/DB assertion을429/503 기대값으로 바꾸지 않는다.
-- [ ] T032 [US4] test/reservation/ReservationConcurrencyIT.java에 경쟁전용10000/60000ms·명령/연결200ms 실제값을 명시하고 각110회 전 ADMIN/A/B 소유키만 초기화한다. 기존 C07·UNIQUE 관측, HTTP인증/필터/Controller 경로·DB준비 커밋·resource→reservation 잠금 기대를 보존한다.
-- [ ] T033 [US4] test/reservation/ReservationConcurrencyIT.java·test/support/ConcurrencyTestSupportTest.java의 기존 종료/전송/오류보존 fixture를 실행해 최초StopState와 모든결과·고유ID·다음reset/준비/제출0을 확인한다. 기존100요청120초·나머지30초·gate5초·HTTP9초·종료10초와 클래스순차 실행을 유지한다.
-- [ ] T034 [US4] backend/build.gradle의 기존 integrationTest에서 영향받는 HTTP IT·ReservationConcurrencyIT를 지정 실행해 C01~C11 각10회(110회)와 지원fixture수를 분리 집계한다. 예상밖429/503·미수집결과·미종료·수량불일치는 실패로 처리하며 모든종료 뒤 단일 SELECT snapshot과 경로기록을 docs/concurrency-runs.json·docs/test-evidence.md에 반영한다.
+- [X] T029 [US4] test/reservation/ReservationConcurrencyIT.java와 기존 종료보호fixture에 Redis reset spy/관측을 추가해 종료실패·전송불확실 뒤 부모setup의 첫 보호검사보다 reset이 앞서면 실패하도록 RED를 작성한다. fixture 정확 위치는 기존 파일 내 탐색해 재사용하며 새로운 경쟁 실행기를 만들지 않는다.
+- [X] T030 [US4] test/reservation/ReservationApiTestSupport.java·test/support/RateLimitTestSupport.java에서 beforeDatabaseReset을 첫 동작으로 유지한 뒤 소유키/DB초기화를 수행한다. 미주입 Redis·mock DataSource 지원fixture도 실제 reset횟수로 검사하며 T029 GREEN을 확인한다. 중단된작업 뒤 초기화는0이어야 한다.
+- [X] T031 [US4] test/reservation/ReservationCreateIT.java·IdempotencyIT.java·ReservationRollbackIT.java·ReservationOwnershipIT.java·ReservationCancelIT.java 및 test/security/SecurityIT.java의 실제 요청을 확인해 영향받는 postgresOnly fixture만 PG+Redis로 전환하고 사례별 소유키격리/적용값 검사를 연결한다. test/resource/ResourceApiIT.java와 순수DB 시험은 쓰기가 없으면 postgresOnly를 유지한다. 원래 HTTP/DB assertion을429/503 기대값으로 바꾸지 않는다.
+- [X] T032 [US4] test/reservation/ReservationConcurrencyIT.java에 경쟁전용10000/60000ms·명령/연결200ms 실제값을 명시하고 각110회 전 ADMIN/A/B 소유키만 초기화한다. 기존 C07·UNIQUE 관측, HTTP인증/필터/Controller 경로·DB준비 커밋·resource→reservation 잠금 기대를 보존한다.
+- [X] T033 [US4] test/reservation/ReservationConcurrencyIT.java·test/support/ConcurrencyTestSupportTest.java의 기존 종료/전송/오류보존 fixture를 실행해 최초StopState와 모든결과·고유ID·다음reset/준비/제출0을 확인한다. 기존100요청120초·나머지30초·gate5초·HTTP9초·종료10초와 클래스순차 실행을 유지한다.
+- [X] T034 [US4] backend/build.gradle의 기존 integrationTest에서 영향받는 HTTP IT·ReservationConcurrencyIT를 지정 실행해 C01~C11 각10회(110회)와 지원fixture수를 분리 집계한다. 예상밖429/503·미수집결과·미종료·수량불일치는 실패로 처리하며 모든종료 뒤 단일 SELECT snapshot과 경로기록을 docs/concurrency-runs.json·docs/test-evidence.md에 반영한다.
 
 **완료 조건**: 영향받는 기존 응답/DB 기대·110회·지원fixture 통과, Redis 초기화로 종료보호를 우회한 사례0. US4만 따로 인수할 때도 US1~US3 구현 통합본이 선행한다.
 

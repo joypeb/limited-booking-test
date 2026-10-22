@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ReservationCreateIT {
-    static final ContainerTestSupport containers = ContainerTestSupport.postgresOnly();
+    static final ContainerTestSupport containers = new ContainerTestSupport();
     static final JsonMapper JSON = JsonMapper.builder().build();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p) {
         containers.registerLocalAuthAndDatabaseProperties(p);
@@ -36,10 +36,15 @@ class ReservationCreateIT {
     }
     @LocalServerPort int port;
     @Autowired DataSource dataSource;
+    @Autowired org.springframework.data.redis.core.StringRedisTemplate redis;
+    @Autowired com.limitedbooking.backend.ratelimit.RateLimitProperties rateLimitPolicy;
+    @Autowired org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory redisFactory;
     JdbcTemplate jdbc;
     TestData data;
     HttpClient client;
     @BeforeEach void setup() {
+        new RateLimitTestSupport(redis).reset();
+        RateLimitTestSupport.assertSettings(rateLimitPolicy, redisFactory, 20);
         data = new TestData(dataSource); data.reset(); jdbc = new JdbcTemplate(dataSource);
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         var pool = (com.zaxxer.hikari.HikariDataSource) dataSource;

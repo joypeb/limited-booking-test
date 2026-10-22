@@ -12,6 +12,15 @@ public final class RateLimitTestSupport {
     public void reset() {
         redis.delete(List.of(key(TestData.ADMIN_ID), key(TestData.USER_A_ID), key(TestData.USER_B_ID)));
     }
+    public static void assertSettings(com.limitedbooking.backend.ratelimit.RateLimitProperties policy,
+            org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory factory, int limit) {
+        org.assertj.core.api.Assertions.assertThat(policy).isEqualTo(
+                new com.limitedbooking.backend.ratelimit.RateLimitProperties(limit, java.time.Duration.ofSeconds(60)));
+        org.assertj.core.api.Assertions.assertThat(factory.getClientConfiguration().getCommandTimeout())
+                .isEqualTo(java.time.Duration.ofMillis(200));
+        org.assertj.core.api.Assertions.assertThat(factory.getClientConfiguration().getClientOptions().orElseThrow()
+                .getSocketOptions().getConnectTimeout()).isEqualTo(java.time.Duration.ofMillis(200));
+    }
     public long count(UUID user) {
         String value = redis.opsForValue().get(key(user));
         return value == null ? 0 : Long.parseLong(value);

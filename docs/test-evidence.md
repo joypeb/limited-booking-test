@@ -1450,3 +1450,22 @@ T022 최초GREEN: 같은분류Unit명령 종료0·16건/실패·오류·skip0. T
 - 최종명령: `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` 종료0·관련Unit37/지정IT49,실패/오류/skip0,1분30초. 현재XML은분류22+종료fixture2+기존순수13=Unit37,기존연결중단1(2.949초)+첫접속전중단1(2.023초)+RedisFailureIT10(73.771초)+US2회귀37(8.539초)=IT49이며listener와일치한다. 앞선46/41/1건은보강전단계별실행이며최종전체지정인수수와혼동하지않는다.
 - 실제OOM3사례(생성/취소/성공키재전송)는각503·Controller/Service/TX0·전체DBsnapshot동일이었다. RedisSystemException→RedisCommandExecutionException의확인된정형OOM응답만503이며본문은OOM/maxmemory를노출하지않는다. 각OOM중정상PG의독립GET2종200·ADMIN resourcePOST201은limiter/script-attempt0이었다. 각finally가원래maxmemory=0/policy=noeviction을정확히원복·재조회확인했고,원복후앱HTTP생성201·최종수량보존을확인했다. 원복/정리오류는원래오류와함께보존하고StopState로다음reset을차단한다. 메모리/정책CONFIG는소유시험Redis만변경하며재현을위해전역캐시초기화나제품정책변경을하지않았다.
 - 최종전체인수의기본TTL실제만료60141ms·성공키재현201/count1,실제pause·두중단·WRONGTYPE·실제DBtimeout/복구·US2HTTP500보호도함께통과했다. 전체stage8완료가아니며 US4 기존110회·최종일반build/verify/의존성·독립리뷰는미완료다. Qodana사용자지정후속을유지한다.
+
+## 8단계 US4 — 기존 HTTP/110회 Redis 연결 회귀 (2026-10-22)
+
+US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수행했다. 제품/업무 SQL·스키마·원래 HTTP/DB 기대값은 변경하지 않았다. `ReservationApiTestSupport.setup`은 `beforeDatabaseReset()`을 여전히 첫 동작으로 호출하고 그 뒤 ADMIN/A/B 세 소유 키만 DEL·count0 확인·DB reset을 한다. 종료 fixture는 mock DataSource와 mock StringRedisTemplate의 접근0·redisResets0·준비/제출0을 검사한다. 실제 장애 통합을 mock으로 대체하지 않았다.
+
+| 검증 | 실제 명령(backend/) | 결과 |
+| --- | --- | --- |
+| 고의 순서 변경 RED | `./gradlew integrationTest --tests '*ReservationConcurrencyIT.parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe' --tests '*ReservationConcurrencyIT.executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle' --tests '*ReservationConcurrencyIT.httpTerminationFailurePreventsSpyResetAndBlocksNextSetup' --tests '*ReservationConcurrencyIT.transportFailureBeforeServiceEntryBlocksResetAndNextSetup'` | 종료1·4건/실패4/오류0/skip0, 실제 Mockito NoInteractionsWanted로 보호검사 전 Redis delete를 탐지 |
+| 원복 GREEN | 위 4 fixture + `--tests '*ReservationConcurrencyIT.cleanupWaitsForHttpTerminationBeforeResettingSpies'`, 앞에 `test --tests '*ConcurrencyTestSupportTest'` | 종료0·Unit13/IT5, 실패/오류/skip0 |
+| 기존 회귀/경쟁 | `./gradlew test --tests '*ConcurrencyTestSupportTest' integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT' --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT' --tests '*SecurityIT' --tests '*ReservationConcurrencyIT'` | 종료0·Unit13/IT167, 실패/오류/skip0, 1분13초 |
+| 취소 입력 검증 위치 정리 | `./gradlew integrationTest --tests '*SecurityIT' --tests '*ResourceApiIT'` | 종료0·Security7/Resource8=IT15, 실패/오류/skip0, 12초 |
+
+- RED는 기존 안전 분기를 재구현한 것이 아니라, Redis 초기화를 보호검사 앞으로 고의 이동한 탐지력 시험이다. 실제 Redis delete 1회(부모 setup 반복 fixture는2회)가 발견됐다. 원복 후 네 실패 상태 모두 Redis/DB 접근0이며 기존 최초 원인과 HTTP/executor/서버 종료 보호가 유지됐다. 최초 준비 시 잘못된 설정 접두사로 실제값 assertion이 실패한 실행은 환경 구성 오류로 구분하고 RED로 세지 않았다. 설정을 `reservation.rate-limit.limit`로 정정한 뒤 위 고의 변경 RED를 실행했다.
+- 회귀167건의 XML은 Create16/Idempotency5/Rollback7/Ownership5/Cancel13/Security6/Concurrency115(110회+지원fixture5)다. 이 XML은 `/private/tmp/009-us4-regression-xml/`에 보존했다. 취소 입력의 위치 정리 후 Security7/Resource8은 별도 실행15건이며 167과 합산해 단일 실행으로 표시하지 않는다.
+- 기존 ResourceApiIT 안에도 인증된 예약 취소의 본문/UUID/8KiB 검증이 있었다. 실제 제한 경로를 통과하므로 해당 취소 부분만 실제 Redis SecurityIT로 옮겼다. 원래 400/413·민감정보/필드 assertion을 유지하며 ResourceApiIT는 순수 대상 API만 남겨 postgresOnly를 유지했다. 순수 DB/Repository/Schema도 Redis를 강제하지 않는다.
+- 예약 HTTP6종과 Security는 소유 PostgreSQL+Redis 동적 포트를 쓴다. 기본20/60000ms·명령/접속200ms 실제값을 확인하고 사례마다 소유 키를 초기화했다. 경쟁에만10000/60000ms를 명시·실제값 검사하며 각110회는 ownedKeyResets=1·키3개 count0을 확인한다. FLUSHALL/영구 제한해제/429·503로 기대값 대체는 없다.
+- C01~C11 각10회는 기존 실제 HTTP·Basic·제한필터·업무서비스·DB 경로를 통과했다. 요청수=결과수, 예상밖429/503 0, 종료 뒤 단일SQL InventorySnapshot과 중복키0, 모든수량보존을 확인했다. 모든110회 CLEANUP은 server0/http=true/failure=none이다. C07의 정확한 요청ID별 UPDATE0→조회present와 UNIQUE 롤백 경로·고유ID·관측을 유지했다. 기존100요청120초/그외30초·gate5초·HTTP9초·종료10초·풀10/획득3000ms와10ms표본을 변경하지 않았다.
+- `docs/concurrency-runs.json`은 이번 지정 실행의 실제110회 RUN/phaseCounts/정확한경로증인/경로hash/CLEANUP·실행소스SHA256으로 재생성했다. 7단계 기록은 Git 이력과 과거 실행 증거로 보존한다. 최종 단일 그래프가 끝나면 그 실행의 실제110회 기록으로 갱신한다.
+- 로그: `/private/tmp/009-us4-order-red.log`, `/private/tmp/009-us4-order-green.log`, `/private/tmp/009-us4-regression.log`, `/private/tmp/009-us4-input-regression.log`. Qodana T037은 미실행 사용자후속이고 이번 게이트 제외다. 다음은 T035/T036/T038 문서·최종단일그래프 인수다.
