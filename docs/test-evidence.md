@@ -1347,3 +1347,40 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 최종 정상 경로: `cd backend && ./gradlew verifyContract build`(실제 실행은 동등한 루트의 `./backend/gradlew -p backend verifyContract build`), 종료0,1분45초. Unit156·일반IT257·Contract6 전부 실패/오류/skip0, listener/XML 수 일치, verifyContractDependencies와build 통과. BackendApplicationIT XML에 관측 SocketFactory 출력이 없어 외부 도구 없이 실행한 결과임을 대조했다. 경쟁115건을 포함하며 Property/PIT/k6/외부CI는 이번에 실행하지 않았다. 소유 컨테이너 종료 후 원래 개발 Compose2개만 남았다.
 - 결론: 테스트 환경의 SSL 협상 경로 제거와 현재 전체 검증은 확인했다. 최초 비정상 응답의 발생원은 미확정으로 보존하며 근본 원인 해결·운영 TLS 검증으로 주장하지 않는다. PR9에 대응·검증·한계를 반영하고 draft는 유지한다.
 - 최종 독립 리뷰: 읽기 전용 리뷰어가 a50ffc6 대비 최종 diff·고정 Testcontainers/pgJDBC 소스·저장된 N→R 관측·현재 XML을 대조했고 수정이 필요한 결함을 발견하지 못했다. 리뷰어는 파일 수정·Gradle 실행을 하지 않았다. 적용 판단은 테스트 소유 비TLS fixture의 연결 설정 명시뿐이며, 최초 비정상 응답 발생원이 다른 경로에도 영향을 주면 향후 연결 실패가 계속 발생할 수 있다. 미룬 경미한 지적은 없다. git diff --check 통과.
+
+
+## 2026-10-22 8단계 구현 시작 — T001~T003
+
+- 공식 speckit-implement 사전조건 FEATURE_DIR=specs/009-redis-rate-limit; requirements16/16 PASS, 확장 hooks 파일 없음.
+- root=/Users/joypeb/.paseo/worktrees/3968wubl/lucky-meerkat, branch=feature/redis-rate-limit, 시작HEAD=3ca6f82, 기존 변경 없음.
+- AGENTS·knowledge README/rules전체·관련4도메인·계획2~5/8단계·헌법·009설계와 실제 SecurityConfig/ContainerTestSupport/예약fixture/Gradle 대조. 기존 업무SQL/Writer·본문필터·공통오류·경쟁실행기 재사용.
+- java -version: Corretto25.0.4+7-LTS, ./gradlew --version:9.7.1, docker version:29.8.2(권한상승 실행), 종료0. Boot4.1.1·고정PG18.6/Redis8.10.2 digest·BOM Testcontainers2.0.5 유지, 실제 기능실행은 후속.
+- qodana.yaml JVM2026.2/Java25/recommended/any0/라이선스 기준 유지. CLI·이미지·QODANA_TOKEN 미확보(인계 정보 및 CLI 미발견), 실제 정적검사 미실행. T037 필수 미완료, 오케스트레이터 확인 대기. 토큰값 출력 안 함.
+- .gitignore/.dockerignore 기존 Java/build/cache/비밀정보 제외 확인; 신규 의존성·기술별 ignore 불필요.
+
+### US1 중간 인수 — T007~T013 (2026-10-22)
+
+최신 오케스트레이터 지시: US1까지 검증·커밋 후 중간검토 대기. T004~T006은 필요한 최소 환경만 준비했다. ContainerTestSupport 고정 PG/Redis의 동적 포트·소유 컨테이너를 재사용했고 RateLimitTestSupport는 ADMIN/A/B 키만 DEL/count/PTTL한다. FLUSHALL 없음. RedisRateLimitIT는 앱 YAML을 읽는 최소 실제 Boot Redis 컨텍스트이며 PG 업무/Basic HTTP 검증이 아니다. HTTP·Controller/Service/TX 관측은 T006 후속으로 남긴다.
+
+| 순서 | backend/ 실제 명령 | 종료 | XML/listener 결과·의도 |
+| --- | --- | --- | --- |
+| 판정 RED | `./gradlew test --tests '*RateLimitDecisionTest'` | 1 | 9건/실패8/오류0/skip0. 상수 허용 골격이 TTL 올림7경계와 깨진응답 거부 assertion 실패 |
+| 판정 GREEN | 같은 명령 | 0 | 9건/실패·오류·skip0 |
+| 설정 RED | `./gradlew test --tests '*RateLimitPropertiesTest'` | 1 | 3건/실패1/오류0/skip0. 검증 없는 record가 비양수·불가능한 창을 거부하지 않음 |
+| 설정 GREEN | `./gradlew test --tests '*RateLimit*Test'` | 0 | 12건/실패·오류·skip0 |
+| 실제 Redis RED | `./gradlew integrationTest --tests '*RedisRateLimitIT'` | 1 | 3건/실패3/오류0/skip0. 상수 허용 limiter로 정확20 대신40허용, PTTL -2, 격리카운트0 확인 |
+| Lua GREEN+만료 확장 | 같은 Redis 지정명령 | 0 | 4건/실패·오류·skip0 |
+| 컨텍스트/기존 경쟁지원 정리 | `./gradlew test integrationTest --tests '*RedisRateLimitIT'` | 0 | 전체 일반 Unit168 + 지정 RedisIT4, 실패·오류·skip0 |
+| 최종 US1 인수 | `./gradlew test integrationTest --tests '*RedisRateLimitIT'` | 0 | 전체 일반 Unit169 + 지정 RedisIT5, 실패·오류·skip0. 신규 판정10·설정3/기존Unit156. RedisIT에 시작시 잘못된 설정 거부 추가 |
+
+- 최종 XML: `backend/build/test-results/test/TEST-*.xml` 합계169/0/0/0, `integrationTest/TEST-com.limitedbooking.backend.ratelimit.RedisRateLimitIT.xml` 5/0/0/0. listener와 일치. 이전 기록 Unit150/IT257을 복사하지 않았다.
+- 기본20/60000ms 실제 count22(21·22거부), 최초PTTL59999→59925ms(40ms 간격 후 후속20/21/22호출), 판정 Retry-After60초. 실제 후속 TTL이 짧아졌으며 요청마다 연장하지 않는다.
+- 기존 ConcurrencyTestSupport 사용: 40요청·작업자10·전체30초·종료10초, 허용20/거부20/count40/PTTL59985ms, 결과40·예외0·terminated=true. StopState 첫 검사 후에만 다음 소유키 reset 가능. HTTP 경쟁40/기존110회는 이번에 실행하지 않았다.
+- 만료 전용 독립 ApplicationContext:3/1000ms, 최초PTTL1000ms,60ms 간격 뒤 허용/거부 모두 최초TTL보다30ms 이상 감소 assertion 통과;20ms polling/최대5초로 만료 확인 뒤 count1·PTTL993ms. 기본 컨텍스트20/60000ms는 별도로 유지했다. 판정PTTL과 후속측정의 경과를 구분하며 정밀한 벽시계 만료 시각을 보장한다고 해석하지 않는다.
+- 실제 YAML 기본값 바인딩20/60000ms·Lettuce factory 명령/SocketOptions 연결 timeout 각각200ms 확인. 설정0한도/0ms/1ns는 컨텍스트 refresh에서 거부된다. 단위 경계는 Long.MAX_VALUE·음수·null·밀리초 소수/overflow를 포함한다.
+- Lua 연결 과정의 DefaultRedisScript 생성자 시도2회는 컴파일 실패였다. 설치 API의 setLocation/setResultType로 수정했으며 컴파일 실패를 기능 RED로 세지 않았다. 기능 RED는 그 전에 실제 Redis assertion3건으로 확인했다.
+- 최종 RedisIT 실행 시간3.834초, Gradle7초. Spring Data Redis4.1.1·Lettuce7.5.2.RELEASE/5728917·실제 Redis서버8.10.2 출력 확인. `./gradlew dependencies --configuration runtimeClasspath` 종료0으로 Framework7.0.9/Security7.1.1/SDR4.1.1/Lettuce7.5.2.RELEASE 해석 확인.
+- afterAll은 컨텍스트 close와 컨테이너 close를 모두 시도하고 정리오류를 보존한다. 이 실행 정리오류0.
+- 업무 SQL/스키마·SecurityConfig·고정 OpenAPI429/503/Retry-After는 변경하지 않았다. 필터 미연결이라 실제 예약 HTTP에는 아직 제한이 적용되지 않는다.
+- 미완료: T004~T006 전체기반 인수, T014~T038. Qodana T037 인증/정식 실행환경 미확보. build+verify+verifyContractDependencies 최종게이트·실제 장애·HTTP순서·기존110회·전체회귀는 후속이며 이번 통과로 표시하지 않는다. docs/concurrency-runs.json은 기존 실행기록을 유지했다.
+- 다음 한 작업: 오케스트레이터의 US1 독립검토 후 지시를 받아 US2 실제 HTTP RED(T014~T016)를 작성한다.

@@ -31,7 +31,7 @@
 - [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기/생성 SQL, `ResourceRules` Unit 52건, 4단계 `POST /api/resources`·`GET /api/resources/{id}` HTTP 통합 테스트(`ResourceApiIT` 8건)까지 구현·검증했으며 예약 생성/취소에 따른 수량 차감·복구는 5~7단계 후속이다.
 - [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백의 구현·검증과 취소·경쟁의 설계 지식.
 - [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)은 후속이다.
-- [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
+- [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 기준과 US1 limiter/Lua·Unit13/실제RedisIT5 구현·검증 지식. HTTP 연결·실제 장애·전체 인수는 미완료다.
 - 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계 구현·검증 완료, 실제 경쟁·Redis 제한(7~8단계)은 후속이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
@@ -100,3 +100,7 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../docs/test-evidence.md)·[110회 기록](../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+
+## 8단계 US1 중간검토 인계 (2026-10-22)
+[009명세](../specs/009-redis-rate-limit/spec.md)·[계획](../specs/009-redis-rate-limit/plan.md)·[작업](../specs/009-redis-rate-limit/tasks.md)·[검증 안내](../specs/009-redis-rate-limit/quickstart.md): T001~T003/T007~T013을 실제 수행했다. 일반Unit169·RedisIT5 통과이며 상세는 [증거](../docs/test-evidence.md)다. T004~T006 전체HTTP기반 인수·T014 이후는 미완료다. 필터 미연결로 HTTP에는 아직 제한이 적용되지 않는다. 최신지시로 US1 중간검토 대기, Qodana는 필수 미완료다. 이전 확인일의 “Redis 후속”은 당시 기록이다.

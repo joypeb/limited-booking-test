@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. Redis 요청 제한은8단계 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반을 구현·검증했고 중간검토 대기 중이다. HTTP 제한 필터는 아직 연결하지 않았다.
 
 ## 로컬 환경
 
@@ -187,3 +187,10 @@ Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [
 
 
 PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 SSL 협상08P01로 실패했다. 이후 테스트 소유 비TLS PostgreSQL URL에 `sslmode=disable`을 명시하고 관측 도구 없이 `verifyContract build`를 실행해 Unit156·일반IT257·Contract6 전부 통과했다. 최초 비정상 응답의 발생원은 여전히 미확정이며, 이번 대응의 범위와 한계는 [최신 실행 기록](docs/test-evidence.md)을 참조한다.
+
+
+## 8단계 US1 중간검토 (2026-10-22)
+
+사용자별 고정 창 limiter/Lua·판정/설정 검증을 구현했다. 기본20/60000ms·연결/명령200ms이며 실제Redis에서 동시40건의 허용20/거부20, TTL비연장·격리·별도3/1000ms 만료를 확인했다. `backend/`에서 `./gradlew test integrationTest --tests '*RedisRateLimitIT'`를 실행해 일반Unit169/지정RedisIT5, 실패·오류·skip0이었다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)를 따른다.
+
+이 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니다. RateLimitFilter·실제장애·기존HTTP/110회 회귀·최종 build/verify/의존성·Qodana는 미완료다. 최신 지시에 따라 US1 중간검토 후 다음 지시를 기다린다.

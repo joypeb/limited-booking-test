@@ -1,3 +1,11 @@
 spring:
   application:
     name: backend
+  data:
+    redis:
+      timeout: 200ms
+      connect-timeout: 200ms
+reservation:
+  rate-limit:
+    limit: 20
+    window: 60000ms

@@ -8,7 +8,7 @@
 
 8단계의 한 검증 대상은 인증된 예약 쓰기의 Redis 원자적 고정 창 제한과 기존 예약 정합성 보존이다. Lua의 한 실행으로 INCR·최초 PEXPIRE·PTTL을 처리하고 기본 20회/60000ms, 명령 timeout 200ms를 유지한다. 보안 체인에서 인증/인가 뒤·취소 입력 검증 앞에 제한을 배치한다. PostgreSQL 업무 SQL·스키마·트랜잭션은 변경하지 않는다.
 
-이 문서는 설계 산출물이다. 신규 제품 코드·시험·tasks·커밋·push는 이번 단계에 포함하지 않는다. [조사](research.md), [데이터 모델](data-model.md), [계약](contracts/rate-limit-contract.md), [검증 안내](quickstart.md)를 함께 읽는다.
+이 문서는 승인된 설계와 구현 추적의 기준이다. 2026-10-22 US1 limiter/Lua·판정/설정 Unit·실제 Redis IT를 구현·검증했으며 중간검토를 위해 T013에서 멈춘다. [작업 상태](tasks.md)와 [실행 증거](../../docs/test-evidence.md)를 따른다. HTTP 필터·장애·기존 회귀·최종 게이트는 미완료다. [조사](research.md), [데이터 모델](data-model.md), [계약](contracts/rate-limit-contract.md), [검증 안내](quickstart.md)를 함께 읽는다.
 
 ## Technical Context
 
@@ -60,11 +60,11 @@ specs/009-redis-rate-limit/
   quickstart.md
 ```
 
-`tasks.md`는 후속 speckit-tasks 산출물이며 이번에는 생성하지 않는다.
+`tasks.md`는 생성·검토 후 현재 구현 진행상태를 추적한다.
 
 ### Source Code (repository root)
 
-아래 신규 파일명은 구현 예정이다. 기존 경로는 유지한다.
+아래 구조는 승인된 설계다. US1의 실제 파일은 ratelimit의 Decision/Properties/RedisRateLimiter·Lua·관련 Unit/Redis IT 및 RateLimitTestSupport다. 나머지 신규 파일은 예정이며 기존 경로는 유지한다.
 
 ```text
 backend/src/main/java/com/limitedbooking/backend/

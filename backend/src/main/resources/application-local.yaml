@@ -14,7 +14,11 @@ spring:
       host: 127.0.0.1
       port: 6379
       timeout: 200ms
+      connect-timeout: 200ms
 reservation:
+  rate-limit:
+    limit: 20
+    window: 60000ms
   security:
     admin-password: ${ADMIN_PASSWORD}
     user-a-password: ${USER_A_PASSWORD}

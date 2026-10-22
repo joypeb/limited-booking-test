@@ -95,3 +95,9 @@ Atlassian 공식3.0.0으로 전환하고 swagger-parser-v2-converter만 제외�
 ## 2026-10-21 테스트 PostgreSQL 연결 모드
 
 도구·라이브러리·이미지 버전은 유지했다. ContainerTestSupport가 소유하는 ssl=off Testcontainers PostgreSQL URL에만 `sslmode=disable`을 명시한다. 실제 서버 설정·비TLS 연결과 앱 기동은 DatabaseSupportIT/BackendApplicationIT에서 확인하며 [결정](decisions.md)·[실행 및 관측 한계](test-evidence.md)를 따른다. 앱 기본/local 설정이나 외부 DB의 TLS 정책 변경은 아니다.
+
+
+### 2026-10-22 8단계 실행 환경 확인
+Corretto25.0.4+7-LTS / Wrapper9.7.1 / DockerEngine29.8.2 실제 명령 종료0. Boot4.1.1·Testcontainers2.0.5와 ContainerTestSupport PG18.6/Redis8.10.2 고정digest 유지. 신규 Redis 제한 호환성 검증은 진행 중. Qodana JVM2026.2 설정 유지·실행 미확보.
+
+US1 실제 인수: 일반Unit169/RedisIT5 통과. runtimeClasspath 해석은 Framework7.0.9·Security7.1.1·DataRedis4.1.1·Lettuce7.5.2.RELEASE이며 RedisIT 런타임 출력 DataRedis4.1.1·Lettuce7.5.2.RELEASE/5728917·서버Redis8.10.2 확인. 명령/연결 timeout200ms 적용. Testcontainers2.0.5 BOM 조합으로 고정 PG/Redis 컨테이너 기동·종료했으나 이 인수에서 PG 업무 연결은 미검증이다. HTTP/장애/최종검증은 후속.

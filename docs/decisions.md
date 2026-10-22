@@ -151,3 +151,7 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 - 이는 최초08P01의 비정상 응답 발생원을 규명한 수정이 아니라 해당 테스트에서 불필요한 SSL 협상 경로를 제거하는 제한된 대응이다. 수정 전 관측 전체 검증과 새 컨테이너5개/SSLRequest250건도 정상이라 최초 실패를 재현했다고 주장하지 않는다. 정상 재실행을 근본 원인 해결의 증거로 삼지 않는다.
 - 대안인 timeout 증가·무조건 재시도·SQLSTATE08P01 무시·버전 변경은 근거가 없어 적용하지 않았다. TLS 연결 자체는 이번 fixture의 검증 범위가 아니며 향후 TLS를 시험하려면 서버 인증서와 클라이언트 검증을 별도 설계한다.
 - Ruling: 최초 실패 원인은 미확정 상태로 보존하고 fixture의 비TLS 계약만 명시한다. 이 판단이 틀리면 협상 이후의 다른 연결 오류는 여전히 발생할 수 있으며, 그런 실패는 기존 검증 게이트에서 그대로 실패한다.
+
+
+## 2026-10-22 US1 Redis 제한 기반
+승인된009 설계대로 StringRedisTemplate/재사용 DefaultRedisScript<List>·단일Lua의 INCR/최초PEXPIRE/PTTL을 사용한다. Java는 두 Long·count>=1/PTTL>=0을 확인하고 나눗셈·나머지로 올림하여 overflow를 피한다. 양수 정수 밀리초 설정을 record 생성 시 검증하며 모든 프로필 기본20/60000ms·명령/연결200ms다. 만료 인수만 독립3/1000ms 컨텍스트다. 기존 경쟁지원의 전체 결과/종료/StopState를 재사용했다. HTTP 필터·장애 분류는 아직 연결하지 않았고 SQL/스키마/OpenAPI는 유지한다. 최신 지시의 US1 중간검토 게이트에서 멈춘다. [실행 근거](test-evidence.md)·[009작업](../specs/009-redis-rate-limit/tasks.md) 참조.

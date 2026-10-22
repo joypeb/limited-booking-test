@@ -1,6 +1,6 @@
 # 구현 후 검증 안내
 
-현재는 설계 단계다. 아래 신규 시험·설정은 구현 예정이며 지금 실행 성공을 의미하지 않는다. 모델은 [data-model](data-model.md), 정확한 응답은 [계약](contracts/rate-limit-contract.md), 장애근거는 [research](research.md)를 따른다.
+2026-10-22 US1까지 구현·지정 인수했다. RedisRateLimitIT와 순수 판정/설정 Unit은 실제 존재·통과했으며 RateLimitApiIT·RedisFailureIT는 아직 없다. 아래 명령 중 HTTP/장애/경쟁/최종 전체 게이트는 후속 인수 안내다. 최신 지시로 US1 중간검토에서 멈추며 전체 구현 완료를 뜻하지 않는다. 모델은 [data-model](data-model.md), 정확한 응답은 [계약](contracts/rate-limit-contract.md), 장애근거는 [research](research.md)를 따른다.
 
 ## 준비
 

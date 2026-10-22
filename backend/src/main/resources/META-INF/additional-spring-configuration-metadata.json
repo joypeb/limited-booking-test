@@ -14,6 +14,18 @@
       "name": "reservation.security.user-b-password",
       "type": "java.lang.String",
       "description": "Local USER_B password supplied through USER_B_PASSWORD."
+    },
+    {
+      "name": "reservation.rate-limit.limit",
+      "type": "java.lang.Long",
+      "defaultValue": 20,
+      "description": "Maximum authenticated reservation writes per fixed window; must be positive."
+    },
+    {
+      "name": "reservation.rate-limit.window",
+      "type": "java.time.Duration",
+      "defaultValue": "60000ms",
+      "description": "Fixed window from the first Redis increment; positive whole milliseconds."
     }
   ]
 }

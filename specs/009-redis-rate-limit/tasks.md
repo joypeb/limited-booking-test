@@ -2,21 +2,23 @@
 
 **Input**: `specs/009-redis-rate-limit/`의 승인된 spec.md·plan.md·research.md·data-model.md·contracts/rate-limit-contract.md·quickstart.md.
 **Prerequisites**: AGENTS.md, knowledge/README.md·rules 전체·ratelimit/security/reservation/resource 도메인, 기준 계획서 2~5절·7절 8단계, .specify/memory/constitution.md.
-**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 모든 체크는 구현·실행 전 미완료다.
+**Organization**: 준비 → 공통 기반 → US1(P1) → US2(P1) → US3(P1) → US4(P2) → 전체 인수. 체크는 실제 구현·실행 근거에 따라 갱신한다. 2026-10-22 US1 중간검토 인계 상태는 아래와 같다.
 
 ## 형식·경로·범위
 
 `- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 신규 파일은 예정이며 기존 코드 재사용이 우선이다.
 
-이번 작업 목록 생성은 tasks.md만 작성한다. 아래 구현·검증은 후속 실행자의 작업이며 지금 구현·커밋·push·PR·외부 workflow를 수행하지 않는다. 후속 실제 구현에는 최신 사용자 지시에 따라 speckit-implement 절차를 적용한다. superpowers 가용성을 별도 필수 게이트로 추가하지 않는다. 목록 생성 에이전트는 구현·Git 공개 작업을 수행하지 않지만, 사용자 승인된 전체 개발 목표에는 목적별 커밋, 검증 완료 후 단일 develop PR, 지정 프로필의 독립 최종 SHA 리뷰, 필수 게이트와 보호 조건 충족 시 merge가 포함되며 후속 오케스트레이터가 수행한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증, 속성·변이·부하·배포는 범위 밖이다.
+이 목록은 생성 후 `speckit-implement`로 실행 중이다. 최신 오케스트레이터 지시로 US1(T013)의 실제 검증·기록·목적별 커밋 후 멈추고 독립 중간검토를 기다린다. T001~T003과 T007~T013을 완료했다. T004~T006은 US1에 필요한 최소 기반만 갖췄으며 전체 HTTP/인증·TX 관측 인수가 남아 체크하지 않았다. T005의 소유 키 reset/count/PTTL 지원과 기존 유한 경쟁 실행기는 US1에서 사용했다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 US2~US4에서 수행한다.
+
+후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 실행환경 미확보로 필수 미완료다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
 기능 작업은 테스트 작성 → 컴파일 가능한 최소 경계 → 의도한 assertion RED → 최소 구현 → GREEN → 정리 순서다. 컴파일 실패·의존성 접속 실패를 기능 RED로 인정하지 않는다. 환경 기반은 최소 실행으로 검증한다. 각 RED/GREEN의 명령·종료코드·발견수·실패/오류/skip·조건은 docs/test-evidence.md에 그때 기록한다. 관련 테스트가 통과하기 전 해당 작업을 체크하지 않는다.
 
 ## Phase 1: Setup — 현재 기반과 실행 의존성 확인
 
-- [ ] T001 AGENTS.md·knowledge/README.md·knowledge/rules/ 전체·관련 4도메인·기준 계획서 2~5절/8단계·009 설계 전체를 실제 코드와 대조하고 `git rev-parse --show-toplevel`·HEAD·브랜치·기존 변경을 확인해 범위/재사용 목록을 docs/test-evidence.md에 기록한다. feature/redis-rate-limit을 유지하고 사용자 변경을 보존한다.
-- [ ] T002 backend/gradle/wrapper/gradle-wrapper.properties·backend/build.gradle·test/support/ContainerTestSupport.java를 대조해 Java25/Wrapper9.7.1/Boot4.1.1·실제 BOM·PG18.6/Redis8.10.2 고정 digest·Testcontainers2.0.5와 Docker 가용성을 확인하고 docs/versions.md에 실행 확인값과 미검증을 구분한다. 버전 하향·신규 의존성 추가부터 하지 않는다.
-- [ ] T003 qodana.yaml의 JVM2026.2·Java25·recommended·any:0·라이선스 게이트를 확인하고 정식 실행 경로/CLI·이미지·인증 확보 상태를 docs/test-evidence.md에 기록한다. 현재 인증 미확보·미실행이며 오케스트레이터의 확보 결과를 기다리는 필수 완료 의존성이다. 토큰을 출력하거나 게이트를 완화하지 않는다.
+- [X] T001 AGENTS.md·knowledge/README.md·knowledge/rules/ 전체·관련 4도메인·기준 계획서 2~5절/8단계·009 설계 전체를 실제 코드와 대조하고 `git rev-parse --show-toplevel`·HEAD·브랜치·기존 변경을 확인해 범위/재사용 목록을 docs/test-evidence.md에 기록한다. feature/redis-rate-limit을 유지하고 사용자 변경을 보존한다.
+- [X] T002 backend/gradle/wrapper/gradle-wrapper.properties·backend/build.gradle·test/support/ContainerTestSupport.java를 대조해 Java25/Wrapper9.7.1/Boot4.1.1·실제 BOM·PG18.6/Redis8.10.2 고정 digest·Testcontainers2.0.5와 Docker 가용성을 확인하고 docs/versions.md에 실행 확인값과 미검증을 구분한다. 버전 하향·신규 의존성 추가부터 하지 않는다.
+- [X] T003 qodana.yaml의 JVM2026.2·Java25·recommended·any:0·라이선스 게이트를 확인하고 정식 실행 경로/CLI·이미지·인증 확보 상태를 docs/test-evidence.md에 기록한다. 현재 인증 미확보·미실행이며 오케스트레이터의 확보 결과를 기다리는 필수 완료 의존성이다. 토큰을 출력하거나 게이트를 완화하지 않는다.
 
 **완료 조건**: 현재 코드/도구/변경 소유권이 확인되고 외부 실행 의존성이 기록됨. T003의 확인 자체는 Qodana 통과가 아니다.
 
@@ -33,13 +35,13 @@
 **목표**: 원자적 카운트·최초 만료·PTTL과 정확한 허용/대기시간을 제공한다.
 **독립 인수**: 실제 Redis에서 기본20/60000ms의 20허용/21거부·A/B/ADMIN 격리·TTL 비연장·동시40건의 정확20허용을 검증한다. HTTP 혼합 인수는 US2 연결 뒤 별도로 확인한다.
 
-- [ ] T007 [US1] test/ratelimit/RateLimitDecisionTest.java에 count 경계20/21, 허용 true/0·거부 false/양수, PTTL0/1/999/1000/1001/60000→1/1/1/1/2/60초 및 long overflow 방지, 깨진 Lua응답(null/길이/타입/count<1/PTTL<0·-1/-2) 거부의 Unit을 작성하고 최소 컴파일 경계로 의도한 RED를 기록한다.
-- [ ] T008 [US1] main/ratelimit/RateLimitDecision.java·main/ratelimit/RedisRateLimiter.java에 T007의 순수 판정/응답 검증을 최소 구현한다. `[count,pttl]` 두 정수·count>=1·pttl>=0, `count<=limit`이면 `(true,0)` 아니면 `(false,max(1,ceil(pttl/1000)))`를 지키며 내부 오류를 정상판정으로 바꾸지 않고 Unit GREEN을 확인한다.
-- [ ] T009 [US1] test/ratelimit/RateLimitPropertiesTest.java에 `reservation.rate-limit.limit=20`, `window=60000ms`, “둘 다 양수·window 밀리초 표현 가능 여부를 시작 시 검증”하는 경계 테스트를 작성해 RED를 확인한다. 비활성화 설정은 제공하지 않는다.
-- [ ] T010 [US1] main/ratelimit/RateLimitProperties.java·backend/src/main/resources/application.yaml·backend/src/main/resources/application-local.yaml에 T009의 검증과 기본값·spring.data.redis.timeout=200ms·connect-timeout=200ms를 연결하고 Unit/최소 컨텍스트 실행으로 GREEN과 적용값을 확인한다.
-- [ ] T011 [US1] test/ratelimit/RedisRateLimitIT.java에 실제 Redis 기본20/60000·21번째 이후 집계·UUID별 격리·TTL 존재/비연장·최초 동시40건 정확20허용/20거부/count40을 작성하고 현재 미동작 assertion RED를 확인한다. 기본 창 내30초 상한·모든 Future 결과/예외·종료를 검사한다.
-- [ ] T012 [US1] backend/src/main/resources/redis/rate-limit.lua·main/ratelimit/RedisRateLimiter.java에 `check(UUID userId): RateLimitDecision`을 구현한다. StringRedisTemplate·재사용 DefaultRedisScript로 INCR→count==1일 때만 PEXPIRE→PTTL을 원자 실행하고 `[count,pttl]`을 반환한다. 키는 `reservation:write-limit:`+UUID 표준문자열(중괄호 없음), ARGV는 양수 창ms다. 앱 시계 창·DB TX·timeout 자체 재시도·DECR 보상 없이 T011 GREEN을 확인한다.
-- [ ] T013 [US1] test/ratelimit/RedisRateLimitIT.java에 만료 전용3/1000ms 컨텍스트를 분리하고 20ms polling/최대5초로 만료 후 count1 재허용을 검증한다. 후속 허용/거부의 최초 만료시점 비연장과 판정 PTTL/나중 PTTL의 경과를 구분하며 docs/test-evidence.md에 변경값·오차·실제결과를 기록한다.
+- [X] T007 [US1] test/ratelimit/RateLimitDecisionTest.java에 count 경계20/21, 허용 true/0·거부 false/양수, PTTL0/1/999/1000/1001/60000→1/1/1/1/2/60초 및 long overflow 방지, 깨진 Lua응답(null/길이/타입/count<1/PTTL<0·-1/-2) 거부의 Unit을 작성하고 최소 컴파일 경계로 의도한 RED를 기록한다.
+- [X] T008 [US1] main/ratelimit/RateLimitDecision.java·main/ratelimit/RedisRateLimiter.java에 T007의 순수 판정/응답 검증을 최소 구현한다. `[count,pttl]` 두 정수·count>=1·pttl>=0, `count<=limit`이면 `(true,0)` 아니면 `(false,max(1,ceil(pttl/1000)))`를 지키며 내부 오류를 정상판정으로 바꾸지 않고 Unit GREEN을 확인한다.
+- [X] T009 [US1] test/ratelimit/RateLimitPropertiesTest.java에 `reservation.rate-limit.limit=20`, `window=60000ms`, “둘 다 양수·window 밀리초 표현 가능 여부를 시작 시 검증”하는 경계 테스트를 작성해 RED를 확인한다. 비활성화 설정은 제공하지 않는다.
+- [X] T010 [US1] main/ratelimit/RateLimitProperties.java·backend/src/main/resources/application.yaml·backend/src/main/resources/application-local.yaml에 T009의 검증과 기본값·spring.data.redis.timeout=200ms·connect-timeout=200ms를 연결하고 Unit/최소 컨텍스트 실행으로 GREEN과 적용값을 확인한다.
+- [X] T011 [US1] test/ratelimit/RedisRateLimitIT.java에 실제 Redis 기본20/60000·21번째 이후 집계·UUID별 격리·TTL 존재/비연장·최초 동시40건 정확20허용/20거부/count40을 작성하고 현재 미동작 assertion RED를 확인한다. 기본 창 내30초 상한·모든 Future 결과/예외·종료를 검사한다.
+- [X] T012 [US1] backend/src/main/resources/redis/rate-limit.lua·main/ratelimit/RedisRateLimiter.java에 `check(UUID userId): RateLimitDecision`을 구현한다. StringRedisTemplate·재사용 DefaultRedisScript로 INCR→count==1일 때만 PEXPIRE→PTTL을 원자 실행하고 `[count,pttl]`을 반환한다. 키는 `reservation:write-limit:`+UUID 표준문자열(중괄호 없음), ARGV는 양수 창ms다. 앱 시계 창·DB TX·timeout 자체 재시도·DECR 보상 없이 T011 GREEN을 확인한다.
+- [X] T013 [US1] test/ratelimit/RedisRateLimitIT.java에 만료 전용3/1000ms 컨텍스트를 분리하고 20ms polling/최대5초로 만료 후 count1 재허용을 검증한다. 후속 허용/거부의 최초 만료시점 비연장과 판정 PTTL/나중 PTTL의 경과를 구분하며 docs/test-evidence.md에 변경값·오차·실제결과를 기록한다.
 
 **완료 조건**: Unit 및 `./gradlew integrationTest --tests '*RedisRateLimitIT'` 발견>=1·실패/오류/skip0, TTL 영구키/유실 없음. T013은 T012 이후의 만료 회귀 확장이다.
 
