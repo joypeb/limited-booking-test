@@ -80,4 +80,4 @@ Redis의[Lua 저메모리 동작](https://redis.io/docs/latest/develop/programma
 
 ## 8. 최종 구현 대조 (2026-10-22)
 
-2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 필터는 Bean 자동등록 대신 SecurityConfig에서만 인스턴스를 생성한다. 기존 종료보호의 Redis reset 순서 변이 RED4·원복 GREEN과 실제110회 기록을 인수했다. 업무SQL/스키마·고정OpenAPI 계약·기술버전을 유지하며 구현 절차는 최신 사용자 지시의 Spec Kit다. [실행 근거](../../docs/test-evidence.md)를 따른다.
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. 필터는 Bean 자동등록 대신 SecurityConfig에서만 인스턴스를 생성한다. 기존 종료보호의 Redis reset 순서 변이 RED4·원복 GREEN과 실제110회 기록을 인수했다. 업무SQL/스키마·고정OpenAPI 계약·기술버전을 유지하며 구현 절차는 최신 사용자 지시의 Spec Kit다. [실행 근거](../../docs/test-evidence.md)를 따른다.
