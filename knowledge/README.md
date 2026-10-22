@@ -103,4 +103,4 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 
 
 ## 8단계 US1 중간검토 인계 (2026-10-22)
-[009명세](../specs/009-redis-rate-limit/spec.md)·[계획](../specs/009-redis-rate-limit/plan.md)·[작업](../specs/009-redis-rate-limit/tasks.md)·[검증 안내](../specs/009-redis-rate-limit/quickstart.md): T001~T003/T007~T013을 실제 수행했다. 일반Unit169·RedisIT5 통과이며 상세는 [증거](../docs/test-evidence.md)다. T004~T006 전체HTTP기반 인수·T014 이후는 미완료다. 필터 미연결로 HTTP에는 아직 제한이 적용되지 않는다. 최신지시로 US1 중간검토 대기, Qodana는 필수 미완료다. 이전 확인일의 “Redis 후속”은 당시 기록이다.
+[009명세](../specs/009-redis-rate-limit/spec.md)·[계획](../specs/009-redis-rate-limit/plan.md)·[작업](../specs/009-redis-rate-limit/tasks.md)·[검증 안내](../specs/009-redis-rate-limit/quickstart.md): T001~T003/T007~T013을 실제 수행했다. 일반Unit169·RedisIT5 통과이며 상세는 [증거](../docs/test-evidence.md)다. T004~T006 전체HTTP기반 인수·T014 이후는 미완료다. 필터 미연결로 HTTP에는 아직 제한이 적용되지 않는다. 최신지시로 US1 중간검토 대기, Qodana는 사용자2026-10-22 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서는 제외한다. 이전 확인일의 “Redis 후속”은 당시 기록이다.

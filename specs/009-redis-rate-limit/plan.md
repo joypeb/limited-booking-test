@@ -41,9 +41,9 @@
 | III 검증/증거 | PASS | TDD·실제 의존성·HTTP·모든 작업 종료·단일SQL; 미실행은 예정으로 표시 |
 | IV 문서 동기화 | PASS | 신규 설계는 이 폴더; 구현 시 README/knowledge 목록·도메인·docs/계획 체크를 실제 상태에 맞춰 갱신. OpenAPI 기존 계약 대조 |
 | V 미확정 정책 | PASS | 새 업무 정책 없음. 아래 실행 환경 의존성과 헌법 역사 TODO를 완료로 오인하지 않음 |
-| 필수 정적검사 | 구현 완료 전 필수 | 루트 qodana.yaml, qodana-jvm:2026.2·any0 기준 유지. CLI/이미지/토큰 부재로 현재 미실행; 오케스트레이터가 실행/인증 경로 확인 중 |
+| 정적검사 후속 이관 | 이번 완료·PR·병합 게이트 제외 | 사용자2026-10-22 “나중에 할거야” 지시. T037 미완료 후속 유지; qodana.yaml JVM2026.2·any0/라이선스 설정과 미실행 상태 보존 |
 
-헌법의 채택일 TODO와 과거 CI_CONTEXT는 이 작업이 임의 확정하지 않는다. 현재 외부 Actions 실행/보호규칙 최종 재확인은 오케스트레이터 담당이며 계획 작성의 업무 정책 미확정이 아니다. Qodana 인증·실행 환경 미해결은 구현 완료 게이트의 실제 blocker로 유지한다. 필수 정적검사 미실행을 통과로 표시하지 않는다.
+헌법의 채택일 TODO와 과거 CI_CONTEXT는 이 작업이 임의 확정하지 않는다. 현재 외부 Actions 실행/보호규칙 최종 재확인은 오케스트레이터 담당이며 계획 작성의 업무 정책 미확정이 아니다. 사용자2026-10-22 지시로 Qodana는 후속 범위이며 이번 완료·PR·병합을 막지 않는다. 미실행을 통과로 표시하지 않으며 기능·경쟁·장애·빌드·verify·의존성·독립리뷰 게이트는 유지한다.
 
 ## Project Structure
 
@@ -86,7 +86,7 @@ backend/src/test/java/com/limitedbooking/backend/
   reservation/ReservationApiTestSupport.java      # 보호 검사 뒤 키 초기화
   reservation/ReservationConcurrencyIT.java      # 실제 Redis·높은 한도
   reservation/*IT.java / security/SecurityIT.java # 영향받는 HTTP fixture 전환
-qodana.yaml                                     # 기존 정적검사 게이트 보존
+qodana.yaml                                     # 기존 정적검사 설정 보존(실행은 사용자지정 후속)
 ```
 
 **Structure Decision**: 단일 backend, 기능별 패키지와 기존 테스트 지원을 확장한다. Filter Bean이면 비활성 FilterRegistrationBean으로 서블릿 자동 등록을 막고 Security 체인만 소유한다. 취소 검증은 명명된 필터로 분리하거나 제한 필터 뒤에 명시적으로 등록해 익명 필터의 같은 order 의존을 없앤다. Controller의 디코딩 경로 본문 검증은 방어로 유지한다.
@@ -101,9 +101,9 @@ qodana.yaml                                     # 기존 정적검사 게이트 
 2. HTTP 합산·인증·413·잘못된 입력·인코딩·재요청·중복 적용 RED→필터 체인 연결→GREEN. 기본 정책 시험의 한도는 올리지 않는다.
 3. 실제 명령 지연/중단·접속 장애, 독립 API와 DB 실패 카운터 유지·TX 순서 검증을 추가한다. 테스트 Spy는 실제 호출을 관측하며 장애 통합을 mock으로 대체하지 않는다.
 4. 영향받는 기존 HTTP fixture를 실제 Redis로 전환하고 원래 응답/DB 기대값을 유지한다. 경쟁 설정10000/60000와 회차별 키 초기화를 적용하며 부모 setup의 첫 종료실패 검사보다 앞에서 Redis/DB reset하지 않는다.
-5. 기존110회·종료보호fixture·관련회귀·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies` 및 Qodana 필수 게이트를 확인한다. docs/test-evidence.md·versions·decisions, README·knowledge·기준 계획서 체크는 실제 근거로 갱신한다. 실제 실행 명령·종료 코드·빌드/의존성 검사 결과를 docs/test-evidence.md에 기록한다. 최종 Gradle 실행은 `./gradlew build verify verifyContractDependencies`로 합쳐 공유 test 태스크의 불필요한 중복 실행을 피할 수 있다. Qodana·빌드·의존성 검사 또는 기능 검증이 막히면 미완료로 보고한다.
+5. 기존110회·종료보호fixture·관련회귀·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies` 필수 게이트를 확인한다. Qodana는 사용자지정 후속(T037)이며 이번 완료·PR·병합 게이트에서 제외한다. docs/test-evidence.md·versions·decisions, README·knowledge·기준 계획서 체크는 실제 근거로 갱신한다. 실제 실행 명령·종료 코드·빌드/의존성 검사 결과를 docs/test-evidence.md에 기록한다. 최종 Gradle 실행은 `./gradlew build verify verifyContractDependencies`로 합쳐 공유 test 태스크의 불필요한 중복 실행을 피할 수 있다. 빌드·의존성 검사 또는 기능 검증이 막히면 미완료로 보고한다. Qodana 미실행은 후속 상태로 별도 보고한다.
 
-FR001~004/011→RedisRateLimitIT·판정Unit, FR005~006/010/012→RateLimitApiIT, FR007~009/012→RedisFailureIT, FR013~014→기존HTTP/ReservationConcurrencyIT·종료fixture, FR015→일반verify·build·verifyContractDependencies·Qodana·docs 기록으로 연결한다.
+FR001~004/011→RedisRateLimitIT·판정Unit, FR005~006/010/012→RateLimitApiIT, FR007~009/012→RedisFailureIT, FR013~014→기존HTTP/ReservationConcurrencyIT·종료fixture, FR015→일반verify·build·verifyContractDependencies·docs 기록으로 연결하며 Qodana는 사용자지정 후속 T037로 추적한다.
 
 ## Complexity Tracking
 

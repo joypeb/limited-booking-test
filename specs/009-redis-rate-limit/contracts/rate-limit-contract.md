@@ -40,6 +40,6 @@ Redis 장애 중 GET resource200·GET 소유예약200·ADMIN POST resource201을
 
 관련 기존 HTTP 원래 기대값 유지, 경쟁10000/60000ms·각회차키초기화·C01~C11 각10회·기존종료fixture 보존. Future 오류/timeout·서버/클라이언트/executor 종료를 모두 확인한 뒤 단일SELECT snapshot을 검사한다. 종료 실패·전송결과 불확실이면 다음 Redis/DB reset·준비·제출0이며 최초 오류와 다른 모든 결과를 보존한다.
 
-필수 완료 증거는 지정IT/Unit·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies`·Qodana 실제 결과, 발견수/실패/skip·환경/설정·장애조건·정리·미검증의 docs 기록이다. 이 계약 문서 자체는 실행증거가 아니다.
+필수 완료 증거는 지정IT/Unit·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies` 실제 결과, 발견수/실패/skip·환경/설정·장애조건·정리·미검증의 docs 기록이다. 이 계약 문서 자체는 실행증거가 아니다.
 
-최종 Gradle 게이트는 `./gradlew build verify verifyContractDependencies`로 합쳐 공유 test를 한 번 실행할 수 있다. 실제 명령·종료 코드와 빌드/의존성 검사 결과를 docs/test-evidence.md에 기록한다. 어느 필수 게이트든 미실행·실패이면 전체 완료로 처리하지 않는다. Qodana는 현재 미실행 상태를 유지한다.
+최종 Gradle 게이트는 `./gradlew build verify verifyContractDependencies`로 합쳐 공유 test를 한 번 실행할 수 있다. 실제 명령·종료 코드와 빌드/의존성 검사 결과를 docs/test-evidence.md에 기록한다. 어느 필수 게이트든 미실행·실패이면 전체 완료로 처리하지 않는다. 사용자2026-10-22 “나중에 할거야” 지시로 Qodana T037은 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 미실행을 통과로 기록하지 않는다.

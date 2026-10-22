@@ -155,3 +155,8 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 
 ## 2026-10-22 US1 Redis 제한 기반
 승인된009 설계대로 StringRedisTemplate/재사용 DefaultRedisScript<List>·단일Lua의 INCR/최초PEXPIRE/PTTL을 사용한다. Java는 두 Long·count>=1/PTTL>=0을 확인하고 나눗셈·나머지로 올림하여 overflow를 피한다. 양수 정수 밀리초 설정을 record 생성 시 검증하며 모든 프로필 기본20/60000ms·명령/연결200ms다. 만료 인수만 독립3/1000ms 컨텍스트다. 기존 경쟁지원의 전체 결과/종료/StopState를 재사용했다. HTTP 필터·장애 분류는 아직 연결하지 않았고 SQL/스키마/OpenAPI는 유지한다. 최신 지시의 US1 중간검토 게이트에서 멈춘다. [실행 근거](test-evidence.md)·[009작업](../specs/009-redis-rate-limit/tasks.md) 참조.
+
+
+### 2026-10-22 사용자 지정 Qodana 후속 이관
+
+사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.

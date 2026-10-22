@@ -10,7 +10,7 @@
 
 이 목록은 생성 후 `speckit-implement`로 실행 중이다. 최신 오케스트레이터 지시로 US1(T013)의 실제 검증·기록·목적별 커밋 후 멈추고 독립 중간검토를 기다린다. T001~T003과 T007~T013을 완료했다. T004~T006은 US1에 필요한 최소 기반만 갖췄으며 전체 HTTP/인증·TX 관측 인수가 남아 체크하지 않았다. T005의 소유 키 reset/count/PTTL 지원과 기존 유한 경쟁 실행기는 US1에서 사용했다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 US2~US4에서 수행한다.
 
-후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 실행환경 미확보로 필수 미완료다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
+후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
 기능 작업은 테스트 작성 → 컴파일 가능한 최소 경계 → 의도한 assertion RED → 최소 구현 → GREEN → 정리 순서다. 컴파일 실패·의존성 접속 실패를 기능 RED로 인정하지 않는다. 환경 기반은 최소 실행으로 검증한다. 각 RED/GREEN의 명령·종료코드·발견수·실패/오류/skip·조건은 docs/test-evidence.md에 그때 기록한다. 관련 테스트가 통과하기 전 해당 작업을 체크하지 않는다.
 
@@ -94,13 +94,13 @@
 
 - [ ] T035 README.md·knowledge/README.md·knowledge/domain/ratelimit.md·security.md·reservation.md·resource.md·관련 knowledge/rules/rate-limit.md·api-and-security.md를 실제구현/검증 상태에 동기화하고 기준 계획서의8단계 체크를 실행근거가 있는 항목만 갱신한다. docs/openapi.yaml의 기존429/503/Retry-After·성공/소유권 계약을 대조하며 불필요한 계약변경을 하지 않는다.
 - [ ] T036 specs/009-redis-rate-limit/quickstart.md와 실제구현을 대조해 backend/에서 `./gradlew build verify verifyContractDependencies`를 순차 단일명령으로 실행하고 build산출물·일반Unit/IT 발견수·실패/오류/skip0·기존의존성gate 결과/종료코드를 docs/test-evidence.md에 기록한다. 공유test는 한 번만 실행하고0건/skip을 통과로 보지 않는다. 실패나새변경이 없으면 전체실행을 반복하지 않는다.
-- [ ] T037 qodana.yaml의 정식확보 실행경로로 Qodana JVM2026.2를 실제실행해 recommended·any:0·라이선스 조건을 확인하고 명령/종료코드/분석결과를 docs/test-evidence.md·docs/qodana-review.md에 기록한다. 현재 인증미확보이며 미실행/실패면 이 작업과 전체 구현완료는 미완료로 남긴다. 존재하지않는 Gradle태스크를 안내하지 않는다.
-- [ ] T038 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제버전·RED/GREEN·각지정/최종명령·제한값·장애/정리조건·110회·미검증을 정리하고 specs/009-redis-rate-limit/tasks.md·spec.md·plan.md의 추적/완료상태와 링크를 대조한다. 기능/정적/빌드/의존성 필수게이트가 모두통과한 경우에만 전체완료를 보고하고 핵심Lua/필터/테스트와 다음한작업을 제시한다. 목록 생성 에이전트는 커밋·push·PR·외부CI를 수행하지 않는다. 후속 오케스트레이터는 사용자 승인 범위에서 목적별 커밋과 검증 완료 후 단일 develop PR을 진행하고, 지정 프로필의 독립 최종 SHA 리뷰·필수 게이트·보호 조건을 모두 충족한 뒤 merge한다. Qodana 미실행 시 전체 미완료이며 검증 완료 전 PR을 생성하지 않는다.
+- [ ] T037 qodana.yaml의 정식확보 실행경로로 Qodana JVM2026.2를 실제실행해 recommended·any:0·라이선스 조건을 확인하고 명령/종료코드/분석결과를 docs/test-evidence.md·docs/qodana-review.md에 기록한다. 사용자2026-10-22 지시로 실행은 후속 범위다. 현재 인증미확보·미실행이며 이 작업만 미완료로 유지하고 이번 완료·PR·병합 게이트에서는 제외한다. 존재하지않는 Gradle태스크를 안내하지 않는다.
+- [ ] T038 docs/versions.md·docs/decisions.md·docs/test-evidence.md에 실제버전·RED/GREEN·각지정/최종명령·제한값·장애/정리조건·110회·미검증을 정리하고 specs/009-redis-rate-limit/tasks.md·spec.md·plan.md의 추적/완료상태와 링크를 대조한다. 기능/경쟁/장애/빌드/verify/의존성 필수게이트가 모두통과한 경우에만 전체완료를 보고하고 핵심Lua/필터/테스트와 다음한작업을 제시한다. 목록 생성 에이전트는 커밋·push·PR·외부CI를 수행하지 않는다. 후속 오케스트레이터는 사용자 승인 범위에서 목적별 커밋과 검증 완료 후 단일 develop PR을 진행하고, 지정 프로필의 독립 최종 SHA 리뷰·필수 게이트·보호 조건을 모두 충족한 뒤 merge한다. Qodana T037은 사용자지정 미완료 후속으로 별도 보고하며 이번 완료·PR·병합을 막지 않는다. 나머지 필수검증 완료 전 PR을 생성하지 않는다.
 
 ## 의존성·실행 순서
 
 `T001 → T002 → T003 → T004 → T005 → T006 → US1(T007~T013) → US2(T014~T020) → US3(T021~T028) → US4(T029~T034) → T035 → T036 → T037 → T038`.
-각 구간 내 번호순으로 실행한다. T003의 환경확인 뒤 기능작업은 진행 가능하지만 Qodana 인증확보/실제통과는 T037/T038의 필수조건이다. T011의 실제 Redis RED는 T012 전에, T014~T016의 HTTP RED는 T017 전에, T021 분류RED는 T022 전에, T029 보호RED는 T030 전에 둔다. 이미 구현한 경로의 추가 인수는 별도 재구현 없이 실행하며 새 결함 발견시 최소재현→RED→수정→GREEN을 기록한다.
+각 구간 내 번호순으로 실행한다. T003의 환경확인 뒤 기능작업은 진행 가능하지만 Qodana T037은 사용자지정 후속이므로 T038의 이번 완료 조건에서 제외한다. T011의 실제 Redis RED는 T012 전에, T014~T016의 HTTP RED는 T017 전에, T021 분류RED는 T022 전에, T029 보호RED는 T030 전에 둔다. 이미 구현한 경로의 추가 인수는 별도 재구현 없이 실행하며 새 결함 발견시 최소재현→RED→수정→GREEN을 기록한다.
 
 US2는 US1 limiter에, US3는 US1/US2 필터경계에, US4는 통합된 제한동작과 종료관측에 의존한다. “독립 인수”는 격리fixture/명령으로 그 이야기의 결과를 판정한다는 뜻이며 기반구현까지 서로 독립이라는 뜻은 아니다. 기본정책 전용 HTTP와 높은한도 경쟁은 설정·컨텍스트·증거를 분리한다.
 
@@ -119,7 +119,7 @@ US2는 US1 limiter에, US3는 US1/US2 필터경계에, US4는 통합된 제한�
 
 MVP는 Phase1~3의 US1 limiter 기반이다. 실제 사용자 HTTP MVP는 US2 연결까지 필요하다. 이어 US3의 실제장애·데이터보호, US4의 기존정합성회귀를 독립 인수하고 최종 게이트로 진행한다. MVP 통과를8단계 전체완료나 배포승인으로 보지 않는다.
 
-전체 완료는 지정Unit/Redis/HTTP/실제장애/기존회귀·110회·종료fixture, 최종 build+verify+verifyContractDependencies, 필수Qodana 및 문서동기화를 모두 실제확인한 때다. Qodana 인증은 현재 미확보다. 미실행·실패·정리실패가 하나라도 남으면 전체미완료이며 알려진 blocker/미검증을 그대로 보고한다.
+전체 완료는 지정Unit/Redis/HTTP/실제장애/기존회귀·110회·종료fixture, 최종 build+verify+verifyContractDependencies 및 문서동기화를 모두 실제확인한 때다. Qodana T037은 사용자2026-10-22 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서는 제외한다. 나머지 필수검증의 미실행·실패·정리실패는 전체미완료이며 알려진 blocker/미검증을 그대로 보고한다.
 
 ## 요구사항 추적
 

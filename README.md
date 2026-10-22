@@ -194,3 +194,8 @@ PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 S
 사용자별 고정 창 limiter/Lua·판정/설정 검증을 구현했다. 기본20/60000ms·연결/명령200ms이며 실제Redis에서 동시40건의 허용20/거부20, TTL비연장·격리·별도3/1000ms 만료를 확인했다. `backend/`에서 `./gradlew test integrationTest --tests '*RedisRateLimitIT'`를 실행해 일반Unit169/지정RedisIT5, 실패·오류·skip0이었다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)를 따른다.
 
 이 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니다. RateLimitFilter·실제장애·기존HTTP/110회 회귀·최종 build/verify/의존성·Qodana는 미완료다. 최신 지시에 따라 US1 중간검토 후 다음 지시를 기다린다.
+
+
+### 2026-10-22 사용자 지정 Qodana 후속 이관
+
+사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.

@@ -6,7 +6,7 @@
 
 저장소 루트에서 git top-level·feature/redis-rate-limit·기존변경을 확인한다. Java25·Wrapper9.7.1·Docker 기동 및 기존 고정 PG18.6/Redis8.10.2 이미지·digest를 유지한다. 테스트는 Testcontainers 동적포트·소유 DB/Redis만 사용하며 .env나 localhost 개발DB에 연결하지 않는다. Testcontainers의 랜덤 인증설정과 실제 Basic 헤더를 쓴다. 앱 DB 풀10/획득3000ms·READ COMMITTED·2s/5s timeout, Redis명령/연결200ms의 실제값을 검사한다.
 
-Qodana CLI/정식 실행 경로·2026.2 이미지·인증 환경이 필요하다. 현재 확보되지 않았으며 오케스트레이터가 확인 중이다. 토큰을 출력하지 않는다. 필수 정적검사 전까지 전체 구현 완료를 선언하지 않는다.
+사용자2026-10-22 “나중에 할거야” 지시로 Qodana는 후속 범위다. T037 미완료·미실행을 유지하며 이번 완료·PR·병합 게이트에서는 제외한다. 후속 실행에는 정식 CLI/2026.2 이미지·인증이 필요하고 토큰을 출력하지 않는다.
 
 ## 실행 명령
 
@@ -57,4 +57,4 @@ TTL 관측은 최초요청 완료 뒤 간격을 두고 측정해 비연장을 �
 
 docs/test-evidence.md에 RED/GREEN명령·종료코드·실제수/실패/skip·제한/창/timeout·의존성정확버전·장애예외/경과·경쟁조건/110회·모든정리를 기록한다. 결정/버전은 docs/decisions.md·versions.md, 동작연결은 README·knowledge 4도메인/목록·기준계획서에 실제상태로 반영한다. OpenAPI는기존429/503·Retry-After계약과대조하며 불필요한계약변경은하지않는다.
 
-성공은 관련/기존회귀·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies`·필수Qodana를 모두 실제확인한 때다. 미실행·환경장애·정리실패를 완료로 표시하지 않는다. 9단계전체계약·속성/변이/부하·외부CI/배포는 이번 인수에 포함하지 않는다.
+성공은 관련/기존회귀·일반verify·`./gradlew build`·기존 `./gradlew verifyContractDependencies`를 모두 실제확인한 때다. Qodana는 사용자지정 후속으로 미완료를 별도 보고한다. 미실행·환경장애·정리실패를 완료로 표시하지 않는다. 9단계전체계약·속성/변이/부하·외부CI/배포는 이번 인수에 포함하지 않는다.
