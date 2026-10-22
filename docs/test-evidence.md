@@ -1486,3 +1486,15 @@ US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수�
 - 로그: `/private/tmp/009-final-build-verify.log`; XML: `backend/build/test-results/test/`·`backend/build/test-results/integrationTest/`, 임시보존 `/private/tmp/009-final-xml/`. JSON은 커밋된 재현가능 요약이며 임시로그/XML은 로컬 실행자료다. seed없음(지정사례+실제스케줄링), workers최대10·풀10/3000ms·10ms연결표본·UTF-8/UTC·동적PG/Redis를 유지했다. 운영규모 성능이나 모든경쟁순서의 증명으로 일반화하지 않는다.
 - 남은 범위: Qodana 미실행(사용자2026-10-22 “나중에 할거야”, 범위조정4895488)·오케스트레이터 최종독립리뷰/PR/merge. Qodana JVM2026.2/Java25/recommended/any0/라이선스 설정을 유지하며 통과·지적0으로 기록하지 않는다. 업무전체 자동계약/Property/PIT심화·k6부하·외부CI는 다음계획단계다. push/PR/merge·외부workflow는 수행하지 않았다.
 - 최종 문서검사: 변경문서의 로컬링크439개 존재, 009 작업37개 완료/T037만미완료, 계획서8단계10/10, 회차JSON110개·현재소스SHA2565개 일치, `git diff --check` 통과. 내장 명세품질 체크리스트는 읽기전용으로16/16 PASS를 확인했다. `.specify/extensions.yml`이 없어 implement 전후 훅 대상없음. 최종 실행 뒤 변경은 이 문서동기화/회차요약뿐이며 제품/시험/Gradle 코드는 바꾸지 않았다.
+
+
+## Qodana 지적 해결 검증 (2026-10-22, revision 782dd03 후속)
+
+- 목적: Qodana 정적 분석 결과(revision `782dd03c2650d10a4c7feece1bf95d6c209db3e0`)에서 보고된 `RateLimitFilter.java`의 중복 예외 조건 1건(`ConditionCoveredByFurtherCondition`) 및 `RedisRateLimiter.java`의 raw type `List` 사용 3건(`RawUseOfParameterizedType`) 해결.
+- 조치:
+  - `RateLimitFilter.java`: `root instanceof java.net.ConnectException` 제거 (`SocketException` 분기로 포섭).
+  - `RedisRateLimiter.java`: `DefaultRedisScript<List<?>>` 타입 지정 및 unchecked 경고 억제 추가.
+- 실행 검증:
+  - `cd backend && ./gradlew test`: 종료 0 (Unit 193건, 실패 0, 오류 0, skip 0).
+  - `cd backend && ./gradlew verify verifyContractDependencies`: 종료 0 (Unit 193건, 일반 IT 312건, 실패 0, 오류 0, skip 0, 계약 의존성 게이트 통과).
+- 문서: `docs/qodana-review.md` 갱신.

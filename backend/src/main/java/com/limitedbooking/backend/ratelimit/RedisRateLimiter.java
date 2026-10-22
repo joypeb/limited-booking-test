@@ -12,11 +12,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @Component
 @EnableConfigurationProperties(RateLimitProperties.class)
 public class RedisRateLimiter {
-    private static final DefaultRedisScript<List> SCRIPT = script();
-    private static DefaultRedisScript<List> script() {
-        var script = new DefaultRedisScript<List>();
+    private static final DefaultRedisScript<List<?>> SCRIPT = script();
+
+    @SuppressWarnings("unchecked")
+    private static DefaultRedisScript<List<?>> script() {
+        var script = new DefaultRedisScript<List<?>>();
         script.setLocation(new ClassPathResource("redis/rate-limit.lua"));
-        script.setResultType(List.class);
+        script.setResultType((Class<List<?>>) (Class<?>) List.class);
         return script;
     }
     private final StringRedisTemplate redis;
