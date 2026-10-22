@@ -1384,3 +1384,28 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 업무 SQL/스키마·SecurityConfig·고정 OpenAPI429/503/Retry-After는 변경하지 않았다. 필터 미연결이라 실제 예약 HTTP에는 아직 제한이 적용되지 않는다.
 - 미완료: T004~T006 전체기반 인수, T014~T038. Qodana T037 인증/정식 실행환경 미확보. build+verify+verifyContractDependencies 최종게이트·실제 장애·HTTP순서·기존110회·전체회귀는 후속이며 이번 통과로 표시하지 않는다. docs/concurrency-runs.json은 기존 실행기록을 유지했다.
 - 다음 한 작업: 오케스트레이터의 US1 독립검토 후 지시를 받아 US2 실제 HTTP RED(T014~T016)를 작성한다.
+
+
+### 2026-10-22 US2 T014~T016 RED
+
+US1 100d392 오케스트레이터 독립검토 통과 후 동일 담당이 재개했다. 공식 사전조건 재확인·checklist16/16·작업트리깨끗함·hooks없음. 승인설계/knowledge/기존SecurityConfig·Controller·SQL과 대조해 실제RANDOM_PORT/Basic·PG/Redis·요청별ID·실제limiter/Controller/Service spy·transaction listener·전체행 단일SELECT snapshot 지원을 작성했다. 설정기본20/60000ms·명령/연결200ms/풀10·획득3000ms를 검사한다.
+
+`./gradlew integrationTest --tests '*RateLimitApiIT'` 종료1, 31건/실패21/오류0/skip0. 필터부재로 limiter-start 기대1/실제0 및 count0을 실제HTTP에서 확인했다. 미인증·413/독립API 사례10건은 기존동작으로 통과. 앞선 관측필터 FilterRegistrationBean 제네릭 컴파일실패1회는 기능RED로 세지 않는다. US3장애·US4기존시험전환은 수행하지 않는다.
+
+### US2 T004~T006/T014~T020 GREEN·중간 인수 (2026-10-22)
+
+- 순서: 필터부재31건/실패21 RED→Security 체인 최소구현→같은 명령31건 GREEN→재전송/중복취소/취소후재현·실제HTTP40건·체인소유/순서·후속500 추가35건 GREEN→실제ERROR dispatch/framing/스크립트관측·userId 입력거부·UTF-8 바이트 상한 보강37건 GREEN. 각 GREEN 명령은 `backend/`의 `./gradlew integrationTest --tests '*RateLimitApiIT'`, 종료0·오류/skip0이다. 31/35건의 실행은 후속 테스트 추가 전 기록이며 최종수는37건이다.
+- 최종 XML `backend/build/test-results/integrationTest/TEST-com.limitedbooking.backend.ratelimit.RateLimitApiIT.xml`: tests37/failures0/errors0/skipped0, listener37/0/0 일치. 실행시각2026-10-22T09:37:34.199Z, XML11.67초·Gradle13초. 다른 일반Unit/IT·verify/build는 이번 US2에서 실행하지 않았다. US1의 일반Unit169/RedisIT5 기록과 구분한다.
+- 실제 소유 PG/Redis 동적접속·RANDOM_PORT·클래스별 랜덤 Basic 비밀번호·UTF-8/UTC·풀10/획득3000ms·명령/연결200ms·기본20/60000ms를 사용했다. ResourceRepository 실제 SQL 진입에서 READ COMMITTED/SET LOCAL lock2s·statement5s/DB UTC를 검사했다.
+- 요청별 고유ID의 테스트 전용 servlet 관측→실제 limiter/Redis script 응답·Controller/Service spy·실제 transaction manager listener→종료 사건을 연결했다. limiter 시작·판정은 TX 비활성, 허용 뒤 Controller/Service/tx-before/tx-start/SQL 순서, tx-start/SQL 활성 상태를 확인했다. 초과 때 Controller/Service/TX0이며 전체 대상·예약의 모든 컬럼을 한 SELECT의 jsonb snapshot으로 비교해 동일함을 확인했다.
+- 생성10+동일 소유예약 취소10(직접커밋 준비, 중복취소 포함)에서 요청별count1~20,21번째429/count21; B/ADMIN 독립1, X-User-Id는 소유자·카운터에 영향 없음. 잘못된JSON/UUID/키·키누락·quantity/userId 미정의·중복필드·415, 취소본문/잘못된UUID400, 타인/없는예약404·품절/충돌409는 각각집계되며 소진후429가 먼저다.
+- 일반 Content-Length/길이미정 publisher 자동chunked/원시chunked × 인증유무 ×8192/8193의12사례를 실행했다. 관측Content-Length는 fixed=size, 나머지-1·Transfer-Encoding=chunked다.8193은413·limiter/script0·업무진입0·전체snapshot동일,8192는401또는인증후201/count1이다. UTF-8 `가`2731자=8193byte의 길이미정 요청도 인증유무 모두413·미집계다.
+- 정상/`%63ancel`/`%72eservations` 각각 빈본문·비빈본문·잘못된UUID의9사례와 소진뒤429를 확인했다. StrictHttpFirewall 완화 없음. PathPatternRequestMatcher는 MVC기본 parsed path 규칙을 사용한다.
+- 필터는 Bean/서블릿에 자동등록하지 않고 SecurityConfig의 체인 생성에서만 소유한다. 실제 체인에서 RequestBodyLimit→Basic→Authorization→RateLimit→CancelValidation 순서와 각1개, Servlet/Bean RateLimitFilter 등록0을 확인했다. 기존 Controller의 취소본문 방어는 유지했다.
+- 실제 후속 Service 내부결함은500으로 남고 실제ERROR dispatch1회에도 limiter/script/count는1회였다. 새500업무code·광범위Redis catch·후속chain catch 없음. Redis 의존성503 분류/실제장애는 US3 미구현으로 명시한다.
+- 재전송201/Location/Replay·최초JSON/UTC시각, 중복취소200/동일cancelledAt, 취소후 생성재현CONFIRMED와 GET현재CANCELLED를 검증했다. 각5회집계 후 소진한 같은 생성/취소는429·업무진입0·전체snapshot동일이다.
+- 기본정책 실제HTTP40건/수량40/서로다른키·작업자10·수집30초/HTTP9초/종료10초:201정확20·429정확20/count40/PTTL59652ms. 결과40/예외0, 서버in-flight0·executorTerminated=true·httpClosed=true 뒤 단일SELECT inventory capacity40/available20/total20/confirmed20. 기존 ConcurrencyTestSupport를 재사용했고 다음reset의 첫STOP검사·모든 종료 관측을 유지한다. US4의 기존부모fixture/110회는 아직 실행하지 않았다.
+- 독립GET resource200·소유예약200·ADMIN resourcePOST201·미인증/틀린비밀번호401+WWW-Authenticate는 limiter/script0이었다.429는 공통writeProblem의6필드/code·민감정보 비노출이며 실제Lua반환PTTL로 계산한 Retry-After와 정확히 비교했다.
+- T004~T006의 US2 필요 기반을 공통 RateLimitHttpTestSupport에 완성했다. RedisFailureIT는 T023 후속에서 이 기반을 재사용하며 현재 파일/실행이 존재한다고 표시하지 않는다. 업무SQL/스키마/OpenAPI 정상·오류 기대값은 변경하지 않았다. 기존 postgresOnly HTTP 전환·전체verify를 미리 실행하지 않았다.
+- Qodana 범위 조정 문서커밋4895488: 사용자2026-10-22 “나중에 할거야” 지시로 T037은 미완료 후속이며 이번 완료/PR/병합 게이트에서 제외한다. 미실행은 통과가 아니다. 앞선 US1 기록의 필수blocker 표시는 당시 지시이며 현재 범위는 이 지시로 대체한다.
+- 다음 한 작업: US2 커밋의 오케스트레이터 독립 중간검토 후 후속 지시를 받는다. T021~T038(Qodana만 별도후속), 실제장애·기존회귀110회·최종build/verify/의존성·전체독립리뷰는 미완료다.

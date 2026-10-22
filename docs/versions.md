@@ -101,3 +101,5 @@ Atlassian 공식3.0.0으로 전환하고 swagger-parser-v2-converter만 제외�
 Corretto25.0.4+7-LTS / Wrapper9.7.1 / DockerEngine29.8.2 실제 명령 종료0. Boot4.1.1·Testcontainers2.0.5와 ContainerTestSupport PG18.6/Redis8.10.2 고정digest 유지. 신규 Redis 제한 호환성 검증은 진행 중. Qodana JVM2026.2 설정 유지·실행 미확보.
 
 US1 실제 인수: 일반Unit169/RedisIT5 통과. runtimeClasspath 해석은 Framework7.0.9·Security7.1.1·DataRedis4.1.1·Lettuce7.5.2.RELEASE이며 RedisIT 런타임 출력 DataRedis4.1.1·Lettuce7.5.2.RELEASE/5728917·서버Redis8.10.2 확인. 명령/연결 timeout200ms 적용. Testcontainers2.0.5 BOM 조합으로 고정 PG/Redis 컨테이너 기동·종료했으나 이 인수에서 PG 업무 연결은 미검증이다. HTTP/장애/최종검증은 후속.
+
+US2 지정HTTP 인수37건(2026-10-22): US1과 같은 JDK25.0.4/Wrapper9.7.1/Boot4.1.1·고정PG18.6/Redis8.10.2·BOM 유지, 신규의존성 없음. 실제동적PG연결/Flyway·SQL READ COMMITTED/2s/5s·풀10/3000ms·UTF-8/UTC와 Redis연결/명령200ms를 검사했다. 전체빌드/verify/의존성게이트는 후속이다. Qodana는 사용자지정미완료후속(문서4895488)이다.

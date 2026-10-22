@@ -8,7 +8,7 @@
 
 8단계의 한 검증 대상은 인증된 예약 쓰기의 Redis 원자적 고정 창 제한과 기존 예약 정합성 보존이다. Lua의 한 실행으로 INCR·최초 PEXPIRE·PTTL을 처리하고 기본 20회/60000ms, 명령 timeout 200ms를 유지한다. 보안 체인에서 인증/인가 뒤·취소 입력 검증 앞에 제한을 배치한다. PostgreSQL 업무 SQL·스키마·트랜잭션은 변경하지 않는다.
 
-이 문서는 승인된 설계와 구현 추적의 기준이다. 2026-10-22 US1 limiter/Lua·판정/설정 Unit·실제 Redis IT를 구현·검증했으며 중간검토를 위해 T013에서 멈춘다. [작업 상태](tasks.md)와 [실행 증거](../../docs/test-evidence.md)를 따른다. HTTP 필터·장애·기존 회귀·최종 게이트는 미완료다. [조사](research.md), [데이터 모델](data-model.md), [계약](contracts/rate-limit-contract.md), [검증 안내](quickstart.md)를 함께 읽는다.
+이 문서는 승인된 설계와 구현 추적의 기준이다. 2026-10-22 US1 limiter/Lua·판정/설정 Unit·실제 Redis IT의 구현·독립검토를 마쳤다. 이어 US2 보안 체인 필터와 실제 HTTP 관측·37건 인수를 완료했고 T020 오케스트레이터 중간검토를 기다린다. [작업 상태](tasks.md)와 [실행 증거](../../docs/test-evidence.md)를 따른다. 장애·기존 회귀·최종 게이트는 미완료다. [조사](research.md), [데이터 모델](data-model.md), [계약](contracts/rate-limit-contract.md), [검증 안내](quickstart.md)를 함께 읽는다.
 
 ## Technical Context
 
@@ -64,7 +64,7 @@ specs/009-redis-rate-limit/
 
 ### Source Code (repository root)
 
-아래 구조는 승인된 설계다. US1의 실제 파일은 ratelimit의 Decision/Properties/RedisRateLimiter·Lua·관련 Unit/Redis IT 및 RateLimitTestSupport다. 나머지 신규 파일은 예정이며 기존 경로는 유지한다.
+아래 구조는 승인된 설계다. US1의 실제 파일은 ratelimit의 Decision/Properties/RedisRateLimiter·Lua·관련 Unit/Redis IT 및 RateLimitTestSupport다. US2의 RateLimitFilter·명명된 CancelRequestValidationFilter와 RateLimitApiIT·공통 RateLimitHttpTestSupport도 구현·지정 인수했다. 나머지 신규 파일은 예정이며 기존 경로는 유지한다.
 
 ```text
 backend/src/main/java/com/limitedbooking/backend/
@@ -78,7 +78,8 @@ backend/src/main/resources/
   application.yaml / application-local.yaml      # 기본 설정 명시
 backend/src/test/java/com/limitedbooking/backend/
   ratelimit/RedisRateLimitIT.java                 # 신규 실제 Redis
-  ratelimit/RateLimitApiIT.java                   # 신규 실제 HTTP/PG/Redis
+  ratelimit/RateLimitApiIT.java                   # 실제 HTTP/PG/Redis 구현·인수
+  ratelimit/RateLimitHttpTestSupport.java           # 요청별 사건·TX·전체행 snapshot 지원
   ratelimit/RedisFailureIT.java                   # 신규 장애/순서/독립 API
   ratelimit/RateLimitDecisionTest.java            # 신규 순수 경계
   support/RateLimitTestSupport.java               # 신규 소유 키 정리

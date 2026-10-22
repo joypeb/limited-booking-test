@@ -171,3 +171,8 @@ C09/C10은 연결·잠금 보유 전 대기와 선행HTTP/별도DB확인으로 �
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+
+### 2026-10-22 US2 Redis 제한 HTTP 연결
+
+생성·취소 합산20/60초가 실제HTTP에 연결됐다. 성공키 재전송·중복취소·취소후 최초CONFIRMED 재현도 각1회 집계하며 초과429에서는 Controller/Service/TX0·모든행/시각/키/수량snapshot동일을 검증했다. 기존Writer/SQL·스키마·성공/소유권 계약은 유지한다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.

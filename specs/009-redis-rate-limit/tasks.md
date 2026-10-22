@@ -8,7 +8,7 @@
 
 `- [ ] T번호 [US번호] 설명·파일 경로`를 사용한다. 공통 작업에는 이야기 라벨을 붙이지 않는다. 아래 `main/`은 `backend/src/main/java/com/limitedbooking/backend/`, `test/`는 `backend/src/test/java/com/limitedbooking/backend/`의 정확한 경로 별칭이다. 리소스·문서·Gradle 경로는 루트 기준으로 적는다. 신규 파일은 예정이며 기존 코드 재사용이 우선이다.
 
-이 목록은 생성 후 `speckit-implement`로 실행 중이다. 최신 오케스트레이터 지시로 US1(T013)의 실제 검증·기록·목적별 커밋 후 멈추고 독립 중간검토를 기다린다. T001~T003과 T007~T013을 완료했다. T004~T006은 US1에 필요한 최소 기반만 갖췄으며 전체 HTTP/인증·TX 관측 인수가 남아 체크하지 않았다. T005의 소유 키 reset/count/PTTL 지원과 기존 유한 경쟁 실행기는 US1에서 사용했다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 US2~US4에서 수행한다.
+이 목록은 생성 후 `speckit-implement`로 실행 중이다. US1(100d392)은 오케스트레이터 독립검토를 통과했다. T001~T020의 구현·지정 인수를 완료했고 US2 커밋 후 오케스트레이터 중간검토를 기다린다. T004~T006의 실제 HTTP 관측은 `RateLimitHttpTestSupport`로 구현해 US3에서 재사용할 기반을 마련했다. `RedisFailureIT` 실제 장애·예외 분류는 T021~T028 후속이며 아직 작성·실행하지 않았다. 기존 HTTP fixture 전환과 종료보호의 전체 연결은 T029~T034 후속이다.
 
 후속 오케스트레이터가 PR/최종 리뷰/merge를 담당한다. 구현 담당은 push·PR·병합을 수행하지 않는다. Qodana T037은 사용자2026-10-22 “나중에 할거야” 지시로 미완료 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 7단계 재구현, 업무 SQL/스키마·잠금 변경, 9단계 전체 계약 검증·속성·변이·부하·배포는 범위 밖이다.
 
@@ -24,9 +24,9 @@
 
 ## Phase 2: Foundational — 격리된 실제 의존성과 관측 기반
 
-- [ ] T004 test/support/ContainerTestSupport.java를 재사용해 신규 제한 IT가 실제 PG/Redis 동적 접속값·랜덤 인증·UTF-8/UTC를 받도록 최소 지원을 구성하고 기동/정리 최소 실행을 기록한다. 기존 postgresOnly 경로와 고정 이미지/digest를 보존하며 개발 DB/Redis에 연결하지 않는다.
-- [ ] T005 test/support/RateLimitTestSupport.java에 ADMIN/A/B 등 시험이 소유한 UUID의 키만 초기화·count/PTTL 관측하는 지원을 작성한다. 기존 test/support/ConcurrencyTestSupport.java·HttpClientTestSupport.java·DatabaseAssertions.java의 유한 실행·종료·단일 SELECT를 재사용하고 초기화는 모든 작업 종료 확인 뒤에만 허용한다. FLUSHALL·공개 제품 장애후크를 만들지 않는다.
-- [ ] T006 test/ratelimit/RateLimitApiIT.java·test/ratelimit/RedisFailureIT.java의 실제 RANDOM_PORT/Basic HTTP 기반에 직접 커밋한 준비 데이터·요청별 ID·실제 limiter/Controller/Service/TX 관측·전체 업무 행 snapshot 지원을 준비한다. DB 풀10/획득3000ms·READ COMMITTED·SET LOCAL 2s/5s 및 Redis 명령/연결200ms 실제값 확인점을 둔다. 신규 기능 assertion은 각 이야기에서 RED 확인한다.
+- [X] T004 test/support/ContainerTestSupport.java를 재사용해 신규 제한 IT가 실제 PG/Redis 동적 접속값·랜덤 인증·UTF-8/UTC를 받도록 최소 지원을 구성하고 기동/정리 최소 실행을 기록한다. 기존 postgresOnly 경로와 고정 이미지/digest를 보존하며 개발 DB/Redis에 연결하지 않는다.
+- [X] T005 test/support/RateLimitTestSupport.java에 ADMIN/A/B 등 시험이 소유한 UUID의 키만 초기화·count/PTTL 관측하는 지원을 작성한다. 기존 test/support/ConcurrencyTestSupport.java·HttpClientTestSupport.java·DatabaseAssertions.java의 유한 실행·종료·단일 SELECT를 재사용하고 초기화는 모든 작업 종료 확인 뒤에만 허용한다. FLUSHALL·공개 제품 장애후크를 만들지 않는다.
+- [X] T006 test/ratelimit/RateLimitApiIT.java·공통 test/ratelimit/RateLimitHttpTestSupport.java의 실제 RANDOM_PORT/Basic HTTP 기반에 직접 커밋한 준비 데이터·요청별 ID·실제 limiter/Controller/Service/TX 관측·전체 업무 행 snapshot 지원을 준비한다. DB 풀10/획득3000ms·READ COMMITTED·SET LOCAL 2s/5s 및 Redis 명령/연결200ms 실제값 확인점을 둔다. 신규 기능 assertion은 각 이야기에서 RED 확인한다. US3 RedisFailureIT는 이 공통 기반을 재사용하며 실제 장애 fixture는 T023 이후 작성한다.
 
 **완료 조건**: 독립 테스트 자원과 관측 기반이 실행 가능함. 신규 기능을 미리 구현하지 않는다. 기존 HTTP fixture 전체 전환은 US4에서 한다.
 
@@ -50,13 +50,13 @@
 **목표**: 인증 UUID의 생성/취소만 검증 전에 정확히 한 번 집계한다.
 **독립 인수**: 직접 준비한 데이터로 혼합21회·인증/크기 경계·잘못된 입력/인코딩·재전송을 실제 HTTP로 검사하고 count·응답·후속 진입·DB 상태를 대조한다.
 
-- [ ] T014 [US2] test/ratelimit/RateLimitApiIT.java에 기본20/60000ms의 생성·취소 혼합21회, 사용자B/ADMIN 격리·X-User-Id 무시, 단일요청 count+1·429 Retry-After/ProblemDetail/무변경을 작성하고 필터 부재에 의한 RED를 확인한다. 준비용 소유예약은 HTTP 쓰기로 카운터를 소비하지 않고 직접 커밋한다.
-- [ ] T015 [US2] test/ratelimit/RateLimitApiIT.java에 인증된 잘못된 JSON/UUID/키·미정의/중복 필드·생성415·취소본문400·타인/없는예약404·품절/충돌409를 각각 count+1로 확인하고 소진 뒤 입력/소유권보다429가 앞서는 RED 사례를 추가한다. 미인증/틀린비번401+WWW-Authenticate·Redis호출0 및 GET/resource POST 미집계를 포함한다.
-- [ ] T016 [US2] test/ratelimit/RateLimitApiIT.java에 일반/길이없음/chunked 8192/8193 실제바이트 경계와 인증유무별413 우선·Redis호출0, 기존 `%63ancel`/`%72eservations` 취소 경로의 빈/비빈본문·잘못된UUID·정확1회 집계 및 ERROR dispatch/이중등록 방지 RED를 추가한다. StrictHttpFirewall 정책은 완화하지 않는다.
-- [ ] T017 [US2] main/ratelimit/RateLimitFilter.java·main/security/SecurityConfig.java에 RequestBodyLimitFilter→Basic→Authorization→RateLimitFilter→취소검증→DispatcherServlet을 명시한다. MVC와 같은 PathPatternRequestMatcher로 UUID검증 전 경로를 선택하고 LocalIdentityResolver의 UUID만 쓴다. 필요시 main/security/CancelRequestValidationFilter.java로 기존 익명 검증을 분리하며 Controller 본문 방어를 유지한다. 필터 자동서블릿등록을 비활성화하거나 체인 소유 인스턴스로 한정해 T014~T016 GREEN을 확인한다.
-- [ ] T018 [US2] test/ratelimit/RateLimitApiIT.java에 성공키 재전송·중복취소·취소후생성재전송을 추가해 매번 집계하되 한도 내201/Location/Replay/최초CONFIRMED·동일시각, GET현재CANCELLED·중복취소 cancelledAt 보존을 확인한다. 소진 뒤 같은 재요청429·Controller/Service/TX0·전체 snapshot 동일을 검증한다.
-- [ ] T019 [US2] test/ratelimit/RateLimitApiIT.java에 기본정책 HTTP 동시40건/수량40/서로다른생성키를 추가해 201정확20·429정확20·count40·TTL존재와 최종 available20/CONFIRMED20을 확인한다. 30초 안 결과/예외를 모으고 서버/클라이언트/executor 종료 확인 뒤 test/support/DatabaseAssertions.java의 단일 SELECT를 사용한다.
-- [ ] T020 [US2] test/ratelimit/RateLimitApiIT.java를 지정 실행해 입력/인증/413/인코딩/재요청/기본동시의 응답·카운터·DB·진입 관측을 docs/test-evidence.md에 기록한다. main/ratelimit/RateLimitFilter.java의429는 ApiExceptionHandler.writeProblem 재사용, 표준6필드·민감정보 비노출·Retry-After 판정PTTL 근거까지 대조한다.
+- [X] T014 [US2] test/ratelimit/RateLimitApiIT.java에 기본20/60000ms의 생성·취소 혼합21회, 사용자B/ADMIN 격리·X-User-Id 무시, 단일요청 count+1·429 Retry-After/ProblemDetail/무변경을 작성하고 필터 부재에 의한 RED를 확인한다. 준비용 소유예약은 HTTP 쓰기로 카운터를 소비하지 않고 직접 커밋한다.
+- [X] T015 [US2] test/ratelimit/RateLimitApiIT.java에 인증된 잘못된 JSON/UUID/키·미정의/중복 필드·생성415·취소본문400·타인/없는예약404·품절/충돌409를 각각 count+1로 확인하고 소진 뒤 입력/소유권보다429가 앞서는 RED 사례를 추가한다. 미인증/틀린비번401+WWW-Authenticate·Redis호출0 및 GET/resource POST 미집계를 포함한다.
+- [X] T016 [US2] test/ratelimit/RateLimitApiIT.java에 일반/길이없음/chunked 8192/8193 실제바이트 경계와 인증유무별413 우선·Redis호출0, 기존 `%63ancel`/`%72eservations` 취소 경로의 빈/비빈본문·잘못된UUID·정확1회 집계 및 ERROR dispatch/이중등록 방지 RED를 추가한다. StrictHttpFirewall 정책은 완화하지 않는다.
+- [X] T017 [US2] main/ratelimit/RateLimitFilter.java·main/security/SecurityConfig.java에 RequestBodyLimitFilter→Basic→Authorization→RateLimitFilter→취소검증→DispatcherServlet을 명시한다. MVC와 같은 PathPatternRequestMatcher로 UUID검증 전 경로를 선택하고 LocalIdentityResolver의 UUID만 쓴다. 필요시 main/security/CancelRequestValidationFilter.java로 기존 익명 검증을 분리하며 Controller 본문 방어를 유지한다. 필터 자동서블릿등록을 비활성화하거나 체인 소유 인스턴스로 한정해 T014~T016 GREEN을 확인한다.
+- [X] T018 [US2] test/ratelimit/RateLimitApiIT.java에 성공키 재전송·중복취소·취소후생성재전송을 추가해 매번 집계하되 한도 내201/Location/Replay/최초CONFIRMED·동일시각, GET현재CANCELLED·중복취소 cancelledAt 보존을 확인한다. 소진 뒤 같은 재요청429·Controller/Service/TX0·전체 snapshot 동일을 검증한다.
+- [X] T019 [US2] test/ratelimit/RateLimitApiIT.java에 기본정책 HTTP 동시40건/수량40/서로다른생성키를 추가해 201정확20·429정확20·count40·TTL존재와 최종 available20/CONFIRMED20을 확인한다. 30초 안 결과/예외를 모으고 서버/클라이언트/executor 종료 확인 뒤 test/support/DatabaseAssertions.java의 단일 SELECT를 사용한다.
+- [X] T020 [US2] test/ratelimit/RateLimitApiIT.java를 지정 실행해 입력/인증/413/인코딩/재요청/기본동시의 응답·카운터·DB·진입 관측을 docs/test-evidence.md에 기록한다. main/ratelimit/RateLimitFilter.java의429는 ApiExceptionHandler.writeProblem 재사용, 표준6필드·민감정보 비노출·Retry-After 판정PTTL 근거까지 대조한다.
 
 **완료 조건**: `./gradlew integrationTest --tests '*RateLimitApiIT'`의 발견>=1·실패/오류/skip0. 정상 응답 보존 및 앞단거부 Redis접근0을 실제 요청으로 입증한다.
 

@@ -108,3 +108,8 @@ LocalUserPrincipal과 필터 doFilterInternal은 상위 Spring JSpecify null 불
 
 
 사용자 제공 Qodana 재검사(revision80e1fa0)에서 LocalIdentityResolver의 userId null 분기가 항상 false로 확인되어 해당 중복 조건만 제거했다. null Authentication·미인증·다른 Principal 거부와 고정 UUID 사용은 유지한다. NullMarked는 정적 계약이며 런타임 null 검사 코드를 자동 생성하는 기능은 아니다. 고정 계정 생성 경로에서 계약을 지키는 것을 전제로 한다.
+
+
+### 2026-10-22 US2 Redis 제한 HTTP 연결
+
+SecurityConfig가 RateLimitFilter·명명된 CancelRequestValidationFilter를 체인에서만 소유하며 인가→제한→취소검증 순서를 명시한다. MVC기본 PathPatternRequestMatcher로 인코딩/잘못된UUID도 집계하고 Controller 본문 방어를 유지한다. 미인증401·실제8KiB초과413은 Redis스크립트0, ERROR dispatch1회에도 집계1회를 실제HTTP로 확인했다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.

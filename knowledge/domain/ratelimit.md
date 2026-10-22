@@ -4,7 +4,7 @@
 
 - 구현 패키지: `com.limitedbooking.backend.ratelimit`. 최초 작성:2026-10-13, US1 구현·검증:2026-10-22.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md).
-- 설계는 기존 확정 규칙이다. US1 판정/설정/RedisRateLimiter·Lua와 순수 Unit13/실제Redis IT5를 구현·검증했다. HTTP 필터·실제 장애·기존 회귀·최종 게이트는 미완료다. US1 독립 중간검토를 위해 멈춘 상태이며 전체 완료가 아니다.
+- 설계는 기존 확정 규칙이다. US1 판정/설정/RedisRateLimiter·Lua와 Unit13/실제Redis IT5를 구현·검증했고 오케스트레이터 독립검토를 통과했다. 이어 US2 필터·실제HTTP37건 인수를 완료했다. 실제 장애·분류·기존 회귀·최종 게이트는 미완료이며 US2 오케스트레이터 중간검토를 기다린다.
 
 ## 2. 목적·책임·경계
 
@@ -60,11 +60,11 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 
 | 규칙 | 사례 | 기대 | 검증 상태 |
 | --- | --- | --- | --- |
-| ratelimit-001 | 20회·21번째·TTL·만료·동시40 | 허용20·이후거부·TTL 비연장·새 창1회 | RedisRateLimitIT5 실제 검증; HTTP429는 후속 |
-| ratelimit-002 | 재요청·입력 오류·사용자 격리 | 포함·사용자별 독립 | 후속 HTTP 미실행 |
+| ratelimit-001 | 20회·21번째·TTL·만료·동시40 | 허용20·이후거부·TTL 비연장·새 창1회 | RedisRateLimitIT5·RateLimitApiIT 실제 검증 |
+| ratelimit-002 | 합산·재요청·입력 오류·인코딩·사용자 격리 | 각1회·사용자별 독립·인증전/413미집계 | RateLimitApiIT37 실제 검증 |
 | ratelimit-003 | Redis 중단·DB 실패 | 쓰기 503/무변경·DB 실패 카운트 유지, 조회/대상 생성은 정상 DB에서 성공 | 후속 장애 IT 미실행 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. US1 외 후속 HTTP/장애 테스트는 아직 존재하거나 실행된 것으로 간주하지 않는다. [009 작업 상태](../../specs/009-redis-rate-limit/tasks.md)를 따른다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. US1·US2 외 후속 장애 테스트는 아직 존재하거나 실행된 것으로 간주하지 않는다. [009 작업 상태](../../specs/009-redis-rate-limit/tasks.md)를 따른다.
 
 ## 8. 구현 연결과 변경 영향
 
@@ -74,7 +74,8 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 | 순수 판정·설정 | [RateLimitDecision](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RateLimitDecision.java)·[RateLimitProperties](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RateLimitProperties.java) | Unit13·시작 설정 검증 완료 |
 | 원자 집계 | [RedisRateLimiter](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RedisRateLimiter.java)·[Lua](../../backend/src/main/resources/redis/rate-limit.lua) | 실제 Redis IT5 검증 완료 |
 | 실제 인수·키 지원 | [RedisRateLimitIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisRateLimitIT.java)·[RateLimitTestSupport](../../backend/src/test/java/com/limitedbooking/backend/support/RateLimitTestSupport.java) | 소유 키만 reset/count/PTTL, 기존 ConcurrencyTestSupport 재사용 |
-| 필터·HTTP·장애 | 승인된009 후속 파일 예정 | 미구현 |
+| 필터·HTTP | [RateLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RateLimitFilter.java)·[CancelRequestValidationFilter](../../backend/src/main/java/com/limitedbooking/backend/security/CancelRequestValidationFilter.java)·[RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)·[관측 기반](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java) | 실제HTTP37건 인수 |
+| 장애·503 분류 | 승인된009 US3 후속 | 미구현 |
 | SQL·마이그레이션 | 추가하지 않음 | Redis에 업무 상태를 두지 않으므로 불필요; HTTP/DB 보호 검증은 후속 |
 | 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
 
@@ -84,7 +85,7 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
-| HTTP 필터·장애 미구현 | 아직 API에 제한이 적용되지 않음 | US1 중간검토 후 US2 실제 HTTP RED |
+| 실제 Redis 장애·503 분류 미구현 | 의존성 오류는 아직 US3 계약으로 분류하지 않음 | US2 오케스트레이터 중간검토 후 US3 RED |
 | 기존 HTTP/110회·최종 기능/빌드/의존성 게이트 미완료 | 전체 완료 선언 불가 | 후속 지시 후 지정 인수 |
 | Qodana T037 미실행 | 사용자2026-10-22 지시로 이번 완료·PR·병합 게이트 제외 | 미완료 후속으로 유지; 통과로 기록하지 않음 |
 

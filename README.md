@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반을 구현·검증했고 중간검토 대기 중이다. HTTP 제한 필터는 아직 연결하지 않았다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 US1 Redis limiter/Lua 기반과 US2 실제 HTTP 제한 필터·37건 인수를 완료했다. US3 장애·분류와 US4 기존 회귀·최종 게이트는 후속이다.
 
 ## 로컬 환경
 
@@ -193,9 +193,18 @@ PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 S
 
 사용자별 고정 창 limiter/Lua·판정/설정 검증을 구현했다. 기본20/60000ms·연결/명령200ms이며 실제Redis에서 동시40건의 허용20/거부20, TTL비연장·격리·별도3/1000ms 만료를 확인했다. `backend/`에서 `./gradlew test integrationTest --tests '*RedisRateLimitIT'`를 실행해 일반Unit169/지정RedisIT5, 실패·오류·skip0이었다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)를 따른다.
 
-이 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니다. RateLimitFilter·실제장애·기존HTTP/110회 회귀·최종 build/verify/의존성·Qodana는 미완료다. 최신 지시에 따라 US1 중간검토 후 다음 지시를 기다린다.
+당시 US1 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니었다. US1 오케스트레이터 독립 중간검토를 통과했고 아래 US2 인수로 이어졌다.
 
 
 ### 2026-10-22 사용자 지정 Qodana 후속 이관
 
 사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
+
+
+## 8단계 US2 실제 HTTP 인수 (2026-10-22)
+
+Security 체인에 인가→RateLimitFilter→취소 검증 순서를 연결했다. 생성·취소는 기본20회/60초를 합산하고 정상·인코딩 경로·잘못된 입력·재전송을 각1회 집계한다. 실제429의 Retry-After는 같은 Lua 반환PTTL로 계산한다. 미인증·본문초과·독립API는 제한 스크립트를 호출하지 않는다.
+
+`backend/`에서 `./gradlew integrationTest --tests '*RateLimitApiIT'` 종료0·37건·실패/오류/skip0. 기본동시40건은201 20건·429 20건/count40, 모든종료 뒤 DB available20/CONFIRMED20이었다. [실행 증거](docs/test-evidence.md)·[작업 상태](specs/009-redis-rate-limit/tasks.md)를 따른다.
+
+US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분류/실제장애·기존postgresOnly 시험전환/110회·최종build/verify/의존성은 아직 미완료다. Qodana는 사용자지정 미완료 후속이다.

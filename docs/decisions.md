@@ -160,3 +160,8 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 ### 2026-10-22 사용자 지정 Qodana 후속 이관
 
 사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
+
+
+### 2026-10-22 US2 인증 뒤 입력 검증 전 제한
+
+RateLimitFilter와 명명된 CancelRequestValidationFilter는 SecurityConfig가 체인에서만 소유한다. 인가→제한→취소검증을 명시하고 PathPatternRequestMatcher로 MVC와 같은 디코딩 경로를 매칭해 잘못된UUID·인코딩 경로도 집계한다. Controller의 본문 방어는 유지한다. Redis 예외 분류는 US3 후속이므로 이번 필터는 광범위catch로 내부결함/후속체인을503으로 바꾸지 않는다. 실제HTTP37건 인수·요청별스크립트/PTTL/Controller/Service/TX/종료 관측·전체행snapshot을 [증거](test-evidence.md)에 기록했다. 기존 postgresOnly 전환은 US4 후속이다.
