@@ -68,7 +68,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return root instanceof io.lettuce.core.RedisCommandTimeoutException
                 || root instanceof java.util.concurrent.TimeoutException
                 || root instanceof io.lettuce.core.RedisConnectionException
-                || root instanceof java.net.ConnectException
                 || root instanceof java.net.SocketException
                 || root instanceof java.net.SocketTimeoutException
                 || root instanceof java.net.UnknownHostException

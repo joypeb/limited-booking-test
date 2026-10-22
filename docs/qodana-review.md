@@ -73,3 +73,16 @@ API·수량·SQL·인증 계약 변경이 없으므로 계획서·OpenAPI 기대
 ### 2026-10-22 사용자 지정 Qodana 후속 이관
 
 사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
+
+
+## 사용자 제공 재검사 결과: revision 782dd03 (2026-10-22)
+
+사용자가 제공한 revision `782dd03c2650d10a4c7feece1bf95d6c209db3e0` (PR #10 머지 직후 develop HEAD) 분석 결과 4건(2종)을 확인하고 조치했다.
+
+| 파일 | 검사 ID / 분류 | 내용 | 조치 |
+|---|---|---|---|
+| `RateLimitFilter.java:70` | `ConditionCoveredByFurtherCondition` | `root instanceof java.net.ConnectException`이 후속 `root instanceof java.net.SocketException`에 의해 커버됨 | `ConnectException`은 `SocketException`의 하위 클래스이므로 중복 조건인 `ConnectException` 분기 제거. `SocketException` 하나로 상위/하위 예외 모두 정상 포섭 |
+| `RedisRateLimiter.java:14,15,16` | `RawUseOfParameterizedType` (3건) | 매개변수화된 클래스 `List`의 원시 사용 | `SCRIPT`와 `script()`의 반환 타입을 `DefaultRedisScript<List<?>>`로 명시하고, 내부 `setResultType`에 `(Class<List<?>>) (Class<?>) List.class` 및 `@SuppressWarnings("unchecked")`를 적용 |
+
+- 업무 API 계약, Redis 고정 창 제한 정책, 503 의존성 오류 분류, Lua 원자성 및 예외 처리 로직은 완전히 보존했다.
+- 검증: `cd backend && ./gradlew test` 종료 0 (Unit 193건, 실패/오류/skip 0), `./gradlew verify verifyContractDependencies` 종료 0 (Unit 193건, IT 312건, 실패/오류/skip 0).
