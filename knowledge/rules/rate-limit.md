@@ -11,7 +11,7 @@
 
 ## 원자적 처리와 응답
 
-- 키는 `reservation:write-limit:{userId}`다.
+- 키는 `reservation:write-limit:{userId}`다. `{userId}`는 UUID 치환 자리이며 실제 키에 중괄호를 넣지 않는다.
 - Lua로 INCR·최초 PEXPIRE·PTTL 조회를 한 번에 원자적으로 처리한다. 요청마다 TTL을 연장하지 않는다.
 - 창의 경계는 Redis TTL로 판단한다. 애플리케이션 시계로 새 창을 계산하지 않는다.
 - 제한 초과는 429 `RATE_LIMITED`, `Retry-After = max(1, ceil(PTTL / 1000))`이다.
@@ -25,3 +25,12 @@
 - 경쟁 테스트는 10,000건/60초, 예약 부하는 100,000건/60초로 설정하고 각 사례·시나리오 전에 테스트 전용 제한 키를 초기화한다. 제한 시험은 원래 20건/60초로 실행한다.
 - 내부 서비스 시험과 실제 HTTP 필터 경로 시험을 구분한다. Redis 장애 시 쓰기는 503·DB 무변경, DB가 정상인 조회·대상 생성은 성공하는지 확인한다.
 - 재요청도 429·503이 될 수 있음을 검증한다. 테스트 편의를 위해 장애를 허용 처리하거나 제한을 영구 비활성화하지 않는다.
+
+### 현재 연결과 검증 범위 (2026-10-22)
+
+US1 limiter/Lua와 US2 실제HTTP필터를 구현·인수했다. 필터는 SecurityConfig 체인만 소유하며 인가 뒤·명명된 취소검증 앞에 둔다. MVC와 같은 parsed path 매칭으로 인코딩 경로도 집계한다. US3에서확인된Redis의존성503분류·실제장애12건·DB롤백/TTL독립·종료보호를인수했다. 분류범위는limiter.check뿐이며직렬화/스크립트/미분류내부결함과후속chain오류를503으로감추지않는다. 인터럽트를복원·전파한다. 상세 상태와 근거는 [009작업](../../specs/009-redis-rate-limit/tasks.md)·[실행증거](../../docs/test-evidence.md)를 따른다.
+
+
+### 2026-10-22 최종 적용 확인
+
+기본20/60000ms·만료전용3/1000ms·경쟁전용10000/60000ms·연결/명령200ms를 유지한다. 기존HTTP 회귀·경쟁110회·종료 후 다음Redis/DB reset0을 인수했다. `build verify verifyContractDependencies`의 실제 수·결과는 [실행 근거](../../docs/test-evidence.md)를 따른다. Qodana T037은 사용자지정 미실행 후속이다. 오케스트레이터 최종검토는 별도다.

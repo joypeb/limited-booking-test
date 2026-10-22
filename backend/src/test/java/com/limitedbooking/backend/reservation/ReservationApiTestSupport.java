@@ -18,14 +18,25 @@ abstract class ReservationApiTestSupport {
     static final JsonMapper JSON = JsonMapper.builder().build();
     @LocalServerPort int port;
     @Autowired DataSource dataSource;
+    @Autowired org.springframework.data.redis.core.StringRedisTemplate redis;
+    @Autowired com.limitedbooking.backend.ratelimit.RateLimitProperties rateLimitPolicy;
+    @Autowired org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory redisFactory;
     JdbcTemplate jdbc;
     TestData data;
     HttpClient client;
+    int redisResets;
 
     protected void beforeDatabaseReset() { }
+    protected int expectedRateLimit() { return 20; }
 
     @BeforeEach void setup() {
         beforeDatabaseReset();
+        var keys = new RateLimitTestSupport(redis);
+        keys.reset();
+        redisResets++;
+        for (var user : List.of(TestData.ADMIN_ID, TestData.USER_A_ID, TestData.USER_B_ID))
+            assertThat(keys.count(user)).isZero();
+        RateLimitTestSupport.assertSettings(rateLimitPolicy, redisFactory, expectedRateLimit());
         data = new TestData(dataSource);
         data.reset();
         jdbc = new JdbcTemplate(dataSource);

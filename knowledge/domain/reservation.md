@@ -2,9 +2,12 @@
 
 ## 1. 기준과 현재 상태
 
-- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-20.
+- 패키지: `com.limitedbooking.backend.reservation`. 작성: 2026-10-13, 재확인: 2026-10-22.
 - 근거: [계획서](<../../한정 수량 예약 백엔드 로컬 개발 계획.md>) 2~5절, [API 규칙](../rules/api-and-security.md), [트랜잭션 규칙](../rules/domain-and-transactions.md), [요청 제한 규칙](../rules/rate-limit.md).
-- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소를 6단계에서 구현하고 HTTP·실제 DB 취소/롤백을 검증했다. 실제 경쟁 반복·Redis 제한은 후속이다.
+- 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소를 6단계에서 구현하고 HTTP·실제 DB 취소/롤백을 검증했다. 실제 경쟁 반복·Redis 제한도7~8단계에서 구현·검증했다.
+
+
+**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -68,7 +71,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | reservation-003 | 중복 취소·생성/취소 경쟁 | 동일 취소 시각·수량식 유지 | ReservationConcurrencyIT C02~C10 실제 HTTP/DB 반복 검증 |
 | 롤백 | UPDATE 뒤 INSERT 실패 | 행·수량 부분 반영 없음, 같은 키 재시도 | ReservationRollbackIT 실제 HTTP/DB 검증 |
 
-실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 5단계, 소유권·취소·롤백은 6단계에서 실행했다. 실제 경쟁 반복은 후속이다.
+실제 검토·실행 기록은 [증거 문서](../../docs/test-evidence.md)에서 구분한다. 생성·재현·롤백은 5단계, 소유권·취소·롤백은 6단계에서 실행했다. 실제 경쟁 반복과 Redis 연결 회귀까지 검증했다.
 
 ## 8. 구현 연결과 변경 영향
 
@@ -77,10 +80,10 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | 앱 골격 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java) | 생성 기능 포함 |
 | 읽기 DTO·Repository | [ReservationRepository](../../backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)·StoredReservation·ReservationStatus | 구현·실행 검증됨 |
 | 순수 키·취소 판단 | IdempotencyKey·CancellationDecision 및 대응 Unit | 구현·Unit 검증됨 |
-| 생성 Controller·Service·Writer | reservation 패키지, 아래5단계 구현 링크 | 구현·HTTP/DB 검증됨; Redis 필터 후속 |
+| 생성 Controller·Service·Writer | reservation 패키지, 아래5단계 구현 링크 | 구현·실제Redis/HTTP/DB 검증됨 |
 | 업무 V1·저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ReservationRepositoryIT | 구현·실행 검증됨 |
-| 생성 쓰기 SQL·HTTP | ResourceRepository/ReservationRepository, 생성3IT | 구현·실행 검증됨; 실제 경쟁 후속 |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 작성·문서 인수됨, 이름 strip 정책 확정·T025 사용자 확인 완료; 독립 재설명/기능 실행 미검증 |
+| 생성 쓰기 SQL·HTTP | ResourceRepository/ReservationRepository, 생성3IT | 구현·실제경쟁110회·Redis연결 회귀 검증됨 |
+| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 고정 계약 대조·실제 HTTP 인수 완료; 업무전체 자동 OpenAPI 대조는9단계 후속 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -89,7 +92,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
 | 예약 GET/취소 구현 | 소유권·수량 복구·롤백 IT 검증 | 6단계 최종 인수는 실행 증거 참조 |
-| 실제 경쟁/Redis/심화 미검증 | 순차·장애 검증으로 경쟁 전체를 입증하지 않음 | 7단계 이후 개발/검증 |
+| 실제 경쟁/Redis | 지정110회·장애·최종인수 완료, 모든순서의 증명은 아님 | 오케스트레이터 최종검토; 자동계약/심화는 후속 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.
 
@@ -171,3 +174,18 @@ C09/C10은 연결·잠금 보유 전 대기와 선행HTTP/별도DB확인으로 �
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+
+### 2026-10-22 US2 Redis 제한 HTTP 연결
+
+생성·취소 합산20/60초가 실제HTTP에 연결됐다. 성공키 재전송·중복취소·취소후 최초CONFIRMED 재현도 각1회 집계하며 초과429에서는 Controller/Service/TX0·모든행/시각/키/수량snapshot동일을 검증했다. 기존Writer/SQL·스키마·성공/소유권 계약은 유지한다. [RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)37건·[공통 관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행 증거](../../docs/test-evidence.md)를 따른다. 실제Redis 장애·503 분류와 기존HTTP/110회 회귀·최종전체게이트는 후속이며 US2 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US3 실제 장애·복구 인수
+
+Redis거부의생성/취소/성공키재전송은503·전체행snapshot동일이다. 제한통과뒤실제수량차감후pg_sleep6→기본statement timeout5초로DB503/전체롤백/count1을확인했고같은키복구201/count2였다. 기본Redis창이실제만료돼도성공예약키/최초생성응답은보존된다. [RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[공통관측](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java)·[실행증거](../../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종전체게이트는후속이며 US3 오케스트레이터 중간검토 대기다.
+
+
+### 2026-10-22 US4 회귀·최종 인수
+
+기존 HTTP는 기본20/60초·실제 Redis를 사용하고 사례별 ADMIN/A/B 소유키만 초기화한다. 경쟁은 별도10000/60초로110회 모두 실제 HTTP·Redis·DB를 통과하며 최종 단일SQL 수량 snapshot과 종료를 확인했다. 부모 setup 첫 보호검사 전에는 Redis/DB를 접근하지 않으며 종료/전송불확실 fixture에서 reset0을 검증했다. 취소 입력 검증은 SecurityIT, 순수 대상 API는 postgresOnly ResourceApiIT에 둔다. 업무 SQL/스키마·성공/소유권/취소·OpenAPI 계약은 유지한다. [증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다.

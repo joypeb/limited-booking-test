@@ -2,10 +2,8 @@ package com.limitedbooking.backend.security;
 
 import com.limitedbooking.backend.common.ApiExceptionHandler;
 import com.limitedbooking.backend.common.RequestBodyLimitFilter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.limitedbooking.backend.ratelimit.RateLimitFilter;
+import com.limitedbooking.backend.ratelimit.RedisRateLimiter;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +26,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +38,6 @@ public class SecurityConfig {
     public static final UUID USER_A_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
     public static final UUID USER_B_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
     public static final String BASIC_REALM = "Basic realm=\"reservation-local\"";
-    private static final String CANCEL_PREFIX = "/api/reservations/";
-    private static final String CANCEL_SUFFIX = "/cancel";
 
     @NullMarked
     public record LocalUserPrincipal(
@@ -121,7 +115,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            RequestBodyLimitFilter requestBodyLimitFilter
+            RequestBodyLimitFilter requestBodyLimitFilter,
+            RedisRateLimiter limiter,
+            LocalIdentityResolver identity
     ) throws Exception {
         AuthenticationEntryPoint authenticationEntryPoint = (request, response, authException) -> {
             response.setHeader(HttpHeaders.WWW_AUTHENTICATE, BASIC_REALM);
@@ -145,52 +141,9 @@ public class SecurityConfig {
                         "FORBIDDEN"
                 );
 
-        OncePerRequestFilter cancelRequestValidationFilter = new OncePerRequestFilter() {
-            @Override
-            @NullMarked
-            protected void doFilterInternal(
-                    HttpServletRequest request,
-                    HttpServletResponse response,
-                    FilterChain filterChain
-            ) throws ServletException, IOException {
-                if (HttpMethod.POST.matches(request.getMethod())) {
-                    String uri = request.getRequestURI();
-                    if (uri != null && uri.startsWith(CANCEL_PREFIX) && uri.endsWith(CANCEL_SUFFIX)) {
-                        String idSegment = uri.substring(
-                                CANCEL_PREFIX.length(),
-                                uri.length() - CANCEL_SUFFIX.length()
-                        );
-                        if (!idSegment.isEmpty() && !idSegment.contains("/")) {
-                            if (RequestBodyLimitFilter.getCachedBody(request).length > 0) {
-                                ApiExceptionHandler.writeProblem(
-                                        request,
-                                        response,
-                                        HttpStatus.BAD_REQUEST,
-                                        "잘못된 요청입니다",
-                                        "예약 취소 요청 본문은 비어 있어야 합니다.",
-                                        "INVALID_REQUEST"
-                                );
-                                return;
-                            }
-                            try {
-                                UUID.fromString(idSegment);
-                            } catch (IllegalArgumentException invalidUuid) {
-                                ApiExceptionHandler.writeProblem(
-                                        request,
-                                        response,
-                                        HttpStatus.BAD_REQUEST,
-                                        "잘못된 요청입니다",
-                                        "예약 식별자 형식이 올바르지 않습니다.",
-                                        "INVALID_REQUEST"
-                                );
-                                return;
-                            }
-                        }
-                    }
-                }
-                filterChain.doFilter(request, response);
-            }
-        };
+        // 서블릿 Filter Bean으로 등록하지 않고 Security 체인에서만 소유해 중복 집계를 막는다.
+        var rateLimitFilter = new RateLimitFilter(limiter, identity);
+        var cancelRequestValidationFilter = new CancelRequestValidationFilter();
 
         // 본 서비스는 localhost(127.0.0.1) 전용 비브라우저 HTTP API를 전제로 서버 세션을 생성하지 않는
         // 무상태(Stateless) Basic 인증을 사용한다. 쿠키·세션 기반 인증을 사용하지 않으므로 CSRF 보호를
@@ -199,7 +152,8 @@ public class SecurityConfig {
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(requestBodyLimitFilter, BasicAuthenticationFilter.class)
-                .addFilterAfter(cancelRequestValidationFilter, AuthorizationFilter.class)
+                .addFilterAfter(rateLimitFilter, AuthorizationFilter.class)
+                .addFilterAfter(cancelRequestValidationFilter, RateLimitFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/resources").hasRole("ADMIN")

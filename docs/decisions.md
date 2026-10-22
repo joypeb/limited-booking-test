@@ -151,3 +151,33 @@ Jackson 기본 UUIDDeserializer의 Base6422/24자와 공백trim 허용이 고정
 - 이는 최초08P01의 비정상 응답 발생원을 규명한 수정이 아니라 해당 테스트에서 불필요한 SSL 협상 경로를 제거하는 제한된 대응이다. 수정 전 관측 전체 검증과 새 컨테이너5개/SSLRequest250건도 정상이라 최초 실패를 재현했다고 주장하지 않는다. 정상 재실행을 근본 원인 해결의 증거로 삼지 않는다.
 - 대안인 timeout 증가·무조건 재시도·SQLSTATE08P01 무시·버전 변경은 근거가 없어 적용하지 않았다. TLS 연결 자체는 이번 fixture의 검증 범위가 아니며 향후 TLS를 시험하려면 서버 인증서와 클라이언트 검증을 별도 설계한다.
 - Ruling: 최초 실패 원인은 미확정 상태로 보존하고 fixture의 비TLS 계약만 명시한다. 이 판단이 틀리면 협상 이후의 다른 연결 오류는 여전히 발생할 수 있으며, 그런 실패는 기존 검증 게이트에서 그대로 실패한다.
+
+
+## 2026-10-22 US1 Redis 제한 기반
+승인된009 설계대로 StringRedisTemplate/재사용 DefaultRedisScript<List>·단일Lua의 INCR/최초PEXPIRE/PTTL을 사용한다. Java는 두 Long·count>=1/PTTL>=0을 확인하고 나눗셈·나머지로 올림하여 overflow를 피한다. 양수 정수 밀리초 설정을 record 생성 시 검증하며 모든 프로필 기본20/60000ms·명령/연결200ms다. 만료 인수만 독립3/1000ms 컨텍스트다. 기존 경쟁지원의 전체 결과/종료/StopState를 재사용했다. HTTP 필터·장애 분류는 아직 연결하지 않았고 SQL/스키마/OpenAPI는 유지한다. 최신 지시의 US1 중간검토 게이트에서 멈춘다. [실행 근거](test-evidence.md)·[009작업](../specs/009-redis-rate-limit/tasks.md) 참조.
+
+
+### 2026-10-22 사용자 지정 Qodana 후속 이관
+
+사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
+
+
+### 2026-10-22 US2 인증 뒤 입력 검증 전 제한
+
+RateLimitFilter와 명명된 CancelRequestValidationFilter는 SecurityConfig가 체인에서만 소유한다. 인가→제한→취소검증을 명시하고 PathPatternRequestMatcher로 MVC와 같은 디코딩 경로를 매칭해 잘못된UUID·인코딩 경로도 집계한다. Controller의 본문 방어는 유지한다. Redis 예외 분류는 US3 후속이므로 이번 필터는 광범위catch로 내부결함/후속체인을503으로 바꾸지 않는다. 실제HTTP37건 인수·요청별스크립트/PTTL/Controller/Service/TX/종료 관측·전체행snapshot을 [증거](test-evidence.md)에 기록했다. 기존 postgresOnly 전환은 US4 후속이다.
+
+
+### 2026-10-22 US3 좁은 Redis 분류와 실제 장애 수단
+
+Spring래퍼전체를503으로분류하지않고limiter.check 안의확인된원인을검사한다. 전송·명령timeout·실제WRONGTYPE·정형OOM는의존성실패이며직렬화(전송원인포함)·미확인명령/스크립트·미분류내부결함은전파한다. 인터럽트는복원하고후속chain은catch밖이다. 기본200ms·20/60000ms는유지했다. 실제CLIENT PAUSE는인증완료후테스트spy의limiter진입에서관리연결OK를확인해각요청의timeout을입증한다. 앱과독립인관리연결3초/복구PING5초/종료future각10초를사용한다. 실제timeout후count0/1모두가능하므로보상하지않는다. 중단시험은기존연결/첫접속전중단을각소유컨테이너/컨텍스트로분리해동적포트재사용을피했다. 기본60초실제만료로성공키독립을확인했다. [실행근거](test-evidence.md)와[009작업](../specs/009-redis-rate-limit/tasks.md)을따른다.
+
+
+US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 GREEN으로보완했다. Redis8.10.2 noeviction/maxmemory거부의정형메시지와RedisCommandExecutionException타입을확인했고해당형태만추가했다. 공식근거와실제SDK형태는[009조사](../specs/009-redis-rate-limit/research.md),기능실행/설정원복/회귀37·장애12·Unit37 근거는[실행증거](test-evidence.md)를따른다.
+
+
+## 8단계 기존 HTTP와 종료보호를 유지하는 최종 인수 (2026-10-22)
+
+- 선택: 예약/보안 HTTP는 실제 Redis와 소유키 초기화를 쓰고 경쟁만10000/60초로 분리한다. 부모setup 첫 StopState검사 전 Redis/DB를 접근하지 않는다. 순수DB/ResourceAPI는 Redis를 강제하지 않는다.
+- 이유: 기존 성공·실패·수량·멱등성 기대값을 유지하며 제한 연결의 회귀와 종료 불확실 후 데이터 초기화0을 증명한다. 혼재한 취소 입력 사례만 ResourceApiIT에서 SecurityIT로 옮겼다.
+- 대안: 429/503로 업무기대값 대체·제한mock·FLUSHALL·내부서비스대체·순서검사 전에 reset을 수행하는 방식은 제외했다.
+- 결과·한계: 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했고 과거 superpowers 기준/실행증거는 보존한다. 운영성능/모든 경쟁순서의 증명이 아니며 업무전체 자동계약/Property/PIT·부하·외부CI는 후속이다.

@@ -1,6 +1,6 @@
 # 0단계 계약·사례 문서 검토 기록
 
-**현재 상태:** 0단계 문서·학습 인수 완료, 작업27/27 완료. T025는 질의·보완 설명 뒤 사용자의 명시적 확인/완료 지시로 처리했다. 최초 답변의 오류와 확인 방식의 한계는 맨 아래 T025 기록에 남겼다. 이전 대기/부분 완료 상태는 당시 이력이다. 실제 기능 실행 검증은 여전히 미실행이다.
+**0단계 당시 상태:** 0단계 문서·학습 인수 완료, 작업27/27 완료. T025는 질의·보완 설명 뒤 사용자의 명시적 확인/완료 지시로 처리했다. 최초 답변의 오류와 확인 방식의 한계는 맨 아래 T025 기록에 남겼다. 이전 대기/부분 완료 상태는 당시 이력이다. 실제 기능 실행 검증은 여전히 미실행이다.
 
 ## 범위와 실행 환경
 
@@ -1347,3 +1347,142 @@ curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
 - 최종 정상 경로: `cd backend && ./gradlew verifyContract build`(실제 실행은 동등한 루트의 `./backend/gradlew -p backend verifyContract build`), 종료0,1분45초. Unit156·일반IT257·Contract6 전부 실패/오류/skip0, listener/XML 수 일치, verifyContractDependencies와build 통과. BackendApplicationIT XML에 관측 SocketFactory 출력이 없어 외부 도구 없이 실행한 결과임을 대조했다. 경쟁115건을 포함하며 Property/PIT/k6/외부CI는 이번에 실행하지 않았다. 소유 컨테이너 종료 후 원래 개발 Compose2개만 남았다.
 - 결론: 테스트 환경의 SSL 협상 경로 제거와 현재 전체 검증은 확인했다. 최초 비정상 응답의 발생원은 미확정으로 보존하며 근본 원인 해결·운영 TLS 검증으로 주장하지 않는다. PR9에 대응·검증·한계를 반영하고 draft는 유지한다.
 - 최종 독립 리뷰: 읽기 전용 리뷰어가 a50ffc6 대비 최종 diff·고정 Testcontainers/pgJDBC 소스·저장된 N→R 관측·현재 XML을 대조했고 수정이 필요한 결함을 발견하지 못했다. 리뷰어는 파일 수정·Gradle 실행을 하지 않았다. 적용 판단은 테스트 소유 비TLS fixture의 연결 설정 명시뿐이며, 최초 비정상 응답 발생원이 다른 경로에도 영향을 주면 향후 연결 실패가 계속 발생할 수 있다. 미룬 경미한 지적은 없다. git diff --check 통과.
+
+
+## 2026-10-22 8단계 구현 시작 — T001~T003
+
+- 공식 speckit-implement 사전조건 FEATURE_DIR=specs/009-redis-rate-limit; requirements16/16 PASS, 확장 hooks 파일 없음.
+- root=/Users/joypeb/.paseo/worktrees/3968wubl/lucky-meerkat, branch=feature/redis-rate-limit, 시작HEAD=3ca6f82, 기존 변경 없음.
+- AGENTS·knowledge README/rules전체·관련4도메인·계획2~5/8단계·헌법·009설계와 실제 SecurityConfig/ContainerTestSupport/예약fixture/Gradle 대조. 기존 업무SQL/Writer·본문필터·공통오류·경쟁실행기 재사용.
+- java -version: Corretto25.0.4+7-LTS, ./gradlew --version:9.7.1, docker version:29.8.2(권한상승 실행), 종료0. Boot4.1.1·고정PG18.6/Redis8.10.2 digest·BOM Testcontainers2.0.5 유지, 실제 기능실행은 후속.
+- qodana.yaml JVM2026.2/Java25/recommended/any0/라이선스 기준 유지. CLI·이미지·QODANA_TOKEN 미확보(인계 정보 및 CLI 미발견), 실제 정적검사 미실행. T037 필수 미완료, 오케스트레이터 확인 대기. 토큰값 출력 안 함.
+- .gitignore/.dockerignore 기존 Java/build/cache/비밀정보 제외 확인; 신규 의존성·기술별 ignore 불필요.
+
+### US1 중간 인수 — T007~T013 (2026-10-22)
+
+최신 오케스트레이터 지시: US1까지 검증·커밋 후 중간검토 대기. T004~T006은 필요한 최소 환경만 준비했다. ContainerTestSupport 고정 PG/Redis의 동적 포트·소유 컨테이너를 재사용했고 RateLimitTestSupport는 ADMIN/A/B 키만 DEL/count/PTTL한다. FLUSHALL 없음. RedisRateLimitIT는 앱 YAML을 읽는 최소 실제 Boot Redis 컨텍스트이며 PG 업무/Basic HTTP 검증이 아니다. HTTP·Controller/Service/TX 관측은 T006 후속으로 남긴다.
+
+| 순서 | backend/ 실제 명령 | 종료 | XML/listener 결과·의도 |
+| --- | --- | --- | --- |
+| 판정 RED | `./gradlew test --tests '*RateLimitDecisionTest'` | 1 | 9건/실패8/오류0/skip0. 상수 허용 골격이 TTL 올림7경계와 깨진응답 거부 assertion 실패 |
+| 판정 GREEN | 같은 명령 | 0 | 9건/실패·오류·skip0 |
+| 설정 RED | `./gradlew test --tests '*RateLimitPropertiesTest'` | 1 | 3건/실패1/오류0/skip0. 검증 없는 record가 비양수·불가능한 창을 거부하지 않음 |
+| 설정 GREEN | `./gradlew test --tests '*RateLimit*Test'` | 0 | 12건/실패·오류·skip0 |
+| 실제 Redis RED | `./gradlew integrationTest --tests '*RedisRateLimitIT'` | 1 | 3건/실패3/오류0/skip0. 상수 허용 limiter로 정확20 대신40허용, PTTL -2, 격리카운트0 확인 |
+| Lua GREEN+만료 확장 | 같은 Redis 지정명령 | 0 | 4건/실패·오류·skip0 |
+| 컨텍스트/기존 경쟁지원 정리 | `./gradlew test integrationTest --tests '*RedisRateLimitIT'` | 0 | 전체 일반 Unit168 + 지정 RedisIT4, 실패·오류·skip0 |
+| 최종 US1 인수 | `./gradlew test integrationTest --tests '*RedisRateLimitIT'` | 0 | 전체 일반 Unit169 + 지정 RedisIT5, 실패·오류·skip0. 신규 판정10·설정3/기존Unit156. RedisIT에 시작시 잘못된 설정 거부 추가 |
+
+- 최종 XML: `backend/build/test-results/test/TEST-*.xml` 합계169/0/0/0, `integrationTest/TEST-com.limitedbooking.backend.ratelimit.RedisRateLimitIT.xml` 5/0/0/0. listener와 일치. 이전 기록 Unit150/IT257을 복사하지 않았다.
+- 기본20/60000ms 실제 count22(21·22거부), 최초PTTL59999→59925ms(40ms 간격 후 후속20/21/22호출), 판정 Retry-After60초. 실제 후속 TTL이 짧아졌으며 요청마다 연장하지 않는다.
+- 기존 ConcurrencyTestSupport 사용: 40요청·작업자10·전체30초·종료10초, 허용20/거부20/count40/PTTL59985ms, 결과40·예외0·terminated=true. StopState 첫 검사 후에만 다음 소유키 reset 가능. HTTP 경쟁40/기존110회는 이번에 실행하지 않았다.
+- 만료 전용 독립 ApplicationContext:3/1000ms, 최초PTTL1000ms,60ms 간격 뒤 허용/거부 모두 최초TTL보다30ms 이상 감소 assertion 통과;20ms polling/최대5초로 만료 확인 뒤 count1·PTTL993ms. 기본 컨텍스트20/60000ms는 별도로 유지했다. 판정PTTL과 후속측정의 경과를 구분하며 정밀한 벽시계 만료 시각을 보장한다고 해석하지 않는다.
+- 실제 YAML 기본값 바인딩20/60000ms·Lettuce factory 명령/SocketOptions 연결 timeout 각각200ms 확인. 설정0한도/0ms/1ns는 컨텍스트 refresh에서 거부된다. 단위 경계는 Long.MAX_VALUE·음수·null·밀리초 소수/overflow를 포함한다.
+- Lua 연결 과정의 DefaultRedisScript 생성자 시도2회는 컴파일 실패였다. 설치 API의 setLocation/setResultType로 수정했으며 컴파일 실패를 기능 RED로 세지 않았다. 기능 RED는 그 전에 실제 Redis assertion3건으로 확인했다.
+- 최종 RedisIT 실행 시간3.834초, Gradle7초. Spring Data Redis4.1.1·Lettuce7.5.2.RELEASE/5728917·실제 Redis서버8.10.2 출력 확인. `./gradlew dependencies --configuration runtimeClasspath` 종료0으로 Framework7.0.9/Security7.1.1/SDR4.1.1/Lettuce7.5.2.RELEASE 해석 확인.
+- afterAll은 컨텍스트 close와 컨테이너 close를 모두 시도하고 정리오류를 보존한다. 이 실행 정리오류0.
+- 업무 SQL/스키마·SecurityConfig·고정 OpenAPI429/503/Retry-After는 변경하지 않았다. 필터 미연결이라 실제 예약 HTTP에는 아직 제한이 적용되지 않는다.
+- 미완료: T004~T006 전체기반 인수, T014~T038. Qodana T037 인증/정식 실행환경 미확보. build+verify+verifyContractDependencies 최종게이트·실제 장애·HTTP순서·기존110회·전체회귀는 후속이며 이번 통과로 표시하지 않는다. docs/concurrency-runs.json은 기존 실행기록을 유지했다.
+- 다음 한 작업: 오케스트레이터의 US1 독립검토 후 지시를 받아 US2 실제 HTTP RED(T014~T016)를 작성한다.
+
+
+### 2026-10-22 US2 T014~T016 RED
+
+US1 100d392 오케스트레이터 독립검토 통과 후 동일 담당이 재개했다. 공식 사전조건 재확인·checklist16/16·작업트리깨끗함·hooks없음. 승인설계/knowledge/기존SecurityConfig·Controller·SQL과 대조해 실제RANDOM_PORT/Basic·PG/Redis·요청별ID·실제limiter/Controller/Service spy·transaction listener·전체행 단일SELECT snapshot 지원을 작성했다. 설정기본20/60000ms·명령/연결200ms/풀10·획득3000ms를 검사한다.
+
+`./gradlew integrationTest --tests '*RateLimitApiIT'` 종료1, 31건/실패21/오류0/skip0. 필터부재로 limiter-start 기대1/실제0 및 count0을 실제HTTP에서 확인했다. 미인증·413/독립API 사례10건은 기존동작으로 통과. 앞선 관측필터 FilterRegistrationBean 제네릭 컴파일실패1회는 기능RED로 세지 않는다. US3장애·US4기존시험전환은 수행하지 않는다.
+
+### US2 T004~T006/T014~T020 GREEN·중간 인수 (2026-10-22)
+
+- 순서: 필터부재31건/실패21 RED→Security 체인 최소구현→같은 명령31건 GREEN→재전송/중복취소/취소후재현·실제HTTP40건·체인소유/순서·후속500 추가35건 GREEN→실제ERROR dispatch/framing/스크립트관측·userId 입력거부·UTF-8 바이트 상한 보강37건 GREEN. 각 GREEN 명령은 `backend/`의 `./gradlew integrationTest --tests '*RateLimitApiIT'`, 종료0·오류/skip0이다. 31/35건의 실행은 후속 테스트 추가 전 기록이며 최종수는37건이다.
+- 최종 XML `backend/build/test-results/integrationTest/TEST-com.limitedbooking.backend.ratelimit.RateLimitApiIT.xml`: tests37/failures0/errors0/skipped0, listener37/0/0 일치. 실행시각2026-10-22T09:37:34.199Z, XML11.67초·Gradle13초. 다른 일반Unit/IT·verify/build는 이번 US2에서 실행하지 않았다. US1의 일반Unit169/RedisIT5 기록과 구분한다.
+- 실제 소유 PG/Redis 동적접속·RANDOM_PORT·클래스별 랜덤 Basic 비밀번호·UTF-8/UTC·풀10/획득3000ms·명령/연결200ms·기본20/60000ms를 사용했다. ResourceRepository 실제 SQL 진입에서 READ COMMITTED/SET LOCAL lock2s·statement5s/DB UTC를 검사했다.
+- 요청별 고유ID의 테스트 전용 servlet 관측→실제 limiter/Redis script 응답·Controller/Service spy·실제 transaction manager listener→종료 사건을 연결했다. limiter 시작·판정은 TX 비활성, 허용 뒤 Controller/Service/tx-before/tx-start/SQL 순서, tx-start/SQL 활성 상태를 확인했다. 초과 때 Controller/Service/TX0이며 전체 대상·예약의 모든 컬럼을 한 SELECT의 jsonb snapshot으로 비교해 동일함을 확인했다.
+- 생성10+동일 소유예약 취소10(직접커밋 준비, 중복취소 포함)에서 요청별count1~20,21번째429/count21; B/ADMIN 독립1, X-User-Id는 소유자·카운터에 영향 없음. 잘못된JSON/UUID/키·키누락·quantity/userId 미정의·중복필드·415, 취소본문/잘못된UUID400, 타인/없는예약404·품절/충돌409는 각각집계되며 소진후429가 먼저다.
+- 일반 Content-Length/길이미정 publisher 자동chunked/원시chunked × 인증유무 ×8192/8193의12사례를 실행했다. 관측Content-Length는 fixed=size, 나머지-1·Transfer-Encoding=chunked다.8193은413·limiter/script0·업무진입0·전체snapshot동일,8192는401또는인증후201/count1이다. UTF-8 `가`2731자=8193byte의 길이미정 요청도 인증유무 모두413·미집계다.
+- 정상/`%63ancel`/`%72eservations` 각각 빈본문·비빈본문·잘못된UUID의9사례와 소진뒤429를 확인했다. StrictHttpFirewall 완화 없음. PathPatternRequestMatcher는 MVC기본 parsed path 규칙을 사용한다.
+- 필터는 Bean/서블릿에 자동등록하지 않고 SecurityConfig의 체인 생성에서만 소유한다. 실제 체인에서 RequestBodyLimit→Basic→Authorization→RateLimit→CancelValidation 순서와 각1개, Servlet/Bean RateLimitFilter 등록0을 확인했다. 기존 Controller의 취소본문 방어는 유지했다.
+- 실제 후속 Service 내부결함은500으로 남고 실제ERROR dispatch1회에도 limiter/script/count는1회였다. 새500업무code·광범위Redis catch·후속chain catch 없음. Redis 의존성503 분류/실제장애는 US3 미구현으로 명시한다.
+- 재전송201/Location/Replay·최초JSON/UTC시각, 중복취소200/동일cancelledAt, 취소후 생성재현CONFIRMED와 GET현재CANCELLED를 검증했다. 각5회집계 후 소진한 같은 생성/취소는429·업무진입0·전체snapshot동일이다.
+- 기본정책 실제HTTP40건/수량40/서로다른키·작업자10·수집30초/HTTP9초/종료10초:201정확20·429정확20/count40/PTTL59652ms. 결과40/예외0, 서버in-flight0·executorTerminated=true·httpClosed=true 뒤 단일SELECT inventory capacity40/available20/total20/confirmed20. 기존 ConcurrencyTestSupport를 재사용했고 다음reset의 첫STOP검사·모든 종료 관측을 유지한다. US4의 기존부모fixture/110회는 아직 실행하지 않았다.
+- 독립GET resource200·소유예약200·ADMIN resourcePOST201·미인증/틀린비밀번호401+WWW-Authenticate는 limiter/script0이었다.429는 공통writeProblem의6필드/code·민감정보 비노출이며 실제Lua반환PTTL로 계산한 Retry-After와 정확히 비교했다.
+- T004~T006의 US2 필요 기반을 공통 RateLimitHttpTestSupport에 완성했다. RedisFailureIT는 T023 후속에서 이 기반을 재사용하며 현재 파일/실행이 존재한다고 표시하지 않는다. 업무SQL/스키마/OpenAPI 정상·오류 기대값은 변경하지 않았다. 기존 postgresOnly HTTP 전환·전체verify를 미리 실행하지 않았다.
+- Qodana 범위 조정 문서커밋4895488: 사용자2026-10-22 “나중에 할거야” 지시로 T037은 미완료 후속이며 이번 완료/PR/병합 게이트에서 제외한다. 미실행은 통과가 아니다. 앞선 US1 기록의 필수blocker 표시는 당시 지시이며 현재 범위는 이 지시로 대체한다.
+- 다음 한 작업: US2 커밋의 오케스트레이터 독립 중간검토 후 후속 지시를 받는다. T021~T038(Qodana만 별도후속), 실제장애·기존회귀110회·최종build/verify/의존성·전체독립리뷰는 미완료다.
+
+
+### 2026-10-22 US3 T021 분류RED
+
+US2 84b3ef7의 오케스트레이터 독립검토 통과 후 공식 사전조건·작업트리·승인된009/knowledge/설치SDR4.1.1 LettuceExceptionConverter·Lettuce7.5.2 예외를 대조했다. `./gradlew test --tests '*RateLimitFilterTest'` 종료1·16건/실패6/오류0/skip0. 확인된연결/명령timeout/WRONGTYPE5종은 기존필터가503으로변환하지못하고, 인터럽트1종은플래그미복원으로실패했다. 내부결함9종·후속chain예외1종은기존전파로통과했다.
+
+T022 최초GREEN: 같은분류Unit명령 종료0·16건/실패·오류·skip0. T023~T026 최초 실제인수: `./gradlew test --tests '*RateLimitFilterTest' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` 종료0·Unit16/IT46(실제장애9+US2회귀37)·실패/오류/skip0,1분33초. 실제예외·경과는 후속 최종기록과 구분한다.
+
+분류보강RED: 직렬화예외가 전송원인을 포함해도 내부결함으로 전파해야 하는 사례를 추가했다. `./gradlew test --tests '*RateLimitFilterTest' --tests '*RateLimitHttpLifecycleTest'` 종료1·19건/실패1/오류0/skip0. 원인만 보는 초기분류가 SerializationException(ConnectException)을503으로감춰 실패했다. 지원fixture2건은 모든정리오류보존·전송불확실뒤Redis/DBreset·준비·제출0을 통과했다.
+
+### US3 T022~T028 최종 인수와 한계 (2026-10-22)
+
+| 실제 명령(backend/) | 종료 | 실제 발견·실패/오류/skip | 조건·범위 |
+| --- | --- | --- | --- |
+| `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` | 0 | Unit32/IT46, 모두0/0/0 | 직렬화결함 우선전파 수정 뒤 전체US3 9건+US2회귀37건,1분27초 |
+| `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT.actualWritePauseTimesOutEachOperationWithoutChangingBusinessState' --tests '*RedisFailureIT.independentApisRemainAvailableDuringWritePause' --tests '*RateLimitApiIT'` | 0 | Unit32/IT41, 모두0/0/0 | 관리연결close/shutdown각10초 future 상한·복구HTTP201 보강 영향4건+US2회귀37건,18초 |
+| `./gradlew test --tests '*RateLimit*Test'` | 0 | Unit33,0/0/0 | 실제관측 RedisSystemException→RedisException→SocketException 원인을 분류표에 추가;분류18+종료fixture2+기존순수13 |
+| `./gradlew integrationTest --tests '*RedisFailureIT.actualWrongTypeRejectsAllWritesWithoutChangingBusinessState'` | 0 | IT1,0/0/0 | WRONGTYPE finally의 원래/정리오류 보존·종료실패뒤키삭제차단 보강 영향 사례만 재검증 |
+
+- 전체46건 당시 XML: ExistingConnectionRedisFailureIT1(6.045초),FirstConnectionRedisFailureIT1(2.011초),RedisFailureIT7(68.317초),RateLimitApiIT37(8.278초), 실패/오류/skip0. 해당XML들은 후속지정실행 덮어쓰기 전 `/private/tmp/009-us3-full46-xml/`에 실행자료로 보관했고 요약은 이 문서에 보존한다. build 산출물/임시XML은커밋하지 않는다. 이후영향시험41건의 XML은 RedisFailureIT4(2.97초)+RateLimitApiIT37(11.891초), 마지막지정XML은WRONGTYPE1건이다. 서로다른명령의 발견수를 합쳐 한 번의 실행수로 표시하지 않는다.
+- 실제 CLIENT PAUSE: 앱200ms와 독립적인3초관리연결에서, 각HTTP의 인증완료뒤실제limiter진입 시 `CLIENT PAUSE 1000 WRITE` OK를 확인해 인증지연이pause를소진하지않도록 했다. 제품후크는없고 실제Bean spy의 테스트전용관측이다. 생성/취소/성공키재전송 각각 QueryTimeoutException→RedisCommandTimeoutException·503을 확인했다. 보강실행 limiter경과207/203/206ms(HTTP전체200ms보장은아님). Controller/Service/TX0·전체대상/예약모든컬럼snapshot동일이다.
+- finally의별도관리연결CLIENT UNPAUSE·PING최대5초,관리명령/접속3초,관리connection.closeAsync와client.shutdownAsync의get각10초를 적용했다. 모든정리오류를preserve하고 정리실패는StopState에보존해다음초기화를차단한다. 복구PONG 뒤앱HTTP생성201도3사례모두확인했다. HTTP9초/전체10초·서버in-flight10초·HTTPclient종료10초를유지했고추가작업executor는만들지않았다. queued명령의실행은불확실하며 실제복구뒤count0/1/1을관측했다. 이를0으로고정하거나DECR보상하지않는다.
+- 기존연결은실제PING완료후소유Redis를stop했다. 관측원인은첫인수의 RedisSystemException→RedisException→SocketException(60/1/1ms) 또는최종전체인수의 QueryTimeoutException→RedisCommandTimeoutException(223/206/206ms)이었다. 재연결/큐상태에따라다르며한형태를보장하지않는다. 별도첫접속컨텍스트는소유포트를확보하고Redis를중단한뒤앱컨텍스트를생성했고resetRedis를하지않았다. 실제 RedisConnectionFailureException→RedisConnectionException→AnnotatedConnectException→ConnectException(1ms수준),3쓰기모두503이었다. 죽은소유동적포트를명시하며개발Redis로fallback하지않는다. 재기동포트를이전ApplicationContext에재사용하지않았다.
+- 실제WRONGTYPE는소유사용자제한키를리스트로준비해Redis가반환한 RedisSystemException→RedisCommandExecutionException의WRONGTYPE접두사를검증했다. 생성/취소/성공키재전송503·후속진입/TX0·전체snapshot동일,키정리후새생성201을확인했다. Lua문법/없는명령·직렬화·깨진응답·일반RuntimeException·auth/config결함은Unit에서원래예외전파를고정하고 US2후속내부500/ERROR dispatch회귀를유지했다.
+- 지연과두중단컨텍스트의정상PG에서GET대상200·GET소유예약200·ADMIN대상생성201을확인했고limiter/Redis script-attempt0이었다. 503은공통writeProblem의6필드/code·민감정보비노출이다. 정상503은HTTP전송예외가아니며STOP는false임을검사했다.
+- DB실패는테스트전용ReservationRepository spy에서실제수량차감0을관측한뒤 `SELECT pg_sleep(6)`을실행했다. 기존SET LOCAL statement_timeout5초가실제로발생해DB503·tx-rollback1·전체행snapshot동일·Rediscount1을확인했다. 실패주입은한번만하며같은생성키재요청201/count2·성공키1행·최종수량보존을확인했다. Writer/Service/업무SQL/스키마는변경하지않았다.
+- 성공키TTL독립은기본20/60000ms를유지해최대65초/200ms polling으로실제제한키만료를기다렸다.60197ms뒤에도예약전체snapshot동일,같은키201/Replay=true/Location/JSON동일·새창count1이었다. 짧은창이나키수명조작으로대체하지않았다.
+- 순수지원fixture2건은정리서버오류+HTTP종료오류를모두보존하고첫StopState원인유지·다음Redis/DBreset/준비/제출0을mock호출0으로확인했다. 별도전송불확실IOException fixture도원인보존·다음동작0을확인했다. 이는지원코드탐지시험이며실제Redis장애9건을mock으로대체한것이아니다. 인터럽트Unit은플래그복원·원래예외전파후시험스레드상태를정리했다.
+- 새정책·버전/제한값변경·skip·무한재시도없음. 분류호출범위는limiter.check만이며후속chain예외는catch밖이다. 역직렬화/스크립트/내부결함은503으로일괄숨기지않는다.
+- 미완료: US4 T029~T034 기존postgresOnly HTTP전환·110회/부모fixture, T035~T036/T038 최종문서/전체build+verify+의존성·독립리뷰. 이번명령은일반전체Unit/IT나최종전체빌드가아니다. Qodana T037은사용자지정미완료후속(4895488)이며이번gate제외를유지한다. docs/concurrency-runs.json은변경하지않았다. 다음한작업은US3커밋의오케스트레이터중간검토다.
+
+### US3 중간 코드검토 보완 — 실제 noeviction OOM RED
+
+오케스트레이터가현재WRONGTYPE이외의모든RedisCommandExecutionException을내부결함으로전파하는분류에서메모리부족거부가빠졌음을지적했다. 코드리뷰수용절차로공식[Lua저메모리동작](https://redis.io/docs/latest/develop/programmability/eval-intro/#execution-under-low-memory-conditions)·[noeviction](https://redis.io/docs/latest/develop/reference/eviction/)과설치Lettuce예외를대조했다. 실제`./gradlew integrationTest --tests '*RedisFailureIT.actualNoEvictionOomRejectsWritesAndRestoresOriginalConfiguration'` 종료1·3건/실패3/오류0/skip0. 소유Redis의원래maxmemory=0/policy=noeviction을보존한뒤maxmemory1/noeviction에서생성·취소·성공키재전송은모두HTTP500이었다. 실제원인은RedisSystemException→RedisCommandExecutionException의 `OOM command not allowed when used memory > 'maxmemory'. script: 218b0e0a17530b3260b642d96184f36dbbfacc98, on @user_script:1.`이었다. 별도OOM타입은아니었다. RED에서도각finally가원래0/noeviction원복·조회확인을완료했다. DB전체snapshot은동일했다.
+
+### US3 OOM 보완 최종 GREEN — 현재 구현 인수
+
+- OOM분류Unit RED: `./gradlew test --tests '*RateLimitFilterTest'` 종료1·22건/실패2/오류0/skip0. 알려진bare/script-suffix OOM만503으로추가하며임의OOM문구와직렬화가감싼OOM은원래예외로전파하는경계를고정했다.
+- 최종명령: `./gradlew test --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*RateLimitApiIT'` 종료0·관련Unit37/지정IT49,실패/오류/skip0,1분30초. 현재XML은분류22+종료fixture2+기존순수13=Unit37,기존연결중단1(2.949초)+첫접속전중단1(2.023초)+RedisFailureIT10(73.771초)+US2회귀37(8.539초)=IT49이며listener와일치한다. 앞선46/41/1건은보강전단계별실행이며최종전체지정인수수와혼동하지않는다.
+- 실제OOM3사례(생성/취소/성공키재전송)는각503·Controller/Service/TX0·전체DBsnapshot동일이었다. RedisSystemException→RedisCommandExecutionException의확인된정형OOM응답만503이며본문은OOM/maxmemory를노출하지않는다. 각OOM중정상PG의독립GET2종200·ADMIN resourcePOST201은limiter/script-attempt0이었다. 각finally가원래maxmemory=0/policy=noeviction을정확히원복·재조회확인했고,원복후앱HTTP생성201·최종수량보존을확인했다. 원복/정리오류는원래오류와함께보존하고StopState로다음reset을차단한다. 메모리/정책CONFIG는소유시험Redis만변경하며재현을위해전역캐시초기화나제품정책변경을하지않았다.
+- 최종전체인수의기본TTL실제만료60141ms·성공키재현201/count1,실제pause·두중단·WRONGTYPE·실제DBtimeout/복구·US2HTTP500보호도함께통과했다. 전체stage8완료가아니며 US4 기존110회·최종일반build/verify/의존성·독립리뷰는미완료다. Qodana사용자지정후속을유지한다.
+
+## 8단계 US4 — 기존 HTTP/110회 Redis 연결 회귀 (2026-10-22)
+
+US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수행했다. 제품/업무 SQL·스키마·원래 HTTP/DB 기대값은 변경하지 않았다. `ReservationApiTestSupport.setup`은 `beforeDatabaseReset()`을 여전히 첫 동작으로 호출하고 그 뒤 ADMIN/A/B 세 소유 키만 DEL·count0 확인·DB reset을 한다. 종료 fixture는 mock DataSource와 mock StringRedisTemplate의 접근0·redisResets0·준비/제출0을 검사한다. 실제 장애 통합을 mock으로 대체하지 않았다.
+
+| 검증 | 실제 명령(backend/) | 결과 |
+| --- | --- | --- |
+| 고의 순서 변경 RED | `./gradlew integrationTest --tests '*ReservationConcurrencyIT.parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe' --tests '*ReservationConcurrencyIT.executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle' --tests '*ReservationConcurrencyIT.httpTerminationFailurePreventsSpyResetAndBlocksNextSetup' --tests '*ReservationConcurrencyIT.transportFailureBeforeServiceEntryBlocksResetAndNextSetup'` | 종료1·4건/실패4/오류0/skip0, 실제 Mockito NoInteractionsWanted로 보호검사 전 Redis delete를 탐지 |
+| 원복 GREEN | 위 4 fixture + `--tests '*ReservationConcurrencyIT.cleanupWaitsForHttpTerminationBeforeResettingSpies'`, 앞에 `test --tests '*ConcurrencyTestSupportTest'` | 종료0·Unit13/IT5, 실패/오류/skip0 |
+| 기존 회귀/경쟁 | `./gradlew test --tests '*ConcurrencyTestSupportTest' integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT' --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT' --tests '*SecurityIT' --tests '*ReservationConcurrencyIT'` | 종료0·Unit13/IT167, 실패/오류/skip0, 1분13초 |
+| 취소 입력 검증 위치 정리 | `./gradlew integrationTest --tests '*SecurityIT' --tests '*ResourceApiIT'` | 종료0·Security7/Resource8=IT15, 실패/오류/skip0, 12초 |
+
+- RED는 기존 안전 분기를 재구현한 것이 아니라, Redis 초기화를 보호검사 앞으로 고의 이동한 탐지력 시험이다. 실제 Redis delete 1회(부모 setup 반복 fixture는2회)가 발견됐다. 원복 후 네 실패 상태 모두 Redis/DB 접근0이며 기존 최초 원인과 HTTP/executor/서버 종료 보호가 유지됐다. 최초 준비 시 잘못된 설정 접두사로 실제값 assertion이 실패한 실행은 환경 구성 오류로 구분하고 RED로 세지 않았다. 설정을 `reservation.rate-limit.limit`로 정정한 뒤 위 고의 변경 RED를 실행했다.
+- 회귀167건의 XML은 Create16/Idempotency5/Rollback7/Ownership5/Cancel13/Security6/Concurrency115(110회+지원fixture5)다. 이 XML은 `/private/tmp/009-us4-regression-xml/`에 보존했다. 취소 입력의 위치 정리 후 Security7/Resource8은 별도 실행15건이며 167과 합산해 단일 실행으로 표시하지 않는다.
+- 기존 ResourceApiIT 안에도 인증된 예약 취소의 본문/UUID/8KiB 검증이 있었다. 실제 제한 경로를 통과하므로 해당 취소 부분만 실제 Redis SecurityIT로 옮겼다. 원래 400/413·민감정보/필드 assertion을 유지하며 ResourceApiIT는 순수 대상 API만 남겨 postgresOnly를 유지했다. 순수 DB/Repository/Schema도 Redis를 강제하지 않는다.
+- 예약 HTTP6종과 Security는 소유 PostgreSQL+Redis 동적 포트를 쓴다. 기본20/60000ms·명령/접속200ms 실제값을 확인하고 사례마다 소유 키를 초기화했다. 경쟁에만10000/60000ms를 명시·실제값 검사하며 각110회는 ownedKeyResets=1·키3개 count0을 확인한다. FLUSHALL/영구 제한해제/429·503로 기대값 대체는 없다.
+- C01~C11 각10회는 기존 실제 HTTP·Basic·제한필터·업무서비스·DB 경로를 통과했다. 요청수=결과수, 예상밖429/503 0, 종료 뒤 단일SQL InventorySnapshot과 중복키0, 모든수량보존을 확인했다. 모든110회 CLEANUP은 server0/http=true/failure=none이다. C07의 정확한 요청ID별 UPDATE0→조회present와 UNIQUE 롤백 경로·고유ID·관측을 유지했다. 기존100요청120초/그외30초·gate5초·HTTP9초·종료10초·풀10/획득3000ms와10ms표본을 변경하지 않았다.
+- `docs/concurrency-runs.json`은 이번 지정 실행의 실제110회 RUN/phaseCounts/정확한경로증인/경로hash/CLEANUP·실행소스SHA256으로 재생성했다. 7단계 기록은 Git 이력과 과거 실행 증거로 보존한다. 최종 단일 그래프가 끝나면 그 실행의 실제110회 기록으로 갱신한다.
+- 로그: `/private/tmp/009-us4-order-red.log`, `/private/tmp/009-us4-order-green.log`, `/private/tmp/009-us4-regression.log`, `/private/tmp/009-us4-input-regression.log`. Qodana T037은 미실행 사용자후속이고 이번 게이트 제외다. 다음은 T035/T036/T038 문서·최종단일그래프 인수다.
+
+
+## 8단계 최종 구현·실행 인수 (2026-10-22)
+
+**현재 상태:** T001~T036/T038 37개 완료, Qodana T037만 사용자지정 미실행 후속이다. US1~US3는 오케스트레이터 중간검토를 통과했고 US4 및 최종 커밋의 독립검토·PR·병합은 후속 오케스트레이터가 수행한다. 아래 실행 인수는 그 검토/병합을 수행했다는 뜻이 아니다. 이번8단계 절차는 최신 사용자 지시의 Spec Kit(specify/plan/tasks/analyze/implement)를 적용했으며 계획서/헌법의 역사적 superpowers 기준과 과거날짜 실행증거는 보존한다.
+
+- 명령: `cd backend && ./gradlew build verify verifyContractDependencies`, 검증 코드 기준 `45c0db0`. 종료0, `BUILD SUCCESSFUL in 3m 12s`, 12 actionable tasks(9 executed/3 up-to-date). 최종 test/integrationTest는 현재 실행했으며 공유 Unit test 태스크는 그래프에서1회다. 도구 경고는 기존 Gradle10 비호환 deprecated 기능 및 ByteBuddy Unsafe 경고이며 실패·skip·continue-on-error로 감추지 않았다.
+- listener/XML 일치: Unit193(13 XML)·일반IT312(20 XML), 각각 실패0/오류0/skip0. IT는 기존 업무/DB/지원258 + RedisRateLimitIT5 + RateLimitApiIT37 + 실제장애12(기존연결1/첫연결1/RedisFailureIT10)다. 기존 업무/지원에는 경쟁115(반복110+종료fixture5), Security7·Resource8, Create16·Idempotency5·Rollback7·Ownership5·Cancel13 등이 포함된다. 발견0·실패·skip을 거부하는 기존 Gradle listener/XML 게이트를 통과했다.
+- 실제장애12건에서 pause1000 WRITE·명령200ms/연결200ms·기존연결중단·첫연결전중단·WRONGTYPE·정형OOM3·실제DB timeout/롤백·성공키TTL독립을 재검증했다. 정상PG의 독립API·거부시업무진입0/전체snapshot동일·원복finally/유한복구·모든종료·정리오류보존·다음reset차단을 유지했다. 최종 RedisFailureIT10은69.782초였다.
+- 최종 경쟁110회(클래스115건,31.811초)는 매회 소유키reset1·10000/60000ms·접속/명령200ms, HTTP 요청수=결과수·예상밖429/503 0·모든종료뒤 단일SQL 수량snapshot·고유ID별C07 UPDATE0/UNIQUE witness를 유지했다. 110 CLEANUP 모두 server0/http=true/failure=none이다. 기본제한 HTTP37은8.760초였으며 기본20/60초 정책을 올리지 않았다.
+- `docs/concurrency-runs.json`을 최종 실행 XML의 실제110회로 갱신했다. sourceSha256 5개를 현재 파일과 모두 대조해 일치했다. 앞선 US4 지정167건은 당시 실행소스/archivedXML 기록이며 커밋전 fixture 선언 정리 이후의 동일소스 실행으로 주장하지 않는다. 이번 최종 실행이 정리된 현재 소스를 검증했다. 이전7단계/지정 회차 기록은 Git 이력과 위 날짜별 증거로 구분한다.
+- 빌드 산출물: `backend/build/libs/backend-0.0.1-SNAPSHOT.jar` 44,156,613 bytes, SHA256 `ccfd488d3c081238d99c2709a65d687dba9b927f2c073ebc030b6599d9c08fa9`; plain JAR65,335 bytes, SHA256 `90eda6530127dcdd280341d34a7f9860c61c2b073e338cd1479845cb846e6724`. 실행JAR에 RateLimitDecision/Properties/Filter/RedisRateLimiter와 `redis/rate-limit.lua` 포함을 ZIP목록으로 확인했다. 산출물은 커밋하지 않는다.
+- `verifyContractDependencies` 실행·종료0: testCompileClasspath/testRuntimeClasspath/runtimeClasspath의 해석실패0 및 금지 `com.github.java-json-tools:json-patch/jackson-coreutils` 재유입0을 기존 게이트로 확인했다. 이는9단계 업무전체 자동OpenAPI검증을 실행했다는 뜻이 아니다.
+- 고정 OpenAPI3.0.3의 생성/취소429·503, Retry-After와 RATE_LIMITED/DEPENDENCY_UNAVAILABLE, 성공201/200·Location·Replay·소유권404를 실제제품/HTTP시험과 대조했다. 계약·업무SQL/스키마를 바꾸지 않았다. 최신 계획서 상단 현재요약과8단계10개체크, README/knowledge/009설계·작업·버전·결정을 실제결과에 맞췄다. 과거 날짜의 Unit137/150/169 및 IT138/257/지정수는 해당 시점 증거로 보존한다.
+- 로그: `/private/tmp/009-final-build-verify.log`; XML: `backend/build/test-results/test/`·`backend/build/test-results/integrationTest/`, 임시보존 `/private/tmp/009-final-xml/`. JSON은 커밋된 재현가능 요약이며 임시로그/XML은 로컬 실행자료다. seed없음(지정사례+실제스케줄링), workers최대10·풀10/3000ms·10ms연결표본·UTF-8/UTC·동적PG/Redis를 유지했다. 운영규모 성능이나 모든경쟁순서의 증명으로 일반화하지 않는다.
+- 남은 범위: Qodana 미실행(사용자2026-10-22 “나중에 할거야”, 범위조정4895488)·오케스트레이터 최종독립리뷰/PR/merge. Qodana JVM2026.2/Java25/recommended/any0/라이선스 설정을 유지하며 통과·지적0으로 기록하지 않는다. 업무전체 자동계약/Property/PIT심화·k6부하·외부CI는 다음계획단계다. push/PR/merge·외부workflow는 수행하지 않았다.
+- 최종 문서검사: 변경문서의 로컬링크439개 존재, 009 작업37개 완료/T037만미완료, 계획서8단계10/10, 회차JSON110개·현재소스SHA2565개 일치, `git diff --check` 통과. 내장 명세품질 체크리스트는 읽기전용으로16/16 PASS를 확인했다. `.specify/extensions.yml`이 없어 implement 전후 훅 대상없음. 최종 실행 뒤 변경은 이 문서동기화/회차요약뿐이며 제품/시험/Gradle 코드는 바꾸지 않았다.

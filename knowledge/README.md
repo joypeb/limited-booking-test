@@ -28,11 +28,11 @@
 ## 도메인 문서 목록과 작성 방법
 
 - [_template.md](domain/_template.md): 새 도메인 문서의 공통 형식. 템플릿 자체는 특정 도메인의 확정 계약이 아니다.
-- [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기/생성 SQL, `ResourceRules` Unit 52건, 4단계 `POST /api/resources`·`GET /api/resources/{id}` HTTP 통합 테스트(`ResourceApiIT` 8건)까지 구현·검증했으며 예약 생성/취소에 따른 수량 차감·복구는 5~7단계 후속이다.
+- [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기/생성 SQL, `ResourceRules` Unit 52건, 4단계 `POST /api/resources`·`GET /api/resources/{id}` HTTP 통합 테스트(`ResourceApiIT` 8건)까지 구현·검증했으며 예약 생성/취소·수량 보존·실제 경쟁과 Redis 독립성을8단계까지 검증했다.
 - [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백의 구현·검증과 취소·경쟁의 설계 지식.
-- [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)은 후속이다.
-- [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 설계 지식.
-- 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계 구현·검증 완료, 실제 경쟁·Redis 제한(7~8단계)은 후속이다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
+- [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)까지 구현·실행 검증했다. SecurityIT는 취소 입력 검증을 포함해 현재7건이다.
+- [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 기준과 US1 limiter/Lua·Unit13/실제RedisIT5 구현·검증 지식. US1~US4와 최종 전체 인수를 완료했다. 실제HTTP37건·장애12건·기존HTTP/110회·종료 reset0을 확인했다.
+- 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계, 실제 경쟁·Redis 제한은7~8단계에서 구현·검증했다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
 - [2단계 요구사항 검토 목록](../specs/003-define-db-schema/checklists/database.md): 저장 제약·조회와 테스트 격리·재현성의 요구사항 품질을 검토한다. 사용자 요청으로34개 항목의 요구사항 품질을 평가했고 CHK022 실패 처리도 문서 보완 후 충족으로 판단했다. 체크는 구현 완료 표시가 아니다.
@@ -100,3 +100,13 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ### 2026-10-21 최종 리뷰 보완 확인
 
 최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](../docs/test-evidence.md)·[110회 기록](../docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
+
+
+## 8단계 US1~US3 중간 인수 (2026-10-22)
+
+[009명세](../specs/009-redis-rate-limit/spec.md)·[계획](../specs/009-redis-rate-limit/plan.md)·[작업](../specs/009-redis-rate-limit/tasks.md)·[검증 안내](../specs/009-redis-rate-limit/quickstart.md): T001~T028 구현·지정 인수를 완료했다. US1·US2 독립검토 후 US3의 좁은503분류·실제지연/중단/WRONGTYPE/OOM12건·DB롤백/카운트유지·기본TTL독립·종료/전송불확실차단을확인했다. 관련Unit37건·실제장애9+US2회귀37건과정리보강영향시험의명령별수는 [증거](../docs/test-evidence.md)를따른다. US4 기존HTTP/110회·최종build/verify/의존성은미완료이며 US3 오케스트레이터 중간검토를기다린다. Qodana T037은사용자2026-10-22지시로미완료후속이며이번완료·PR·병합게이트제외다. 이전확인일의후속표시는당시기록이다.
+
+
+## 8단계 현재 인수 상태 (2026-10-22)
+
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../docs/test-evidence.md)·[009 작업](../specs/009-redis-rate-limit/tasks.md)을 따른다. 위 날짜별 과거 확인 상태는 당시 기록이다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했다.

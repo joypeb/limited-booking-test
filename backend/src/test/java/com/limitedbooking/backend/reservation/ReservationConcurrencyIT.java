@@ -27,10 +27,11 @@ import static org.mockito.Mockito.*;
         mergeMode=TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ReservationConcurrencyIT extends ReservationApiTestSupport {
-    static final ContainerTestSupport containers=ContainerTestSupport.postgresOnly();
+    static final ContainerTestSupport containers=new ContainerTestSupport();
     static final StopState STOP=new StopState();
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p) {
         containers.registerLocalAuthAndDatabaseProperties(p);
+        p.add("reservation.rate-limit.limit",()->10000);
         p.add("spring.datasource.hikari.maximum-pool-size",()->10);
         p.add("spring.datasource.hikari.connection-timeout",()->3000);
     }
@@ -58,6 +59,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     Map<UUID,DatabaseAssertions.InventorySnapshot> lastSnapshot;
 
     StopState stopState() { return STOP; }
+    @Override protected int expectedRateLimit() { return 10000; }
     @Override protected void beforeDatabaseReset() { stopState().check(); }
     @BeforeEach void observe() {
         observed=true;
@@ -156,18 +158,20 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     }
     @Test void executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle() throws Exception {
         var fixture=new CleanupFixture(); var first=new IllegalStateException("executor termination");
-        fixture.ownState.stop(first); fixture.dataSource=mock(javax.sql.DataSource.class); fixture.cleanup();
+        fixture.ownState.stop(first); fixture.dataSource=mock(javax.sql.DataSource.class); fixture.redis=mock(org.springframework.data.redis.core.StringRedisTemplate.class); fixture.cleanup();
         assertThat(fixture.order).doesNotContain("reset").contains("http");
         assertThatThrownBy(fixture::setup).hasCause(first);
-        verifyNoInteractions(fixture.dataSource);
+        verifyNoInteractions(fixture.dataSource,fixture.redis);
+        assertThat(fixture.redisResets).isZero();
     }
     @Test void httpTerminationFailurePreventsSpyResetAndBlocksNextSetup() {
         var fixture=new CleanupFixture(); var first=new IllegalStateException("http termination");
-        fixture.httpFailure=first; fixture.dataSource=mock(javax.sql.DataSource.class);
+        fixture.httpFailure=first; fixture.dataSource=mock(javax.sql.DataSource.class); fixture.redis=mock(org.springframework.data.redis.core.StringRedisTemplate.class);
         assertThatThrownBy(fixture::cleanup).isSameAs(first);
         assertThat(fixture.order).doesNotContain("reset");
         assertThatThrownBy(fixture::setup).hasCause(first);
-        verifyNoInteractions(fixture.dataSource);
+        verifyNoInteractions(fixture.dataSource,fixture.redis);
+        assertThat(fixture.redisResets).isZero();
     }
 
     void begin(String id,RepetitionInfo info) { caseId=id; repetition=info.getCurrentRepetition(); started=System.nanoTime(); }
@@ -199,13 +203,14 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
     }
     @Test void transportFailureBeforeServiceEntryBlocksResetAndNextSetup() throws Exception {
         var fixture=new CleanupFixture(); var timeout=new java.net.http.HttpTimeoutException("before Service");
-        fixture.results=List.of(new Outcome<>(null,timeout)); fixture.dataSource=mock(javax.sql.DataSource.class);
+        fixture.results=List.of(new Outcome<>(null,timeout)); fixture.dataSource=mock(javax.sql.DataSource.class); fixture.redis=mock(org.springframework.data.redis.core.StringRedisTemplate.class);
         assertThat(fixture.inFlight).hasValue(0);
         assertThatThrownBy(fixture::completedRequests).isInstanceOf(AssertionError.class);
         fixture.cleanup();
         assertThat(fixture.order).doesNotContain("reset");
         assertThatThrownBy(fixture::setup).hasCause(timeout);
-        verifyNoInteractions(fixture.dataSource);
+        verifyNoInteractions(fixture.dataSource,fixture.redis);
+        assertThat(fixture.redisResets).isZero();
     }
 
     Callable<HttpResponse<String>> creation(UUID id,String key) { return () -> create(id,"USER_A",key); }
@@ -226,6 +231,7 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
         System.out.println("RUN case="+caseId+" repetition="+repetition+" requests="+results.size()+" results="+results.size()
             +" elapsedMs="+TimeUnit.NANOSECONDS.toMillis(System.nanoTime()-started)+" workers="+Math.min(10,results.size())
             +" pool=10/3000ms activeSampleMax="+poolMax.get()+" sampleMs=10 server="+inFlight.get()
+            +" redis=10000/60000ms timeout=200/200ms ownedKeyResets="+redisResets
             +" distribution="+distribution+" snapshot="+lastSnapshot);
         System.out.println("PATH case="+caseId+" repetition="+repetition+" events="+events.all());
     }
@@ -454,10 +460,11 @@ class ReservationConcurrencyIT extends ReservationApiTestSupport {
             @Override protected void beforeDatabaseReset() { state.check(); }
             void next() { setup(); prepared++; submitted++; }
         }
-        var fixture=new Fixture(); fixture.dataSource=mock(javax.sql.DataSource.class);
+        var fixture=new Fixture(); fixture.dataSource=mock(javax.sql.DataSource.class); fixture.redis=mock(org.springframework.data.redis.core.StringRedisTemplate.class);
         var first=new IllegalStateException("termination injected"); fixture.state.stop(first);
         for(int round=0;round<2;round++) assertThatThrownBy(fixture::next).hasCause(first);
-        verifyNoInteractions(fixture.dataSource);
+        verifyNoInteractions(fixture.dataSource,fixture.redis);
+        assertThat(fixture.redisResets).isZero();
         assertThat(fixture.prepared).isZero(); assertThat(fixture.submitted).isZero();
         assertThat(fixture.client).isNull(); fixture.cleanup();
     }

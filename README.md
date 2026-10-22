@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. Redis 요청 제한은8단계 후속이다.
+Java25·Spring Boot4.1.1·Gradle9.7.1의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 Redis limiter/Lua·HTTP 제한·실제 장애·기존 회귀와 최종 빌드/verify/의존성 검사를 완료했다.
 
 ## 로컬 환경
 
@@ -187,3 +187,38 @@ Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [
 
 
 PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 SSL 협상08P01로 실패했다. 이후 테스트 소유 비TLS PostgreSQL URL에 `sslmode=disable`을 명시하고 관측 도구 없이 `verifyContract build`를 실행해 Unit156·일반IT257·Contract6 전부 통과했다. 최초 비정상 응답의 발생원은 여전히 미확정이며, 이번 대응의 범위와 한계는 [최신 실행 기록](docs/test-evidence.md)을 참조한다.
+
+
+## 8단계 US1 중간검토 (2026-10-22)
+
+사용자별 고정 창 limiter/Lua·판정/설정 검증을 구현했다. 기본20/60000ms·연결/명령200ms이며 실제Redis에서 동시40건의 허용20/거부20, TTL비연장·격리·별도3/1000ms 만료를 확인했다. `backend/`에서 `./gradlew test integrationTest --tests '*RedisRateLimitIT'`를 실행해 일반Unit169/지정RedisIT5, 실패·오류·skip0이었다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)를 따른다.
+
+당시 US1 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니었다. US1 오케스트레이터 독립 중간검토를 통과했고 아래 US2 인수로 이어졌다.
+
+
+### 2026-10-22 사용자 지정 Qodana 후속 이관
+
+사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
+
+
+## 8단계 US2 실제 HTTP 인수 (2026-10-22)
+
+Security 체인에 인가→RateLimitFilter→취소 검증 순서를 연결했다. 생성·취소는 기본20회/60초를 합산하고 정상·인코딩 경로·잘못된 입력·재전송을 각1회 집계한다. 실제429의 Retry-After는 같은 Lua 반환PTTL로 계산한다. 미인증·본문초과·독립API는 제한 스크립트를 호출하지 않는다.
+
+`backend/`에서 `./gradlew integrationTest --tests '*RateLimitApiIT'` 종료0·37건·실패/오류/skip0. 기본동시40건은201 20건·429 20건/count40, 모든종료 뒤 DB available20/CONFIRMED20이었다. [실행 증거](docs/test-evidence.md)·[작업 상태](specs/009-redis-rate-limit/tasks.md)를 따른다.
+
+US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분류/실제장애·기존postgresOnly 시험전환/110회·최종build/verify/의존성은 아직 미완료다. Qodana는 사용자지정 미완료 후속이다.
+
+
+## 8단계 US3 실제 장애 인수 (2026-10-22)
+
+확인된 Redis 연결·명령timeout·WRONGTYPE·정형OOM만503으로변환한다. 직렬화/스크립트/미분류결함·후속chain오류는그대로전파하고인터럽트를복원한다. 실제CLIENT PAUSE1000 WRITE·기존연결중단·첫접속전중단·WRONGTYPE·maxmemory/noeviction OOM,DB의실제5초statement timeout과전체롤백/카운트유지·기본60초TTL뒤성공키재현을인수했다.
+
+관련Unit37건통과,OOM보완을포함한US3전체장애12건+US2회귀37건의49건지정인수를실제통과했다. 각실행의명령/XML수·한계는 [실행증거](docs/test-evidence.md)에구분했다. 전체verify/빌드·기존110회는아직실행하지않았으며 US3 오케스트레이터 중간검토를 기다린다. Qodana는미실행후속범위다.
+
+
+## 8단계 최종 구현 인수 (2026-10-22)
+
+2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다.
+
+부모 setup은 첫 StopState 검사 뒤에만 소유 Redis 키와 DB를 초기화한다. 기본 정책과 성공/소유권/취소/수량 계약을 유지하며 기존 HTTP를 실제 Redis로 전환했다. 순수 대상 API/DB 시험은 Redis 없이 검증한다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)를 따른다. 위 날짜별 중간 인수의 후속·대기 표시는 해당 시점 기록이다. 이번 절차는 최신 사용자 지시의 Spec Kit를 적용했다.
