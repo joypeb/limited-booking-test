@@ -34,7 +34,7 @@ Java/Spring 개발 감각을 복구하고, AI가 작성한 코드의 정확성�
 이 절은 파일을 확인한 2026-10-13 기준이다. 이후 작업에서는 실제 파일을 다시 확인한다.
 
 - 작업 루트는 `limited-booking/`, 애플리케이션 루트는 `backend/`다.
-- 기존 골격은 Java 25, Spring Boot 4.1.1, Gradle Wrapper 9.7.1을 사용한다. 기본 패키지는 `com.limitedbooking.backend`, 진입점은 `BackendApplication`이다.
+- 기존 골격은 Java 25, Spring Boot 4.1.1, Gradle Wrapper 9.8.0(2026-10-23 9.7.1에서 갱신)을 사용한다. 기본 패키지는 `com.limitedbooking.backend`, 진입점은 `BackendApplication`이다.
 - 2026-10-13 1단계에서 MVC·Security·JDBC·PostgreSQL·Redis·Flyway·Actuator와 심화 도구 기반을 추가했다. 도구 프로브 최소 실행은 확인했으나 업무 API·SQL·권한·경쟁 구현이 완료됐다고 가정하지 않는다.
 - 계획서의 Maven Wrapper, `reservation-backend/`, `com.example.reservation`은 계획상의 구성이다. 존재하지 않는 `mvnw`나 Maven 프로필을 실행하지 않는다.
 - 현재 Gradle·패키지·디렉터리를 자동으로 교체하지 않는다. 빌드 도구 변경이 필요한 작업에서는 차이와 이유를 제시하고 사용자 지시에 따른다. Gradle을 유지한다면 계획서의 테스트 분류·실행 계약을 명시적인 Gradle 태스크로 구현하고 문서도 맞춘다.
