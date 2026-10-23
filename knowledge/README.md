@@ -129,3 +129,8 @@ T012~T017에서 불변의정확요청위반multiset·원문JSON/UTF8검사와항
 ### 9단계 US2 의존성 계약 (T018~T020)
 
 [의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB 중단과 Redis 중단을 별도 소유 컨테이너·컨텍스트로 격리한다. 실제 DB 중단의5API503·정상Redis, Redis 중단의예약생성/취소503·업무전체행무변경·대상생성/두조회정상을 고정 OpenAPI와 대조한다. 중단 DB의 사후snapshot은 조회하지 않고 기존 실제timeout 롤백회귀와 근거를 구분한다. 전체 오류 적용표·지정검증수·정리는 [실행 증거](../docs/test-evidence.md)의 T018~T020 절을 따른다. 제품/SQL/정책변경없음. T021 이후·전체9단계 인수는 미완료이며 Qodana는 사용자지정스킵/후속이다.
+
+
+### 9단계 US3 생성 재현·현재 상태 인수
+
+T021~T023은실제7회HTTP시퀀스의첫생성baseline과각시점의Replay/상태/필드값을`ScenarioExpectation`으로비교한다. 취소후생성은최초CONFIRMED4필드·Location을재현하고현재GET은CANCELLED5필드이며중복취소시각도같다. `DatabaseAssertions.reservationSnapshot`의한SELECT로수량·예약행과불변컬럼을함께관측한다. 관련Unit114(검사기101+종료지원13)·Contract93(업무87+프로브6)을지정실행해통과했으며자세한RED/GREEN/한계는[실행증거](../docs/test-evidence.md)를따른다. US4/T024이후와최종전체인수는미완료다.

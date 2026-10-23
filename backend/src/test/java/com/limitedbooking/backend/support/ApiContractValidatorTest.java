@@ -331,4 +331,28 @@ class ApiContractValidatorTest {
         assertThatThrownBy(()->v.assertRetryAfter(header(baseline,"Retry-After","59"),60000))
                 .isInstanceOf(AssertionError.class).hasMessageContaining("decision-pttl");
     }
+    private static ApiContractValidator.ScenarioExpectation creationExpectation(boolean replayed) {
+        return new ApiContractValidator.ScenarioExpectation(201,null,
+                Map.of("id",RESERVATION_ID,"resourceId",ID,"status","CONFIRMED","createdAt",TIME),
+                "/api/reservations/"+RESERVATION_ID,replayed,null);
+    }
+    @ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(strings={"first-true","retry-false","replayed-field"})
+    void scenarioDetectsValidBooleanAtWrongTimeAndChangedInitialField(String defect) throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        boolean retry=!defect.equals("first-true");
+        var baseline=retry?header(created(),"Idempotent-Replayed","true"):created();
+        var expected=creationExpectation(retry);
+        validator.assertScenario(baseline,expected);
+        var broken=defect.equals("replayed-field")?body(baseline,CREATED.replace(TIME,"2026-10-23T00:00:00.123457Z")):
+                header(baseline,"Idempotent-Replayed",retry?"false":"true");
+        broken.assertValid(validator); // 개별 교환으로는 유효한 값이다.
+        assertThatThrownBy(()->validator.assertScenario(broken,expected)).isInstanceOf(AssertionError.class)
+                .hasMessageContaining("semantic:scenario");
+    }
+    @Test void scenarioComparesFieldValuesWithoutJsonWhitespaceOrOrderEquality() throws Exception {
+        var reordered=body(created()," { \"createdAt\" : \""+TIME+"\", \"status\":\"CONFIRMED\", \"resourceId\":\""+ID
+                +"\", \"id\":\""+RESERVATION_ID+"\" } ");
+        assertThatCode(()->ApiContractValidator.load("business.openapi.yaml").assertScenario(reordered,creationExpectation(false)))
+                .doesNotThrowAnyException();
+    }
 }

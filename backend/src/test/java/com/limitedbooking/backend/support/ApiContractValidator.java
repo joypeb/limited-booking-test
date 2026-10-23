@@ -95,6 +95,26 @@ public final class ApiContractValidator {
         }
         if(!failures.isEmpty()) throw new AssertionError(String.join("; ",failures));
     }
+    public void assertScenario(HttpExchange exchange,ScenarioExpectation scenario) {
+        exchange.assertValid(this);
+        var failures=new ArrayList<String>();
+        if(exchange.status()!=scenario.status()) failures.add("semantic:scenario-status:/status");
+        if(scenario.location()!=null && !scenario.location().equals(header(exchange.responseHeaders(),"Location")))
+            failures.add("semantic:scenario-location:/headers/Location");
+        if(scenario.replayed()!=null && !scenario.replayed().toString().equals(header(exchange.responseHeaders(),"Idempotent-Replayed")))
+            failures.add("semantic:scenario-replay:/headers/Idempotent-Replayed");
+        try {
+            var json=JSON.readTree(exchange.responseBody());
+            for(var field:scenario.initialFields().entrySet()) {
+                if(json==null || !json.path(field.getKey()).isTextual() || !field.getValue().equals(json.path(field.getKey()).textValue()))
+                    failures.add("semantic:scenario-field:/body/"+field.getKey());
+            }
+            if(scenario.code()!=null && (json==null || !scenario.code().equals(json.path("code").asText())))
+                failures.add("semantic:scenario-code:/body/code");
+        } catch(JsonProcessingException malformed) {failures.add("semantic:scenario-json:/body");}
+        if(!failures.isEmpty()) throw new AssertionError(String.join("; ",failures));
+        if(scenario.decisionPttl()!=null) assertRetryAfter(exchange,scenario.decisionPttl());
+    }
     public void assertRetryAfter(HttpExchange exchange,long decisionPttl) {
         exchange.assertValid(this);
         if(decisionPttl<0)throw new IllegalArgumentException("판정 PTTL은 음수일 수 없다");

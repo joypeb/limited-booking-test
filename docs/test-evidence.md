@@ -1679,3 +1679,22 @@ backend에서 다음 명령을 순차 Test 태스크로 실행했다. 종료0, �
 최종429 독립관측은 생성count21/PTTL58256ms/Retry-After59초, 취소count21/PTTL58524ms/59초였다. 응답후TTL을정답으로재조회하지않았다. ApiContractIT의server미종료·transport대기·truncated전송fixture와Unit종료지원13+RateLimitLifecycle2가 최초원인보존/인터럽트/다음reset·prepare·send0회귀를 유지했다. verifyContractDependencies도종료0이며새라이브러리·제품·SQL·OpenAPI·Wrapper·제한정책변경없음이다.
 
 T018~T020만 완료 체크했다. T021이후 생성재현시퀀스/US4훼손·실제DTO변이/전체build verifyContract인수와단계전체완료는미완료다. Qodana는사용자지정스킵/후속이며통과로세지않는다. 이번에는전체경쟁110회·Property/PIT·부하·외부CI·push/PR을실행하지않았다. extensions.yml은여전히없어after_implement훅없음이다. 다음한작업은메인의T018~T020검토후T021시퀀스이며담당범위밖으로진행하지않는다.
+
+
+## 2026-10-23 9단계 US3 T021~T023
+
+깨끗한237b2a0에서시작했다. prerequisite종료0·requirements16/16PASS·extensions없음·ignore유지. knowledge규칙/관련domain·승인spec/plan/contracts/data-model/quickstart와계획2~5절·9단계의최초생성/현재상태규칙을유지한다. T018~T020의의존성fixture와공유지원상태를인계확인했으며US3범위만진행한다.
+
+T021 RED Unit: `./gradlew test --tests '*ApiContractValidatorTest.scenario*'` 종료1/4건중assertion실패3·오류/skip0, 2초. 첫응답true/재요청false/최초createdAt 1마이크로초변경은각각개별교환schema/semantic상유효하지만ScenarioExpectation골격이시점/최초값을비교하지않아거부하지못했다. JSON공백/필드순서가다른정상대조군1건은통과했다.
+
+T021 RED 실제HTTP: `./gradlew contractTest --tests '*ApiContractIT.replayCancelAndCurrentStateSequenceMatchesIndependentBaseline'` 종료1/1건assertion실패, 10초. 생성201false→같은키201true→GETCONFIRMED→취소200→중복취소200→취소후생성201true→GETCANCELLED의7교환과모든종료/최종단일SQLsnapshot·불변컬럼·Redis쓰기5회는정상이다. 그뒤실제첫응답을잘못된replay=true시나리오와비교해도거부하지않는검사기결함으로RED를만들었으며가짜제품실패/제품변이는없다.
+
+최종DB지원을위해DatabaseAssertions.reservationSnapshot을추가했다. 한SELECT에서대상capacity/available와연결예약행의id/resourceId/userId/key/status/createdAt/cancelledAt을함께읽고동일관측시점의수량식/행수를검사한다. 준비는기존TestData의사전커밋,실행은기존HTTPguard를재사용하며개발DB·제품SQL·트랜잭션경계는변경하지않는다.
+
+T022 GREEN: `./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest'` 종료0/114건(검사기101+종료지원13), 실패·오류·skip0, 4초. `./gradlew contractTest --tests '*ApiContractIT.replayCancelAndCurrentStateSequenceMatchesIndependentBaseline'` 종료0/1건, 10초. 첫응답의4필드/Location을그다음교환전에불변baseline으로저장하고각시점의status·replayed와비교한다. ScenarioExpectation.initialFields는JSON문자열전체가아닌필드값을비교하므로공백·순서차이는허용한다. 개별유효boolean이라도시점이다르면semantic:scenario-replay, 최초값이다르면semantic:scenario-field로거부한다. 기존assertValid의원문/schema/raw/semantic경계와void인터페이스는유지한다.
+
+정상7교환의JSON은생성4필드CONFIRMED/cancelledAt없음,GET·취소5필드로검사했다. 취소후생성은최초CONFIRMED/createdAt/id/resourceId/Location을그대로재현하고현재GET은CANCELLED다. 중복취소cancelledAt은첫취소응답에서미리보존한값과같다. 모든HTTP/client/server종료후단일SELECT snapshot에서capacity1/available1/예약행1/CONFIRMED0과수량식,동일id/resourceId/userId=USER_A/원래키/createdAt·첫cancelledAt/CANCELLED를확인했다. 생성·중복생성·취소·중복취소·취소후생성만집계되어소유USER_A키count5,USER_B/ADMIN0이다. FR-008·SC-004의실제시퀀스/최종상태를이시험에연결한다.
+
+T023 최종관련회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'` 종료0/93건(업무87+프로브6), 실패·오류·skip0, 23초. Unit의검사기101/종료지원13과Contract업무87/프로브6 XML을현재listener결과와대조해일치했다. 신규US3시험1건이실제7교환을포함하며테스트수와HTTP교환수를혼동하지않는다. 기존정상/입력/권한/품절/충돌/8KiB/chunked/요청제한·독립PTTL·서버미종료/transport대기/truncated최초원인회귀를함께통과했다. verifyContractDependencies도종료0이다. 새메서드assertScenario/예약상세snapshot만추가했고기존assertValid/HTTP종료지원·제품/SQL/Wrapper/기본정책은변경하지않았다.
+
+이번에는새시나리오를호출하지않는DB/Redis중단fixture2건·기존장애/경쟁일반IT·전체verifyContract를반복하지않았다. 이들의직전237b2a0/T020인수와이번실행을구분한다. 테스트전용상세snapshot SQL외제품SQL변경없음,새의존성/비밀번호/임의정책완화없음이다. 환경은기존Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트·20회/60000ms·Redis200ms·풀10/획득3000ms다. Qodana는사용자스킵후속이며통과로세지않는다. T024이후US4/실제DTO변이/최종전체인수·T035설명정리는미완료다. 전후extension훅없음·push/PR/외부CI없음. `git diff --check`종료0.

@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1과 US2 일부 T001~T020 구현·지정 검증을 완료했다. T021 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T020까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T021 이후·push·PR은 이번 담당 범위 밖이다.
+**상태**: 2026-10-23 공통 선행·US1~US3 T001~T023 구현·지정 검증을 완료했다. T024 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T023까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T024 이후·push·PR은 이번 담당 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -59,9 +59,9 @@
 **목표**: 재전송·중복취소가 최초값과 현재값을 혼동하거나 수량을 추가 변경하지 않음을 확인한다.
 **독립 인수**: 실제 연결 시퀀스와 최종 단일 DBsnapshot으로 최초 생성값/Location 동일·추가예약0·복구1회다.
 
-- [ ] T021 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 생성201(false)→같은키201(true)→GET CONFIRMED→취소200→중복취소200→같은생성201(true)→GET CANCELLED 시퀀스를 작성한다. 최초 id/resourceId/CONFIRMED/createdAt·Location을 사전 baseline으로 보존하고 필드값을 비교한다. 생성 cancelledAt 없음·현재5필드/명시null 또는 UTC·중복취소 동일시각을 검사하고 시퀀스 검사 누락의 의도한 RED를 확인한다.
-- [ ] T022 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 시나리오 의미 비교를 최소 구현해 T021 GREEN을 확인한다. 최초 true/재요청 false처럼 개별 유효 boolean도 기대 시점이 다르면 거부한다. 재현 JSON 공백/순서의 바이트동일성은 요구하지 않는다. 모든 요청 종료 뒤 `DatabaseAssertions` 단일 snapshot으로 예약행1·추가차감0·복구1·available+CONFIRMED수=capacity·불변 user/key/resourceId/createdAt을 확인한다.
-- [ ] T023 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java` 시퀀스 지정 실행 결과·원문/최초값 비교·최종 DB상태·소유키/종료와 정상/오류 기존 사례의 영향 회귀를 `docs/test-evidence.md`에 기록한다. SC-004와 FR-008을 실행 증거로 연결한다.
+- [X] T021 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 생성201(false)→같은키201(true)→GET CONFIRMED→취소200→중복취소200→같은생성201(true)→GET CANCELLED 시퀀스를 작성한다. 최초 id/resourceId/CONFIRMED/createdAt·Location을 사전 baseline으로 보존하고 필드값을 비교한다. 생성 cancelledAt 없음·현재5필드/명시null 또는 UTC·중복취소 동일시각을 검사하고 시퀀스 검사 누락의 의도한 RED를 확인한다.
+- [X] T022 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 시나리오 의미 비교를 최소 구현해 T021 GREEN을 확인한다. 최초 true/재요청 false처럼 개별 유효 boolean도 기대 시점이 다르면 거부한다. 재현 JSON 공백/순서의 바이트동일성은 요구하지 않는다. 모든 요청 종료 뒤 `DatabaseAssertions` 단일 snapshot으로 예약행1·추가차감0·복구1·available+CONFIRMED수=capacity·불변 user/key/resourceId/createdAt을 확인한다.
+- [X] T023 [US3] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java` 시퀀스 지정 실행 결과·원문/최초값 비교·최종 DB상태·소유키/종료와 정상/오류 기존 사례의 영향 회귀를 `docs/test-evidence.md`에 기록한다. SC-004와 FR-008을 실행 증거로 연결한다.
 
 ## Phase 6: US4 — 계약 이탈 탐지력 (P2)
 

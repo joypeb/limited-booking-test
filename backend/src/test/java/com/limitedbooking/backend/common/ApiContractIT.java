@@ -564,4 +564,75 @@ class ApiContractIT {
         } finally {org.mockito.Mockito.reset(redis);}
         assertThat(new DatabaseAssertions(database).snapshot(List.of(ERROR_RESOURCE,ERROR_OTHER))).isEqualTo(before);
     }
+    private static ApiContractValidator.ScenarioExpectation scenario(int status,Map<String,String> fields,
+            String location,Boolean replayed) {
+        return new ApiContractValidator.ScenarioExpectation(status,null,fields,location,replayed,null);
+    }
+    private static Map<String,String> currentFields(Map<String,String> initial,String state,String cancelledAt) {
+        var fields=new LinkedHashMap<>(initial);fields.put("status",state);
+        if(cancelledAt!=null)fields.put("cancelledAt",cancelledAt);
+        return Map.copyOf(fields);
+    }
+    @Test void replayCancelAndCurrentStateSequenceMatchesIndependentBaseline() throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        UUID resourceId=UUID.randomUUID();String key="sequence-"+UUID.randomUUID();
+        Map<String,String> initial;
+        String initialLocation,cancelledAt;
+        ApiContractValidator.HttpExchange first;
+        try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
+            resetOwnedData(http);
+            http.prepare(()->new TestData(database).resource(resourceId,"시퀀스 대상",1,1,Instant.EPOCH));
+            var headers=Map.of("Content-Type","application/json","Authorization",userAuth(),"Idempotency-Key",key);
+            String request=" { \"resourceId\" : \""+resourceId+"\" } ";
+            first=http.send("POST","/api/reservations",headers,request);
+            first.assertValid(validator);
+            var created=mapper.readTree(first.responseBody());
+            assertFields(created,"id","resourceId","status","createdAt");
+            assertThat(created.get("resourceId").asString()).isEqualTo(resourceId.toString());
+            assertThat(created.get("status").asString()).isEqualTo("CONFIRMED");
+            var saved=new LinkedHashMap<String,String>();
+            for(String field:List.of("id","resourceId","status","createdAt"))saved.put(field,created.get(field).asString());
+            initial=Map.copyOf(saved);initialLocation=header(first.responseHeaders(),"Location");
+            validator.assertScenario(first,scenario(201,initial,initialLocation,false));
+            String compact="{\"resourceId\":\""+resourceId+"\"}";
+            var replay=http.send("POST","/api/reservations",headers,compact);
+            validator.assertScenario(replay,scenario(201,initial,initialLocation,true));
+            var current=http.send("GET",initialLocation,Map.of("Authorization",userAuth()),null);
+            validator.assertScenario(current,scenario(200,currentFields(initial,"CONFIRMED",null),null,null));
+            assertThat(mapper.readTree(current.responseBody()).get("cancelledAt").isNull()).isTrue();
+            var cancelled=http.send("POST",initialLocation+"/cancel",Map.of("Authorization",userAuth()),null);
+            validator.assertScenario(cancelled,scenario(200,currentFields(initial,"CANCELLED",null),null,null));
+            cancelledAt=mapper.readTree(cancelled.responseBody()).get("cancelledAt").asString();
+            var currentCancelled=currentFields(initial,"CANCELLED",cancelledAt);
+            var duplicateCancel=http.send("POST",initialLocation+"/cancel",Map.of("Authorization",userAuth()),null);
+            validator.assertScenario(duplicateCancel,scenario(200,currentCancelled,null,null));
+            var afterCancelReplay=http.send("POST","/api/reservations",headers,request);
+            validator.assertScenario(afterCancelReplay,scenario(201,initial,initialLocation,true));
+            var finalCurrent=http.send("GET",initialLocation,Map.of("Authorization",userAuth()),null);
+            validator.assertScenario(finalCurrent,scenario(200,currentCancelled,null,null));
+            assertThat(http.submittedCount()).isEqualTo(7);
+        }
+        // 모든 HTTP/client/server 종료 뒤 수량·예약 불변 컬럼을 단일 SQL snapshot으로 읽는다.
+        var snapshot=new DatabaseAssertions(database).reservationSnapshot(resourceId);
+        assertThat(snapshot.inventory().capacity()).isEqualTo(1);
+        assertThat(snapshot.inventory().available()).isEqualTo(1);
+        assertThat(snapshot.inventory().totalCount()).isEqualTo(1);
+        assertThat(snapshot.inventory().confirmedCount()).isZero();
+        assertThat(snapshot.reservations()).hasSize(1);
+        var stored=snapshot.reservations().getFirst();
+        assertThat(stored.id()).isEqualTo(UUID.fromString(initial.get("id")));
+        assertThat(stored.resourceId()).isEqualTo(resourceId);
+        assertThat(stored.userId()).isEqualTo(TestData.USER_A_ID);
+        assertThat(stored.idempotencyKey()).isEqualTo(key);
+        assertThat(stored.createdAt()).isEqualTo(Instant.parse(initial.get("createdAt")));
+        assertThat(stored.cancelledAt()).isEqualTo(Instant.parse(cancelledAt));
+        assertThat(stored.status()).isEqualTo(com.limitedbooking.backend.reservation.ReservationStatus.CANCELLED);
+        var keys=new RateLimitTestSupport(redis);
+        assertThat(keys.count(TestData.USER_A_ID)).isEqualTo(5);
+        assertThat(keys.count(TestData.USER_B_ID)).isZero();assertThat(keys.count(TestData.ADMIN_ID)).isZero();
+        // 실제 제품 시퀀스는 정상이다. 비교기가 유효한 boolean의 잘못된 시점을 놓치는지 별도로 확인한다.
+        assertThatThrownBy(()->validator.assertScenario(first,scenario(201,initial,initialLocation,true)))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("semantic:scenario-replay");
+    }
 }
