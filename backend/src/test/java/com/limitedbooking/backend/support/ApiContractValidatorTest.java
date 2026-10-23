@@ -324,6 +324,18 @@ class ApiContractValidatorTest {
             assertThatThrownBy(()->body(baseline,broken).assertValid(v)).isInstanceOf(AssertionError.class).hasMessageContaining("semantic");
         }
     }
+    // 스키마는 title·detail을 string으로만 정의하므로 빈 문자열·공백만 있는 값은 의미 검사가 거부해야 한다.
+    @ParameterizedTest(name="Problem {0}={1}")
+    @org.junit.jupiter.params.provider.CsvSource(value={"title,''","title,'   '","detail,''","detail,'   '"})
+    void problemTitleAndDetailMustNotBeBlank(String field,String blank) throws Exception {
+        var v=ApiContractValidator.load("business.openapi.yaml");
+        var baseline=problem(401);baseline.assertValid(v);
+        String original=field.equals("title")?"\"title\":\"요청 거부\"":"\"detail\":\"요청을 처리할 수 없습니다.\"";
+        String broken=baseline.responseBody().replace(original,"\""+field+"\":\""+blank+"\"");
+        assertThat(broken).isNotEqualTo(baseline.responseBody());
+        assertThatThrownBy(()->body(baseline,broken).assertValid(v)).isInstanceOf(AssertionError.class)
+                .hasMessageContaining("semantic:problem-text").hasMessageContaining("/body/"+field);
+    }
     @Test void positiveRetryAfterMustMatchIndependentDecisionPttl() throws Exception {
         var v=ApiContractValidator.load("business.openapi.yaml");
         var baseline=problem(429);

@@ -1895,3 +1895,10 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
   - 새 단언 + 누출 RED: 종료1, 83건 중 75건 실패(`[<사례> 업무 전체 행 무변경] expected …`). 실패하지 않은 8건은 비교 대상이 아닌 8192 정상 성공 사례다(`/tmp/t037-p22-new-leak.log`).
   - 원복 GREEN: 누출 줄 0건, 원복 파일이 새 단언 파일과 바이트 일치. 같은 명령 종료0, 83건 실패/오류/skip0(`/tmp/t037-p22-green.log`).
 - 관련 회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT'` 종료0, 96건(ApiContractIT94·DB fixture1·Redis fixture1) 실패/오류/skip0. 47초.
+
+### P3 Problem title·detail 공백 거부
+
+- 원인: 고정 OpenAPI는 title·detail을 필수 string으로만 정의해 `""`·공백만 있는 값도 schema를 통과했고, semantic 검사에도 해당 규칙이 없었다.
+- RED: `ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank`(title/detail × `""`/`"   "`)를 추가했다. 정상 401 Problem은 먼저 통과시킨 뒤 한 필드만 바꾼다. `cd backend && ./gradlew test --tests '*ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank'` 종료1, 4/4 실패(`Expecting code to raise a throwable`). 로그 `/tmp/t037-p3-problem-red.log`.
+- 최소 수정: 오류 응답 semantic에 `semantic:problem-text@/body/title|detail`을 추가했다. 누락·타입 오류는 기존 response-schema가 담당하므로 문자열일 때 blank만 거부한다.
+- GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0, 105건(기존101+신규4) 실패/오류/skip0. 로그 `/tmp/t037-p3-problem-green.log`.

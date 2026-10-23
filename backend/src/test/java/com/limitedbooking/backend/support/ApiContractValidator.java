@@ -237,6 +237,9 @@ public final class ApiContractValidator {
                     404,Set.of("NOT_FOUND"),409,Set.of("SOLD_OUT","IDEMPOTENCY_CONFLICT"),413,Set.of("PAYLOAD_TOO_LARGE"),
                     415,Set.of("UNSUPPORTED_MEDIA_TYPE"),429,Set.of("RATE_LIMITED"),503,Set.of("DEPENDENCY_UNAVAILABLE"));
             if(!codes.getOrDefault(status,Set.of()).contains(json.path("code").asText())) violation(failures,"problem-code","/body/code");
+            // 누락·타입 오류는 response-schema가 담당하고, 스키마가 허용하는 빈/공백 문자열만 여기서 거부한다.
+            for(String field:List.of("title","detail"))
+                if(json.path(field).isTextual() && json.path(field).asText().isBlank()) violation(failures,"problem-text","/body/"+field);
             String serialized=json.toString();
             boolean secret=List.of(TestData.ADMIN_PASSWORD,TestData.USER_A_PASSWORD,TestData.USER_B_PASSWORD)
                     .stream().anyMatch(serialized::contains);
