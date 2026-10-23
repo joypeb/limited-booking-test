@@ -2025,3 +2025,7 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 
 - T030(reviewer) `c71afaa..b29cbe2` 6커밋·26파일: Critical/High/Medium 0, Low 1(spec 상태·research R3의 설계 당시 `NONE` 문구) → spec 상태 갱신·research에 구현 갱신 주석 추가. 역할 범위 위반 0(`backend/src/main` diff 0, build.gradle은 발견 규칙·PIT·게이트 한정, 제품 Bean 대체/mock 0). FR-001~017·SC-001~006 전부 충족 판정.
 - T031(orchestrator) Spec Kit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 정상. spec/plan/tasks·헌법 대비 missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계 추가 없음. 남은 T032~T034는 PR 절차다.
+- T032(orchestrator): `git push -u origin feature/011-property-mutation`, Draft PR #14(base develop) 생성 https://github.com/joypeb/limited-booking-test/pull/14
+- T033 1차(reviewer): OCR v1.13.3 `ocr review --provider chatgpt …` 범위 c71afaa..5c4ff87(26파일, gh pr diff와 일치)에서 LLM provider 인증 부재(`ocr auth login` 필요, 비대화형 세션에서 불가)로 종료1 — 모델 리뷰 미실행, 게시 0. 대응: 같은 OCR의 `ocr delegate`(LLM 없이 파일 선택·규칙 해석, host-agent가 리뷰) 모드로 재개.
+- T033 2차(reviewer): `ocr delegate preview --format json --from c71afaa… --to 5c4ff87… --rule …`, `ocr delegate rule --format json …`로 OCR이 선택·해석한 26파일 전체를 host-agent가 리뷰. 후보 4건(명세 상태 표기·research NONE/MOCK·B 속성 미탐지·실패 경로 시간 상한) 모두 무효/기존 기록된 한계로 판정, 유효 지적 0. PR #14 COMMENT 리뷰 5629011946 게시(본문에 delegate 모드와 범위 명시).
+- T034(orchestrator): PR 라인 코멘트 0·이슈 코멘트 0·리뷰 1(유효 지적 없음). Critical/High·실패 테스트·누락 요구사항 0 → 재할당 없음. Merge는 사용자 승인 대기.

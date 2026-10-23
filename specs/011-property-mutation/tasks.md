@@ -1,7 +1,7 @@
 # Tasks: 명령 순서 속성 검증과 변이 탐지력 확인
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [검증 계약](contracts/verification-contract.md), [실행 안내](quickstart.md)
-**상태**: 2026-10-23 T001~T029 구현·검증 완료(T019·T026은 생존 변이/미탐지 0으로 해당 없음). T030 이후 리뷰·Converge·PR 진행. 실행 근거는 docs/test-evidence.md 10단계 절.
+**상태**: 2026-10-23 T001~T029 구현·검증 완료(T019·T026은 생존 변이/미탐지 0으로 해당 없음). T030~T034 리뷰·Converge(Converged)·Draft PR #14·OCR(delegate) 리뷰 완료, 유효 지적 0. Merge는 사용자 승인 대기. 실행 근거는 docs/test-evidence.md 10단계 절.
 
 ## 형식과 공통 실행 계약
 
@@ -79,9 +79,9 @@
 - [X] T029 (orch) 문서 동기화: `docs/test-evidence.md`(10단계 절), `docs/versions.md`(Property/PIT 현재 대상·수치), `docs/decisions.md`(R2·R4·R5 결정), `README.md`(propertyTest·mutationSmoke 범위), 계획서 상단 상태·6.2 표·10단계 체크박스(실행 검증 항목만), `knowledge/rules/development-and-testing.md`, `knowledge/domain/reservation.md` 검증 사례, 필요 시 `knowledge/README.md`. 링크·형식 검사. — 선행: T028
 - [X] T030 (rev) 로컬 전체 diff 독립 리뷰(역할 범위 위반 파일 포함 점검). — 선행: T029
 - [X] T031 (orch) Spec Kit Converge 수행, 미수렴 항목 재분배. — 선행: T030
-- [ ] T032 (orch) 목적별 커밋·push·Draft PR(base `develop`). — 선행: T031
-- [ ] T033 (rev) Codex Open Code Review로 PR 정확한 diff 리뷰, 유효 항목을 GitHub PR Review API로 파일·라인 코멘트 게시. — 선행: T032
-- [ ] T034 (orch) PR 코멘트 분류·재할당·재검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 후. — 선행: T033
+- [X] T032 (orch) 목적별 커밋·push·Draft PR(base `develop`). — 선행: T031
+- [X] T033 (rev) Codex Open Code Review로 PR 정확한 diff 리뷰, 유효 항목을 GitHub PR Review API로 파일·라인 코멘트 게시. — 선행: T032
+- [X] T034 (orch) PR 코멘트 분류·재할당·재검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 후. — 선행: T033
 
 ## Dependencies
 
