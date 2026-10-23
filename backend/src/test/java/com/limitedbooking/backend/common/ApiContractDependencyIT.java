@@ -17,7 +17,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.*;
 import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.*;
 import org.springframework.test.context.support.AbstractTestExecutionListener;
@@ -94,12 +93,7 @@ abstract class ContractDependencyFixture {
     }
     /** 업무 두 테이블의 모든 컬럼·모든 행을 한 SQL 시점에 비교한다. */
     String snapshot() {
-        return new JdbcTemplate(database).queryForObject("""
-                SELECT jsonb_build_object(
-                    'resources', (SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY r.id), '[]'::jsonb) FROM resources r),
-                    'reservations', (SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id), '[]'::jsonb) FROM reservations v)
-                )::text
-                """,String.class);
+        return new DatabaseAssertions(database).businessRows();
     }
     void stopOwned(Runnable action) throws Exception {
         stop.check();

@@ -1885,3 +1885,13 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - RED: `cd backend && ./gradlew integrationTest --tests '*ResourceApiIT.rejectsNonCanonicalUuidPath*' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료1. ResourceApiIT 3/3 실패(`expected: 400 but was: 200`), ApiContractIT 34건 중 2건 실패(`path-/api/resources/1-1-1-1-1`, `path-/api/resources/%2010000000-…` 각각 `expected: 400 but was: 404`). 예약 두 경로의 새 사례는 기존 binder로 이미 400이었다. 로그 `/tmp/t037-p21-red.log`.
 - 최소 수정: `ResourceController`에 `ReservationController`와 같은 정규식 `@InitBinder`를 추가했다. 공통 추상화는 만들지 않았다.
 - GREEN: `./gradlew integrationTest --tests '*ResourceApiIT' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료0. ResourceApiIT 11(기존8+신규3), invalidInputs 34, 실패/오류/skip0. 로그 `/tmp/t037-p21-green.log`.
+
+### P2-2 오류 경로의 업무 전체 행 무변경
+
+- 원인: `securityAndBusinessErrorMatchesContract`와 429 사례는 두 대상의 집계(capacity/available/total/CONFIRMED)만 비교했고, 400·413·415 사례는 DB를 확인하지 않았다. 집계에 잡히지 않는 행 추가·컬럼 변경을 놓칠 수 있었다.
+- 수정(테스트만): 의존성 fixture의 `jsonb_agg(to_jsonb(...))` 단일 SQL을 `DatabaseAssertions.businessRows()`로 옮겨 두 시험이 같은 방식을 쓴다. `ApiContractIT`의 400(invalidInputs, 사전 데이터 준비 추가)·401/403/404/409·413/400 본문 경계(오류 응답만)·415(사전 데이터 준비 추가)·429/413 사례에서 요청 전 snapshot과 HTTP·서버 종료 뒤 snapshot을 비교한다. 8192 정상 생성201·조회200은 의도한 성공이라 비교하지 않는다.
+- 탐지 실험(테스트 소스만 임시 변경, 정확히 원복): 각 오류 요청 직후 `TestData.resource(UUID.randomUUID(),"고의 누출 행",…)`을 넣었다. 대상 명령은 `./gradlew contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --tests '*ApiContractIT.securityAndBusinessErrorMatchesContract' --tests '*ApiContractIT.actualBodyFramingAndUtf8BoundaryMatchesContract' --tests '*ApiContractIT.unsupportedContentTypeMatchesContract' --continue`다.
+  - 기존 단언 + 누출: 종료0, 83건 모두 통과. 누출을 탐지하지 못하는 구멍을 확인했다(`/tmp/t037-p22-old-leak.log`).
+  - 새 단언 + 누출 RED: 종료1, 83건 중 75건 실패(`[<사례> 업무 전체 행 무변경] expected …`). 실패하지 않은 8건은 비교 대상이 아닌 8192 정상 성공 사례다(`/tmp/t037-p22-new-leak.log`).
+  - 원복 GREEN: 누출 줄 0건, 원복 파일이 새 단언 파일과 바이트 일치. 같은 명령 종료0, 83건 실패/오류/skip0(`/tmp/t037-p22-green.log`).
+- 관련 회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT'` 종료0, 96건(ApiContractIT94·DB fixture1·Redis fixture1) 실패/오류/skip0. 47초.

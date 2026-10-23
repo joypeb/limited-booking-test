@@ -94,5 +94,15 @@ public final class DatabaseAssertions {
         });
     }
 
+    /** 업무 두 테이블의 모든 컬럼·모든 행을 한 SQL 시점에 JSON 문자열로 읽는다. */
+    public String businessRows() {
+        return jdbc.getJdbcTemplate().queryForObject("""
+                SELECT jsonb_build_object(
+                    'resources', (SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY r.id), '[]'::jsonb) FROM resources r),
+                    'reservations', (SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id), '[]'::jsonb) FROM reservations v)
+                )::text
+                """,String.class);
+    }
+
     private record Inventory(int capacity, int available, long confirmedCount) {}
 }

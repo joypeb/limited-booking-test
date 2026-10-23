@@ -373,14 +373,21 @@ class ApiContractIT {
     @org.junit.jupiter.params.provider.MethodSource("invalidInputs")
     void invalidInputMatchesExactContract(InvalidInput input) throws Exception {
         var headers=new LinkedHashMap<>(input.headers());headers.put("Authorization",adminAuth());
+        String before;
         try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
-            resetOwnedData(http);
+            resetOwnedData(http);prepareErrorData(http);
+            before=new DatabaseAssertions(database).businessRows();
             var reply=http.send(input.method(),input.path(),headers,input.body());
             assertThat(reply.status()).as(input.id()).isEqualTo(400);
             var validator=ApiContractValidator.load("business.openapi.yaml").expectInvalidRequest(
                     new ApiContractValidator.ExpectedRequestViolations(input.library(),input.raw(),400,"INVALID_REQUEST"));
             reply.assertValid(validator);
         }
+        assertBusinessRowsUnchanged(input.id(),before);
+    }
+    /** HTTP·서버 종료 뒤 업무 두 테이블의 모든 행·컬럼이 요청 전과 같은지 단일 SQL로 비교한다. */
+    private void assertBusinessRowsUnchanged(String caseId,String before) {
+        assertThat(new DatabaseAssertions(database).businessRows()).as(caseId+" 업무 전체 행 무변경").isEqualTo(before);
     }
     private static final UUID ERROR_RESOURCE=UUID.fromString(CONTRACT_ID);
     private static final UUID ERROR_OTHER=UUID.fromString("10000000-0000-0000-0000-000000000002");
@@ -432,10 +439,10 @@ class ApiContractIT {
     @org.junit.jupiter.params.ParameterizedTest(name="{0}")
     @org.junit.jupiter.params.provider.MethodSource("securityAndBusinessCases")
     void securityAndBusinessErrorMatchesContract(ErrorCase fixture) throws Exception {
-        Map<UUID,DatabaseAssertions.InventorySnapshot> before;
+        String before;
         try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
             resetOwnedData(http);prepareErrorData(http);
-            before=new DatabaseAssertions(database).snapshot(List.of(ERROR_RESOURCE,ERROR_OTHER));
+            before=new DatabaseAssertions(database).businessRows();
             var headers=new LinkedHashMap<String,String>();
             if(fixture.user()!=null)headers.put("Authorization",auth(fixture.user(),fixture.wrongPassword()));
             if(fixture.body()!=null)headers.put("Content-Type","application/json");
@@ -443,7 +450,7 @@ class ApiContractIT {
             var reply=http.send(fixture.method(),fixture.path(),headers,fixture.body());
             assertProblem(reply,fixture.status(),fixture.code());
         }
-        assertThat(new DatabaseAssertions(database).snapshot(List.of(ERROR_RESOURCE,ERROR_OTHER))).isEqualTo(before);
+        assertBusinessRowsUnchanged(fixture.id(),before);
     }
     record BodyCase(String id,String method,String path,int bytes,boolean chunked,String user,boolean wrong,
             boolean multibyte,int status,String code) {
@@ -486,8 +493,10 @@ class ApiContractIT {
     @org.junit.jupiter.params.ParameterizedTest(name="{0}")
     @org.junit.jupiter.params.provider.MethodSource("bodyCases")
     void actualBodyFramingAndUtf8BoundaryMatchesContract(BodyCase fixture) throws Exception {
+        String before;
         try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
             resetOwnedData(http);prepareErrorData(http);
+            before=new DatabaseAssertions(database).businessRows();
             var headers=new LinkedHashMap<String,String>();
             headers.put("Content-Type","application/json");headers.put("Idempotency-Key","boundary-key");
             if(fixture.user()!=null)headers.put("Authorization",auth(fixture.user(),fixture.wrong()));
@@ -508,18 +517,23 @@ class ApiContractIT {
                 assertThat(transport.transferEncoding()).isEqualToIgnoringCase("chunked");
             } else assertThat(transport.contentLength()).isEqualTo(fixture.bytes());
         }
+        // 8192 정상 생성(201)·조회(200)는 의도한 변경/무변경 성공이므로 오류 응답만 전체 행 무변경을 요구한다.
+        if(fixture.status()>=400)assertBusinessRowsUnchanged(fixture.id(),before);
     }
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings={"/api/resources","/api/reservations"})
     void unsupportedContentTypeMatchesContract(String path) throws Exception {
+        String before;
         try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
-            resetOwnedData(http);
+            resetOwnedData(http);prepareErrorData(http);
+            before=new DatabaseAssertions(database).businessRows();
             String body=path.endsWith("resources")?"{\"name\":\"대상\",\"capacity\":1}":"{\"resourceId\":\""+ERROR_OTHER+"\"}";
             var reply=http.send("POST",path,Map.of("Authorization",adminAuth(),"Content-Type","text/plain","Idempotency-Key","media-key"),body);
             assertThat(reply.status()).isEqualTo(415);
             reply.assertValid(ApiContractValidator.load("business.openapi.yaml").expectInvalidRequest(new ApiContractValidator.ExpectedRequestViolations(
                     List.of(schema("contentType.notAllowed","/headers/Content-Type")),List.of(),415,"UNSUPPORTED_MEDIA_TYPE")));
         }
+        assertBusinessRowsUnchanged("415 "+path,before);
     }
     private long decisionPttl(ApiContractValidator.HttpExchange reply) {
         var result=SCRIPT_RESULTS.get(header(reply.requestHeaders(),"X-Test-Request-Id"));
@@ -539,7 +553,7 @@ class ApiContractIT {
         }).when(redis).execute(org.mockito.ArgumentMatchers.any(org.springframework.data.redis.core.script.RedisScript.class),
                 org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.any(Object[].class));
         var validator=ApiContractValidator.load("business.openapi.yaml");
-        Map<UUID,DatabaseAssertions.InventorySnapshot> before;
+        String before;
         try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
             resetOwnedData(http);prepareErrorData(http);
             String path=cancel?"/api/reservations/"+ERROR_RESERVATION+"/cancel":"/api/reservations";
@@ -549,7 +563,7 @@ class ApiContractIT {
                 var admitted=http.send("POST",path,headers,body);
                 assertThat(admitted.status()).isEqualTo(cancel?200:201);admitted.assertValid(validator);
             }
-            before=new DatabaseAssertions(database).snapshot(List.of(ERROR_RESOURCE,ERROR_OTHER));
+            before=new DatabaseAssertions(database).businessRows();
             var denied=http.send("POST",path,headers,body);
             assertProblem(denied,429,"RATE_LIMITED");
             validator.assertRetryAfter(denied,decisionPttl(denied));
@@ -566,7 +580,7 @@ class ApiContractIT {
             }
             assertThat(new RateLimitTestSupport(redis).count(TestData.USER_A_ID)).isEqualTo(21);
         } finally {org.mockito.Mockito.reset(redis);}
-        assertThat(new DatabaseAssertions(database).snapshot(List.of(ERROR_RESOURCE,ERROR_OTHER))).isEqualTo(before);
+        assertBusinessRowsUnchanged("429 413 cancel="+cancel,before);
     }
     private static ApiContractValidator.ScenarioExpectation scenario(int status,Map<String,String> fields,
             String location,Boolean replayed) {

@@ -90,7 +90,7 @@
 제품 변경은 T037만 허용한다. OpenAPI·계획서 정책은 바꾸지 않는다.
 
 - [X] T037 [P2-1] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java` 경로 UUID를 예약 Controller와 같은 정규식 binder로 엄격히 변환한다. `ResourceApiIT`·`ApiContractIT.invalidInputs`의 `1-1-1-1-1`·공백 사례 RED(200/404)→GREEN(400)을 확인한다.
-- [ ] T038 [P2-2] `ApiContractIT`의 400·401·403·404·409·413·415·429 사례 전후에 resources·reservations 전체 행·컬럼 단일 SQL snapshot이 같음을 확인한다.
+- [X] T038 [P2-2] `ApiContractIT`의 400·401·403·404·409·413·415·429 사례 전후에 resources·reservations 전체 행·컬럼 단일 SQL snapshot이 같음을 확인한다.
 - [ ] T039 [P3] `ApiContractDependencyIT`의 `httpClosed`를 실제 값으로 단언하고, cleanup listener가 컨텍스트 종료 뒤 실행되는 실제 순서를 검증·문서화한다.
 - [ ] T040 [P3] `ApiContractValidator` semantic에 Problem title·detail 비어 있지 않음 검사를 추가한다(Unit RED→GREEN).
 - [ ] T041 [P3] `quickstart.md`·`research.md`의 계획/예정 표시를 현재 상태 또는 당시 기록으로 명시한다.
