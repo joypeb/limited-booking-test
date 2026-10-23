@@ -1,6 +1,6 @@
 # 9단계 검증 안내
 
-**현재 상태**: 계획만 작성했다. 아래 신규 클래스/시험 이름은 예정이며 구현 전 명령을 성공했다고 해석하지 않는다. 현재 계획 단계에서는 Gradle/Docker/HTTP/DTO 변이를 실행하지 않았다.
+**현재 상태(2026-10-23)**: 아래 클래스·시험은 구현됐고 명령은 실제 실행·인수했다(T001~T036, PR #12 리뷰 보완 T037~). 실제 수·종료 코드는 [실행 증거](../../docs/test-evidence.md)와 [작업 목록](tasks.md)을 따른다. 이 안내는 계획 단계에 작성했으며, 당시의 "예정·미실행" 표현은 현재 상태에 맞게 고쳤다. 작성 당시에는 Gradle/Docker/HTTP/DTO 변이를 실행하지 않았다.
 
 ## 준비
 
@@ -16,7 +16,7 @@
 ./gradlew contractTest --tests '*ApiContractDependencyIT'
 ```
 
-마지막 클래스는 별도 의존성 fixture 분리 시 예정 이름이다. 구현 시 실제 발견 이름을 반영한다. 첫 시험은 정상/정확한 예상 request 위반/response 항상검사/UTC·헤더/default/strict JSON 보완을 검사한다. 업무 IT는 [계약 적용표](contracts/validation-contract.md)의 모든 셀과 정상·실패 시퀀스·응답 훼손을 검사한다. 파괴적 의존성 fixture는 실제 소유 DB/Redis 장애503·독립API·DB무변경을 확인한다. 예상 request 위반이 누락되거나 무관한 위반이 추가되면 실패해야 한다.
+마지막 명령은 같은 파일의 `ApiContractDependencyIT`(DB 중단)와 `RedisApiContractDependencyIT`(Redis 중단)를 함께 발견한다. 첫 시험은 정상/정확한 예상 request 위반/response 항상검사/UTC·헤더/default/strict JSON 보완을 검사한다. 업무 IT는 [계약 적용표](contracts/validation-contract.md)의 모든 셀과 정상·실패 시퀀스·응답 훼손을 검사한다. 파괴적 의존성 fixture는 실제 소유 DB/Redis 장애503·독립API·DB무변경을 확인한다. 예상 request 위반이 누락되거나 무관한 위반이 추가되면 실패해야 한다.
 
 ## 실제 HTTP 인수 시퀀스
 
@@ -32,7 +32,7 @@
 
 - 대상: 실제 `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java`의 available component int→String. 기존 int 생성자 호출은 (UUID,String,int,int) 보조생성자가 String.valueOf(available)로 위임하도록 최소 보완한다. 이는 실제 DTO 타입·실제 JSON 숫자→문자열 변이이고 controller/SQL/고정 schema/시험 기대값을 바꾸지 않는다. 최종 코드에 남기지 않는다.
 - `./gradlew compileJava compileTestJava`가 종료0이어야 한다. 컴파일 실패면 탐지 증거가 아니므로 원인/최소 보완 후 다시 확인한다.
-- baseline에서 통과한 `ApiContractIT`의 `resourceSuccessMatchesContract`(예정 고정 메서드)를 지정 실행한다.
+- baseline에서 통과한 `ApiContractIT`의 `resourceSuccessMatchesContract`(구현된 고정 메서드)를 지정 실행한다.
 
 ```sh
 ./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'
@@ -55,4 +55,4 @@ verifyContract가 verify(Unit·일반IT)+contractTest를 포함한다. 일반IT�
 
 docs/test-evidence.md에 명령·종료코드·태스크/클래스별 수·실패/오류/skip·최소 재현·응답 훼손 종류별 탐지·DTO 컴파일/HTTP RED/원복 GREEN·실제 의존성/제한/종료·미검증을 남긴다. versions/decisions/README·knowledge 연결·계획서 완료 표시는 실제 검증 후 갱신한다. performance는 비용/시간을 실제 측정한 경우에만 기록하고 운영 규모로 일반화하지 않는다.
 
-Qodana는 최신 사용자 “추후 직접/이번 스킵” 지시에 따라 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. Property/PIT 확장·부하·외부CI·배포는 이번9단계 밖이다. 다음 작업은 이 계획을 검토한 뒤 speckit-tasks로 의존성 순서의 작업 목록을 작성하는 것이다.
+Qodana는 최신 사용자 “추후 직접/이번 스킵” 지시에 따라 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. Property/PIT 확장·부하·외부CI·배포는 이번9단계 밖이다. 작성 당시의 다음 작업은 speckit-tasks였고, 이후 [작업 목록](tasks.md)대로 구현·인수했다.

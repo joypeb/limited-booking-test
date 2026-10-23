@@ -1914,3 +1914,7 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - GREEN: 실제 `isClosed()` 구현과 2999 원복(임시 표식 0건) 뒤 `./gradlew test --tests '*ApiContractValidatorTest' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'` 종료0이다.
   - Unit105·Contract102(ApiContractIT94·DB fixture1·Redis fixture1·프로브6), 실패/오류/skip0.
   - 출력은 `fixture=DB-stopped serverIdle=true httpClosed=true stop=false`와 Redis-stopped 동일이다. 로그 `/tmp/t037-p3-green.log`.
+
+### P3 quickstart·research 상태 표시
+
+`specs/010-openapi-contract/quickstart.md`의 "계획만·예정 이름·예정 고정 메서드·다음 작업 speckit-tasks"를 현재 구현·인수 상태와 실제 클래스 이름(`ApiContractDependencyIT`·`RedisApiContractDependencyIT`)으로 고쳤다. 작성 당시 미실행 사실은 그대로 남겼다. `research.md` 상단은 설계 당시의 historical record임을 명시하고 현재 결과 문서를 연결했다. 결정 본문(R1~R6)은 바꾸지 않았다. 승인된 spec/plan 본문은 수정하지 않았다.
