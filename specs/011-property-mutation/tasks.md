@@ -77,8 +77,8 @@
 
 - [X] T028 (orch) 최종 게이트: `./gradlew build deepTest mutationSmoke verifyContractDependencies` 종료0, 그룹별 수·실패0·skip0·attempts·PIT ratio 기록, `git diff --exit-code -- backend/src/main` 0. — 선행: T027
 - [X] T029 (orch) 문서 동기화: `docs/test-evidence.md`(10단계 절), `docs/versions.md`(Property/PIT 현재 대상·수치), `docs/decisions.md`(R2·R4·R5 결정), `README.md`(propertyTest·mutationSmoke 범위), 계획서 상단 상태·6.2 표·10단계 체크박스(실행 검증 항목만), `knowledge/rules/development-and-testing.md`, `knowledge/domain/reservation.md` 검증 사례, 필요 시 `knowledge/README.md`. 링크·형식 검사. — 선행: T028
-- [ ] T030 (rev) 로컬 전체 diff 독립 리뷰(역할 범위 위반 파일 포함 점검). — 선행: T029
-- [ ] T031 (orch) Spec Kit Converge 수행, 미수렴 항목 재분배. — 선행: T030
+- [X] T030 (rev) 로컬 전체 diff 독립 리뷰(역할 범위 위반 파일 포함 점검). — 선행: T029
+- [X] T031 (orch) Spec Kit Converge 수행, 미수렴 항목 재분배. — 선행: T030
 - [ ] T032 (orch) 목적별 커밋·push·Draft PR(base `develop`). — 선행: T031
 - [ ] T033 (rev) Codex Open Code Review로 PR 정확한 diff 리뷰, 유효 항목을 GitHub PR Review API로 파일·라인 코멘트 게시. — 선행: T032
 - [ ] T034 (orch) PR 코멘트 분류·재할당·재검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 후. — 선행: T033

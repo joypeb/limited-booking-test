@@ -2020,3 +2020,8 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 ### T029 문서 동기화
 
 README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상단 상태·3.1 PIT 행·6.2 표·10단계 체크박스(실행 검증 후 표시)·수행 기록, knowledge/rules/development-and-testing.md, knowledge/domain/reservation.md, knowledge/README.md 목록 설명을 갱신했다.
+
+### T030 전체 로컬 리뷰·T031 Converge
+
+- T030(reviewer) `c71afaa..b29cbe2` 6커밋·26파일: Critical/High/Medium 0, Low 1(spec 상태·research R3의 설계 당시 `NONE` 문구) → spec 상태 갱신·research에 구현 갱신 주석 추가. 역할 범위 위반 0(`backend/src/main` diff 0, build.gradle은 발견 규칙·PIT·게이트 한정, 제품 Bean 대체/mock 0). FR-001~017·SC-001~006 전부 충족 판정.
+- T031(orchestrator) Spec Kit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 정상. spec/plan/tasks·헌법 대비 missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계 추가 없음. 남은 T032~T034는 PR 절차다.

@@ -14,7 +14,7 @@
 
 ## R3. 속성 실행 경로
 
-- **Decision**: `@SpringBootTest(webEnvironment = NONE)` 컨텍스트에서 `ReservationService.create/get/cancel`, `ResourceService.create`를 순차 호출한다. 인증 UUID는 `TestData.USER_A_ID/USER_B_ID`. 컨테이너는 `ContainerTestSupport.postgresOnly()`, 종료는 기존 `Cleanup` listener 패턴(order 2999, afterTestClass close)을 따른다.
+- **Decision**(구현 갱신: T006에서 `NONE`은 보안 필터 체인의 `HttpSecurity` Bean 부재로 컨텍스트 기동 실패 → 실제 Bean 그대로 `MOCK` 웹 환경으로 확정. 아래는 설계 당시 문구): `@SpringBootTest(webEnvironment = NONE)` 컨텍스트에서 `ReservationService.create/get/cancel`, `ResourceService.create`를 순차 호출한다. 인증 UUID는 `TestData.USER_A_ID/USER_B_ID`. 컨테이너는 `ContainerTestSupport.postgresOnly()`, 종료는 기존 `Cleanup` listener 패턴(order 2999, afterTestClass close)을 따른다.
 - **Rationale**: 계획서 10단계 “ReservationService/get/cancel과 실제 DB”, “Redis 필터를 우회하는 내부 서비스의 순차 정합성 검증”. HTTP·인증·제한은 계약/보안/제한 IT가 담당한다. 서비스 호출은 호출자 트랜잭션이 없어야 하므로 테스트에 `@Transactional`을 두지 않는다.
 - **Alternatives**: HTTP 경로(요청 제한 20회/60초에 걸리고 실행이 느림), Writer 직접 호출(Service의 재현·충돌 분기를 우회).
 
