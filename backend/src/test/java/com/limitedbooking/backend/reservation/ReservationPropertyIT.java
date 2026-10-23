@@ -72,7 +72,7 @@ class ReservationPropertyIT {
 
         System.out.println("reservation-property seed=" + seed + " examples=150");
         try {
-            qt().withFixedSeed(seed).withExamples(150).withShrinkCycles(200)
+            qt().withFixedSeed(seed).withExamples(150).withShrinkCycles(2000)
                     .forAll(integers().between(0, 5), integers().between(0, 5), commands)
                     .checkAssert((capacityR1, capacityR2, sequence) -> {
                         attempts.incrementAndGet();
