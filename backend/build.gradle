@@ -112,6 +112,7 @@ tasks.named('contractTest') { dependsOn tasks.named('verifyContractDependencies'
 tasks.register('propertyTest', Test) {
     group = 'verification'
     include '**/*Test.class'
+    include '**/*IT.class'
     useJUnitPlatform { includeTags 'property' }
     if (System.getenv('QT_SEED')) systemProperty 'QT_SEED', System.getenv('QT_SEED')
     shouldRunAfter tasks.contractTest, tasks.integrationTest
