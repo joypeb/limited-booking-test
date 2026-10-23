@@ -1841,3 +1841,25 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - `docs/concurrency-runs.json`은 8단계와 같은 변환 규칙(`/private/tmp/009-record-concurrency.py`의 기준 문구·날짜만 바꾼 로컬 사본)으로 이번 XML에서 재생성했다. command/exitCode/date/unit294/IT312/class115/반복110/fixture5/실패·오류·skip0이다. 경쟁 관련 소스 5개의 SHA256이 8단계 기록과 같고 현재 파일과도 일치하므로 경쟁 시험 소스는 바뀌지 않았다. 바뀐 것은 회차별 실제 관측값(UUID·시간·경로)뿐이다. 스크립트는 110회·사례별1~10·CLEANUP 정상·429/503 0·C07 UPDATE0 증인을 assert한 뒤 기록했다.
 - 새 경쟁 시험 복제·제한 하향·실패 반복·skip은 없다. 실패가 없어 최소 수정·영향 재검증도 필요하지 않았다. 반복 실행은 모든 경쟁 순서의 증명이 아니며 로컬 결과를 운영 규모로 일반화하지 않는다.
 - 미검증·제외: Qodana는 사용자 지시로 이번에 건너뛴 미실행 후속이며 완료·PR·병합 게이트에서 제외한다. 통과로 기록하지 않는다. Property/PIT 확장·k6 부하·외부 CI·push/PR은 실행하지 않았다.
+
+### T034 9단계 실행 근거 정리
+
+9단계의 실제 근거는 아래 기존 절에 단일 담당자 순서로 남아 있다. 이 절은 새 실행이 아니라 색인이며, 각 숫자는 해당 절의 실제 명령·종료 코드·XML을 따른다.
+
+| 항목 | 근거 절 | 핵심 결과 |
+| --- | --- | --- |
+| 기준·환경·기존 게이트 | 공통 선행 T001~T006 | Wrapper9.7.1·Corretto25.0.4, build.gradle의 business.openapi.yaml 복사·contract 태그·XML 게이트 무변경 |
+| 최소 재현 RED→GREEN | T003~T031 각 절 | 각 기능의 assertion RED를 확인했다. 컴파일·sandbox·경로 오류는 RED에서 제외했다 |
+| 정확한 요청 위반 | US2 T012~T017 | library key+location·raw rule 정확 multiset. 알 수 없는 key/context는 실패, 응답 검사는 항상 실행 |
+| 적용표 | T020 실제 적용표 | 5작업 정상, 400/401/403/404/409×2/413/415/429/503(DB5·Redis2) 모든 셀을 실제 HTTP로 관측. 미명시 500/default 거부는 T025 사본 훼손으로 확인 |
+| 429 PTTL | T017·T020·T032 | 독립 판정 PTTL로 Retry-After 비교. T032에서는 58652/58633ms→59초 |
+| DB/Redis 503 | T018~T019·T032 | 소유 DB 중단 5작업 503, 소유 Redis 중단 생성·취소 503·업무 행 무변경·독립3API 정상 |
+| 재현·현재 상태 | US3 T021~T023 | 7교환과 최종 단일 SQL snapshot(예약1행·복구1회·수량식) |
+| 단일 훼손 탐지 | US4 T024~T026 | 44종 각 정상 대조 통과·단일 결함 거부(`contract-copy total=44 controls=44 rejected=44`) |
+| 실제 DTO 변이 | T027~T030 | compile 종료0 → HTTP `/body/available` schema type RED 종료1 → 정확 원복(SHA256 일치) → 같은 명령 GREEN |
+| 전체 게이트·회귀 | T032·T033 | 종료0, Unit294·IT312·Contract96, 실패/오류/skip0, 경쟁110회·fixture5·장애/제한/권한 회귀 |
+
+- 버전·선택은 [versions](versions.md)의 2026-10-23 9단계 절과 [decisions](decisions.md)의 9단계 검사기 구성 절에 반영했다.
+- `docs/performance.md`: 9단계에서는 계약 검사 비용을 별도로 측정하지 않았으므로 작성하지 않았다(미측정). 위 실행 시간은 기능 실행 기록이며 성능 근거가 아니다.
+- 미검증·제외: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외, 통과로 기록하지 않음), Property/PIT 확장(10단계), k6 부하·외부 CI·소비자 주도 계약, push/PR. 승인된 010 spec/plan 문서는 수정하지 않았다.
+- T035에서 `docs/openapi.yaml`의 `info.description` 첫 문장만 "초안·미실행"에서 실제 검증 상태로 바꿨다(스키마·경로·응답 변경 없음). 영향 확인으로 `cd backend && ./gradlew test --tests '*ApiContractValidatorTest'`를 실행해 종료0, 101건 실패/오류/skip0(고정 명세 parse/ref·5 operation 포함)을 확인했다. 이 실행이 `backend/build/test-results/test/`를 덮었으므로 T032 Unit XML 원본은 `/private/tmp/010-t032-xml/test/`를 기준으로 한다. 전체 게이트는 재실행하지 않았다.

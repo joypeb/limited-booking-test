@@ -64,3 +64,8 @@
 ### 2026-10-22 최종 적용 확인
 
 기본20/60000ms·만료전용3/1000ms·경쟁전용10000/60000ms·연결/명령200ms를 유지한다. 기존HTTP 회귀·경쟁110회·종료 후 다음Redis/DB reset0을 인수했다. `build verify verifyContractDependencies`의 실제 수·결과는 [실행 근거](../../docs/test-evidence.md)를 따른다. Qodana T037은 사용자지정 미실행 후속이다. 오케스트레이터 최종검토는 별도다.
+
+
+### 2026-10-23 9단계 계약 적용 확인
+
+위 엔드포인트·오류 표의 모든 작업별 정상·실패 조합을 고정 OpenAPI와 실제 HTTP로 대조했다. Problem 6필드와 status·code·instance 대응, 401 Basic·429 Retry-After, 민감정보 비노출을 검사하며 명시하지 않은 상태와 500은 default 선언과 무관하게 거부한다. GET의 413은 전역 본문 상한의 적용이며 새 정책이 아니다. 규칙 변경은 없다. 실행 수·적용표는 [실행 근거](../../docs/test-evidence.md)의 9단계 절을 따른다.

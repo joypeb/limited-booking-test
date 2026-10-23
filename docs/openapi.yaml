@@ -3,7 +3,8 @@ info:
   title: 한정 수량 예약 API
   version: 0.1.0
   description: |
-    localhost CLI/API 클라이언트용 고정 계약 초안. 0단계 문서 작성이며 실제 HTTP/DB/Redis 검증은 미실행이다.
+    localhost CLI/API 클라이언트용 고정 계약. 0단계에 작성했고 2026-10-23 9단계에서 실제 HTTP·소유 PostgreSQL/Redis
+    계약 시험과 build verifyContract로 검증했다. 실행 근거는 docs/test-evidence.md를 따른다.
     모든 요청의 실제 본문 상한은 8192바이트다. Content-Length 유무와 chunked 여부와 무관하게
     실제 읽기 바이트를 제한하며 초과는 인증 전 413 PAYLOAD_TOO_LARGE로 거부한다.
     상한 이하 요청은 인증 → 예약 생성/취소 요청 제한 → 입력 검증 → 서비스 순서다.

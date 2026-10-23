@@ -185,3 +185,11 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 ## 9단계 의존성 계약 fixture 격리 (2026-10-23, T018~T020)
 
 실제 DB 중단과 Redis 중단을 `ApiContractDependencyIT.java`의 두 별도 contract 클래스·소유 컨테이너·Spring 컨텍스트로 분리한다. 각 시험이 정상 준비를 사전 커밋한 뒤 해당 소유 의존성만 유한하게 중단한다. 중단 후 재기동 포트나 개발 DB로 우회하지 않는다. 서비스 예외 mock 대신 실제 HTTP·Basic·필터와 원문 검사기를 사용한다. DB 중단은 풀 기존 연결을 비우고 Redis 통과/5API503을 검사하며, 중단 DB의 사후 snapshot을 주장하지 않는다. Redis 중단은 정상 DB의 전체 업무 행 단일 SQL snapshot으로 두 쓰기 무변경을 확인하고 독립3API 성공도 검사한다. DB 실제 timeout 롤백·카운터 유지는 기존 회귀와 별개 근거로 연결한다. 제품·SQL·정책 변경 없음. 실행 수/RED·GREEN/미검증은 [증거](test-evidence.md)의 T018~T020 절을 따른다.
+
+
+## 9단계 업무 계약 검사기 구성 (2026-10-23)
+
+- 선택: 지정 `assertValid` void 인터페이스를 유지하고, 고정 docs/openapi.yaml을 OpenAPI schema 검사와 테스트 전용 raw JSON·semantic·operation status·scenario 검사로 함께 판정한다. 무효 요청은 불변 파생 인스턴스의 정확한 예상 위반 multiset으로만 허용한다.
+- 이유: schema만으로는 중복 키·1.0 정수·UTC 의미·필수 헤더·default의 500 허용·최초/재전송 관계를 증명하지 못한다. 요청 위반을 일괄 무시하면 정상 요청 회귀와 잘못된 오류 응답을 놓친다.
+- 대안: 자동 생성 명세, 반환형 변경, ThreadLocal 전역 허용, 메시지 부분 문자열 허용, 응답 사본만으로 DTO 변이 대체, 스키마를 구현에 맞춰 완화하는 방식은 제외했다. 근거와 세부는 [010 조사](../specs/010-openapi-contract/research.md)를 따른다.
+- 결과·한계: 적용표 전체·사본 훼손44종·실제 `ResourceView` int→String 변이를 탐지했고 T032 전체 게이트가 종료0이다. 소비자 주도 계약(Pact), Property/PIT 확장, 부하, 외부 CI는 범위 밖이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.

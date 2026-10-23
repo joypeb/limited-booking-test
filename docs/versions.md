@@ -116,3 +116,8 @@ US3 OOM보완최종: 같은버전에서RedisSystemException→RedisCommandExecut
 ### 2026-10-23 9단계 T018~T020 지정 검증 환경
 
 `java -version`은 Corretto25.0.4.7.1/build25.0.4+7-LTS, Wrapper 파일과 실행은9.7.1·Boot plugin4.1.1을 유지했다. ContainerTestSupport의 고정 PG18.6-bookworm/Redis8.10.2-trixie digest·동적 포트·Testcontainers2.0.5 및 기존 계약 라이브러리를 그대로 사용한다. 새로운 의존성·버전 변경은 없다. 두 중단 fixture에서 실제 Hikari10/획득3000ms·Redis 기본20/60000ms·명령/연결200ms를 검사했다. UTF-8/UTC와 JUnit 클래스 병렬실행 false를 유지한다. 지정 실행 수·종료·기존timeout 회귀는 [실행 증거](test-evidence.md)의 T018~T020 절에 기록한다. 전체9단계/전체verifyContract 인수·Qodana 통과를 의미하지 않는다.
+
+
+### 2026-10-23 9단계 최종 실행 환경
+
+T032 `./gradlew build verifyContract verifyContractDependencies`(종료0)는 Corretto25.0.4+7-LTS·Wrapper9.7.1·Boot4.1.1·macOS27.0.1 aarch64·Docker29.8.2에서 실행했다. ContainerTestSupport의 고정 PG18.6-bookworm/Redis8.10.2-trixie digest·Testcontainers2.0.5를 유지했다. 계약 도구는 openapi-request-validator-core3.0.0(Swagger2 converter 제외)·테스트 한정 Jackson2 BOM2.21.8을 그대로 쓰고 런타임은 Jackson3다. 9단계 신규 의존성·버전 변경은 없고 verifyContractDependencies가 미해결 edge0·json-patch/jackson-coreutils 재유입0을 확인했다. Qodana는 미실행이다. 수·XML은 [실행 증거](test-evidence.md)의 T032·T033 절을 따른다.

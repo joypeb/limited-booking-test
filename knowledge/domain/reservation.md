@@ -7,7 +7,9 @@
 - 설계: 기존 확정 규칙. V1·StoredReservation·ReservationStatus·읽기 Repository와 저장 IT는 구현·실행 검증됨. 5단계 생성 Controller/Service/Writer·멱등 재현·정확한 유일 위반 복구·장애 롤백을 구현·검증했다. 소유자 GET/취소를 6단계에서 구현하고 HTTP·실제 DB 취소/롤백을 검증했다. 실제 경쟁 반복·Redis 제한도7~8단계에서 구현·검증했다.
 
 
-**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
+**9단계 계약 검증 상태(2026-10-23):** 010 T001~T033 구현·실행 인수 완료. `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit294·일반IT312·Contract96(업무90+프로브6), 실패/오류/skip0. 고정 OpenAPI와 실제 HTTP의 정상 5작업·적용표 전체 오류·응답 사본 훼손44종·실제 DTO 타입 변이 RED→원복 GREEN을 확인했다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. [010 작업](../../specs/010-openapi-contract/tasks.md)·[실행 근거](../../docs/test-evidence.md)를 따른다. 아래 8단계 상태와 날짜별 이력은 해당 시점 기록이다.
+
+**8단계 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -83,7 +85,7 @@ DB timeout은 트랜잭션 시작 SET LOCAL로 lock 2초·statement 5초, 풀 �
 | 생성 Controller·Service·Writer | reservation 패키지, 아래5단계 구현 링크 | 구현·실제Redis/HTTP/DB 검증됨 |
 | 업무 V1·저장/조회 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·SchemaIT·ReservationRepositoryIT | 구현·실행 검증됨 |
 | 생성 쓰기 SQL·HTTP | ResourceRepository/ReservationRepository, 생성3IT | 구현·실제경쟁110회·Redis연결 회귀 검증됨 |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 고정 계약 대조·실제 HTTP 인수 완료; 업무전체 자동 OpenAPI 대조는9단계 후속 |
+| 고정 계약·결정 기록 | [고정 OpenAPI](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 고정 계약 대조·실제 HTTP 인수 완료; 2026-10-23 9단계 업무 전체 자동 OpenAPI 대조 완료 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -194,3 +196,8 @@ Redis거부의생성/취소/성공키재전송은503·전체행snapshot동일이
 ### 9단계 US2 의존성 계약 연결 (2026-10-23)
 
 [의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 별도 소유 DB/Redis 중단의5API/두쓰기503과 정상DB에서의업무전체행무변경·독립3API정상을 고정명세와 대조한다. 중단DB의사후snapshot과 기존정상DB의timeout롤백증거를 구분한다. 제품·SQL·정책은 유지하며 [T018~T020 실행증거](../../docs/test-evidence.md)를 따른다. T021이후/전체9단계인수·Qodana는미완료다.
+
+
+### 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 예약 생성201·Location·Replay, 소유자 조회·취소200, 409 SOLD_OUT/IDEMPOTENCY_CONFLICT, 타인·ADMIN 404를 고정 OpenAPI로 대조한다. 생성→재전송→GET→취소→중복 취소→취소 후 재전송→GET 7교환은 최초 CONFIRMED 4필드·Location을 재현하고 현재 CANCELLED를 반환하며, 최종 단일 SQL snapshot에서 예약1행·복구1회를 확인했다. T032 전체 게이트에서 기존 경쟁 110회(C01~C11 각10)·종료 fixture5·롤백7·취소13이 다시 통과했고 [110회 기록](../../docs/concurrency-runs.json)을 갱신했다. 앞 절의 미완료 표시는 당시 기록이다. 제품·SQL·정책은 바꾸지 않았다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.

@@ -134,3 +134,8 @@ T012~T017에서 불변의정확요청위반multiset·원문JSON/UTF8검사와항
 ### 9단계 US3 생성 재현·현재 상태 인수
 
 T021~T023은실제7회HTTP시퀀스의첫생성baseline과각시점의Replay/상태/필드값을`ScenarioExpectation`으로비교한다. 취소후생성은최초CONFIRMED4필드·Location을재현하고현재GET은CANCELLED5필드이며중복취소시각도같다. `DatabaseAssertions.reservationSnapshot`의한SELECT로수량·예약행과불변컬럼을함께관측한다. 관련Unit114(검사기101+종료지원13)·Contract93(업무87+프로브6)을지정실행해통과했으며자세한RED/GREEN/한계는[실행증거](../docs/test-evidence.md)를따른다. US4/T024이후와최종전체인수는미완료다.
+
+
+## 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[010 작업](../specs/010-openapi-contract/tasks.md) T001~T033 구현·실행 인수를 완료했다. `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit294·일반IT312(경쟁110회·종료 fixture5 포함)·Contract96(업무90+프로브6), 실패/오류/skip0이다. 고정 [OpenAPI](../docs/openapi.yaml)를 기대값으로 [검사기](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)·[계약 HTTP 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)이 적용표 전체, 응답 사본 훼손44종, 실제 DTO 타입 변이 RED→원복 GREEN을 검증했다. 위 9단계 진행 절들의 미완료 표시는 당시 기록이다. 제품·SQL·Gradle·정책 변경은 없다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. 근거는 [실행 증거](../docs/test-evidence.md)와 [110회 기록](../docs/concurrency-runs.json)을 따른다.

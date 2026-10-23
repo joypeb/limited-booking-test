@@ -72,3 +72,8 @@
 현재 계약 도구는 openapi-request-validator-core3.0.0/networknt이며 고정 OpenAPI3.0.3을 직접 읽는다. Swagger2 변환 경로는 지원 범위 밖으로 제외했다. verifyContractDependencies가 취약 json-patch/jackson-coreutils의 compile·test runtime·app runtime 재유입을 거부하며 contractTest 전에 실행된다. 도구 교체 시 실제 HTTP 정상·필수값 누락·UUID·타입·미정의필드 거부와 업무 명세 참조 해석을 보존한다. 상세 실행은 docs/test-evidence.md를 따른다.
 
 verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성 edge도 거부한다. 해석 실패를 취약 모듈 부재로 판정하지 않으며, 정상·금지 모듈 재유입·존재하지 않는 의존성의 세 경로를 검증한다. 장애 주입은 테스트용 임시 init script로만 수행한다.
+
+
+### 9단계 계약 탐지력 적용 (2026-10-23)
+
+계약 검사는 schema·raw JSON·semantic·operation status·scenario 단계로 나누어 진단을 `단계:key@위치`로 남긴다. 무효 요청은 정확한 예상 요청 위반 multiset만 허용하고 응답 검사는 생략하지 않는다. 탐지력은 정상 대조 뒤 응답 사본 한 요소만 바꾸는 44종 훼손과, 실제 DTO의 컴파일 가능한 타입 변이(compile 성공→HTTP schema RED→정확 원복→같은 명령 GREEN)를 따로 기록한다. verifyContract는 업무 계약90과 프로브6을 구분해 발견>0·실패/skip0을 확인한다. 상세는 [010 작업](../../specs/010-openapi-contract/tasks.md)과 [실행 근거](../../docs/test-evidence.md)를 따른다.

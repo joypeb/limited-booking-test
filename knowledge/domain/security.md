@@ -7,7 +7,9 @@
 - 설계: 기존 확정 규칙. 구현·테스트: 4단계 로컬 Basic 인증·고정 UUID Principal(`SecurityConfig`·`LocalIdentityResolver`), 인증 앞단 8KiB 본문 상한 필터(`RequestBodyLimitFilter`), 공통 `application/problem+json` 오류 응답(`ApiExceptionHandler`), 취소 비어 있지 않은 본문/잘못된 UUID `400` 검증 구현 완료. 실행 검증: `SecurityIT`(6건)·`ResourceApiIT`(8건) 및 `./gradlew verify` 통과. 예약 소유권 조회/취소(`security-001`)는6단계 HTTP/DB 검증을 완료했고 Redis 쓰기 제한도8단계 구현·검증을 완료했다.
 
 
-**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
+**9단계 계약 검증 상태(2026-10-23):** 010 T001~T033 구현·실행 인수 완료. `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit294·일반IT312·Contract96(업무90+프로브6), 실패/오류/skip0. 고정 OpenAPI와 실제 HTTP의 정상 5작업·적용표 전체 오류·응답 사본 훼손44종·실제 DTO 타입 변이 RED→원복 GREEN을 확인했다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. [010 작업](../../specs/010-openapi-contract/tasks.md)·[실행 근거](../../docs/test-evidence.md)를 따른다. 아래 8단계 상태와 날짜별 이력은 해당 시점 기록이다.
+
+**8단계 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -67,7 +69,7 @@ CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 
 | 로컬 인증·권한·고정 UUID 추출 | [SecurityConfig](../../backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)·[LocalIdentityResolver](../../backend/src/main/java/com/limitedbooking/backend/security/LocalIdentityResolver.java) | 구현·실행 검증됨 |
 | 인증 앞단 8KiB 제한·공통 오류·엄격 JSON | [RequestBodyLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/common/RequestBodyLimitFilter.java)·[ApiExceptionHandler](../../backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java) | 구현·실행 검증됨 |
 | 실제 HTTP 보안·오류 통합 테스트 | [SecurityIT](../../backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 (`SecurityIT` 7건, `ResourceApiIT` 8건) |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 4단계 로컬 인증·예약 대상 API 실제 HTTP 검증 완료; 5단계 생성 인증 연동 완료; 소유권6단계 검증 완료; 제한8단계 검증 완료 |
+| 고정 계약·결정 기록 | [고정 OpenAPI](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 4단계 로컬 인증·예약 대상 API 실제 HTTP 검증 완료; 5단계 생성 인증 연동 완료; 소유권6단계 검증 완료; 제한8단계 검증 완료; 9단계 401/403/404·413/415·Problem 자동 계약 대조 완료 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -131,3 +133,8 @@ limiter.check 안의확인된Redis의존성만503으로변환하고후속chain�
 ### 9단계 US2 의존성 계약 연결 (2026-10-23)
 
 [의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 별도 소유 DB/Redis 중단의5API/두쓰기503과 정상DB에서의업무전체행무변경·독립3API정상을 고정명세와 대조한다. 중단DB의사후snapshot과 기존정상DB의timeout롤백증거를 구분한다. 제품·SQL·정책은 유지하며 [T018~T020 실행증거](../../docs/test-evidence.md)를 따른다. T021이후/전체9단계인수·Qodana는미완료다.
+
+
+### 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 실제 Authorization과 보안 필터로 미인증·틀린 비밀번호 401(Basic WWW-Authenticate), USER의 대상 생성 403, 타인·ADMIN 예약 404, 인증 전 8193바이트 413(Content-Length·chunked)을 검증한다. 모든 오류는 `application/problem+json` 6필드와 status·code·instance 대응, 시험 비밀번호·SQL·스택 비노출을 확인한다. 미명시 500/default는 거부한다. T032에서 SecurityIT7·ResourceApiIT8·OwnershipIT5 회귀도 통과했다. 앞 절의 미완료 표시는 당시 기록이다. 제품·SQL·정책은 바꾸지 않았다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
