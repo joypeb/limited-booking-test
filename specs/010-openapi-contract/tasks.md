@@ -1,7 +1,7 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 전체 게이트(`build verifyContract verifyContractDependencies` 종료0, Unit294·IT312·Contract96, 실패/오류/skip0)와 T033 기존 회귀 XML 대조를 완료했다. T034~T035 문서 동기화와 T036 자가검토를 완료했다(36/36). Qodana는 사용자 지시로 건너뛴 미실행 후속이며 게이트에서 제외한다. 메인 검토·push·PR은 남아 있다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 전체 게이트(`build verifyContract verifyContractDependencies` 종료0, Unit294·IT312·Contract96, 실패/오류/skip0)와 T033 기존 회귀 XML 대조를 완료했다. T034~T035 문서 동기화와 T036 자가검토를 완료했다. PR #12 리뷰 보완 T037~T042도 완료했다(최종 게이트 Unit298·IT315·Contract102, 실패/오류/skip0). Qodana는 사용자 지시로 건너뛴 미실행 후속이며 게이트에서 제외한다. 메인 검토·push·PR은 남아 있다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
 **절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032는 메인이 실행했고 T033~T036은 메인 지시로 교체 담당이 순차 수행한다(제품·SQL·Gradle·Wrapper 무변경, 전체 테스트 재실행 없음). push·PR은 범위 밖이다.
 
 ## 형식과 공통 실행 계약
@@ -94,7 +94,7 @@
 - [X] T039 [P3] `ApiContractDependencyIT`의 `httpClosed`를 실제 값으로 단언하고, cleanup listener가 컨텍스트 종료 뒤 실행되는 실제 순서를 검증·문서화한다.
 - [X] T040 [P3] `ApiContractValidator` semantic에 Problem title·detail 비어 있지 않음 검사를 추가한다(Unit RED→GREEN).
 - [X] T041 [P3] `quickstart.md`·`research.md`의 계획/예정 표시를 현재 상태 또는 당시 기록으로 명시한다.
-- [ ] T042 `./gradlew build verifyContract verifyContractDependencies` 1회 실행, XML 수 대조, 증거 기록, 목적별 커밋·push.
+- [X] T042 `./gradlew build verifyContract verifyContractDependencies` 1회 실행, XML 수 대조, 증거 기록, 목적별 커밋·push.
 
 ## 전체 계약 적용표와 실행 추적
 

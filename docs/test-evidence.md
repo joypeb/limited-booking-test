@@ -1918,3 +1918,14 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 ### P3 quickstart·research 상태 표시
 
 `specs/010-openapi-contract/quickstart.md`의 "계획만·예정 이름·예정 고정 메서드·다음 작업 speckit-tasks"를 현재 구현·인수 상태와 실제 클래스 이름(`ApiContractDependencyIT`·`RedisApiContractDependencyIT`)으로 고쳤다. 작성 당시 미실행 사실은 그대로 남겼다. `research.md` 상단은 설계 당시의 historical record임을 명시하고 현재 결과 문서를 연결했다. 결정 본문(R1~R6)은 바꾸지 않았다. 승인된 spec/plan 본문은 수정하지 않았다.
+
+### 리뷰 보완 최종 전체 게이트 (T042)
+
+- 명령: 깨끗한 `c8e3e75`에서 `cd backend && ./gradlew build verifyContract verifyContractDependencies`를 1회 실행했다. 종료0, `BUILD SUCCESSFUL in 3m 58s`, 14 actionable tasks(10 executed/4 up-to-date). 로그 `/tmp/t042.log`. XML 사본은 `/private/tmp/010-t042-xml/`(로컬, 커밋하지 않음)이다.
+- listener와 XML 수가 일치하고 실패/오류/skip은 모두 0이다.
+  - test 298(14 XML) = T032의 294 + Problem 공백4. ApiContractValidatorTest 105.
+  - integrationTest 315(20 XML) = 312 + ResourceApiIT 비정규 UUID 3. ResourceApiIT 11.
+  - contractTest 102(4 XML) = ApiContractIT94(88 + 경로 UUID 사례6) + DB fixture1 + Redis fixture1 + 프로브6. 업무 계약 발견 수는 96이다.
+- 출력: `contract-copy total=44 controls=44 rejected=44`, DB-stopped·Redis-stopped 모두 `serverIdle=true httpClosed=true stop=false`(실제 값 단언), 429 `count=21 decisionPttl=58597/58556 retryAfter=59`.
+- 경쟁: ReservationConcurrencyIT 115/0/0/0이다. RUN 110줄은 C01~C11 각10이고, 모두 `ownedKeyResets=1`이며 예상 밖 429/503은 0이다. 110 CLEANUP이 정상이고 모든 snapshot에서 수량식이 유지됐다. 경쟁 시험 소스가 바뀌지 않았으므로 `docs/concurrency-runs.json`은 T032 회차 기록을 유지한다(이번 회차 값으로 재생성하지 않음).
+- 정책 무변경: OpenAPI 스키마·계획서 정책은 그대로다. 제품 변경은 `ResourceController` binder 1건이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
