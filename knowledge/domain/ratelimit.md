@@ -7,7 +7,9 @@
 - 설계는 기존 확정 규칙이다. US1 판정/설정/RedisRateLimiter·Lua와 Unit13/실제Redis IT5를 구현·검증했고 오케스트레이터 독립검토를 통과했다. 이어 US2 필터·실제HTTP37건 인수를 완료했다. US3 좁은503분류·실제장애12건·DB롤백/TTL독립·종료보호도 인수했다. US3 독립검토와 US4 기존HTTP/110회·최종빌드/verify/의존성 인수까지 완료했다.
 
 
-**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
+**9단계 계약 검증 상태(2026-10-23):** 010 T001~T042 구현·실행 인수 완료(PR #12 리뷰 보완 포함). T042 `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 고정 OpenAPI와 실제 HTTP의 정상 5작업·적용표 전체 오류·응답 사본 훼손44종·실제 DTO 타입 변이 RED→원복 GREEN을 확인했다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. [010 작업](../../specs/010-openapi-contract/tasks.md)·[실행 근거](../../docs/test-evidence.md)를 따른다. 아래 8단계 상태와 날짜별 이력은 해당 시점 기록이다.
+
+**8단계 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -80,7 +82,7 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 | 필터·HTTP | [RateLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RateLimitFilter.java)·[CancelRequestValidationFilter](../../backend/src/main/java/com/limitedbooking/backend/security/CancelRequestValidationFilter.java)·[RateLimitApiIT](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitApiIT.java)·[관측 기반](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpTestSupport.java) | 실제HTTP37건 인수 |
 | 장애·503 분류 | [RateLimitFilter](../../backend/src/main/java/com/limitedbooking/backend/ratelimit/RateLimitFilter.java)·[RedisFailureIT 계열](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)·[분류 Unit](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitFilterTest.java)·[종료 fixture](../../backend/src/test/java/com/limitedbooking/backend/ratelimit/RateLimitHttpLifecycleTest.java) | 실제장애12건·분류22/종료2Unit 인수 |
 | SQL·마이그레이션 | 추가하지 않음 | Redis에 업무 상태를 두지 않으므로 불필요; HTTP/DB 보호 검증은 US3 지정인수 |
-| 고정 계약·결정 기록 | [OpenAPI 초안](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 고정 계약 대조·실제 HTTP 인수 완료; 업무전체 자동 OpenAPI 대조는9단계 후속 |
+| 고정 계약·결정 기록 | [고정 OpenAPI](../../docs/openapi.yaml)·[결정 기록](../../docs/decisions.md) | 고정 계약 대조·실제 HTTP 인수 완료; 2026-10-23 9단계 업무 전체 자동 OpenAPI 대조 완료 |
 
 계약·업무 변경은 계획서·관련 도메인·공통 규칙·OpenAPI·테스트를 함께 검토한다. 서비스 경계·키·수량·권한·실패 무변경은 관련 도메인에 함께 영향을 준다.
 
@@ -91,6 +93,7 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 | 실제장애·503분류 | US3 지정인수·독립검토 완료 | 최종 오케스트레이터 검토 |
 | 기존 HTTP/110회·최종 기능/빌드/의존성 게이트 | 실행 인수 완료 | 최종 오케스트레이터 검토 |
 | Qodana T037 미실행 | 사용자2026-10-22 지시로 이번 완료·PR·병합 게이트 제외 | 미완료 후속으로 유지; 통과로 기록하지 않음 |
+| 9단계 429·Redis503 계약 | 2026-10-23 실제 HTTP 자동 대조 완료 | 해결됨; 9단계 Qodana도 사용자 후속 |
 
 기존 규칙 이외의 새 정책을 추가하지 않았다.
 
@@ -103,3 +106,13 @@ DB 트랜잭션은 제한 통과 뒤 시작한다. 제한 카운터는 DB 트랜
 ### 2026-10-22 US4 회귀·최종 인수
 
 기존 HTTP는 기본20/60초·실제 Redis를 사용하고 사례별 ADMIN/A/B 소유키만 초기화한다. 경쟁은 별도10000/60초로110회 모두 실제 HTTP·Redis·DB를 통과하며 최종 단일SQL 수량 snapshot과 종료를 확인했다. 부모 setup 첫 보호검사 전에는 Redis/DB를 접근하지 않으며 종료/전송불확실 fixture에서 reset0을 검증했다. 취소 입력 검증은 SecurityIT, 순수 대상 API는 postgresOnly ResourceApiIT에 둔다. 업무 SQL/스키마·성공/소유권/취소·OpenAPI 계약은 유지한다. [증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다.
+
+
+### 9단계 US2 의존성 계약 연결 (2026-10-23)
+
+[의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 별도 소유 DB/Redis 중단의5API/두쓰기503과 정상DB에서의업무전체행무변경·독립3API정상을 고정명세와 대조한다. 중단DB의사후snapshot과 기존정상DB의timeout롤백증거를 구분한다. 제품·SQL·정책은 유지하며 [T018~T020 실행증거](../../docs/test-evidence.md)를 따른다. T021이후/전체9단계인수·Qodana는미완료다.
+
+
+### 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 기본20/60000ms에서 생성·취소 각각 21번째 429 RATE_LIMITED를 만들고, test-only 독립 판정 PTTL로 `Retry-After = max(1, ceil(PTTL/1000))`을 비교한다(T042: 58597ms·58556ms→59초, T032 당시 58652ms·58633ms). 응답 뒤 TTL 재조회로 정답을 만들지 않는다. [의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 Redis 중단 중 생성·취소 503과 업무 행 무변경, 독립 3API 정상을 확인한다. T032와 T042에서 RateLimitApiIT37·Redis 장애12 회귀가 통과했다. 앞 절의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.

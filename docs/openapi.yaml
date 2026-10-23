@@ -3,7 +3,8 @@ info:
   title: 한정 수량 예약 API
   version: 0.1.0
   description: |
-    localhost CLI/API 클라이언트용 고정 계약 초안. 0단계 문서 작성이며 실제 HTTP/DB/Redis 검증은 미실행이다.
+    localhost CLI/API 클라이언트용 고정 계약. 0단계에 작성했고 2026-10-23 9단계에서 실제 HTTP·소유 PostgreSQL/Redis
+    계약 시험과 build verifyContract로 검증했다. 실행 근거는 docs/test-evidence.md를 따른다.
     모든 요청의 실제 본문 상한은 8192바이트다. Content-Length 유무와 chunked 여부와 무관하게
     실제 읽기 바이트를 제한하며 초과는 인증 전 413 PAYLOAD_TOO_LARGE로 거부한다.
     상한 이하 요청은 인증 → 예약 생성/취소 요청 제한 → 입력 검증 → 서비스 순서다.
@@ -67,7 +68,7 @@ paths:
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
         default:
-          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+          description: 이 default는 계약 시험의 허용 상태가 아니다. 명시된 응답 상태만 허용한다. 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
   /api/resources/{id}:
     get:
       operationId: getResource
@@ -94,7 +95,7 @@ paths:
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
         default:
-          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+          description: 이 default는 계약 시험의 허용 상태가 아니다. 명시된 응답 상태만 허용한다. 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
   /api/reservations:
     post:
       operationId: createReservation
@@ -144,7 +145,7 @@ paths:
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
         default:
-          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+          description: 이 default는 계약 시험의 허용 상태가 아니다. 명시된 응답 상태만 허용한다. 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
   /api/reservations/{id}:
     get:
       operationId: getReservation
@@ -171,7 +172,7 @@ paths:
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
         default:
-          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+          description: 이 default는 계약 시험의 허용 상태가 아니다. 명시된 응답 상태만 허용한다. 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
   /api/reservations/{id}/cancel:
     post:
       operationId: cancelReservation
@@ -200,7 +201,7 @@ paths:
         '503':
           $ref: '#/components/responses/DependencyUnavailable'
         default:
-          description: 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
+          description: 이 default는 계약 시험의 허용 상태가 아니다. 명시된 응답 상태만 허용한다. 미분류 내부 결함은 500으로 탐지한다. 임의 code를 추가하거나 409/503으로 숨기지 않는다. 상세 500 필드 계약은 이번 단계에서 추가하지 않는다.
 components:
   securitySchemes:
     basicAuth:
@@ -241,7 +242,7 @@ components:
       properties:
         name:
           type: string
-          description: Java String.strip()으로 앞뒤 공백 제거 후 유니코드 코드 포인트 1~100개, 😀는 1자. 원문 maxLength 100으로 공백 포함 유효 입력을 거부하지 않는다. Character.isWhitespace(int) 기준이다. 일반 공백·탭·줄바꿈은 제거하며 내부 공백과 U+00A0(NBSP)·U+2007·U+202F는 유지·길이에 포함한다. 제거 후 빈 문자열은 400, NBSP만 1개인 입력은 길이1로 허용한다. 사용자 답변으로 확정된 정책이며 실제 HTTP 실행 검증은 미실행이다.
+          description: Java String.strip()으로 앞뒤 공백 제거 후 유니코드 코드 포인트 1~100개, 😀는 1자. 원문 maxLength 100으로 공백 포함 유효 입력을 거부하지 않는다. Character.isWhitespace(int) 기준이다. 일반 공백·탭·줄바꿈은 제거하며 내부 공백과 U+00A0(NBSP)·U+2007·U+202F는 유지·길이에 포함한다. 제거 후 빈 문자열은 400, NBSP만 1개인 입력은 길이1로 허용한다. 사용자 답변으로 확정된 정책이다. 계약의 독립 raw 검사와 실제 HTTP 사례로 검증한다.
           example: '  예약 대상  '
         capacity:
           type: integer
@@ -297,7 +298,7 @@ components:
         createdAt:
           type: string
           format: date-time
-          description: UTC ISO-8601, 저장된 마이크로초 정밀도 값을 사용. 최초·재요청 동일.
+          description: UTC ISO-8601 Z 표현, 나노초 값은 1000으로 나누어 떨어지는 최대 마이크로초 정밀도. 소수부 6자리 고정은 요구하지 않는다. 최초·재요청 동일.
           example: '2026-10-13T00:00:00.123456Z'
     ReservationView:
       type: object
@@ -326,6 +327,7 @@ components:
           example: null
     ProblemDetail:
       type: object
+      additionalProperties: false
       required: [type, title, status, detail, instance, code]
       properties:
         type:

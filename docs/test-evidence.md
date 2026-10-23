@@ -1498,3 +1498,438 @@ US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수�
   - `cd backend && ./gradlew test`: 종료 0 (Unit 193건, 실패 0, 오류 0, skip 0).
   - `cd backend && ./gradlew verify verifyContractDependencies`: 종료 0 (Unit 193건, 일반 IT 312건, 실패 0, 오류 0, skip 0, 계약 의존성 게이트 통과).
 - 문서: `docs/qodana-review.md` 갱신.
+
+
+## 2026-10-23 9단계 공통 선행 T001~T006
+
+T001: prerequisite 종료0, FEATURE_DIR=specs/010-openapi-contract, requirements 체크16/16 PASS. extensions.yml 없음(전후 훅 없음). AGENTS·knowledge README/rules 전체·4 domain·헌법·계획2~5/7절9단계 및 승인 spec/plan/tasks/research/data-model/contracts/quickstart 대조. HEAD e098af6, feature/010-openapi-contract, 독립 worktree 루트 확인, 초기 사용자 diff 없음. backend `./gradlew --version` 종료0: Wrapper9.7.1, Corretto25.0.4+7-LTS, macOS27.0.1 aarch64. 원본9.8 변경 무수정.
+
+T002: build.gradle은 docs/openapi.yaml→business.openapi.yaml 복사, Unit *Test(contract/property 제외), contractTest *IT/contract 태그, maxParallelForks1, 현재 listener/XML 수 일치·0/실패/skip 거부, verifyContractDependencies 재유입 게이트를 제공한다. 기본 Gradle 변경 없음. 기존 ToolchainContractValidator는 본문없는 GET 프로브만 검증하고 ToolchainContractIT 업무 검사는 parser/ref뿐이다. ContainerTestSupport 소유 동적PG/Redis·종료10초, HttpClientTestSupport connect/request/종료 패턴, TestData 사전커밋/reset 순서, DatabaseAssertions 단일 snapshot, RateLimitTestSupport 소유3키, ConcurrencyTestSupport StopState/최초원인/suppressed를 재사용한다. 기존 회귀 대상: ReservationConcurrencyIT110회/종료fixture, ReservationRollbackIT/CancelIT, RedisFailureIT, RateLimitApiIT, SecurityIT/ResourceApiIT. 이번 공통선행은 이 전체 회귀 인수와 구분한다. .gitignore 및 backend/.gitignore의 Java/Gradle 산출물·비밀정보 제외, .dockerignore의 .git/산출물/.env 제외 확인.
+
+T003 RED: `./gradlew test --tests '*ApiContractValidatorTest'` 1차 종료1/6건 중 assertion실패5, 2차 파싱경계 추가 후 종료1/7건 중 assertion실패6, 오류/skip0. 컴파일 및 testClasses 성공. 빈 void 골격의 미검증을 실제 assertion으로 확인했다. 최초 잘못된 cwd 파일쓰기와 sandbox 캐시 잠금 실패는 기능 RED에서 제외하고 올바른 경로/정상 권한 상승으로 실행했다.
+
+T004 GREEN: 동일 Unit명령 종료0, 7건 실패/오류/skip0. 고정 3.0.3 parser/ref·정확5operation·명시status·원문 request/response 전달 구현. docs/openapi.yaml 단일 원본에 default 비허용·UTC 정밀도 설명·Problem 추가필드거부를 반영했다. US1 이후 의미/오류/탐지력은 미구현.
+
+T005: 동일 Unit명령 RED 종료1/11건 중 중복 singleton assertion실패2, GREEN 종료0/11건 실패·오류·skip0. HttpExchange 원문/null/빈문자열/raw path/헤더 보존, Map 이전 중복·case변형 singleton 거부, 불변 예상위반 multiset/시나리오 경계만 구현. 무효요청 허용/의미검사는 후속이며 아직 연결하지 않았다.
+
+T006 RED: `./gradlew contractTest --tests '*ApiContractIT'` 종료1/3건 실패3·skip0. 실제 앱201 후 requestBody=null assertion 및 실제 truncated HTTP IOException 뒤 StopState=false assertion을 확인했다. 서버 지연fixture의 최초 chunked EOF는 기능 RED로 세지 않았다. 응답 stream을 완결한 뒤 `./gradlew contractTest --tests '*ApiContractIT.responseReceivedButServerStillRunningBlocksNextStages'` 종료1/1건 assertion실패1: 실제404 수신 후 close가 in-flight를 검사하지 않아 예외가 없었다. 소유PG/Redis·Spring RANDOM_PORT/실제 Basic 인증 기동 성공.
+
+T006 첫 GREEN: `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 6초. 원문 String과 실제 HttpRequest raw path/headers·HttpResponse status/headers/body를 전달한다. singleton 중복은 List→Map 이전 검사한다. 실제 Authorization으로 ADMIN 생성201/사전커밋된 USER 조회200을 확인한다. 기본 정책20/60000ms·DB풀10/획득3000ms·Redis200ms 및 기존 이미지/digest는 변경하지 않았다.
+
+최종 관련 회귀(순차):
+- `./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest'`: 종료0/24건(신규11+기존13), 실패·오류·skip0, 2초.
+- `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'`: 종료0/9건(신규3+기존6), 실패·오류·skip0, 11초. verifyContractDependencies도 종료0. 실제 percent-encoded raw path 유지, 본문 null/빈문자열 구별, 실제201 requestBody 공백/필드순서 보존을 확인했다.
+
+종료 fixture: 실제404 본문을 완결한 뒤 서버 filter 종료만 latch로 보류하고 100ms 시험용 deadline에 close 실패를 확인한다. release는 finally에서 수행하고 서버 idle을10초 내 확인한다. truncated Content-Length 실제HTTP는 IOException 뒤 StopState를 설정하며 서버종료 미확인 cleanup을 원래 IOException의 suppressed로 보존한다(50ms fixture deadline). 두 경우 모두 **새** HTTP 지원 인스턴스에 같은 StopState를 전달해 reset/준비 callback0·submittedCount0·최초원인 보존을 확인했다. 정상 지원은 connect3초/request9초/외부HTTP전체10초/client await10초/server await10초, ContainerTestSupport는 종료10초다. 기존 raw socket read10초는 변경하지 않았고 이번 최소 지원에서 raw socket/chunked/조기응답 전송바이트 관측은 구현·실행하지 않았다(T016 후속).
+
+미완료: T007 이후/US1~US4·전체 적용표·정확한 expected-invalid 요청 판정·schema 밖 의미검사·실제DTO변이·전체 verifyContract 인수. OpenAPI info 첫설명과 나머지 시각필드의 오래된 상태 설명은 T035에서 정리한다. Qodana는 최신 사용자지정 미실행 후속이며 이번 게이트 제외. Property/PIT/부하/외부CI/push/PR 없음.
+
+T006 최종 snapshot 보완 후 `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 12초. 정상 시험의 모든 HTTP/서버 종료 후 준비 대상과 HTTP 생성 대상을 **한 SELECT snapshot**으로 함께 검사: 2행 각각capacity1/available1/예약0, 보존식 적합. 최종 XML의3건 및 앞선Unit XML24건을 대조했다. `git diff --check` 종료0. after_implement 훅은 .specify/extensions.yml 부재로 없음. T001~T006만 완료하며 승인 spec/plan·Gradle·Wrapper·제품코드/SQL은 무수정이다.
+
+T006 커밋 전 수명주기 보완 RED: `./gradlew contractTest --tests '*ApiContractIT.actualTruncatedHttpTransportStopsAndPreservesOriginalFailure'` 종료1/1건 assertion실패1, 6초. 실제 truncated HTTP를 try-with-resources로 실행하자 send IOException을 close가 동일 객체로 다시 던져 Self-suppression IllegalArgumentException이 주예외를 가렸다. send 원인은 StopState에 유지하고 close는 새로 발생한 cleanup만 던지며 기존 원인에 붙인 오류와 독립 wrapper를 보존하도록 최소 수정했다. 범위는 T006이며 기존 정상 GREEN 뒤 발견된 새 결함이다.
+
+수명주기 보완 GREEN: `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 11초. 동일 truncated HTTP의 try-with-resources 결과는 최초 IOException이며 cleanup suppressed와 다음 인스턴스 StopState의 동일 cause를 확인했다. 나머지 실제 원문·2대상 단일snapshot·서버 in-flight 종료차단 시험도 함께 통과했다. 최종 stage에는 이 최신 수정까지 포함한다.
+
+
+## 2026-10-23 9단계 US1 T007~T011
+
+메인 승인에 따라 깨끗한 dee212d에서 지정 두 worktree의 ApiContractValidatorTest.java/ApiContractIT.java만 정확히 복사했다. 작성 담당은 Gradle/커밋 미실행이며 통합 실행은 여기서 순차 수행한다. prerequisite 종료0·requirements16/16 PASS·extensions.yml 없음·기존 ignore 규칙 유지. 승인 spec/plan/data-model/contracts/quickstart 및 knowledge 규칙과 계획2~5절의 기대값을 유지한다. T007/T008은 작성만 완료 표시했다.
+
+T009 RED: `./gradlew test --tests '*ApiContractValidatorTest'` 종료1, 87건 중 assertion실패18·오류/skip0, 2초. 기존11+신규76 발견. 실패는 available>capacity, 비정규화 이름, 상태/cancelledAt 두 관계, createdAt/cancelledAt의 비UTC·+00:00·마이크로초초과 각3, 필수Location2/Replay/401challenge/429retry 누락, Location다른id2, 비Basic challenge다. 전부 정상 대조군 통과 뒤 결함 사본이 거부되지 않은 assertion이며 컴파일/기동 실패가 아니다. Replay대문자·RetryAfter0/소수/문자열은 이미 library response-schema가 거부했고 이를 semantic 탐지로 세지 않는다.
+
+T009 실제HTTP: `./gradlew contractTest --tests '*ApiContractIT'` 종료0, 6건 실패·오류·skip0, 12초. 기존3+신규3 발견. 정상5operation·capacity0/1000·strip전102→100·😀100·NBSP·헤더case/JSON순서·DBsnapshot을 현재 schema만으로 통과했다. 실제HTTP 실패를 꾸미지 않았으며 누락 탐지 RED는 위 독립 Unit의18건이다. 제품/SQL/기본정책/Wrapper 변경 없음.
+
+T010/T011 GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0/87건 실패·오류·skip0, 2초. 스키마와 분리한 semantic 단계에 UTC Z/offset0/nano%1000, 이름 strip·코드포인트, available≤capacity, 현재상태/cancelledAt 관계, Location-id·소문자Replay·401Basic·429양의정수와 Content-Type 본래 미디어타입을 검사한다. charset 파라미터·추가 전송헤더·필드순서·0/3/6/9자리 중 값이 마이크로초로 표현되는 시각을 허용한다. 기존 Jackson2 테스트 라이브러리를 사용하며 제품 ResourceRules를 기대값으로 호출하지 않는다. 기존 요청/응답 schema 보고서는 계속 분리 수집하고 semantic도 합산한다.
+
+T011 실제HTTP/프로브 회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'` 종료0/12건(업무6+프로브6) 실패·오류·skip0, 12초. listener와 XML(Unit87/업무6/프로브6) 일치 및 verifyContractDependencies 종료0 확인. 업무는 다섯operation의 원문교환/실제Basic/응답필드·헤더·UTC, 대상0/1000·strip전102→100·😀100·NBSP 및 JSON순서/헤더case 동등성을 검사했다. 신규 정상시나리오는 모든 HTTP/서버 종료 후 단일 DBsnapshot에서 대상수량식과 생성/취소 후 예약1·CONFIRMED0·복구수량1을 확인한다. 기존 미종료/전송불확실/try-with-resources 최초원인 보호3건도 포함한다. 원문 헤더/본문을 정규화 DTO로 재생성하지 않았다.
+
+환경은 선행 확인 Corretto25.0.4+7-LTS/Wrapper9.7.1/Boot4.1.1·기존 고정 PostgreSQL18.6/Redis8.10.2 digest·동적 소유 포트·UTF-8/UTC다. 업무/SQL/Gradle/Wrapper/OpenAPI·기본20회/60000ms·Redis200ms·풀10/획득3000ms는 변경하지 않았다. 정상 기대값 변경·제품변이/원복 실험 없음. 통합된 기존 정상Unit fixture에 필수Location을 명시한 작성 담당 변경은 기존 정책을 충족하는 수정이며 입력/응답의 규칙 완화가 아니다.
+
+US1 MVP 지정 인수만 완료한다. T012 이후 정확한 무효요청 multiset/전체오류·필터/의존성/시퀀스·실제DTO변이/전체verifyContract는 미구현·미검증이며 현재 정상 HTTP 통과를 전체계약 인수로 세지 않는다. T035 OpenAPI 오래된 설명 정리·Qodana 사용자 후속을 유지한다. push/PR/외부CI 없음. 전후 extension 훅 없음, ignore 파일 변경 불필요.
+
+
+## 2026-10-23 9단계 US2 T012~T017 진행
+
+깨끗한9354e23에서 prerequisite 종료0, requirements16/16·extensions 없음·knowledge/승인산출물 기준을 유지한다. T012 조사: 고정core3.0.0 sources의 MessageContext/pointers/parameter와 실제 진단Unit1건 종료0을 대조했다. {}는 validation.request.body.schema.required@/body 두 건, capacity문자열/1.0은 type@/body/capacity, malformed는 invalidJson@/body, 중복JSON키는library0이다. 원문 메시지/인증값은 출력하지 않았다. 진단 임시시험은 제거하고 선언fixture로 고정했다.
+
+T012 RED `./gradlew test --tests '*ApiContractValidatorTest'`: 종료1/91건 중 assertion실패4·오류/skip0, 2초. 정확예상무효 허용, 누락/추가/중복/무관/정상위반 거부, raw중복, request무효+response schema/semantic합산을 확인했다. T013 1차 GREEN 동일명령 종료0/91건, 2초. 메인검토의unknown sentinel 허용구멍은 추가Unit을먼저작성: `--tests '*ApiContractValidatorTest.unknownKeyAndMissingContextCannotBeWhitelistedEvenWithExactSentinel'` 종료1/1건 assertion RED, 1초. 알수없는key/context는원래key와안전한context종류를남기고예상multiset과무관하게추가실패하며응답검사를계속하도록보완했다.
+
+T013 최종Unit GREEN: 동일전체명령 종료0/92건 실패·오류·skip0, 2초. unknown sentinel exact expected로도 실패하는 Unit을 포함한다. T014는 다음 소검증대상으로 진행한다.
+
+T014 RED: `./gradlew contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract'` 종료1/27건 중 assertion실패10·오류/skip0, 10초. 실제400은전건수신했고raw name공백/101·소수토큰·취소본문누락을확인했다. 관측으로고정한추가librarykey는 body.schema.format.uuid@/body/resourceId, parameter.schema.format.uuid@/path/id, parameter.header.missing@/header/Idempotency-Key, body.unexpected@/body다. 최초추정format 대신실제format.uuid 및취소body.unexpected를선언fixture에정확히반영했으며포괄허용/제품기대완화는없다.
+
+T014 GREEN: 동일지정명령 종료0/27건 실패·오류·skip0, 8초. T015 의미누락Unit은최초루프1건RED후각훼손을독립4건으로분리하여종료1/4건assertionRED를확인했다. 경로다름·SQL·시험비밀·스택누출각각이며본문값을assertion진단에출력하지않는다. T015 GREEN 전체Unit `./gradlew test --tests '*ApiContractValidatorTest'` 종료0/96건, 3초. `./gradlew contractTest --tests '*ApiContractIT.securityAndBusinessErrorMatchesContract'` 종료0/21건, 9초. 오류401(5작업×미인증/틀린비밀번호)·403·없는대상/예약/취소/생성대상404·USER_B/ADMIN의타인조회취소404·SOLD_OUT/IDEMPOTENCY_CONFLICT409를유효입력/request위반0과거부전후DBsnapshot동일로확인했다.
+
+T016 RED: 본문경계/415 지정명령 종료1/28건 중실패26, 8초. raw byte-limit미검사·전송관측0이주원인이다. GET8192의성공expected.code=null처리NPE와예약GET의시험계정ADMIN(실제소유자USER_A)2건은기능탐지RED로세지않고시험지원/선행조건을수정했다. 기대하는소유자200을완화하지않았다. Content-Length8193은제품크기필터가본문을읽기전거부하므로실제app-read0을기대하며chunked는8193바이트를읽어거부한다.
+
+T016 GREEN: `./gradlew contractTest --tests '*ApiContractIT.actualBodyFramingAndUtf8BoundaryMatchesContract' --tests '*ApiContractIT.unsupportedContentTypeMatchesContract'` 종료0/28건 실패·오류·skip0, 8초. 5작업×8192/8193×2framing20건·멀티바이트/미인증/틀린인증×2framing6건·두생성415를확인했다. JDK실제HTTP/1.1의정해진길이publisher와길이미지정InputStream publisher로Content-Length/chunked를전송한다. 원문payload/UTF8예정바이트·publisher전달바이트·서버앱실제읽기바이트·수신Content-Length/Transfer-Encoding을분리관측한다. publisher전달을socket전송완료로주장하지않고프레이밍바이트를JSON에섞지않는다. raw socket경로는새로추가하지않았고기존socket10초상한은유지한다.
+
+T017 RED: RetryAfter독립판정Unit지정1건 assertion RED종료1, 실제HTTP생성/취소지정2건도PTTL관측stub0에대한assertionRED종료1(9초). 응답후TTL을재조회하지않고실제Lua의반환count/PTTL을test-only spy callRealMethod로관측한다.
+
+T016 transport수명주기추가RED: `./gradlew contractTest --tests '*ApiContractIT.responseReceivedButServerStillRunningBlocksNextStages'` 종료1/2건중transport대기1건assertion실패, 11초. 실제404응답후transport대기만시간초과시키고서버를해제한뒤close를성공시켜도StopState가설정되지않음을확인했다. transport가guard를통하도록최소보완하여최초불확실/인터럽트/다음reset·prepare·send차단규칙을동일하게적용한다.
+
+T017/transport GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0/97건, 2초. `./gradlew contractTest --tests '*ApiContractIT.defaultRateLimitAndDecisionPttlMatchContract' --tests '*ApiContractIT.responseReceivedButServerStillRunningBlocksNextStages'` 종료0/4건 실패·오류·skip0, 15초. 실제생성/취소 각각기본20회허용·21번째429, Lua스크립트의count21/판정PTTL을실호출spy로보존해RetryAfter=max(1,ceil(PTTL/1000))와비교했다. 응답후TTL재조회로정답을만들지않았다. RateLimitTestSupport.assertSettings로20/60000ms·Redis연결/명령200ms를확인했다. 제한소진후동일두쓰기8193본문은Content-Length/chunked모두413이며Lua미진입·count21유지·최종DBsnapshot동일이다. transport불확실fixture는해제후close가성공해도같은StopState를사용한새지원의reset/prepare0·submittedCount0을확인했다.
+
+T014 strictJSON 추가RED: 누적회귀Unit110/Contract91통과뒤마지막검토에서다중JSON root검사누락가능성을발견했다. resource-trailing-root 실제HTTP사례추가후입력지정명령종료1/28건중1건assertionRED, 9초. 실제400이지만library는0이며raw=json@/body도발생하지않았다. 전체토큰stream의root수를검사하는최소보완으로단일문서조건을추가한다. 제품/기대400은유지한다.
+
+T012~T017 최종관련인수(다중root최신수정포함):
+
+- `./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest'`: 종료0/110건(검사기97+기존종료지원13), 실패·오류·skip0, 2초.
+- `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'`: 종료0/92건(업무86+기존프로브6), 실패·오류·skip0, 21초. verifyContractDependencies도종료0. 현재listener/XML각클래스수일치. 업무86=기존US1/선행7(transportfixture1추가)+입력28+권한/업무오류21+바이트경계26+415두건+제한2건. 이테스트수는HTTP교환수가아니며제한한시험안의20허용/거부/초과본문교환을별도로포함한다.
+- 최종Lua독립관측: 생성count21/PTTL58564ms/RetryAfter59초, 취소count21/PTTL58461ms/RetryAfter59초. 응답후TTL재조회없음.
+
+GET8192본문의200은 **OAS표현한계/전역상한후정상GET** 경로다. 서버는상한이하본문을읽고인증/조회로진행하며고정OAS의본문미정의때문에발생하는정확한 `validation.request.body.unexpected@/body` 한건만그사례의expected로선언했다. 성공status200/정상응답전체/원문바이트는그대로검사한다. 이를일반무효요청거부400으로바꾸거나모든정상요청위반을무시하지않는다. 생성8192는201·취소8192는본문검증400이며모든5작업8193은두framing모두413이다. Content-Length초과는서버앱read0, chunked초과는read8193으로조기응답의관측차이를보존했다.
+
+적용표진행(T018이후미착수):
+
+| 작업 | 이번까지실행한상태·근거 | 남은셀 |
+| --- | --- | --- |
+| POST resources | 201(US1),400(input28중대상),401×2/403(securityAndBusiness),413×2/415(body/media) | 503 DB |
+| GET resource | 200(US1/8192),400(UUID),401×2/404,413×2 | 503 DB |
+| POST reservations | 201(US1/8192/제한허용),400(input),401×2/404/409 SOLD_OUT·IDEMPOTENCY_CONFLICT,413×2/415/429 | 503 DB·Redis |
+| GET reservation | 200(US1/8192),400(UUID),401×2/404(없음·USER_B·ADMIN),413×2 | 503 DB |
+| POST cancel | 200(US1/제한허용),400(UUID/본문/8192),401×2/404(없음·USER_B·ADMIN),413×2/429 | 503 DB·Redis |
+
+정확요청위반은코드의사전선언 InvalidInput.library/raw 목록을원본으로한다. 관측된schema required@/body는필수필드마다중복횟수를유지한다. type/minimum/maximum@/body/capacity, type@/body/name, additionalProperties@/body, format.uuid@/body/resourceId·/path/id, header.missing/pattern/maxLength@/header/Idempotency-Key, invalidJson/body.unexpected@/body, contentType.notAllowed@/headers/Content-Type을구별했다. raw duplicate-json은각중복필드pointer, normalized-name@/body/name, integer-token@/body/capacity, json/empty-cancel-body/byte-limit@/body를정확multiset으로비교한다. 부모/자식message를순회하고알수없는key/context는원래key·안전한context종류를보존하는독립실패라expected로허용할수없다. 메시지문장/Authorization/비밀번호를허용판정이나진단에사용하지않는다.
+
+제품/SQL/OpenAPI/Gradle/Wrapper차이0, 실제서비스예외mock·제품후크·새의존성없음. test-only Redis spy는Lua실호출을그대로실행하고결과만관측한다. 환경은기존Corretto25.0.4+7-LTS/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트·20/60000ms·Redis200ms를유지한다. T018이후503fixture·US3시퀀스·US4변이·전체verifyContract·T035설명정리는미완료다. Qodana는사용자지정스킵/후속이며통과로세지않는다. 외부CI/push/PR없음. extensions.yml없어전후훅없음.
+
+마지막unknown진단정리: 알수없는key에도이미해석된안전한parameter/pointer위치가있으면그위치를보존하고없을때만context종류/absent를남긴다. 실패정책은동일하며이진단정리후관련Unit110건을다시실행해종료0·실패/오류/skip0(3초)을확인했다. 위업무HTTP86/프로브6의현재XML과검사기97/종료지원13을대조했다. `git diff --check`종료0.
+
+## 2026-10-23 9단계 US2 T018~T020 의존성 계약과 적용표
+
+기준 HEAD `694106c`, 기존 `feature/010-openapi-contract`·작업트리 깨끗함을 확인했다. `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` 종료0, FEATURE_DIR는 현재 worktree의 specs/010-openapi-contract다. requirements16/16·미체크0, extensions.yml 부재로 전후 훅 없음. AGENTS·knowledge README/rules전체·resource/reservation/security/ratelimit 도메인·계획서2~5절/7절9단계와 승인010산출물을 적용했다. Java·Docker/Gradle 프로젝트의 기존 root/backend ignore 설정을 확인했고 변경하지 않았다. 승인 spec/plan·제품·SQL·Wrapper·정책을 보존한다.
+
+### T018~T019 RED와 GREEN의 구분
+
+- 신규 `common/ApiContractDependencyIT.java` 안의 두 package-private contract 클래스는 각각 별도 정적 ContainerTestSupport와 DynamicPropertySource, RANDOM_PORT 컨텍스트, DirtiesContext 및 컨텍스트 종료 후 소유 컨테이너 close listener를 갖는다. DB 중단을 Redis fixture가 이어받거나 중단 의존성을 재기동해 다른 컨텍스트 포트로 바꾸지 않는다. 기존 개발 DB/Redis·Compose·볼륨에는 접근하지 않는다.
+- RED: `cd backend && ./gradlew contractTest --tests '*ApiContractDependencyIT'` 종료1/2건·assertion실패2·오류/skip0,11초. 컴파일·testClasses 성공 후 “실제 소유 DB 중단”, “실제 소유 Redis 중단”에서 false 기대/true 실제다. 테스트 전용 stopOwned의 빈 골격이 실제 중단을 수행하지 않는 누락을 검출한 것이며 제품503 결함이나 응답검사 탐지 실험으로 세지 않는다.
+- 최소 GREEN: stopOwned에 소유 stop action 실행/future10초·executor 종료확인10초를 구현했다. 실패 시 최초 오류·후속 정리오류를 preserve하고 인터럽트를 복원하며 StopState를 설정한다. 동일 명령 종료0/2건·실패/오류/skip0,29초. DB fixture21.890초·Redis fixture2.694초(XML의 클래스 시간은 컨텍스트 준비도 포함)다. 초기 잘못된 root의 `./gradlew` 경로와 sandbox Gradle 캐시 lock 거부는 환경 실행 실패로 따로 분류하며 RED에 포함하지 않는다. 정상 권한으로 같은 Wrapper를 실행했다.
+- DB: 준비 대상 capacity2/available1·소유자 CONFIRMED 예약1행을 REQUIRES_NEW로 사전 커밋했다. 실제 Redis PING/PONG 뒤 소유 PostgreSQL stop 완료·isRunning=false·Hikari softEvictConnections/totalConnections0을 확인했다. 다섯 작업 모두 실제 JDBC 연결 획득 실패로503·DEPENDENCY_UNAVAILABLE, 유효 요청 위반0·오류 전체 스키마/의미검사 적합이다. 예약 생성 후 Redis count1, 취소 후2로 DB 실패를 보상하지 않고 기본 limiter가 통과함을 확인했다. 두 조회와 대상 생성은 count를 늘리지 않으며 마지막 PING도 PONG이다.
+- Redis: 별도 정상 DB/Redis의 사전 커밋·PING 후 소유 Redis만 stop/isRunning=false로 확인했다. 생성·취소503 각각 모든 resources/reservations 컬럼·행의 단일 SQL JSON snapshot이 거부 전과 동일하다. 각 비교는 HTTP 지원 guard의 서버 종료확인 뒤 수행한다. 이후 같은 장애 중 대상 GET200·소유예약 GET200·ADMIN 대상 POST201의 요청/응답 전체도 계약에 적합하다. 최종 기존 대상 수량 보존·전체 대상2개를 확인했다.
+- 두 fixture 모두 실제 Basic/보안필터/HTTP 원문·공통 ApiContractValidator를 사용한다. 서비스 예외 mock·제품 장애 후크·새 의존성은 없다. HTTP close 후 serverIdle=true/httpClosed=true/stop=false, listener의 소유 컨테이너 정리 성공을 확인했다. DB 중단 중 snapshot은 조회하지 않았다. DB 부분 반영 롤백은 아래 별도 정상 DB의 기존 실제 statement/lock/pool timeout 회귀 근거이며, 이 중단 fixture가 중단된 DB를 정상 조회했다고 주장하지 않는다.
+
+### T020 실제 적용표
+
+아래는 적용표의 모든 셀에 대한 실제 실행 사례 연결이다. 각 행의 응답은 전체 response-schema·semantic 검사를 수행하며 예상 밖500/default 승인·응답 검사 생략은0이다. `I`=ApiContractIT.invalidInputMatchesExactContract, `E`=securityAndBusinessErrorMatchesContract, `B`=actualBodyFramingAndUtf8BoundaryMatchesContract, `M`=unsupportedContentTypeMatchesContract, `L`=defaultRateLimitAndDecisionPttlMatchContract, `D`=ApiContractDependencyIT.stoppedOwnedDatabaseRejectsAllFiveOperationsWithHealthyRedis, `R`=RedisApiContractDependencyIT.stoppedOwnedRedisRejectsWritesWithoutChangingDatabaseAndLeavesIndependentApisAvailable이다.
+
+경로의 `{X}`=`10000000-0000-0000-0000-000000000001`, `{Y}`=`20000000-0000-0000-0000-000000000001`, `{M}`=`99999999-0000-0000-0000-000000000001`, `{D}`=`31000000-0000-0000-0000-000000000001`, `{V}`=`32000000-0000-0000-0000-000000000001`이며 표의 자리표시는 실제 raw path에 이 UUID를 치환한다. `{id}`는 정상 생성 HTTP 응답에서 얻은 실제 UUID이며 해당 조회 요청·Location과 비교했다. `S:` 뒤 key는 `validation.request.` 접두사를 포함한 library key의 약기, `raw:`는 별도 원문 rule이다. `0`은 두 종류 요청 위반 모두0이다. 모든 오류는 Content-Type application/problem+json·type/title/status/detail/instance/code 필수 및 상태/code·instance raw path·민감정보 비노출을 검사한다. 성공 Content-Type은 application/json이다. 추가 charset 파라미터는 허용한다.
+
+| 메서드·raw path | status/code | 실제 사례ID·메서드 | 정확한 예상 요청 위반(대표 셀) | 필수 추가 헤더 |
+| --- | --- | --- | --- | --- |
+| POST /api/resources | 201 | resourceSuccessMatchesContract(capacity0/1000·정규화/Unicode), R:resource-create | 0 | Location=단건경로/body.id |
+| POST /api/resources | 400 INVALID_REQUEST | I:name-blank | raw:normalized-name@/body/name | 없음 |
+| POST /api/resources | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/resources | 0 | Basic WWW-Authenticate |
+| POST /api/resources | 403 FORBIDDEN | E:resource-forbidden | 0 | 없음 |
+| POST /api/resources | 413 PAYLOAD_TOO_LARGE | B:/api/resources 8193 false/true | raw:byte-limit@/body | 없음 |
+| POST /api/resources | 415 UNSUPPORTED_MEDIA_TYPE | M:/api/resources | S:contentType.notAllowed@/headers/Content-Type | 없음 |
+| POST /api/resources | 503 DEPENDENCY_UNAVAILABLE | D:resource-create | 0 | 없음 |
+| GET /api/resources/{id} | 200 | resourceSuccessMatchesContract, R:resource-get({D}) | 0 | 없음 |
+| GET /api/resources/invalid | 400 INVALID_REQUEST | I:path-/api/resources/invalid | S:parameter.schema.format.uuid@/path/id | 없음 |
+| GET /api/resources/{X} | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/resources/{X} | 0 | Basic WWW-Authenticate |
+| GET /api/resources/{M} | 404 NOT_FOUND | E:missing /api/resources/{M} | 0 | 없음 |
+| GET /api/resources/{X} | 413 PAYLOAD_TOO_LARGE | B:/api/resources/{X} 8193 false/true | S:body.unexpected@/body + raw:byte-limit@/body | 없음 |
+| GET /api/resources/{D} | 503 DEPENDENCY_UNAVAILABLE | D:resource-get | 0 | 없음 |
+| POST /api/reservations | 201 | reservationCreateOwnerReadAndCancelMatchContract | 0 | Location=body.id, Idempotent-Replayed=false |
+| POST /api/reservations | 400 INVALID_REQUEST | I:reservation-bad-uuid | S:body.schema.format.uuid@/body/resourceId | 없음 |
+| POST /api/reservations | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations | 0 | Basic WWW-Authenticate |
+| POST /api/reservations | 404 NOT_FOUND | E:missing-create-resource | 0 | 없음 |
+| POST /api/reservations | 409 SOLD_OUT | E:sold-out | 0 | 없음 |
+| POST /api/reservations | 409 IDEMPOTENCY_CONFLICT | E:key-conflict | 0 | 없음 |
+| POST /api/reservations | 413 PAYLOAD_TOO_LARGE | B:/api/reservations 8193 false/true | raw:byte-limit@/body | 없음 |
+| POST /api/reservations | 415 UNSUPPORTED_MEDIA_TYPE | M:/api/reservations | S:contentType.notAllowed@/headers/Content-Type | 없음 |
+| POST /api/reservations | 429 RATE_LIMITED | L:cancel=false | 0 | Retry-After=독립 판정PTTL 올림·최소1초 |
+| POST /api/reservations | 503 DEPENDENCY_UNAVAILABLE | D:reservation-create / R:reservation-create | 0 | 없음 |
+| GET /api/reservations/{id} | 200 | reservationCreateOwnerReadAndCancelMatchContract, R:reservation-get({V}) | 0 | 없음 |
+| GET /api/reservations/invalid | 400 INVALID_REQUEST | I:path-/api/reservations/invalid | S:parameter.schema.format.uuid@/path/id | 없음 |
+| GET /api/reservations/{Y} | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations/{Y} | 0 | Basic WWW-Authenticate |
+| GET /api/reservations/{M} 또는 /api/reservations/{Y} | 404 NOT_FOUND | E:missing /api/reservations/{M}·other-owner USER_B/ADMIN false({Y}) | 0 | 없음 |
+| GET /api/reservations/{Y} | 413 PAYLOAD_TOO_LARGE | B:/api/reservations/{Y} 8193 false/true | S:body.unexpected@/body + raw:byte-limit@/body | 없음 |
+| GET /api/reservations/{V} | 503 DEPENDENCY_UNAVAILABLE | D:reservation-get | 0 | 없음 |
+| POST /api/reservations/{id}/cancel | 200 | reservationCreateOwnerReadAndCancelMatchContract | 0 | 없음 |
+| POST /api/reservations/invalid/cancel | 400 INVALID_REQUEST | I:path-/api/reservations/invalid/cancel | S:parameter.schema.format.uuid@/path/id | 없음 |
+| POST /api/reservations/{Y}/cancel | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations/{Y}/cancel | 0 | Basic WWW-Authenticate |
+| POST /api/reservations/{M}/cancel 또는 /api/reservations/{Y}/cancel | 404 NOT_FOUND | E:missing /api/reservations/{M}/cancel·other-owner USER_B/ADMIN true({Y}) | 0 | 없음 |
+| POST /api/reservations/{Y}/cancel | 413 PAYLOAD_TOO_LARGE | B:/api/reservations/{Y}/cancel 8193 false/true | S:body.unexpected@/body + raw:empty-cancel-body@/body + raw:byte-limit@/body | 없음 |
+| POST /api/reservations/{Y}/cancel | 429 RATE_LIMITED | L:cancel=true | 0 | Retry-After=독립 판정PTTL 올림·최소1초 |
+| POST /api/reservations/{V}/cancel | 503 DEPENDENCY_UNAVAILABLE | D:reservation-cancel / R:reservation-cancel | 0 | 없음 |
+
+대표 셀 외 나머지 입력28건의 정확한 multiset은 `invalidInputs()`의 사례ID별 library/raw 불변 목록과 위 T012~T017 기록에 연결된다. 누락 필드 required@/body, capacity minimum/maximum/type@/body/capacity, name type@/body/name, additionalProperties@/body, 생성 키 header.missing/pattern/maxLength@/header/Idempotency-Key, invalidJson@/body, duplicate-json@중복필드 pointer, json@/body, integer-token@/body/capacity, 취소 body.unexpected+empty-cancel-body@/body를 개별 검사한다. 모든 요청 위반을 허용하는 공통 설정은 없다.
+
+원인 분리: E/D/R/L는 유효 입력이므로 요청 위반0이다. B의 정상8192 생성은 위반0/201, GET8192는 표현 한계로 정확한 S:body.unexpected만 허용/200, 취소8192는 S:body.unexpected+raw:empty-cancel-body/400이다. 별도 복합무효인 미인증/틀린인증+8193은 인증보다413 우선, 제한소진+8193도429보다413 우선이며 Redis count21을 늘리지 않는다. 미인증 초과본문을 “유효 입력의401 시험”으로 혼합하지 않았다. framing false=Content-Length·true=길이 미지정 chunked, 멀티바이트8193도 포함한다. 원문·publisher 전달·서버앱 read·framing은 T016의 경계를 보존한다.
+
+종료 근거: 위 업무 모든 사례의 try-with-resources는 HTTP client종료10초·server in-flight10초를 확인한다. 응답 후 server 미종료/실제 truncated HTTP/transport 대기 오류 fixture는 최초 StopState·다음 reset/prepare/send0을 유지한다. D/R의10교환(503은DB5+Redis2,독립정상3)도 정상 종료를 기록했다. 중단 fixture의 준비·snapshot은 guard 경로이며 다음 시험은 다른 컨텍스트·다른 소유 컨테이너다.
+
+### T020 최종 지정 인수·XML 대조
+
+backend에서 다음 명령을 순차 Test 태스크로 실행했다. 종료0, 총2분36초이며 listener와 XML 수가 일치했다. JUnit 클래스 병렬실행은 false다.
+
+```sh
+./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest' --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*ReservationRollbackIT' --tests '*RateLimitApiIT' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'
+```
+
+| 태스크 | 실제 클래스별 수 | 합계/실패/오류/skip |
+| --- | --- | --- |
+| test | 검사기97·ConcurrencyTestSupport13·RateLimitDecision10/Filter22/Lifecycle2/Properties3 | 147/0/0/0 |
+| integrationTest | ExistingConnectionRedisFailure1·FirstConnectionRedisFailure1·RedisFailure10·RateLimitApi37·ReservationRollback7 | 56/0/0/0 |
+| contractTest | ApiContractIT86·ApiContractDependencyIT1·RedisApiContractDependencyIT1·ToolchainContractIT6 | 94/0/0/0 |
+
+현재 XML은 backend/build/test-results/{test,integrationTest,contractTest}/TEST-*.xml에 있으며 전부 이번 실행의 timestamp다. DB fixture20.758초·Redis fixture2.089초·기존업무17.192초·프로브0.035초다. 신규2건은503 HTTP7교환(DB5+Redis2)과독립정상3교환을 포함하므로 테스트수/HTTP교환수를 혼동하지 않는다. 기존 Redis 장애12건에는 실제지연/중단2컨텍스트/WRONGTYPE/OOM·DB실패카운터유지·기본60초만료가 포함되고 모두통과했다. 정상DB의ReservationRollback7은 실제UPDATE후INSERT실패/유일위반·잠금/문장/풀timeout503뒤롤백/같은키복구·내부결함500을 별도로 확인했다. 이 회귀는 중단DB의사후snapshot이 아니다.
+
+최종429 독립관측은 생성count21/PTTL58256ms/Retry-After59초, 취소count21/PTTL58524ms/59초였다. 응답후TTL을정답으로재조회하지않았다. ApiContractIT의server미종료·transport대기·truncated전송fixture와Unit종료지원13+RateLimitLifecycle2가 최초원인보존/인터럽트/다음reset·prepare·send0회귀를 유지했다. verifyContractDependencies도종료0이며새라이브러리·제품·SQL·OpenAPI·Wrapper·제한정책변경없음이다.
+
+T018~T020만 완료 체크했다. T021이후 생성재현시퀀스/US4훼손·실제DTO변이/전체build verifyContract인수와단계전체완료는미완료다. Qodana는사용자지정스킵/후속이며통과로세지않는다. 이번에는전체경쟁110회·Property/PIT·부하·외부CI·push/PR을실행하지않았다. extensions.yml은여전히없어after_implement훅없음이다. 다음한작업은메인의T018~T020검토후T021시퀀스이며담당범위밖으로진행하지않는다.
+
+
+## 2026-10-23 9단계 US3 T021~T023
+
+깨끗한237b2a0에서시작했다. prerequisite종료0·requirements16/16PASS·extensions없음·ignore유지. knowledge규칙/관련domain·승인spec/plan/contracts/data-model/quickstart와계획2~5절·9단계의최초생성/현재상태규칙을유지한다. T018~T020의의존성fixture와공유지원상태를인계확인했으며US3범위만진행한다.
+
+T021 RED Unit: `./gradlew test --tests '*ApiContractValidatorTest.scenario*'` 종료1/4건중assertion실패3·오류/skip0, 2초. 첫응답true/재요청false/최초createdAt 1마이크로초변경은각각개별교환schema/semantic상유효하지만ScenarioExpectation골격이시점/최초값을비교하지않아거부하지못했다. JSON공백/필드순서가다른정상대조군1건은통과했다.
+
+T021 RED 실제HTTP: `./gradlew contractTest --tests '*ApiContractIT.replayCancelAndCurrentStateSequenceMatchesIndependentBaseline'` 종료1/1건assertion실패, 10초. 생성201false→같은키201true→GETCONFIRMED→취소200→중복취소200→취소후생성201true→GETCANCELLED의7교환과모든종료/최종단일SQLsnapshot·불변컬럼·Redis쓰기5회는정상이다. 그뒤실제첫응답을잘못된replay=true시나리오와비교해도거부하지않는검사기결함으로RED를만들었으며가짜제품실패/제품변이는없다.
+
+최종DB지원을위해DatabaseAssertions.reservationSnapshot을추가했다. 한SELECT에서대상capacity/available와연결예약행의id/resourceId/userId/key/status/createdAt/cancelledAt을함께읽고동일관측시점의수량식/행수를검사한다. 준비는기존TestData의사전커밋,실행은기존HTTPguard를재사용하며개발DB·제품SQL·트랜잭션경계는변경하지않는다.
+
+T022 GREEN: `./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest'` 종료0/114건(검사기101+종료지원13), 실패·오류·skip0, 4초. `./gradlew contractTest --tests '*ApiContractIT.replayCancelAndCurrentStateSequenceMatchesIndependentBaseline'` 종료0/1건, 10초. 첫응답의4필드/Location을그다음교환전에불변baseline으로저장하고각시점의status·replayed와비교한다. ScenarioExpectation.initialFields는JSON문자열전체가아닌필드값을비교하므로공백·순서차이는허용한다. 개별유효boolean이라도시점이다르면semantic:scenario-replay, 최초값이다르면semantic:scenario-field로거부한다. 기존assertValid의원문/schema/raw/semantic경계와void인터페이스는유지한다.
+
+정상7교환의JSON은생성4필드CONFIRMED/cancelledAt없음,GET·취소5필드로검사했다. 취소후생성은최초CONFIRMED/createdAt/id/resourceId/Location을그대로재현하고현재GET은CANCELLED다. 중복취소cancelledAt은첫취소응답에서미리보존한값과같다. 모든HTTP/client/server종료후단일SELECT snapshot에서capacity1/available1/예약행1/CONFIRMED0과수량식,동일id/resourceId/userId=USER_A/원래키/createdAt·첫cancelledAt/CANCELLED를확인했다. 생성·중복생성·취소·중복취소·취소후생성만집계되어소유USER_A키count5,USER_B/ADMIN0이다. FR-008·SC-004의실제시퀀스/최종상태를이시험에연결한다.
+
+T023 최종관련회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'` 종료0/93건(업무87+프로브6), 실패·오류·skip0, 23초. Unit의검사기101/종료지원13과Contract업무87/프로브6 XML을현재listener결과와대조해일치했다. 신규US3시험1건이실제7교환을포함하며테스트수와HTTP교환수를혼동하지않는다. 기존정상/입력/권한/품절/충돌/8KiB/chunked/요청제한·독립PTTL·서버미종료/transport대기/truncated최초원인회귀를함께통과했다. verifyContractDependencies도종료0이다. 새메서드assertScenario/예약상세snapshot만추가했고기존assertValid/HTTP종료지원·제품/SQL/Wrapper/기본정책은변경하지않았다.
+
+이번에는새시나리오를호출하지않는DB/Redis중단fixture2건·기존장애/경쟁일반IT·전체verifyContract를반복하지않았다. 이들의직전237b2a0/T020인수와이번실행을구분한다. 테스트전용상세snapshot SQL외제품SQL변경없음,새의존성/비밀번호/임의정책완화없음이다. 환경은기존Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트·20회/60000ms·Redis200ms·풀10/획득3000ms다. Qodana는사용자스킵후속이며통과로세지않는다. T024이후US4/실제DTO변이/최종전체인수·T035설명정리는미완료다. 전후extension훅없음·push/PR/외부CI없음. `git diff --check`종료0.
+
+
+## 2026-10-23 9단계 US4 T024~T031 진행
+
+깨끗한25cd123에서prerequisite/체크16/16·knowledge/승인계약·기존ignore/훅없음을확인했다. T024~T026 실제baseline교환은소유DB/Redis/실제Basic·default20/60000ms에서확보하고각사본마다정상대조를다시통과시킨다. 실제Lua반환PTTL관측후429사본을검사하며응답후TTL을재조회하지않는다.
+
+사본RED: `./gradlew contractTest --tests '*ApiContractIT.actualResponseCopiesRejectEachIndependentContractDefect'` 종료1/1건(assertAll 44종중15실패), 11초. 29종은기존검사의거부를확인했다. 초기에는stage/key와위치의존재를분리확인했으므로동일진단에연결된최종원인확인은아래GREEN44종을기준으로한다. 실제거부누락은cancel200의CONFIRMED/null상태투영과두번째JSON root2종이다. 다른13종은거부되지만response-schema pointer/중복singleton header위치/미명시status의진단이부족했다. 이미거부된결함을가짜의미RED로세지않는다. 추가로훼손assertion은단계:key:위치가같은진단에연결돼있는지연속문자열로검사해다른위반의위치를원인으로잘못세지않도록한다.
+
+고정core3.0.0 ResponseValidator sources에서header schema보고서에이름context가없음을확인했다. library원래header-root위치는/headers로보존하고semantic의필수/형식검사는정확/header이름을제공한다. body는안전한instancepointer를,부모/자식은context상속을사용한다. 메시지전문/비밀번호를진단에출력하지않는다. 취소성공은CANCELLED라는기존operation계약만추가검사하고응답은FAIL_ON_TRAILING_TOKENS로단일JSON문서만강제한다. 응답중복키거부정책은추가하지않는다.
+
+T024~T026 GREEN: 동일사본지정명령 종료0/1건·44정상대조/44개별훼손거부, 실패·오류·skip0, 10초. 아래는실제시험이출력한원인별결과다. cancel-result-confirmed는명시승인된일관된CONFIRMED/null상태투영으로공통스키마를통과시키고취소operation규칙을독립검사한다. 나머지는매번사본한필드/헤더/상태만변경한다. 실제DTO변이결과와별개다.
+
+```text
+contract-copy required-id rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy uuid rejected=response-schema:validation.response.body.schema.format.uuid@/body/id
+contract-copy numeric-string-capacity rejected=response-schema:validation.response.body.schema.type@/body/capacity
+contract-copy numeric-string-available rejected=response-schema:validation.response.body.schema.type@/body/available
+contract-copy malformed-time rejected=response-schema:validation.response.body.schema.format.date-time@/body/createdAt
+contract-copy non-utc-time rejected=semantic:utc-micros@/body/createdAt
+contract-copy over-micro-time rejected=semantic:utc-micros@/body/createdAt
+contract-copy unknown-state rejected=response-schema:validation.response.body.schema.enum@/body/status
+contract-copy extra-field rejected=response-schema:validation.response.body.schema.additionalProperties@/body
+contract-copy created-cancelledAt rejected=response-schema:validation.response.body.schema.additionalProperties@/body
+contract-copy current-cancelledAt-missing rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy confirmed-has-time rejected=semantic:confirmed-null@/body/cancelledAt
+contract-copy cancelled-without-time rejected=semantic:cancelled-time@/body/cancelledAt
+contract-copy cancelled-time-malformed rejected=response-schema:validation.response.body.schema.format.date-time@/body/cancelledAt
+contract-copy cancelled-time-non-utc rejected=semantic:utc-micros@/body/cancelledAt
+contract-copy cancelled-time-over-micro rejected=semantic:utc-micros@/body/cancelledAt
+contract-copy cancel-result-confirmed rejected=semantic:cancel-state@/body/status
+contract-copy second-json-root rejected=semantic:json-document@/body
+contract-copy resource-location-missing rejected=semantic:location-id@/headers/Location
+contract-copy reservation-location-missing rejected=semantic:location-id@/headers/Location
+contract-copy replay-missing rejected=semantic:replay-boolean@/headers/Idempotent-Replayed
+contract-copy challenge-missing rejected=semantic:basic-challenge@/headers/WWW-Authenticate
+contract-copy retry-missing rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy success-media rejected=semantic:media-type@/headers/Content-Type
+contract-copy problem-media rejected=semantic:media-type@/headers/Content-Type
+contract-copy location-different-id rejected=semantic:location-id@/headers/Location
+contract-copy replay-invalid rejected=semantic:replay-boolean@/headers/Idempotent-Replayed
+contract-copy challenge-non-basic rejected=semantic:basic-challenge@/headers/WWW-Authenticate
+contract-copy retry-invalid-0 rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy retry-invalid-1.5 rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy retry-invalid-later rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy duplicate-Location rejected=raw:duplicate-singleton@/headers/location
+contract-copy duplicate-Idempotent-Replayed rejected=raw:duplicate-singleton@/headers/idempotent-replayed
+contract-copy duplicate-WWW-Authenticate rejected=raw:duplicate-singleton@/headers/www-authenticate
+contract-copy duplicate-Retry-After rejected=raw:duplicate-singleton@/headers/retry-after
+contract-copy problem-http-status rejected=semantic:problem-status@/body/status
+contract-copy problem-code rejected=semantic:problem-code@/body/code
+contract-copy problem-instance rejected=semantic:problem-instance@/body/instance
+contract-copy problem-required-type rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy unspecified-500-default rejected=operation:response-status@/status
+contract-copy first-true rejected=semantic:scenario-replay@/headers/Idempotent-Replayed
+contract-copy replay-false rejected=semantic:scenario-replay@/headers/Idempotent-Replayed
+contract-copy replay-initial-field rejected=semantic:scenario-field@/body/createdAt
+contract-copy retry-positive-wrong-pttl rejected=semantic:decision-pttl@/headers/Retry-After
+contract-copy total=44 controls=44 rejected=44
+```
+
+DTO실험전Unit지정회귀114건(검사기101+종료지원13)종료0, 3초. T027 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'` baseline 결과는별도로그와함께다음실험기록에남긴다. PTTL훼손도독립판정PTTL을담은ScenarioExpectation으로비교하며응답에서정답을만들지않는다.
+
+### T027~T030 실제DTO단독변이
+
+T027 baseline: `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'` 종료0/1건 실패·오류·skip0, 7초. ResourceView 기존diff0과정확내용/해시를보관했다. 실제실험은Python단일try/finally에서ResourceView만변경하고나머지전체diff해시가실험전후같음을확인했다. 컴파일/HTTP RED가예상대로발생하지않거나중단돼도finally원복후같은시험을실행하며성공으로세지않는다.
+
+- 원본/백업/복원SHA256: `ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98` (세값동일).
+- 임시변이SHA256: `215b631db5715ecac7f75059e7f6379300162a84ed350eff5145903d2e8aa2b6`.
+- available component만int→String으로바꾸고기존int인자를받는보조생성자는String.valueOf로위임했다. controller/SQL/고정명세/시험기대값은그대로다.
+- T028 `./gradlew compileJava compileTestJava`: 종료0, 1.610초. 컴파일실패로탐지했다고하지않는다.
+- T029 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'`: 종료1/1건 assertion실패·오류/skip0, 7.061초. 실제HTTP관측은 `actualStatus=201 availableTextual=true`, 거부원인은 `response-schema:validation.response.body.schema.type:/body/available`이다. 일반assertion/기동실패가아니다.
+- T030 finally에서보관한bytes로정확원복,DTOdiff0·전체다른diff불변. **동일명령** 종료0/1건 실패·오류·skip0, 7.931초. 원복후actualStatus201의availableTextual=false와정상5개대상생성/조회가통과했다. checkout/reset·원본사용자Wrapper변경없음.
+- 로컬세부원본/compile·RED·GREEN로그/XML/result.json: `/private/tmp/contract-dto-us4-jb78iyj8`. 이임시경로는현재세션로컬증거이며영구추적파일이아니다. 핵심결과와해시는이문서에남겼다.
+
+T031은기존Gradle의 *IT/contract태그발견·현재listener/XML·0건/skip거부·verifyContract→verify+contractTest·verifyContractDependencies를재사용한다. 빌드게이트결함이없어Gradle은변경하지않고고의실패도반복하지않는다. T032의전체build/verifyContract인수는이번범위가아니며실행하지않는다.
+
+### T031 최신 관련 지정 인수
+
+```sh
+./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'
+```
+
+종료0, 총51초. 순차태스크/listener/XML은Unit114(검사기101+종료지원13), Contract96(업무88+DB503 fixture1+Redis503 fixture1+프로브6)이며실패·오류·skip0이다. 업무시험의실제로그도 `contract-copy total=44 controls=44 rejected=44`로모든독립정상대조와단일결함거부를확인했다. 양의RetryAfter불일치역시독립PTTL의ScenarioExpectation을통과하므로단순형식오류검사가아니다. 신규테스트수1건/사본44종/실제DTO실험1건은서로구분한다. 공유검증기를사용하는실제DB5/Redis2의503과Redis비의존정상3교환도두fixture에서재통과했다.
+
+기존contract 태그/발견>0·verifyContractDependencies·listener/XML/0skip게이트를그대로사용했고Gradle결함이없어수정하지않았다. 최종ResourceView SHA256은다시원본ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98과일치하며제품DTO/기타제품코드/SQL/OpenAPI/Wrapperdiff0이다. 기본20/60000ms·Redis200ms·Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트를유지했다.
+
+T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종회귀/최종문서동기화/전체자기검토는아직미실행이다. Qodana는사용자지정스킵후속이며통과로세지않는다. push/PR/외부CI없음. prerequisite/checklist PASS, extensions.yml없어전후훅없음, ignore설정변경불필요. `git diff --check`종료0이다.
+
+
+## 2026-10-23 9단계 T032 전체 게이트·T033 기존 회귀 대조
+
+### T032 전체 build·verifyContract·의존성 게이트
+
+- 실행: 메인이 깨끗한 `f07cc9b`(feature/010-openapi-contract)에서 단일 순차 Gradle 그래프로 `cd backend && ./gradlew build verifyContract verifyContractDependencies`를 실행했다. 종료0, `BUILD SUCCESSFUL in 3m 53s`, 14 actionable tasks(7 executed/7 up-to-date). compile/jar류는 up-to-date이고 test·integrationTest·verifyContractDependencies·contractTest는 실제로 실행했다. 경고는 기존 Gradle10 비호환 deprecated 기능·ByteBuddy Unsafe·CDS 안내이며 실패·skip·continue-on-error로 감추지 않았다. 로그 `/tmp/t032.log`.
+- 교체 담당자가 T033에서 결과를 대조했다. 전체 테스트는 재실행하지 않았고 `backend/build/test-results/`의 현재 XML과 로그만 대조했다. XML은 `/private/tmp/010-t032-xml/`에 로컬 보관했으며 이 경로는 커밋하지 않는다.
+- 환경: Corretto25.0.4+7-LTS, Gradle Wrapper9.7.1, Boot4.1.1, macOS27.0.1 aarch64, Docker29.8.2, 소유 PostgreSQL `postgres:18.6-bookworm@sha256:afc7…a24a647c`·Redis `redis:8.10.2-trixie@sha256:2c2d…6bfd6`, UTF-8/UTC, 동적 포트. 9단계 커밋(e098af6 이후)에서 제품 코드·SQL·build.gradle·Wrapper 변경은 0이다. 산출 JAR는 up-to-date(실행JAR 44,156,615 bytes SHA256 `938cc418452c667c6c4a9025237c7b8c12c24b59dc7eb1dd53ab16225af242ed`, plain65,337 bytes `3077f2db193eb06f706cac735b82cde771efc8c9f3a8175f8e5b163d33c4298e`)이며 커밋하지 않는다.
+
+| 태스크 | listener | XML 파일/합계 | 구성 |
+| --- | --- | --- | --- |
+| test | 294, failed0, skipped0 | 14파일, 294/0/0/0 | 기존 Unit193(ResourceRules52·IdempotencyKey56·Cancellation5·UniqueViolation10·ApiExceptionHandler6·ReservationService7/Writer4·RateLimitDecision10/Filter22/HttpLifecycle2/Properties3·ConcurrencyTestSupport13·도구프로브3) + 신규 ApiContractValidatorTest101 |
+| integrationTest | 312, failed0, skipped0 | 20파일, 312/0/0/0 | 8단계와 같은 클래스·수. 신규 9단계 IT 없음 |
+| contractTest | 96, failed0, skipped0 | 4파일, 96/0/0/0 | 업무 계약90(ApiContractIT88·DB503 fixture1·Redis503 fixture1) + 도구 프로브 ToolchainContractIT6 |
+
+- 표의 합계는 XML의 tests/failures/errors/skipped를 클래스별로 합산한 값이며 세 태스크 모두 listener 수와 일치한다. XML timestamp는 모두 2026-10-23T08:09~08:13Z로 이번 그래프의 결과다. 과거 193/312·이전 XML을 복사하지 않았다.
+- 업무 계약 시험 발견 수는 90(>0)이고 프로브6과 구분된다. 기존 Gradle의 *IT+contract 태그 발견·현재 listener/XML 수 일치·0건/skip 거부 게이트를 그대로 통과했다(T031에서 Gradle 무변경 확인).
+- `verifyContractDependencies`는 실행·종료0이다. testCompileClasspath/testRuntimeClasspath/runtimeClasspath의 미해결 edge0과 `json-patch`/`jackson-coreutils` 재유입0을 기존 게이트로 확인했다. 테스트 쪽 계약 도구의 Jackson2와 런타임 Jackson3 경계도 이 게이트와 컴파일·실행 결과로 유지됐다.
+- contractTest 시스템 출력: `contract-copy total=44 controls=44 rejected=44`(사본 훼손44종 각 정상 대조 통과·단일 결함 거부), `contract-resource actualStatus=201 availableTextual=false` 5회(원복된 실제 DTO), 429 독립 판정 `cancel=false count=21 decisionPttl=58652 retryAfter=59`·`cancel=true count=21 decisionPttl=58633 retryAfter=59`, DB 중단 5작업 503(requestViolations=0·responseValid=true), Redis 중단 생성·취소 503(같은 판정), 두 fixture의 `serverIdle=true httpClosed=true stop=false`.
+
+### T033 기존 회귀의 XML 대조
+
+| 대상 | XML 결과 | 확인 내용 |
+| --- | --- | --- |
+| ReservationConcurrencyIT | 115/0/0/0, 28.666초 | `repetition N of 10` 110건 + 종료 지원 fixture5 |
+| ReservationRollbackIT | 7/0/0/0 | UPDATE 후 INSERT 실패, 실제 UNIQUE 롤백, 연결 획득·lock·statement timeout 503 롤백과 같은 키 복구, 미분류 500, 상위 트랜잭션 거부 |
+| ReservationCancelIT | 13/0/0/0 | 복구1회, 중복 취소 시각 보존, 오래된 CONFIRMED 읽기, 복구 timeout·예외·0건 롤백, 취소 후 원래 키 재현, 인코딩 경로2 |
+| Redis 장애 계열 | RedisFailureIT10 + ExistingConnection1 + FirstConnection1 = 12/0/0/0 | 쓰기 pause 중 독립 API, create/cancel/replay의 지연·중단 각3, WRONGTYPE, 실제 DB timeout 뒤 카운트 유지·같은 키 복구, 기본60초 만료 뒤 성공 키 유지(60.35초), 기존 연결·첫 연결 중단 |
+| RateLimitApiIT | 37/0/0/0 | 기본20/60000ms, 인증 실패·독립 API 미집계, 생성·취소 합산, 무효 입력8종 집계, 8KiB fixed/unknown/raw-chunked 12종, 인코딩 취소 경로, 동시 40요청 중 정확히20 허용, 하위500 이중 집계 없음 |
+| 권한·입력 HTTP | SecurityIT7·ResourceApiIT8·ReservationOwnershipIT5·ReservationCreateIT16·IdempotencyIT5 = 41/0/0/0 | 401·403·위조 X-User-Id 무시, 인증 전 413·chunked, 타인/ADMIN 404, 엄격 JSON·이름/수량·키/UUID 경계, 생성·재현·충돌 |
+
+**ReservationConcurrencyIT 115건의 정확한 구성**
+
+- 반복 110건: XML testcase 이름은 `repetition 1 of 10`~`repetition 10 of 10`이며 클래스 안의 11개 `@RepeatedTest(10)` 메서드에서 나온다. 사례 ID는 system-out의 `RUN case=Cxx repetition=n` 줄로 대응시켰다. C01~C11이 각각 정확히 1~10회차(중복0)이고 RUN 110줄, 해당 PATH·CLEANUP이 각 110줄이다.
+- 종료 지원 fixture 5건: `httpTerminationFailurePreventsSpyResetAndBlocksNextSetup()`, `executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle()`, `cleanupWaitsForHttpTerminationBeforeResettingSpies()`, `parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe()`, `transportFailureBeforeServiceEntryBlocksResetAndNextSetup()`. 이 fixture들이 남긴 `case=null` CLEANUP 9줄(그중 1줄은 의도한 `failure=IllegalStateException`)과 `FAILED-RUN case=null … HttpTimeoutException: before Service`·빈 PATH 1줄은 fixture의 의도한 종료 실패 주입이다. 업무 회차 기록에는 넣지 않았다.
+- system-out의 `IllegalStateException` 10건은 모두 C11의 `C11 injected INSERT fault`(회차당1)이며 기대한 `500:ok=1` 분포와 일치한다.
+
+| 사례 | 요청/결과 | 10회 모두 같은 분포 | 최종 단일 SQL snapshot(capacity/available/total/CONFIRMED) | elapsedMs |
+| --- | --- | --- | --- | --- |
+| C01 | 100/100, workers10 | 201×10, 409 SOLD_OUT×90 | 10/0/10/10 | 890~1004 |
+| C02 | 10/10 | 201×10 | 1/0/1/1 | 93~188 |
+| C03 | 10/10 | 201×10 | 10/9/1/1 | 92~106 |
+| C04 | 2/2 | 201×1, 409 IDEMPOTENCY_CONFLICT×1 | 두 대상 1/0/1/1과 1/1/0/0 | 75~80 |
+| C05 | 10/10 | 200×10 | 1/1/1/0 | 221~231 |
+| C06 | 2/2 | 200×1, 409 SOLD_OUT×1 | 1/0/2/1 | 274~283 |
+| C07 | 2/2 | 201×2 | 1/0/1/1 | 74~78 |
+| C08 | 2/2 | 201×2 | 2/1/1/1 | 76~87 |
+| C09 | 2/2 | 200×1, 201×1 | 1/0/2/1 | 272~289 |
+| C10 | 2/2 | 200×1, 409 SOLD_OUT×1 | 1/0/2/1 | 339~365 |
+| C11 | 2/2 | 201×1, 500×1(주입) | 2/0/2/2 | 144~161 |
+
+- 110회 모두 `requests=results`, `server=0`, `ownedKeyResets=1`, `redis=10000/60000ms timeout=200/200ms`, 예상 밖 429/503 0, 모든 snapshot에서 `available + CONFIRMED = capacity`이다. 110 CLEANUP 모두 `server=0 http=true failure=none`이다. C07은 10회 모두 정확한 요청 ID의 `decrement …:0` 뒤 `lookup present` 증인이 있고, UNIQUE 경로 증인은 C03·C04·C08의 30회에서 관측됐다.
+- `docs/concurrency-runs.json`은 8단계와 같은 변환 규칙(`/private/tmp/009-record-concurrency.py`의 기준 문구·날짜만 바꾼 로컬 사본)으로 이번 XML에서 재생성했다. command/exitCode/date/unit294/IT312/class115/반복110/fixture5/실패·오류·skip0이다. 경쟁 관련 소스 5개의 SHA256이 8단계 기록과 같고 현재 파일과도 일치하므로 경쟁 시험 소스는 바뀌지 않았다. 바뀐 것은 회차별 실제 관측값(UUID·시간·경로)뿐이다. 스크립트는 110회·사례별1~10·CLEANUP 정상·429/503 0·C07 UPDATE0 증인을 assert한 뒤 기록했다.
+- 새 경쟁 시험 복제·제한 하향·실패 반복·skip은 없다. 실패가 없어 최소 수정·영향 재검증도 필요하지 않았다. 반복 실행은 모든 경쟁 순서의 증명이 아니며 로컬 결과를 운영 규모로 일반화하지 않는다.
+- 미검증·제외: Qodana는 사용자 지시로 이번에 건너뛴 미실행 후속이며 완료·PR·병합 게이트에서 제외한다. 통과로 기록하지 않는다. Property/PIT 확장·k6 부하·외부 CI·push/PR은 실행하지 않았다.
+
+### T034 9단계 실행 근거 정리
+
+9단계의 실제 근거는 아래 기존 절에 단일 담당자 순서로 남아 있다. 이 절은 새 실행이 아니라 색인이며, 각 숫자는 해당 절의 실제 명령·종료 코드·XML을 따른다.
+
+| 항목 | 근거 절 | 핵심 결과 |
+| --- | --- | --- |
+| 기준·환경·기존 게이트 | 공통 선행 T001~T006 | Wrapper9.7.1·Corretto25.0.4, build.gradle의 business.openapi.yaml 복사·contract 태그·XML 게이트 무변경 |
+| 최소 재현 RED→GREEN | T003~T031 각 절 | 각 기능의 assertion RED를 확인했다. 컴파일·sandbox·경로 오류는 RED에서 제외했다 |
+| 정확한 요청 위반 | US2 T012~T017 | library key+location·raw rule 정확 multiset. 알 수 없는 key/context는 실패, 응답 검사는 항상 실행 |
+| 적용표 | T020 실제 적용표 | 5작업 정상, 400/401/403/404/409×2/413/415/429/503(DB5·Redis2) 모든 셀을 실제 HTTP로 관측. 미명시 500/default 거부는 T025 사본 훼손으로 확인 |
+| 429 PTTL | T017·T020·T032 | 독립 판정 PTTL로 Retry-After 비교. T032에서는 58652/58633ms→59초 |
+| DB/Redis 503 | T018~T019·T032 | 소유 DB 중단 5작업 503, 소유 Redis 중단 생성·취소 503·업무 행 무변경·독립3API 정상 |
+| 재현·현재 상태 | US3 T021~T023 | 7교환과 최종 단일 SQL snapshot(예약1행·복구1회·수량식) |
+| 단일 훼손 탐지 | US4 T024~T026 | 44종 각 정상 대조 통과·단일 결함 거부(`contract-copy total=44 controls=44 rejected=44`) |
+| 실제 DTO 변이 | T027~T030 | compile 종료0 → HTTP `/body/available` schema type RED 종료1 → 정확 원복(SHA256 일치) → 같은 명령 GREEN |
+| 전체 게이트·회귀 | T032·T033 | 종료0, Unit294·IT312·Contract96, 실패/오류/skip0, 경쟁110회·fixture5·장애/제한/권한 회귀 |
+
+- 버전·선택은 [versions](versions.md)의 2026-10-23 9단계 절과 [decisions](decisions.md)의 9단계 검사기 구성 절에 반영했다.
+- `docs/performance.md`: 9단계에서는 계약 검사 비용을 별도로 측정하지 않았으므로 작성하지 않았다(미측정). 위 실행 시간은 기능 실행 기록이며 성능 근거가 아니다.
+- 미검증·제외: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외, 통과로 기록하지 않음), Property/PIT 확장(10단계), k6 부하·외부 CI·소비자 주도 계약, push/PR. 승인된 010 spec/plan 문서는 수정하지 않았다.
+- T035에서 `docs/openapi.yaml`의 `info.description` 첫 문장만 "초안·미실행"에서 실제 검증 상태로 바꿨다(스키마·경로·응답 변경 없음). 영향 확인으로 `cd backend && ./gradlew test --tests '*ApiContractValidatorTest'`를 실행해 종료0, 101건 실패/오류/skip0(고정 명세 parse/ref·5 operation 포함)을 확인했다. 이 실행이 `backend/build/test-results/test/`를 덮었으므로 T032 Unit XML 원본은 `/private/tmp/010-t032-xml/test/`를 기준으로 한다. 전체 게이트는 재실행하지 않았다.
+
+### T036 자가검토 (2026-10-23)
+
+- 대상: `e098af6..7ec6397`의 변경 21파일. 제품(`backend/src/main`)·build.gradle·Wrapper·settings diff 0, 변경은 테스트 지원·계약 시험·docs/knowledge/spec 작업 목록·계획서다. `git diff --check e098af6 HEAD` 통과. 변경 Markdown의 로컬 링크473개가 모두 존재한다.
+- 임시 DTO 변경0: `ResourceView.java` SHA256 `ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98`이 T027 보관 원본과 같다. 계약 시험 파일에 `@Disabled`·assume류 skip 없음. T032 세 태스크의 실패/오류/skip0.
+- FR 대조: FR-001 고정 명세(T004·T035), FR-002 원문 전달(T005~T006), FR-003 정확 무효 위반·응답 항상 검사(T012~T016), FR-004 적용표 전체·409/503 구분(T020), FR-005 UUID/타입/UTC/관계·정규화(T007~T011·T024), FR-006 미디어·필수 헤더(T010·T025), FR-007 Problem·민감정보·default 거부(T015·T025), FR-008 재전송·현재 상태(T021~T023), FR-009 사본 훼손44종(T024~T026), FR-010 실제 DTO 변이·원복(T027~T030), FR-011 격리 의존성·기본 정책 유지(T018~T019·T032~T033), FR-012 수·버전·증거(T032~T035). 누락0.
+- SC 대조: SC-001 적용표 전체 관측(T020), SC-002 정상 오거부·예상 위반 누락·잘못된 오류 통과0(T011~T016·T020), SC-003 44종100% 거부·대조군100% 통과·DTO RED/원복 GREEN(T024~T030), SC-004 최초값·Location 재현과 추가 예약·차감·복구0(T021~T023), SC-005 업무 발견90>0·실패/오류/skip·미원복0·재현 명령 기록(T032~T035). US1~US4 인수 시나리오도 같은 작업에 대응한다.
+- 남은 차이(수정하지 않음): 승인된 `specs/010-openapi-contract/spec.md`의 Status(Draft·구현 미완료)와 research/plan의 "실행 미실시" 문구는 작성 당시 상태다. tasks.md의 "승인된 spec/plan은 수정하지 않는다" 규칙에 따라 그대로 두었으며 갱신 여부는 메인 판단이다. 계획서 13절 프로젝트 최종 체크리스트는 11단계 등 미완료 항목과 묶여 있어 표시하지 않았다.
+- 미완료·미검증: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외), docs/performance.md(미측정), Property/PIT 확장·k6 부하·외부 CI·소비자 주도 계약, 독립 리뷰·push·PR·병합.
+
+
+## 2026-10-23 PR #12 독립 리뷰 보완
+
+기준 head `f84e9f1`. 메인이 전달한 독립 리뷰의 P2-1·P2-2·P3를 TDD로 보완한다. 제품 변경은 P2-1(`ResourceController`)만 허용됐다. OpenAPI·계획서 정책은 바꾸지 않았다. 경로 UUID 400은 기존 규칙이다.
+
+### P2-1 대상 조회 경로의 비정규 UUID
+
+- 원인: `ResourceController.get(@PathVariable UUID)`는 Spring 기본 `StringToUUIDConverter`를 쓴다. 이 변환기는 앞뒤 공백을 trim하고 `UUID.fromString`의 `1-1-1-1-1` 축약형을 받아들인다. `ReservationController`만 8-4-4-4-12 정규식 `@InitBinder`를 갖고 있었다.
+- 시험: `ResourceApiIT.rejectsNonCanonicalUuidPathEvenWhenLenientValueExists`에 `1-1-1-1-1`, `%20`+UUID, UUID+`%20`을 추가했다. 관대한 변환값 `00000001-0001-0001-0001-000000000001`의 대상을 실제로 저장해 200/404 누출과 400을 구분한다. `ApiContractIT.invalidInputs`의 세 경로(대상 GET·예약 GET·취소 POST)에 `1-1-1-1-1`과 `%20`+UUID를 추가했다(+6). 정확한 예상 위반은 기존과 같은 `request-schema:validation.request.parameter.schema.format.uuid@/path/id`다.
+- RED: `cd backend && ./gradlew integrationTest --tests '*ResourceApiIT.rejectsNonCanonicalUuidPath*' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료1. ResourceApiIT 3/3 실패(`expected: 400 but was: 200`), ApiContractIT 34건 중 2건 실패(`path-/api/resources/1-1-1-1-1`, `path-/api/resources/%2010000000-…` 각각 `expected: 400 but was: 404`). 예약 두 경로의 새 사례는 기존 binder로 이미 400이었다. 로그 `/tmp/t037-p21-red.log`.
+- 최소 수정: `ResourceController`에 `ReservationController`와 같은 정규식 `@InitBinder`를 추가했다. 공통 추상화는 만들지 않았다.
+- GREEN: `./gradlew integrationTest --tests '*ResourceApiIT' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료0. ResourceApiIT 11(기존8+신규3), invalidInputs 34, 실패/오류/skip0. 로그 `/tmp/t037-p21-green.log`.
+
+### P2-2 오류 경로의 업무 전체 행 무변경
+
+- 원인: `securityAndBusinessErrorMatchesContract`와 429 사례는 두 대상의 집계(capacity/available/total/CONFIRMED)만 비교했고, 400·413·415 사례는 DB를 확인하지 않았다. 집계에 잡히지 않는 행 추가·컬럼 변경을 놓칠 수 있었다.
+- 수정(테스트만): 의존성 fixture의 `jsonb_agg(to_jsonb(...))` 단일 SQL을 `DatabaseAssertions.businessRows()`로 옮겨 두 시험이 같은 방식을 쓴다. `ApiContractIT`의 400(invalidInputs, 사전 데이터 준비 추가)·401/403/404/409·413/400 본문 경계(오류 응답만)·415(사전 데이터 준비 추가)·429/413 사례에서 요청 전 snapshot과 HTTP·서버 종료 뒤 snapshot을 비교한다. 8192 정상 생성201·조회200은 의도한 성공이라 비교하지 않는다.
+- 탐지 실험(테스트 소스만 임시 변경, 정확히 원복): 각 오류 요청 직후 `TestData.resource(UUID.randomUUID(),"고의 누출 행",…)`을 넣었다. 대상 명령은 `./gradlew contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --tests '*ApiContractIT.securityAndBusinessErrorMatchesContract' --tests '*ApiContractIT.actualBodyFramingAndUtf8BoundaryMatchesContract' --tests '*ApiContractIT.unsupportedContentTypeMatchesContract' --continue`다.
+  - 기존 단언 + 누출: 종료0, 83건 모두 통과. 누출을 탐지하지 못하는 구멍을 확인했다(`/tmp/t037-p22-old-leak.log`).
+  - 새 단언 + 누출 RED: 종료1, 83건 중 75건 실패(`[<사례> 업무 전체 행 무변경] expected …`). 실패하지 않은 8건은 비교 대상이 아닌 8192 정상 성공 사례다(`/tmp/t037-p22-new-leak.log`).
+  - 원복 GREEN: 누출 줄 0건, 원복 파일이 새 단언 파일과 바이트 일치. 같은 명령 종료0, 83건 실패/오류/skip0(`/tmp/t037-p22-green.log`).
+- 관련 회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT'` 종료0, 96건(ApiContractIT94·DB fixture1·Redis fixture1) 실패/오류/skip0. 47초.
+
+### P3 Problem title·detail 공백 거부
+
+- 원인: 고정 OpenAPI는 title·detail을 필수 string으로만 정의해 `""`·공백만 있는 값도 schema를 통과했고, semantic 검사에도 해당 규칙이 없었다.
+- RED: `ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank`(title/detail × `""`/`"   "`)를 추가했다. 정상 401 Problem은 먼저 통과시킨 뒤 한 필드만 바꾼다. `cd backend && ./gradlew test --tests '*ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank'` 종료1, 4/4 실패(`Expecting code to raise a throwable`). 로그 `/tmp/t037-p3-problem-red.log`.
+- 최소 수정: 오류 응답 semantic에 `semantic:problem-text@/body/title|detail`을 추가했다. 누락·타입 오류는 기존 response-schema가 담당하므로 문자열일 때 blank만 거부한다.
+- GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0, 105건(기존101+신규4) 실패/오류/skip0. 로그 `/tmp/t037-p3-problem-green.log`.
+
+### P3 의존성 fixture의 실제 종료 단언과 정리 리스너 순서
+
+- `httpClosed=true`는 하드코딩이었다. `ApiContractHttpSupport.isClosed()`를 추가했다. 이 값은 클라이언트 종료와 server in-flight 대기가 오류 없이 끝났을 때만 true다. 두 fixture는 try 밖에서 같은 객체로 `serverIdle`·`httpClosed`·`stop`을 실제 값으로 단언하고 출력한다.
+- 리스너 순서는 바꾸지 않았다. 리뷰는 order 2999가 DirtiesContext(3000)보다 먼저 실행된다고 지적했다. 그러나 spring-test 7.0.9 `TestContextManager.afterTestClass`는 `getReversedTestExecutionListeners()`로 역순 실행한다. 따라서 afterTestClass에서는 DirtiesContext(3000)가 컨텍스트를 먼저 닫고, 그다음 2999 정리 리스너가 컨테이너를 닫는다(소스 jar로 확인). 3001로 바꾸면 컨텍스트가 살아 있는 동안 컨테이너를 닫게 된다. 그래서 2999를 유지하고 실제 순서를 코드 주석과 아래 단언으로 고정했다. 정리 리스너는 `TestContext.hasApplicationContext()`가 false인지 확인한다. 컨텍스트가 아직 캐시에 있으면 컨테이너는 닫되 실패로 드러낸다. 같은 방식을 `ApiContractIT`의 정리 리스너에도 적용했다. 다른 기존 IT의 같은 2999 패턴은 이번 범위에서 바꾸지 않았다.
+- RED: `isClosed()`를 false 스텁으로 두고 Redis fixture 순서를 임시로 3001로 바꿨다. `cd backend && ./gradlew contractTest --tests '*ApiContractDependencyIT' --continue` 종료1, 3건 모두 실패.
+  - DB·Redis fixture: `[HTTP 지원 정상 종료] Expecting value to be true but was false`.
+  - Redis 클래스: `executionError: IllegalStateException: 앱 컨텍스트 종료 전에 소유 컨테이너를 정리했다`.
+  - 2999를 유지한 DB 클래스에서는 순서 오류가 없었다. 로그 `/tmp/t037-p3-close-red.log`.
+- GREEN: 실제 `isClosed()` 구현과 2999 원복(임시 표식 0건) 뒤 `./gradlew test --tests '*ApiContractValidatorTest' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'` 종료0이다.
+  - Unit105·Contract102(ApiContractIT94·DB fixture1·Redis fixture1·프로브6), 실패/오류/skip0.
+  - 출력은 `fixture=DB-stopped serverIdle=true httpClosed=true stop=false`와 Redis-stopped 동일이다. 로그 `/tmp/t037-p3-green.log`.
+
+### P3 quickstart·research 상태 표시
+
+`specs/010-openapi-contract/quickstart.md`의 "계획만·예정 이름·예정 고정 메서드·다음 작업 speckit-tasks"를 현재 구현·인수 상태와 실제 클래스 이름(`ApiContractDependencyIT`·`RedisApiContractDependencyIT`)으로 고쳤다. 작성 당시 미실행 사실은 그대로 남겼다. `research.md` 상단은 설계 당시의 historical record임을 명시하고 현재 결과 문서를 연결했다. 결정 본문(R1~R6)은 바꾸지 않았다. 승인된 spec/plan 본문은 수정하지 않았다.
+
+### 리뷰 보완 최종 전체 게이트 (T042)
+
+- 명령: 깨끗한 `c8e3e75`에서 `cd backend && ./gradlew build verifyContract verifyContractDependencies`를 1회 실행했다. 종료0, `BUILD SUCCESSFUL in 3m 58s`, 14 actionable tasks(10 executed/4 up-to-date). 로그 `/tmp/t042.log`. XML 사본은 `/private/tmp/010-t042-xml/`(로컬, 커밋하지 않음)이다.
+- listener와 XML 수가 일치하고 실패/오류/skip은 모두 0이다.
+  - test 298(14 XML) = T032의 294 + Problem 공백4. ApiContractValidatorTest 105.
+  - integrationTest 315(20 XML) = 312 + ResourceApiIT 비정규 UUID 3. ResourceApiIT 11.
+  - contractTest 102(4 XML) = ApiContractIT94(88 + 경로 UUID 사례6) + DB fixture1 + Redis fixture1 + 프로브6. 업무 계약 발견 수는 96이다.
+- 출력: `contract-copy total=44 controls=44 rejected=44`, DB-stopped·Redis-stopped 모두 `serverIdle=true httpClosed=true stop=false`(실제 값 단언), 429 `count=21 decisionPttl=58597/58556 retryAfter=59`.
+- 경쟁: ReservationConcurrencyIT 115/0/0/0이다. RUN 110줄은 C01~C11 각10이고, 모두 `ownedKeyResets=1`이며 예상 밖 429/503은 0이다. 110 CLEANUP이 정상이고 모든 snapshot에서 수량식이 유지됐다. 경쟁 시험 소스가 바뀌지 않았으므로 `docs/concurrency-runs.json`은 T032 회차 기록을 유지한다(이번 회차 값으로 재생성하지 않음).
+- 정책 무변경: OpenAPI 스키마·계획서 정책은 그대로다. 제품 변경은 `ResourceController` binder 1건이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
+
+### 재리뷰 문서 동기화 (head f37123c 이후)
+
+재리뷰 P2 지적에 따라 README·knowledge(README·도메인4·개발 규칙)·versions·decisions·계획서·tasks의 현재 수를 T042 기준으로 고쳤다. 기준은 Unit298·IT315·Contract102(업무96+프로브6), ApiContractIT94, ResourceApiIT11이다. T032 수(294·312·96, ApiContractIT88, ResourceApiIT8)는 historical로 표시했다. 9단계 최신 절의 "제품 변경 없음"은 `ResourceController` 엄격 UUID binder 1건을 명시하도록 바꿨다. `rg`로 전수 확인한 결과 남은 이전 수치는 날짜가 붙은 당시 기록(4단계 2026-10-17, 8단계 2026-10-22, T018~T033 절)뿐이다. 코드 변경과 테스트 재실행은 없다.

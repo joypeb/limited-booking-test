@@ -62,13 +62,13 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit156 (기존143+경쟁지원13) |
-| `./gradlew verify` | Unit156+일반IT257 (기존138+DB지원4+경쟁110+fixture5) |
+| `./gradlew test` | Spring 없는 Unit298 (8단계까지193+계약 검사기105) |
+| `./gradlew verify` | Unit298+일반IT315 (경쟁110+fixture5·Redis 제한/장애·ResourceApiIT11 포함) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | Unit156+지정IT3 (이번 단계 재실행 없음) |
-| `./gradlew verifyContract` | 구성상 Unit156+일반IT257+Contract6; 이번 단계 재실행 없음 |
-| `./gradlew verifyProperty` | 구성상 Unit156+일반IT257+Property3; 이번 단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성상 총281; 이번 단계 재실행 없음 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit298+지정IT3; 9단계 재실행 없음 |
+| `./gradlew verifyContract` | Unit298·일반IT315·Contract102(업무96+프로브6); 2026-10-23 T042 `build verifyContract verifyContractDependencies` 종료0 |
+| `./gradlew verifyProperty` | 구성상 Unit+일반IT+Property; 9단계 재실행 없음 |
+| `./gradlew deepTest` | 네 그룹 구성; 9단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
 
 `contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
@@ -79,7 +79,7 @@ QT_SEED=20261013 ./gradlew propertyTest
 
 정상 Property는 별도 경계0/100과 생성 예산1000 중 실제 assertion101회다. 실제 assertion 최소100회를 검사하며 JUnit3건과 내부 시도 수를 구분한다. 고의 n>50 결함의 100→51 축소와 동일 seed 재실패·원복 통과는 [증거](docs/test-evidence.md)에 기록했다. 결함은 현재 원복 상태다.
 
-XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/tests/<task>/`, PIT XML/HTML은 `backend/build/reports/pitest/`에 있다. 계약 fixture는 시험 전용이며 업무 OpenAPI 원본은 docs/openapi.yaml이다. 해당 문서 parse/ref 성공을 업무 HTTP 준수로 해석하지 않는다.
+XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/tests/<task>/`, PIT XML/HTML은 `backend/build/reports/pitest/`에 있다. 계약 fixture는 시험 전용이며 업무 OpenAPI 원본은 docs/openapi.yaml이다. 해당 문서 parse/ref 성공만으로 업무 HTTP 준수로 해석하지 않으며, 업무 HTTP 준수는 9단계 `ApiContractIT`·`ApiContractDependencyIT`로 검증한다.
 
 Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
 
@@ -222,3 +222,20 @@ US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분�
 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다.
 
 부모 setup은 첫 StopState 검사 뒤에만 소유 Redis 키와 DB를 초기화한다. 기본 정책과 성공/소유권/취소/수량 계약을 유지하며 기존 HTTP를 실제 Redis로 전환했다. 순수 대상 API/DB 시험은 Redis 없이 검증한다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)를 따른다. 위 날짜별 중간 인수의 후속·대기 표시는 해당 시점 기록이다. 이번 절차는 최신 사용자 지시의 Spec Kit를 적용했다.
+
+## 9단계 계약 검증 진행 (2026-10-23, T018~T020)
+
+고정 OpenAPI 검사기와 실제 업무 HTTP의 정상·입력/권한/품절·제한·DB/Redis503 적용표를 검증했다. [의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB/Redis 중단을 각각 별도 소유 컨테이너·컨텍스트로 격리하며, Redis 장애의쓰기503·DB무변경·독립API정상을 확인한다. [실행 증거](docs/test-evidence.md)의 T018~T020 절에 지정명령·수·정리·적용표가 있다. 생성 재현 시퀀스·실제DTO변이·전체9단계 인수(T021 이후)는 미완료이며 Qodana는 사용자지정스킵/후속이다.
+
+
+## 9단계 계약 검증 최종 인수 (2026-10-23)
+
+고정 [OpenAPI 3.0.3](docs/openapi.yaml)을 기대값으로 실제 HTTP 요청·응답 원문을 [검사기](backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)에 전달한다. 검사기는 OpenAPI schema, raw JSON(중복 키·정수 토큰·단일 문서), UTC 마이크로초·Location·Replay·WWW-Authenticate·Retry-After·Problem 6필드 의미, 명시 status만 허용하는 operation 검사, 최초/재전송 시나리오 비교를 함께 수행한다. 무효 요청은 정확한 예상 요청 위반만 허용하고 오류 응답은 항상 전체 검사한다.
+
+```sh
+cd backend
+./gradlew contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT'
+./gradlew build verifyContract verifyContractDependencies
+```
+
+2026-10-23 PR #12 리뷰 보완 후 T042 전체 게이트는 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0이다. ApiContractIT는 94건, ResourceApiIT는 11건이다. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 다섯 작업의 정상·오류 적용표, DB/Redis 중단 503, 응답 사본 단일 훼손44종 거부, 실제 `ResourceView` 타입 변이의 HTTP 실패와 원복 통과를 확인했다. [계약 HTTP 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)·[작업 상태](specs/010-openapi-contract/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 위 T018~T020 진행 절의 미완료 표시는 당시 기록이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이며 통과로 기록하지 않는다. Property/PIT 심화·k6 부하·외부 CI는 후속이다.

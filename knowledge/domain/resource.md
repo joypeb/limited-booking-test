@@ -9,7 +9,9 @@
 - 구현 상태: V1·`ResourceView`·`ResourceRepository`(`find`·`insert`)·`ResourceRules`·`ResourceService`(`create`·`get`)·`ResourceController`(`POST /api/resources`·`GET /api/resources/{id}`) 및 저장·Unit·HTTP 통합 테스트(`SchemaIT`, `ResourceRepositoryIT`, `ResourceRulesTest`, `ResourceApiIT`, `SecurityIT`) 구현·실행 검증됨. 예약 생성·취소의 `available` 차감/복구·경쟁 보존·Redis 장애 중 무변경도 구현·검증했다.
 
 
-**현재 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
+**9단계 계약 검증 상태(2026-10-23):** 010 T001~T042 구현·실행 인수 완료(PR #12 리뷰 보완 포함). T042 `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 고정 OpenAPI와 실제 HTTP의 정상 5작업·적용표 전체 오류·응답 사본 훼손44종·실제 DTO 타입 변이 RED→원복 GREEN을 확인했다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. [010 작업](../../specs/010-openapi-contract/tasks.md)·[실행 근거](../../docs/test-evidence.md)를 따른다. 아래 8단계 상태와 날짜별 이력은 해당 시점 기록이다.
+
+**8단계 검증 상태(2026-10-22):** 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../../docs/test-evidence.md)·[009 작업](../../specs/009-redis-rate-limit/tasks.md)을 따른다. 아래 날짜별 이력은 해당 시점 기록이다.
 
 ## 2. 목적·책임·경계
 
@@ -71,9 +73,9 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | 앱 골격·UTC 시계 | [BackendApplication](../../backend/src/main/java/com/limitedbooking/backend/BackendApplication.java)·[ClockConfig](../../backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java) | 구현·실행 검증됨 |
 | 읽기/생성 DTO·Repository | [ResourceRepository](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)·[ResourceView](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java) | `find`·`insert` 구현·실행 검증됨 |
 | 입력 규칙 | [ResourceRules](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)·[ResourceRulesTest](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceRulesTest.java) | 구현·Unit 52건 및 HTTP 경로 연동 검증됨 |
-| Controller·Service | [ResourceController](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java)·[ResourceService](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceService.java) | 구현·`ResourceApiIT` 8건·`SecurityIT` 7건 검증됨 |
+| Controller·Service | [ResourceController](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java)·[ResourceService](../../backend/src/main/java/com/limitedbooking/backend/resource/ResourceService.java) | 구현·`ResourceApiIT` 11건(T042, 비정규 UUID 경로400 3건 포함)·`SecurityIT` 7건 검증됨 |
 | 업무 V1·대상 저장/조회/HTTP 테스트 | [V1](../../backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)·`SchemaIT`·`ResourceRepositoryIT`·[ResourceApiIT](../../backend/src/test/java/com/limitedbooking/backend/resource/ResourceApiIT.java) | 구현·실행 검증됨 |
-| 고정 OpenAPI 초안 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨, 9단계 OpenAPI 자동 검증은 후속 |
+| 고정 OpenAPI 계약 | [계약](../../docs/openapi.yaml) | 작성·문서 대조됨; 2026-10-23 9단계 실제 HTTP 자동 계약 검증 완료 |
 
 이름 길이 단위의 명확화는 계획서·도메인 규칙·명세·계약 설계에 반영했다. 구현 이후에는 순수 규칙·DTO·OpenAPI·Unit·HTTP 기대값을 함께 검토한다. JDBC 등 선택 이유는 [결정 기록](../../docs/decisions.md)에 작성했다.
 
@@ -82,7 +84,7 @@ ResourceView는 id·name·capacity·available다. 본문 크기 제한·오류 �
 | 항목 | 영향 | 다음 작업 |
 | --- | --- | --- |
 | 취소 복구·실제 경쟁·Redis 독립성 | 6~8단계 실행 인수 완료 | 오케스트레이터 최종검토 |
-| 업무 OpenAPI 자동 계약 검증 미실행 | 수동/IT 검증은 완료했으나 validator 자동 대조는 후속 | 9단계 API 계약 및 비정상 입력 테스트에서 검증 |
+| 업무 OpenAPI 자동 계약 검증 | 2026-10-23 9단계 실행 인수 완료(정상·오류·DB503·DTO 변이) | 해결됨; Property/PIT는 10단계 |
 
 이름 길이 코드 포인트·공백 strip 정책과 4단계 대상 생성·단건 조회 HTTP API 구현 및 통합 검증을 완료했다. 예약 생성의 조건부 차감·재현 무변경·실패 롤백과 수량 보존은5단계에서 검증했다. 취소 복구·실제 경쟁 보존 및 Redis 연결 회귀는6~8단계에서 검증했다.
 
@@ -142,3 +144,13 @@ fresh/reapplied 두 독립 DB에서 같은 제약·조회·초기화/검사 사�
 ### 2026-10-22 US4 회귀·최종 인수
 
 기존 HTTP는 기본20/60초·실제 Redis를 사용하고 사례별 ADMIN/A/B 소유키만 초기화한다. 경쟁은 별도10000/60초로110회 모두 실제 HTTP·Redis·DB를 통과하며 최종 단일SQL 수량 snapshot과 종료를 확인했다. 부모 setup 첫 보호검사 전에는 Redis/DB를 접근하지 않으며 종료/전송불확실 fixture에서 reset0을 검증했다. 취소 입력 검증은 SecurityIT, 순수 대상 API는 postgresOnly ResourceApiIT에 둔다. 업무 SQL/스키마·성공/소유권/취소·OpenAPI 계약은 유지한다. [증거](../../docs/test-evidence.md)·[110회 기록](../../docs/concurrency-runs.json)을 따른다.
+
+
+### 9단계 US2 의존성 계약 연결 (2026-10-23)
+
+[의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 별도 소유 DB/Redis 중단의5API/두쓰기503과 정상DB에서의업무전체행무변경·독립3API정상을 고정명세와 대조한다. 중단DB의사후snapshot과 기존정상DB의timeout롤백증거를 구분한다. 제품·SQL·정책은 유지하며 [T018~T020 실행증거](../../docs/test-evidence.md)를 따른다. T021이후/전체9단계인수·Qodana는미완료다.
+
+
+### 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 대상 생성201·조회200(capacity0/1000, strip 경계·😀·NBSP)과 400/401/403/404/413/415를 고정 OpenAPI로 대조한다(ApiContractIT 94건, T042). PR #12 리뷰에서 `GET /api/resources/1-1-1-1-1`·앞뒤 공백 UUID가 기본 변환으로 200/404가 되던 결함을 RED로 재현하고, `ResourceController`에 예약과 같은 엄격 UUID binder를 넣어 400으로 고쳤다. [의존성 계약 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB 중단 503과 Redis 중단 중 대상 생성/조회 정상을 확인한다. `ResourceView.available`을 int→String으로 임시 변이하면 compile은 성공하고 같은 HTTP 시험이 `/body/available` schema type 위반으로 실패했으며, 정확 원복 뒤 통과했다(SHA256 원본 일치). 앞 절의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.

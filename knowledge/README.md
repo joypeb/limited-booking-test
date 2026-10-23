@@ -110,3 +110,32 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ## 8단계 현재 인수 상태 (2026-10-22)
 
 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../docs/test-evidence.md)·[009 작업](../specs/009-redis-rate-limit/tasks.md)을 따른다. 위 날짜별 과거 확인 상태는 당시 기록이다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했다.
+
+
+## 9단계 계약 검증 공통 선행
+
+[010 명세](../specs/010-openapi-contract/spec.md)·[계획](../specs/010-openapi-contract/plan.md)·[작업](../specs/010-openapi-contract/tasks.md)을 기준으로 공통 선행 T001~T006만 진행했다. [ApiContractValidator](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)의 고정 명세/명시 operation·status/원문 경계와 [Unit](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java), [HTTP 지원](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java)·[최소 실제 HTTP와 종료 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)을 추가했다. 예상위반·시나리오 값 모델은 불변 경계만 정의했으며 후속 판정 구현과 US1~US4는 미완료다. 실제 명령·RED/GREEN·수·한계는 [실행 증거](../docs/test-evidence.md)를 따른다. 새 업무 도메인·제품/API/SQL 변경은 없다.
+
+
+### 9단계 US1 정상 계약 인수
+
+T007~T011에서 검사기 Unit87건과 실제 업무HTTP6건·기존프로브6건을 지정 실행해 통과했다. `ApiContractValidator`는 스키마와 별도 semantic 단계로 UTC Z/마이크로초 값·이름 정규화/수량 관계·현재상태별 cancelledAt·필수응답헤더를 검사한다. 실제5operation·capacity0/1000·이름 경계/유니코드·원문/헤더case·DBsnapshot·기존종료보호를 확인했다. 선행 절의 US1 미완료는 당시 상태이며 현재 US2~US4/정확한무효요청·전체오류/변이 인수는 미완료다. [실행 증거](../docs/test-evidence.md)와 [작업](../specs/010-openapi-contract/tasks.md)을 따른다.
+
+
+### 9단계 US2 일부 인수
+
+T012~T017에서 불변의정확요청위반multiset·원문JSON/UTF8검사와항상실행하는오류응답검사를추가했다. 알수없는library key/context는예상목록과무관하게실패한다. 실제입력/권한/업무오류·5작업413·두생성415·기본429/판정PTTL까지검증했고관련Unit110(검사기97+기존13), Contract92(업무86+프로브6)가통과했다. GET8192본문의OAS body.unexpected/서버200은표현한계로정확히분리한다. publisher전달바이트는wire전송완료가아니며서버앱read관측과구별한다. T018이후DB/Redis503fixture·시퀀스/변이/전체인수는미완료다. [작업](../specs/010-openapi-contract/tasks.md)·[실행증거](../docs/test-evidence.md)를따른다.
+
+### 9단계 US2 의존성 계약 (T018~T020)
+
+[의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB 중단과 Redis 중단을 별도 소유 컨테이너·컨텍스트로 격리한다. 실제 DB 중단의5API503·정상Redis, Redis 중단의예약생성/취소503·업무전체행무변경·대상생성/두조회정상을 고정 OpenAPI와 대조한다. 중단 DB의 사후snapshot은 조회하지 않고 기존 실제timeout 롤백회귀와 근거를 구분한다. 전체 오류 적용표·지정검증수·정리는 [실행 증거](../docs/test-evidence.md)의 T018~T020 절을 따른다. 제품/SQL/정책변경없음. T021 이후·전체9단계 인수는 미완료이며 Qodana는 사용자지정스킵/후속이다.
+
+
+### 9단계 US3 생성 재현·현재 상태 인수
+
+T021~T023은실제7회HTTP시퀀스의첫생성baseline과각시점의Replay/상태/필드값을`ScenarioExpectation`으로비교한다. 취소후생성은최초CONFIRMED4필드·Location을재현하고현재GET은CANCELLED5필드이며중복취소시각도같다. `DatabaseAssertions.reservationSnapshot`의한SELECT로수량·예약행과불변컬럼을함께관측한다. 관련Unit114(검사기101+종료지원13)·Contract93(업무87+프로브6)을지정실행해통과했으며자세한RED/GREEN/한계는[실행증거](../docs/test-evidence.md)를따른다. US4/T024이후와최종전체인수는미완료다.
+
+
+## 9단계 계약 검증 최종 인수 (2026-10-23)
+
+[010 작업](../specs/010-openapi-contract/tasks.md) T001~T042 구현·실행 인수를 완료했다(PR #12 리뷰 보완 포함). `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·일반IT315(경쟁110회·종료 fixture5 포함)·Contract102(업무96+프로브6), 실패/오류/skip0이다(T042). T032 당시 Unit294·IT312·Contract96은 historical 값이다. 고정 [OpenAPI](../docs/openapi.yaml)를 기대값으로 [검사기](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)·[계약 HTTP 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)이 적용표 전체, 응답 사본 훼손44종, 실제 DTO 타입 변이 RED→원복 GREEN을 검증했다. 위 9단계 진행 절들의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. 근거는 [실행 증거](../docs/test-evidence.md)와 [110회 기록](../docs/concurrency-runs.json)을 따른다.
