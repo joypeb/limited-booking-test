@@ -63,12 +63,13 @@
 
 ## Phase 6: US4 — SQL·소유자·키 비교 고의 변경 탐지 (P2)
 
-**독립 인수**: A~D 각각 실패 테스트 ≥1(B의 속성 미탐지는 사유 기록), 원복 diff 0.
+**독립 인수**: A~E 각각 실패 테스트 ≥1(B의 속성 미탐지는 사유 기록), 원복 diff 0.
 
 - [ ] T022 [US4] (impl→orch) 변경 A: `M/resource/ResourceRepository.java` `decrementIfAvailable`의 `AND available > 0` 제거 → orch `./gradlew test integrationTest propertyTest` 실행·실패 테스트 기록 → impl 원복 → `git diff --exit-code -- backend/src/main`. — 선행: T016, T021
 - [ ] T023 [US4] (impl→orch) 변경 B: `M/reservation/ReservationRepository.java` `markCancelled`의 `AND status = 'CONFIRMED'` 제거 → 같은 절차. — 선행: T022
 - [ ] T024 [US4] (impl→orch) 변경 C: `ReservationRepository.findByIdAndUser`의 `AND user_id = :userId` 제거 → 같은 절차. — 선행: T023
 - [ ] T025 [US4] (impl→orch) 변경 D: T011과 같은 변경으로 `./gradlew test integrationTest` 실행·실패 테스트 기록(속성 결과는 T012 재사용) → 원복 확인. — 선행: T024
+- [ ] T025a [US4] (impl→orch) 변경 E(T018 분석으로 추가): `M/reservation/CancellationDecision.java` `from`의 두 case 반환값 교체 → `./gradlew test integrationTest propertyTest` 실행·실패 기록 → 원복 확인. PIT가 enum 매핑 교체 변이를 만들지 못하는 도구 한계의 보완. — 선행: T025
 - [ ] T026 [US4] (ta, 조건부) 탐지 0인 변경이 있으면 해당 규칙 테스트를 보완하고 그 변경 재적용 상태 RED → 원복 GREEN 확인. 없으면 “해당 없음” 기록. — 선행: T025
 - [ ] T027 [US4] REVIEW (rev) 탐지 표·원복 증거 검토. — 선행: T026
 

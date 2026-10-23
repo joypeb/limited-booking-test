@@ -36,6 +36,7 @@
 | B | `ReservationRepository.markCancelled`의 `AND status = 'CONFIRMED'` 제거 | `integrationTest` (경쟁 포함), `propertyTest` | integrationTest 실패 ≥1, 속성 미탐지는 R4 사유로 기록 |
 | C | `ReservationRepository.findByIdAndUser`의 `AND user_id = :userId` 제거 | `integrationTest`, `propertyTest` | 실패 ≥1 |
 | D | `ReservationService.replay`의 resourceId 비교 제거(항상 재현) | `test`, `integrationTest`, `propertyTest` | 실패 ≥1, 속성 실패 seed·축소 순서 기록 |
+| E | `CancellationDecision.from`의 매핑 교체(CONFIRMED→ALREADY_CANCELLED, CANCELLED→CANCEL_NOW) | `test`, `integrationTest`, `propertyTest` | 실패 ≥1. PIT 연산자로 만들 수 없는 enum 매핑 변이의 보완(2026-10-23 T018 분석 추가) |
 
 각 ID: 적용 → 실행(종료 코드·실패 테스트 이름 기록) → 원복 → `git diff --exit-code -- backend/src/main` 종료 0. 한 번에 하나만 적용한다. 고의 변경 상태는 커밋하지 않는다.
 
