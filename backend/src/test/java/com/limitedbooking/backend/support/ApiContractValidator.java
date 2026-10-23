@@ -68,7 +68,7 @@ public final class ApiContractValidator {
                         .collect(java.util.stream.Collectors.joining("/")),path))
                 .map(e->e.getValue().readOperationsMap().get(httpMethod)).filter(Objects::nonNull).findFirst()
                 .orElseThrow(()->new AssertionError("operation: 미명시 path/method"));
-        if(!operation.getResponses().containsKey(Integer.toString(status))) throw new AssertionError("status: 미명시 응답");
+        if(!operation.getResponses().containsKey(Integer.toString(status))) throw new AssertionError("operation:response-status:/status");
         var request=new SimpleRequest.Builder(method,path);
         requestHeaders.forEach(request::withHeader);
         if(requestBody!=null) request.withBody(requestBody);
@@ -219,9 +219,9 @@ public final class ApiContractValidator {
                 violation(failures,"replay-boolean","/headers/Idempotent-Replayed");
         }
         JsonNode json;
-        try { json=body==null?null:JSON.readTree(body); }
+        try { json=body==null?null:JSON.reader().with(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readTree(body); }
         catch(JsonProcessingException malformed) {
-            violation(failures,"json","/body"); return;
+            violation(failures,"json-document","/body"); return;
         }
         if(json==null || !json.isObject()) return; // 구조 결함은 response-schema 보고서가 담당한다.
         if(status==201) {
@@ -248,6 +248,8 @@ public final class ApiContractValidator {
             } catch(IllegalArgumentException e) {violation(failures,"problem-type","/body/type");}
             return;
         }
+        if(status==200 && path.endsWith("/cancel") && !"CANCELLED".equals(json.path("status").asText()))
+            violation(failures,"cancel-state","/body/status");
         if(path.startsWith("/api/resources")) {
             var name=json.get("name");
             if(name!=null && name.isTextual()) {
@@ -313,13 +315,33 @@ public final class ApiContractValidator {
         headers.forEach((name,values)->{
             String lower=name.toLowerCase(Locale.ROOT);
             if(singleton.contains(lower) && (values.size()!=1 || !seen.add(lower)))
-                throw new AssertionError("raw:duplicate-singleton:"+lower);
+                throw new AssertionError("raw:duplicate-singleton:/headers/"+lower);
             result.put(name,String.join(", ",values));
         });
         return Map.copyOf(result);
     }
     private static void collect(String stage, ValidationReport report, List<String> failures) {
-        report.getMessages().stream().filter(m->m.getLevel()==ValidationReport.Level.ERROR)
-                .forEach(m->failures.add(stage+":"+m.getKey()));
+        for(var message:report.getMessages()) responseMessage(stage,message,null,failures);
+    }
+    private static void responseMessage(String stage,ValidationReport.Message message,
+            ValidationReport.MessageContext inherited,List<String> failures) {
+        var context=message.getContext().map(c->inherited==null?c:c.enhanceWith(inherited)).orElse(inherited);
+        if(message.getLevel()==ValidationReport.Level.ERROR) {
+            String key=message.getKey();String location=null;
+            if(context!=null && context.getLocation().orElse(null)==ValidationReport.MessageContext.Location.RESPONSE) {
+                if(context.getParameter().isPresent()) {
+                    var parameter=context.getParameter().get();location="/"+parameter.getIn()+"/"+parameter.getName();
+                } else if(key.startsWith("validation.response.body.")) {
+                    location="/body"+context.getPointers().map(ValidationReport.MessageContext.Pointers::getInstance).orElse("");
+                } else if(key.startsWith("validation.response.header.")) {
+                    // 고정 라이브러리는 응답 header 이름을 context에 제공하지 않는다.
+                    // 원래 header-root pointer를 보존하고 별도 의미 검사가 정확한 이름을 제공한다.
+                    location="/headers"+context.getPointers().map(ValidationReport.MessageContext.Pointers::getInstance).orElse("");
+                } else if(key.equals("validation.response.contentType.notAllowed")||key.equals("validation.response.contentType.invalid"))
+                    location="/headers/Content-Type";
+            }
+            failures.add(stage+":"+key+":"+(location==null?"/unknown-context":location));
+        }
+        for(var child:message.getNestedMessages())responseMessage(stage,child,context,failures);
     }
 }

@@ -135,6 +135,8 @@ class ApiContractIT {
                         "aUtHoRiZaTiOn",adminAuth()),body);
                 assertThat(created.status()).isEqualTo(201);
                 assertThat(created.requestBody()).isEqualTo(body);
+                System.out.println("contract-resource actualStatus="+created.status()+" availableTextual="
+                        +mapper.readTree(created.responseBody()).get("available").isTextual());
                 created.assertValid(validator);
                 var resource=mapper.readTree(created.responseBody());
                 assertResource(resource,names.get(i),capacities.get(i));
@@ -634,5 +636,124 @@ class ApiContractIT {
         // 실제 제품 시퀀스는 정상이다. 비교기가 유효한 boolean의 잘못된 시점을 놓치는지 별도로 확인한다.
         assertThatThrownBy(()->validator.assertScenario(first,scenario(201,initial,initialLocation,true)))
                 .isInstanceOf(AssertionError.class).hasMessageContaining("semantic:scenario-replay");
+    }
+    record ResponseDefect(String id,ApiContractValidator.HttpExchange baseline,ApiContractValidator.HttpExchange broken,
+            String stage,String key,String location,ApiContractValidator.ScenarioExpectation scenario,Long pttl) { }
+    private static ApiContractValidator.HttpExchange responseCopy(ApiContractValidator.HttpExchange baseline,int status,
+            Map<String,String> headers,String body) {
+        return new ApiContractValidator.HttpExchange(baseline.method(),baseline.path(),baseline.requestHeaders(),baseline.requestBody(),status,headers,body);
+    }
+    private static ApiContractValidator.HttpExchange changedField(ApiContractValidator.HttpExchange baseline,String field,Object value,boolean remove) throws Exception {
+        var tree=(com.fasterxml.jackson.databind.node.ObjectNode)new com.fasterxml.jackson.databind.ObjectMapper().readTree(baseline.responseBody());
+        if(remove)tree.remove(field);else tree.set(field,new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(value));
+        return responseCopy(baseline,baseline.status(),baseline.responseHeaders(),tree.toString());
+    }
+    private static ApiContractValidator.HttpExchange changedHeader(ApiContractValidator.HttpExchange baseline,String name,String value,boolean duplicate) {
+        var headers=new LinkedHashMap<>(baseline.responseHeaders());
+        String original=headers.keySet().stream().filter(k->k.equalsIgnoreCase(name)).findFirst().orElse(name);
+        if(duplicate)headers.put(original.equals(original.toLowerCase(Locale.ROOT))?original.toUpperCase(Locale.ROOT):original.toLowerCase(Locale.ROOT),value);
+        else {headers.remove(original);if(value!=null)headers.put(name,value);}
+        return responseCopy(baseline,baseline.status(),headers,baseline.responseBody());
+    }
+    private static void bodyDefect(List<ResponseDefect> cases,String id,ApiContractValidator.HttpExchange baseline,
+            String field,Object value,boolean remove,String stage,String key,String location) throws Exception {
+        cases.add(new ResponseDefect(id,baseline,changedField(baseline,field,value,remove),stage,key,location,null,null));
+    }
+    private static void headerDefect(List<ResponseDefect> cases,String id,ApiContractValidator.HttpExchange baseline,
+            String header,String value,String key) {
+        cases.add(new ResponseDefect(id,baseline,changedHeader(baseline,header,value,false),"semantic",key,"/headers/"+header,null,null));
+    }
+    private void observeRealLua() {
+        SCRIPT_RESULTS.clear();
+        org.mockito.Mockito.doAnswer(call->{
+            var result=(List<?>)call.callRealMethod();String id=CURRENT_REQUEST.get();
+            if(id!=null)SCRIPT_RESULTS.put(id,List.of((Long)result.get(0),(Long)result.get(1)));return result;
+        }).when(redis).execute(org.mockito.ArgumentMatchers.any(org.springframework.data.redis.core.script.RedisScript.class),
+                org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.any(Object[].class));
+    }
+    @Test void actualResponseCopiesRejectEachIndependentContractDefect() throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        ApiContractValidator.HttpExchange resource,created,current,cancelled,replayed,unauth,limited;
+        long pttl;
+        observeRealLua();
+        try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
+            resetOwnedData(http);
+            resource=http.send("POST","/api/resources",Map.of("Authorization",adminAuth(),"Content-Type","application/json"),"{\"name\":\"훼손 대조\",\"capacity\":1}");
+            resource.assertValid(validator);
+            String resourceId=new com.fasterxml.jackson.databind.ObjectMapper().readTree(resource.responseBody()).get("id").textValue();
+            var headers=Map.of("Authorization",userAuth(),"Content-Type","application/json","Idempotency-Key","copy-baseline");
+            String request="{\"resourceId\":\""+resourceId+"\"}";
+            created=http.send("POST","/api/reservations",headers,request);created.assertValid(validator);
+            String location=header(created.responseHeaders(),"Location");
+            current=http.send("GET",location,Map.of("Authorization",userAuth()),null);current.assertValid(validator);
+            cancelled=http.send("POST",location+"/cancel",Map.of("Authorization",userAuth()),null);cancelled.assertValid(validator);
+            replayed=http.send("POST","/api/reservations",headers,request);replayed.assertValid(validator);
+            unauth=http.send("GET","/api/resources/"+resourceId,Map.of(),null);assertProblem(unauth,401,"UNAUTHENTICATED");
+            for(int i=3;i<20;i++)http.send("POST",location+"/cancel",Map.of("Authorization",userAuth()),null).assertValid(validator);
+            limited=http.send("POST",location+"/cancel",Map.of("Authorization",userAuth()),null);assertProblem(limited,429,"RATE_LIMITED");
+            pttl=decisionPttl(limited);validator.assertRetryAfter(limited,pttl);
+        } finally {org.mockito.Mockito.reset(redis);}
+        var cases=new ArrayList<ResponseDefect>();
+        String createdAt=new com.fasterxml.jackson.databind.ObjectMapper().readTree(created.responseBody()).get("createdAt").textValue();
+        bodyDefect(cases,"required-id",resource,"id",null,true,"response-schema","validation.response.body.schema.required","/body");
+        bodyDefect(cases,"uuid",resource,"id","not-a-uuid",false,"response-schema","validation.response.body.schema.format.uuid","/body/id");
+        for(String field:List.of("capacity","available"))bodyDefect(cases,"numeric-string-"+field,resource,field,"1",false,"response-schema","validation.response.body.schema.type","/body/"+field);
+        bodyDefect(cases,"malformed-time",created,"createdAt","not-a-time",false,"response-schema","validation.response.body.schema.format.date-time","/body/createdAt");
+        bodyDefect(cases,"non-utc-time",created,"createdAt","2026-10-23T09:00:00+09:00",false,"semantic","utc-micros","/body/createdAt");
+        bodyDefect(cases,"over-micro-time",created,"createdAt","2026-10-23T00:00:00.123456001Z",false,"semantic","utc-micros","/body/createdAt");
+        bodyDefect(cases,"unknown-state",current,"status","UNKNOWN",false,"response-schema","validation.response.body.schema.enum","/body/status");
+        bodyDefect(cases,"extra-field",resource,"extra",true,false,"response-schema","validation.response.body.schema.additionalProperties","/body");
+        bodyDefect(cases,"created-cancelledAt",created,"cancelledAt",null,false,"response-schema","validation.response.body.schema.additionalProperties","/body");
+        bodyDefect(cases,"current-cancelledAt-missing",current,"cancelledAt",null,true,"response-schema","validation.response.body.schema.required","/body");
+        bodyDefect(cases,"confirmed-has-time",current,"cancelledAt",createdAt,false,"semantic","confirmed-null","/body/cancelledAt");
+        bodyDefect(cases,"cancelled-without-time",cancelled,"cancelledAt",null,false,"semantic","cancelled-time","/body/cancelledAt");
+        bodyDefect(cases,"cancelled-time-malformed",cancelled,"cancelledAt","invalid",false,"response-schema","validation.response.body.schema.format.date-time","/body/cancelledAt");
+        bodyDefect(cases,"cancelled-time-non-utc",cancelled,"cancelledAt","2026-10-23T09:00:00+09:00",false,"semantic","utc-micros","/body/cancelledAt");
+        bodyDefect(cases,"cancelled-time-over-micro",cancelled,"cancelledAt","2026-10-23T00:00:00.123456001Z",false,"semantic","utc-micros","/body/cancelledAt");
+        var confirmedCancel=changedField(changedField(cancelled,"status","CONFIRMED",false),"cancelledAt",null,false);
+        cases.add(new ResponseDefect("cancel-result-confirmed",cancelled,confirmedCancel,"semantic","cancel-state","/body/status",null,null));
+        cases.add(new ResponseDefect("second-json-root",resource,responseCopy(resource,resource.status(),resource.responseHeaders(),resource.responseBody()+" {}"),"semantic","json-document","/body",null,null));
+        headerDefect(cases,"resource-location-missing",resource,"Location",null,"location-id");
+        headerDefect(cases,"reservation-location-missing",created,"Location",null,"location-id");
+        headerDefect(cases,"replay-missing",created,"Idempotent-Replayed",null,"replay-boolean");
+        headerDefect(cases,"challenge-missing",unauth,"WWW-Authenticate",null,"basic-challenge");
+        headerDefect(cases,"retry-missing",limited,"Retry-After",null,"positive-integer");
+        headerDefect(cases,"success-media",resource,"Content-Type","text/plain","media-type");
+        headerDefect(cases,"problem-media",unauth,"Content-Type","application/json","media-type");
+        headerDefect(cases,"location-different-id",created,"Location","/api/reservations/"+UUID.randomUUID(),"location-id");
+        headerDefect(cases,"replay-invalid",created,"Idempotent-Replayed","TRUE","replay-boolean");
+        headerDefect(cases,"challenge-non-basic",unauth,"WWW-Authenticate","Bearer","basic-challenge");
+        for(String value:List.of("0","1.5","later"))headerDefect(cases,"retry-invalid-"+value,limited,"Retry-After",value,"positive-integer");
+        for(var pair:List.of(Map.entry(resource,"Location"),Map.entry(created,"Idempotent-Replayed"),Map.entry(unauth,"WWW-Authenticate"),Map.entry(limited,"Retry-After"))) {
+            var baseline=pair.getKey();String name=pair.getValue();
+            cases.add(new ResponseDefect("duplicate-"+name,baseline,changedHeader(baseline,name,header(baseline.responseHeaders(),name),true),"raw","duplicate-singleton","/headers/"+name.toLowerCase(Locale.ROOT),null,null));
+        }
+        bodyDefect(cases,"problem-http-status",unauth,"status",400,false,"semantic","problem-status","/body/status");
+        bodyDefect(cases,"problem-code",unauth,"code","FORBIDDEN",false,"semantic","problem-code","/body/code");
+        bodyDefect(cases,"problem-instance",unauth,"instance","/different",false,"semantic","problem-instance","/body/instance");
+        bodyDefect(cases,"problem-required-type",unauth,"type",null,true,"response-schema","validation.response.body.schema.required","/body");
+        cases.add(new ResponseDefect("unspecified-500-default",resource,responseCopy(resource,500,resource.responseHeaders(),resource.responseBody()),"operation","response-status","/status",null,null));
+        var tree=new com.fasterxml.jackson.databind.ObjectMapper().readTree(created.responseBody());
+        var initial=new LinkedHashMap<String,String>();for(String field:List.of("id","resourceId","status","createdAt"))initial.put(field,tree.get(field).textValue());
+        var firstScenario=scenario(201,initial,header(created.responseHeaders(),"Location"),false);
+        var replayScenario=scenario(201,initial,header(created.responseHeaders(),"Location"),true);
+        cases.add(new ResponseDefect("first-true",created,changedHeader(created,"Idempotent-Replayed","true",false),"semantic","scenario-replay","/headers/Idempotent-Replayed",firstScenario,null));
+        cases.add(new ResponseDefect("replay-false",replayed,changedHeader(replayed,"Idempotent-Replayed","false",false),"semantic","scenario-replay","/headers/Idempotent-Replayed",replayScenario,null));
+        cases.add(new ResponseDefect("replay-initial-field",replayed,changedField(replayed,"createdAt",Instant.parse(createdAt).plusNanos(1000).toString(),false),"semantic","scenario-field","/body/createdAt",replayScenario,null));
+        String wrongRetry=Long.toString(Long.parseLong(header(limited.responseHeaders(),"Retry-After"))+1);
+        cases.add(new ResponseDefect("retry-positive-wrong-pttl",limited,changedHeader(limited,"Retry-After",wrongRetry,false),"semantic","decision-pttl","/headers/Retry-After",
+                new ApiContractValidator.ScenarioExpectation(429,"RATE_LIMITED",Map.of(),null,null,pttl),null));
+        org.junit.jupiter.api.Assertions.assertAll(cases.stream().map(defect->(org.junit.jupiter.api.function.Executable)()->{
+            if(defect.scenario()!=null)validator.assertScenario(defect.baseline(),defect.scenario());
+            else if(defect.pttl()!=null)validator.assertRetryAfter(defect.baseline(),defect.pttl());else defect.baseline().assertValid(validator);
+            var failure=catchThrowable(()->{
+                if(defect.scenario()!=null)validator.assertScenario(defect.broken(),defect.scenario());
+                else if(defect.pttl()!=null)validator.assertRetryAfter(defect.broken(),defect.pttl());else defect.broken().assertValid(validator);
+            });
+            assertThat(failure).as(defect.id()).isInstanceOf(AssertionError.class);
+            assertThat(failure.getMessage()).as(defect.id()).contains(defect.stage()+":"+defect.key()+":"+defect.location());
+            System.out.println("contract-copy "+defect.id()+" rejected="+defect.stage()+":"+defect.key()+"@"+defect.location());
+        }));
+        System.out.println("contract-copy total="+cases.size()+" controls="+cases.size()+" rejected="+cases.size());
     }
 }

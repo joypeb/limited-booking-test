@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1~US3 T001~T023 구현·지정 검증을 완료했다. T024 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T023까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T024 이후·push·PR은 이번 담당 범위 밖이다.
+**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032 이후·push·PR은 이번 담당 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -68,14 +68,14 @@
 **목표**: 응답 사본 훼손과 실제 DTO 타입 변경의 별도 탐지 증거를 확보한다.
 **독립 인수**: 정상 대조군100%통과·각 단일훼손100%거부·실제 DTO compile성공→HTTP schema RED→정확원복→동일 GREEN이다.
 
-- [ ] T024 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 정상 실제 교환을 먼저 통과시키고 매번 사본 한 요소만 훼손하는 시험을 작성한다. 필수id 제거/UUID/숫자→문자열, malformed·비UTC·마이크로초초과 시각, 미정의status/추가필드/생성cancelledAt/현재cancelledAt누락·상태관계 위반을 독립 사례로 둔다. 검사 구멍의 의도한 RED를 확인하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`를 최소 보완해 각 AssertionError의 해당 단계/key/location 거부와 정상대조 GREEN을 확인한다.
-- [ ] T025 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 각각 필수 Location/Replay/WWW-Authenticate/Retry-After 제거, 미디어타입/Location다른id/Replay오류/401비Basic/Retry-After0·소수·문자열·중복singleton, HTTP/status/code불일치/instance다른path/미명시500·default를 독립 훼손한다. 정확한 훼손원인 RED→최소 검사기 보완→정상대조 및 거부 GREEN을 확인한다.
-- [ ] T026 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 최초true/재요청false, 양의정수지만 독립 판정PTTL과 다른 Retry-After, 재요청 최초생성값 변경의 사본 훼손을 추가한다. `ScenarioExpectation`의 시퀀스 의미 누락 RED→최소 비교 GREEN을 확인한다. T024~T026의 종류별 실제 탐지 결과를 `docs/test-evidence.md`에 기록하며 응답사본 실험을 실제 DTO 변이로 세지 않는다.
-- [ ] T027 [US4] 실제 DTO 실험 전에 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 `resourceSuccessMatchesContract`를 지정 실행해 정상 baseline GREEN을 확보한다. `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java`의 정확한 내용·해시·기존diff를 임시경로에 보관하고 해당 파일의 외부 수정 부재·단독실험·finally 원복 절차를 `docs/test-evidence.md`에 기록한다.
-- [ ] T028 [US4] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java` available record component를 int→String으로 임시변이하고 기존 (UUID,String,int,int) 호출은 String.valueOf(available)로 위임하는 보조생성자로 보존한다. controller/SQL/schema/시험기대값을 바꾸지 않고 backend에서 `./gradlew compileJava compileTestJava` 종료0을 확인한다. 컴파일 실패는 탐지로 인정하지 않으며 최소 보완·확인 결과를 `docs/test-evidence.md`에 기록한다.
-- [ ] T029 [US4] T028 컴파일 성공 뒤 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'`를 실행한다. 실제 앱201/200 available JSON 문자열과 schema integer 위반의 해당 key/location·종료비0을 `docs/test-evidence.md`에 기록한다. 일반 assertion/기동/컴파일 실패는 HTTP schema RED가 아니다.
-- [ ] T030 [US4] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java`를 보관한 정확한 내용으로 임시변경만 원복하고 기존diff/해시 일치를 확인한다. checkout/reset으로 사용자변경을 덮어쓰지 않는다. T029와 **동일 명령** GREEN·최종 DTO 임시diff0을 `docs/test-evidence.md`에 기록한다. 실패/중단에도 원복하고 미원복이면 명시·최종게이트 차단한다.
-- [ ] T031 [US4] `backend/build.gradle`의 기존 contract 발견·verifyContract→verify+contractTest·listener/XML·0건/skip거부·verifyContractDependencies 연결을 신규 업무시험에 대해 확인한다. 기본 변경 없이 업무발견>0·프로브와 업무 수 구분을 검증하고 실제 결함이 있을 때만 RED 회귀→최소 Gradle 수정→GREEN을 수행해 `docs/test-evidence.md`에 남긴다. 기존 게이트의 고의실패를 수정 없이 반복하지 않는다.
+- [X] T024 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 정상 실제 교환을 먼저 통과시키고 매번 사본 한 요소만 훼손하는 시험을 작성한다. 필수id 제거/UUID/숫자→문자열, malformed·비UTC·마이크로초초과 시각, 미정의status/추가필드/생성cancelledAt/현재cancelledAt누락·상태관계 위반을 독립 사례로 둔다. 검사 구멍의 의도한 RED를 확인하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`를 최소 보완해 각 AssertionError의 해당 단계/key/location 거부와 정상대조 GREEN을 확인한다.
+- [X] T025 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 각각 필수 Location/Replay/WWW-Authenticate/Retry-After 제거, 미디어타입/Location다른id/Replay오류/401비Basic/Retry-After0·소수·문자열·중복singleton, HTTP/status/code불일치/instance다른path/미명시500·default를 독립 훼손한다. 정확한 훼손원인 RED→최소 검사기 보완→정상대조 및 거부 GREEN을 확인한다.
+- [X] T026 [US4] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 최초true/재요청false, 양의정수지만 독립 판정PTTL과 다른 Retry-After, 재요청 최초생성값 변경의 사본 훼손을 추가한다. `ScenarioExpectation`의 시퀀스 의미 누락 RED→최소 비교 GREEN을 확인한다. T024~T026의 종류별 실제 탐지 결과를 `docs/test-evidence.md`에 기록하며 응답사본 실험을 실제 DTO 변이로 세지 않는다.
+- [X] T027 [US4] 실제 DTO 실험 전에 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 `resourceSuccessMatchesContract`를 지정 실행해 정상 baseline GREEN을 확보한다. `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java`의 정확한 내용·해시·기존diff를 임시경로에 보관하고 해당 파일의 외부 수정 부재·단독실험·finally 원복 절차를 `docs/test-evidence.md`에 기록한다.
+- [X] T028 [US4] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java` available record component를 int→String으로 임시변이하고 기존 (UUID,String,int,int) 호출은 String.valueOf(available)로 위임하는 보조생성자로 보존한다. controller/SQL/schema/시험기대값을 바꾸지 않고 backend에서 `./gradlew compileJava compileTestJava` 종료0을 확인한다. 컴파일 실패는 탐지로 인정하지 않으며 최소 보완·확인 결과를 `docs/test-evidence.md`에 기록한다.
+- [X] T029 [US4] T028 컴파일 성공 뒤 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'`를 실행한다. 실제 앱201/200 available JSON 문자열과 schema integer 위반의 해당 key/location·종료비0을 `docs/test-evidence.md`에 기록한다. 일반 assertion/기동/컴파일 실패는 HTTP schema RED가 아니다.
+- [X] T030 [US4] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceView.java`를 보관한 정확한 내용으로 임시변경만 원복하고 기존diff/해시 일치를 확인한다. checkout/reset으로 사용자변경을 덮어쓰지 않는다. T029와 **동일 명령** GREEN·최종 DTO 임시diff0을 `docs/test-evidence.md`에 기록한다. 실패/중단에도 원복하고 미원복이면 명시·최종게이트 차단한다.
+- [X] T031 [US4] `backend/build.gradle`의 기존 contract 발견·verifyContract→verify+contractTest·listener/XML·0건/skip거부·verifyContractDependencies 연결을 신규 업무시험에 대해 확인한다. 기본 변경 없이 업무발견>0·프로브와 업무 수 구분을 검증하고 실제 결함이 있을 때만 RED 회귀→최소 Gradle 수정→GREEN을 수행해 `docs/test-evidence.md`에 남긴다. 기존 게이트의 고의실패를 수정 없이 반복하지 않는다.
 
 ## Phase 7: 전체 인수와 문서 동기화
 

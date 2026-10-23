@@ -1698,3 +1698,90 @@ T022 GREEN: `./gradlew test --tests '*ApiContractValidatorTest' --tests '*Concur
 T023 최종관련회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'` 종료0/93건(업무87+프로브6), 실패·오류·skip0, 23초. Unit의검사기101/종료지원13과Contract업무87/프로브6 XML을현재listener결과와대조해일치했다. 신규US3시험1건이실제7교환을포함하며테스트수와HTTP교환수를혼동하지않는다. 기존정상/입력/권한/품절/충돌/8KiB/chunked/요청제한·독립PTTL·서버미종료/transport대기/truncated최초원인회귀를함께통과했다. verifyContractDependencies도종료0이다. 새메서드assertScenario/예약상세snapshot만추가했고기존assertValid/HTTP종료지원·제품/SQL/Wrapper/기본정책은변경하지않았다.
 
 이번에는새시나리오를호출하지않는DB/Redis중단fixture2건·기존장애/경쟁일반IT·전체verifyContract를반복하지않았다. 이들의직전237b2a0/T020인수와이번실행을구분한다. 테스트전용상세snapshot SQL외제품SQL변경없음,새의존성/비밀번호/임의정책완화없음이다. 환경은기존Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트·20회/60000ms·Redis200ms·풀10/획득3000ms다. Qodana는사용자스킵후속이며통과로세지않는다. T024이후US4/실제DTO변이/최종전체인수·T035설명정리는미완료다. 전후extension훅없음·push/PR/외부CI없음. `git diff --check`종료0.
+
+
+## 2026-10-23 9단계 US4 T024~T031 진행
+
+깨끗한25cd123에서prerequisite/체크16/16·knowledge/승인계약·기존ignore/훅없음을확인했다. T024~T026 실제baseline교환은소유DB/Redis/실제Basic·default20/60000ms에서확보하고각사본마다정상대조를다시통과시킨다. 실제Lua반환PTTL관측후429사본을검사하며응답후TTL을재조회하지않는다.
+
+사본RED: `./gradlew contractTest --tests '*ApiContractIT.actualResponseCopiesRejectEachIndependentContractDefect'` 종료1/1건(assertAll 44종중15실패), 11초. 29종은기존검사의거부를확인했다. 초기에는stage/key와위치의존재를분리확인했으므로동일진단에연결된최종원인확인은아래GREEN44종을기준으로한다. 실제거부누락은cancel200의CONFIRMED/null상태투영과두번째JSON root2종이다. 다른13종은거부되지만response-schema pointer/중복singleton header위치/미명시status의진단이부족했다. 이미거부된결함을가짜의미RED로세지않는다. 추가로훼손assertion은단계:key:위치가같은진단에연결돼있는지연속문자열로검사해다른위반의위치를원인으로잘못세지않도록한다.
+
+고정core3.0.0 ResponseValidator sources에서header schema보고서에이름context가없음을확인했다. library원래header-root위치는/headers로보존하고semantic의필수/형식검사는정확/header이름을제공한다. body는안전한instancepointer를,부모/자식은context상속을사용한다. 메시지전문/비밀번호를진단에출력하지않는다. 취소성공은CANCELLED라는기존operation계약만추가검사하고응답은FAIL_ON_TRAILING_TOKENS로단일JSON문서만강제한다. 응답중복키거부정책은추가하지않는다.
+
+T024~T026 GREEN: 동일사본지정명령 종료0/1건·44정상대조/44개별훼손거부, 실패·오류·skip0, 10초. 아래는실제시험이출력한원인별결과다. cancel-result-confirmed는명시승인된일관된CONFIRMED/null상태투영으로공통스키마를통과시키고취소operation규칙을독립검사한다. 나머지는매번사본한필드/헤더/상태만변경한다. 실제DTO변이결과와별개다.
+
+```text
+contract-copy required-id rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy uuid rejected=response-schema:validation.response.body.schema.format.uuid@/body/id
+contract-copy numeric-string-capacity rejected=response-schema:validation.response.body.schema.type@/body/capacity
+contract-copy numeric-string-available rejected=response-schema:validation.response.body.schema.type@/body/available
+contract-copy malformed-time rejected=response-schema:validation.response.body.schema.format.date-time@/body/createdAt
+contract-copy non-utc-time rejected=semantic:utc-micros@/body/createdAt
+contract-copy over-micro-time rejected=semantic:utc-micros@/body/createdAt
+contract-copy unknown-state rejected=response-schema:validation.response.body.schema.enum@/body/status
+contract-copy extra-field rejected=response-schema:validation.response.body.schema.additionalProperties@/body
+contract-copy created-cancelledAt rejected=response-schema:validation.response.body.schema.additionalProperties@/body
+contract-copy current-cancelledAt-missing rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy confirmed-has-time rejected=semantic:confirmed-null@/body/cancelledAt
+contract-copy cancelled-without-time rejected=semantic:cancelled-time@/body/cancelledAt
+contract-copy cancelled-time-malformed rejected=response-schema:validation.response.body.schema.format.date-time@/body/cancelledAt
+contract-copy cancelled-time-non-utc rejected=semantic:utc-micros@/body/cancelledAt
+contract-copy cancelled-time-over-micro rejected=semantic:utc-micros@/body/cancelledAt
+contract-copy cancel-result-confirmed rejected=semantic:cancel-state@/body/status
+contract-copy second-json-root rejected=semantic:json-document@/body
+contract-copy resource-location-missing rejected=semantic:location-id@/headers/Location
+contract-copy reservation-location-missing rejected=semantic:location-id@/headers/Location
+contract-copy replay-missing rejected=semantic:replay-boolean@/headers/Idempotent-Replayed
+contract-copy challenge-missing rejected=semantic:basic-challenge@/headers/WWW-Authenticate
+contract-copy retry-missing rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy success-media rejected=semantic:media-type@/headers/Content-Type
+contract-copy problem-media rejected=semantic:media-type@/headers/Content-Type
+contract-copy location-different-id rejected=semantic:location-id@/headers/Location
+contract-copy replay-invalid rejected=semantic:replay-boolean@/headers/Idempotent-Replayed
+contract-copy challenge-non-basic rejected=semantic:basic-challenge@/headers/WWW-Authenticate
+contract-copy retry-invalid-0 rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy retry-invalid-1.5 rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy retry-invalid-later rejected=semantic:positive-integer@/headers/Retry-After
+contract-copy duplicate-Location rejected=raw:duplicate-singleton@/headers/location
+contract-copy duplicate-Idempotent-Replayed rejected=raw:duplicate-singleton@/headers/idempotent-replayed
+contract-copy duplicate-WWW-Authenticate rejected=raw:duplicate-singleton@/headers/www-authenticate
+contract-copy duplicate-Retry-After rejected=raw:duplicate-singleton@/headers/retry-after
+contract-copy problem-http-status rejected=semantic:problem-status@/body/status
+contract-copy problem-code rejected=semantic:problem-code@/body/code
+contract-copy problem-instance rejected=semantic:problem-instance@/body/instance
+contract-copy problem-required-type rejected=response-schema:validation.response.body.schema.required@/body
+contract-copy unspecified-500-default rejected=operation:response-status@/status
+contract-copy first-true rejected=semantic:scenario-replay@/headers/Idempotent-Replayed
+contract-copy replay-false rejected=semantic:scenario-replay@/headers/Idempotent-Replayed
+contract-copy replay-initial-field rejected=semantic:scenario-field@/body/createdAt
+contract-copy retry-positive-wrong-pttl rejected=semantic:decision-pttl@/headers/Retry-After
+contract-copy total=44 controls=44 rejected=44
+```
+
+DTO실험전Unit지정회귀114건(검사기101+종료지원13)종료0, 3초. T027 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'` baseline 결과는별도로그와함께다음실험기록에남긴다. PTTL훼손도독립판정PTTL을담은ScenarioExpectation으로비교하며응답에서정답을만들지않는다.
+
+### T027~T030 실제DTO단독변이
+
+T027 baseline: `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'` 종료0/1건 실패·오류·skip0, 7초. ResourceView 기존diff0과정확내용/해시를보관했다. 실제실험은Python단일try/finally에서ResourceView만변경하고나머지전체diff해시가실험전후같음을확인했다. 컴파일/HTTP RED가예상대로발생하지않거나중단돼도finally원복후같은시험을실행하며성공으로세지않는다.
+
+- 원본/백업/복원SHA256: `ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98` (세값동일).
+- 임시변이SHA256: `215b631db5715ecac7f75059e7f6379300162a84ed350eff5145903d2e8aa2b6`.
+- available component만int→String으로바꾸고기존int인자를받는보조생성자는String.valueOf로위임했다. controller/SQL/고정명세/시험기대값은그대로다.
+- T028 `./gradlew compileJava compileTestJava`: 종료0, 1.610초. 컴파일실패로탐지했다고하지않는다.
+- T029 `./gradlew contractTest --tests '*ApiContractIT.resourceSuccessMatchesContract'`: 종료1/1건 assertion실패·오류/skip0, 7.061초. 실제HTTP관측은 `actualStatus=201 availableTextual=true`, 거부원인은 `response-schema:validation.response.body.schema.type:/body/available`이다. 일반assertion/기동실패가아니다.
+- T030 finally에서보관한bytes로정확원복,DTOdiff0·전체다른diff불변. **동일명령** 종료0/1건 실패·오류·skip0, 7.931초. 원복후actualStatus201의availableTextual=false와정상5개대상생성/조회가통과했다. checkout/reset·원본사용자Wrapper변경없음.
+- 로컬세부원본/compile·RED·GREEN로그/XML/result.json: `/private/tmp/contract-dto-us4-jb78iyj8`. 이임시경로는현재세션로컬증거이며영구추적파일이아니다. 핵심결과와해시는이문서에남겼다.
+
+T031은기존Gradle의 *IT/contract태그발견·현재listener/XML·0건/skip거부·verifyContract→verify+contractTest·verifyContractDependencies를재사용한다. 빌드게이트결함이없어Gradle은변경하지않고고의실패도반복하지않는다. T032의전체build/verifyContract인수는이번범위가아니며실행하지않는다.
+
+### T031 최신 관련 지정 인수
+
+```sh
+./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'
+```
+
+종료0, 총51초. 순차태스크/listener/XML은Unit114(검사기101+종료지원13), Contract96(업무88+DB503 fixture1+Redis503 fixture1+프로브6)이며실패·오류·skip0이다. 업무시험의실제로그도 `contract-copy total=44 controls=44 rejected=44`로모든독립정상대조와단일결함거부를확인했다. 양의RetryAfter불일치역시독립PTTL의ScenarioExpectation을통과하므로단순형식오류검사가아니다. 신규테스트수1건/사본44종/실제DTO실험1건은서로구분한다. 공유검증기를사용하는실제DB5/Redis2의503과Redis비의존정상3교환도두fixture에서재통과했다.
+
+기존contract 태그/발견>0·verifyContractDependencies·listener/XML/0skip게이트를그대로사용했고Gradle결함이없어수정하지않았다. 최종ResourceView SHA256은다시원본ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98과일치하며제품DTO/기타제품코드/SQL/OpenAPI/Wrapperdiff0이다. 기본20/60000ms·Redis200ms·Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트를유지했다.
+
+T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종회귀/최종문서동기화/전체자기검토는아직미실행이다. Qodana는사용자지정스킵후속이며통과로세지않는다. push/PR/외부CI없음. prerequisite/checklist PASS, extensions.yml없어전후훅없음, ignore설정변경불필요. `git diff --check`종료0이다.
