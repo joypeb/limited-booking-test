@@ -1529,3 +1529,20 @@ T006 최종 snapshot 보완 후 `./gradlew contractTest --tests '*ApiContractIT'
 T006 커밋 전 수명주기 보완 RED: `./gradlew contractTest --tests '*ApiContractIT.actualTruncatedHttpTransportStopsAndPreservesOriginalFailure'` 종료1/1건 assertion실패1, 6초. 실제 truncated HTTP를 try-with-resources로 실행하자 send IOException을 close가 동일 객체로 다시 던져 Self-suppression IllegalArgumentException이 주예외를 가렸다. send 원인은 StopState에 유지하고 close는 새로 발생한 cleanup만 던지며 기존 원인에 붙인 오류와 독립 wrapper를 보존하도록 최소 수정했다. 범위는 T006이며 기존 정상 GREEN 뒤 발견된 새 결함이다.
 
 수명주기 보완 GREEN: `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 11초. 동일 truncated HTTP의 try-with-resources 결과는 최초 IOException이며 cleanup suppressed와 다음 인스턴스 StopState의 동일 cause를 확인했다. 나머지 실제 원문·2대상 단일snapshot·서버 in-flight 종료차단 시험도 함께 통과했다. 최종 stage에는 이 최신 수정까지 포함한다.
+
+
+## 2026-10-23 9단계 US1 T007~T011
+
+메인 승인에 따라 깨끗한 dee212d에서 지정 두 worktree의 ApiContractValidatorTest.java/ApiContractIT.java만 정확히 복사했다. 작성 담당은 Gradle/커밋 미실행이며 통합 실행은 여기서 순차 수행한다. prerequisite 종료0·requirements16/16 PASS·extensions.yml 없음·기존 ignore 규칙 유지. 승인 spec/plan/data-model/contracts/quickstart 및 knowledge 규칙과 계획2~5절의 기대값을 유지한다. T007/T008은 작성만 완료 표시했다.
+
+T009 RED: `./gradlew test --tests '*ApiContractValidatorTest'` 종료1, 87건 중 assertion실패18·오류/skip0, 2초. 기존11+신규76 발견. 실패는 available>capacity, 비정규화 이름, 상태/cancelledAt 두 관계, createdAt/cancelledAt의 비UTC·+00:00·마이크로초초과 각3, 필수Location2/Replay/401challenge/429retry 누락, Location다른id2, 비Basic challenge다. 전부 정상 대조군 통과 뒤 결함 사본이 거부되지 않은 assertion이며 컴파일/기동 실패가 아니다. Replay대문자·RetryAfter0/소수/문자열은 이미 library response-schema가 거부했고 이를 semantic 탐지로 세지 않는다.
+
+T009 실제HTTP: `./gradlew contractTest --tests '*ApiContractIT'` 종료0, 6건 실패·오류·skip0, 12초. 기존3+신규3 발견. 정상5operation·capacity0/1000·strip전102→100·😀100·NBSP·헤더case/JSON순서·DBsnapshot을 현재 schema만으로 통과했다. 실제HTTP 실패를 꾸미지 않았으며 누락 탐지 RED는 위 독립 Unit의18건이다. 제품/SQL/기본정책/Wrapper 변경 없음.
+
+T010/T011 GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0/87건 실패·오류·skip0, 2초. 스키마와 분리한 semantic 단계에 UTC Z/offset0/nano%1000, 이름 strip·코드포인트, available≤capacity, 현재상태/cancelledAt 관계, Location-id·소문자Replay·401Basic·429양의정수와 Content-Type 본래 미디어타입을 검사한다. charset 파라미터·추가 전송헤더·필드순서·0/3/6/9자리 중 값이 마이크로초로 표현되는 시각을 허용한다. 기존 Jackson2 테스트 라이브러리를 사용하며 제품 ResourceRules를 기대값으로 호출하지 않는다. 기존 요청/응답 schema 보고서는 계속 분리 수집하고 semantic도 합산한다.
+
+T011 실제HTTP/프로브 회귀: `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'` 종료0/12건(업무6+프로브6) 실패·오류·skip0, 12초. listener와 XML(Unit87/업무6/프로브6) 일치 및 verifyContractDependencies 종료0 확인. 업무는 다섯operation의 원문교환/실제Basic/응답필드·헤더·UTC, 대상0/1000·strip전102→100·😀100·NBSP 및 JSON순서/헤더case 동등성을 검사했다. 신규 정상시나리오는 모든 HTTP/서버 종료 후 단일 DBsnapshot에서 대상수량식과 생성/취소 후 예약1·CONFIRMED0·복구수량1을 확인한다. 기존 미종료/전송불확실/try-with-resources 최초원인 보호3건도 포함한다. 원문 헤더/본문을 정규화 DTO로 재생성하지 않았다.
+
+환경은 선행 확인 Corretto25.0.4+7-LTS/Wrapper9.7.1/Boot4.1.1·기존 고정 PostgreSQL18.6/Redis8.10.2 digest·동적 소유 포트·UTF-8/UTC다. 업무/SQL/Gradle/Wrapper/OpenAPI·기본20회/60000ms·Redis200ms·풀10/획득3000ms는 변경하지 않았다. 정상 기대값 변경·제품변이/원복 실험 없음. 통합된 기존 정상Unit fixture에 필수Location을 명시한 작성 담당 변경은 기존 정책을 충족하는 수정이며 입력/응답의 규칙 완화가 아니다.
+
+US1 MVP 지정 인수만 완료한다. T012 이후 정확한 무효요청 multiset/전체오류·필터/의존성/시퀀스·실제DTO변이/전체verifyContract는 미구현·미검증이며 현재 정상 HTTP 통과를 전체계약 인수로 세지 않는다. T035 OpenAPI 오래된 설명 정리·Qodana 사용자 후속을 유지한다. push/PR/외부CI 없음. 전후 extension 훅 없음, ignore 파일 변경 불필요.

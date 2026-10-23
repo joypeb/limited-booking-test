@@ -97,6 +97,152 @@ class ApiContractIT {
             assertThat(row.totalCount()).isZero();
         });
     }
+    @Test void resourceSuccessMatchesContract() throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        // 기대 이름은 제품 strip/길이 규칙을 호출하지 않고 명시한다.
+        var names=List.of("수량0", "수량1000", "가".repeat(100), "😀".repeat(100), "\u00a0");
+        var rawNames=List.of("수량0", "수량1000", " "+"가".repeat(100)+" ", "😀".repeat(100), "\u00a0");
+        var capacities=List.of(0,1000,1,1,1);
+        var ids=new ArrayList<UUID>();
+        try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
+            resetOwnedData(http);
+            for(int i=0;i<names.size();i++) {
+                String body=" { \"capacity\" : "+capacities.get(i)+", \"name\" : "
+                        +mapper.writeValueAsString(rawNames.get(i))+" } ";
+                var created=http.send("POST","/api/resources",Map.of("content-type","application/json",
+                        "aUtHoRiZaTiOn",adminAuth()),body);
+                assertThat(created.status()).isEqualTo(201);
+                assertThat(created.requestBody()).isEqualTo(body);
+                created.assertValid(validator);
+                var resource=mapper.readTree(created.responseBody());
+                assertResource(resource,names.get(i),capacities.get(i));
+                UUID id=UUID.fromString(resource.get("id").asText());ids.add(id);
+                assertThat(header(created.responseHeaders(),"LOCATION")).isEqualTo("/api/resources/"+id);
+                var found=http.send("GET","/api/resources/"+id,Map.of("authorization",userAuth()),null);
+                assertThat(found.status()).isEqualTo(200);found.assertValid(validator);
+                assertThat(mapper.readTree(found.responseBody())).isEqualTo(resource);
+            }
+        }
+        var snapshot=new DatabaseAssertions(database).snapshot(ids);
+        for(int i=0;i<ids.size();i++) {
+            var row=snapshot.get(ids.get(i));
+            assertThat(row.capacity()).isEqualTo(capacities.get(i));
+            assertThat(row.available()).isEqualTo(capacities.get(i));
+            assertThat(row.totalCount()).isZero();assertThat(row.confirmedCount()).isZero();
+        }
+    }
+
+    @Test void resourceJsonOrderAndHeaderCasePreserveEquivalentValues() throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        var bodies=List.of(" { \"name\" : \"동등성\", \"capacity\" : 1 } ",
+                "{\"capacity\":1,\"name\":\"동등성\"}");
+        var ids=new ArrayList<UUID>();
+        try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
+            resetOwnedData(http);
+            for(int i=0;i<bodies.size();i++) {
+                var headers=i==0?Map.of("Content-Type","application/json","Authorization",adminAuth())
+                        :Map.of("cOnTeNt-TyPe","application/json","authorization",adminAuth());
+                var exchange=http.send("POST","/api/resources",headers,bodies.get(i));
+                assertThat(exchange.status()).isEqualTo(201);
+                assertThat(exchange.requestBody()).isEqualTo(bodies.get(i));exchange.assertValid(validator);
+                var body=mapper.readTree(exchange.responseBody());assertResource(body,"동등성",1);
+                UUID id=UUID.fromString(body.get("id").asText());ids.add(id);
+                assertThat(header(exchange.responseHeaders(),"Location")).isEqualTo("/api/resources/"+id);
+            }
+        }
+        assertThat(ids).doesNotHaveDuplicates();
+        var snapshot=new DatabaseAssertions(database).snapshot(ids);
+        assertThat(snapshot.values()).allSatisfy(row->{
+            assertThat(row.capacity()).isEqualTo(1);assertThat(row.available()).isEqualTo(1);
+            assertThat(row.totalCount()).isZero();assertThat(row.confirmedCount()).isZero();
+        });
+    }
+
+    @Test void reservationCreateOwnerReadAndCancelMatchContract() throws Exception {
+        var validator=ApiContractValidator.load("business.openapi.yaml");
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        UUID resourceId=UUID.randomUUID();
+        String key="contract-"+UUID.randomUUID();
+        try(var http=new ApiContractHttpSupport(port,OBSERVATION,STOP)) {
+            resetOwnedData(http);
+            http.prepare(()->new TestData(database).resource(resourceId,"예약 대상",1,1,
+                    Instant.parse("2026-10-23T00:00:00Z")));
+            String request=" { \"resourceId\" : \""+resourceId+"\" } ";
+            var created=http.send("POST","/api/reservations",Map.of("Content-Type","application/json",
+                    "Authorization",userAuth(),"iDeMpOtEnCy-KeY",key),request);
+            assertThat(created.status()).isEqualTo(201);
+            assertThat(created.requestBody()).isEqualTo(request);created.assertValid(validator);
+            assertThat(header(created.responseHeaders(),"Idempotent-Replayed")).isEqualTo("false");
+            var initial=mapper.readTree(created.responseBody());
+            assertFields(initial,"id","resourceId","status","createdAt");
+            UUID reservationId=UUID.fromString(initial.get("id").asText());
+            assertThat(initial.get("resourceId").asText()).isEqualTo(resourceId.toString());
+            assertThat(initial.get("status").asText()).isEqualTo("CONFIRMED");
+            assertThat(initial.has("cancelledAt")).isFalse();
+            assertUtcMicros(initial.get("createdAt").asText());
+            String path="/api/reservations/"+reservationId;
+            assertThat(header(created.responseHeaders(),"location")).isEqualTo(path);
+            var found=http.send("GET",path,Map.of("Authorization",userAuth()),null);
+            assertThat(found.status()).isEqualTo(200);found.assertValid(validator);
+            var current=mapper.readTree(found.responseBody());
+            assertCurrentReservation(current,initial,"CONFIRMED");
+            assertThat(current.get("cancelledAt").isNull()).isTrue();
+            var cancelled=http.send("POST",path+"/cancel",Map.of("authorization",userAuth()),null);
+            assertThat(cancelled.status()).isEqualTo(200);
+            assertThat(cancelled.requestBody()).isNull();cancelled.assertValid(validator);
+            var finalView=mapper.readTree(cancelled.responseBody());
+            assertCurrentReservation(finalView,initial,"CANCELLED");
+            assertUtcMicros(finalView.get("cancelledAt").asText());
+        }
+        var row=new DatabaseAssertions(database).snapshot(List.of(resourceId)).get(resourceId);
+        assertThat(row.capacity()).isEqualTo(1);assertThat(row.available()).isEqualTo(1);
+        assertThat(row.totalCount()).isEqualTo(1);assertThat(row.confirmedCount()).isZero();
+    }
+
+    private void resetOwnedData(ApiContractHttpSupport http) {
+        http.reset(()->{new RateLimitTestSupport(redis).reset();new TestData(database).reset();});
+    }
+    private static String adminAuth() {
+        return HttpClientTestSupport.basicAuth(TestData.ADMIN_USERNAME,TestData.ADMIN_PASSWORD);
+    }
+    private static String userAuth() {
+        return HttpClientTestSupport.basicAuth(TestData.USER_A_USERNAME,TestData.USER_A_PASSWORD);
+    }
+    private static String header(Map<String,String> headers,String name) {
+        var values=headers.entrySet().stream().filter(e->e.getKey().equalsIgnoreCase(name))
+                .map(Map.Entry::getValue).toList();
+        assertThat(values).as("필수 헤더 %s",name).hasSize(1);return values.getFirst();
+    }
+    private static void assertFields(tools.jackson.databind.JsonNode body,String... fields) {
+        assertThat(body.isObject()).isTrue();assertThat(body.size()).isEqualTo(fields.length);
+        for(String field:fields) assertThat(body.has(field)).as("필수 필드 %s",field).isTrue();
+    }
+    private static void assertResource(tools.jackson.databind.JsonNode body,String name,int capacity) {
+        assertFields(body,"id","name","capacity","available");
+        assertThat(UUID.fromString(body.get("id").asText())).isNotNull();
+        assertThat(body.get("name").asText()).isEqualTo(name);
+        assertThat(body.get("capacity").isIntegralNumber()).isTrue();
+        assertThat(body.get("available").isIntegralNumber()).isTrue();
+        assertThat(body.get("capacity").asInt()).isEqualTo(capacity);
+        assertThat(body.get("available").asInt()).isEqualTo(capacity);
+    }
+    private static void assertCurrentReservation(tools.jackson.databind.JsonNode body,
+            tools.jackson.databind.JsonNode initial,String status) {
+        assertFields(body,"id","resourceId","status","createdAt","cancelledAt");
+        for(String field:List.of("id","resourceId","createdAt"))
+            assertThat(body.get(field)).as("생성값 유지 %s",field).isEqualTo(initial.get(field));
+        assertThat(body.get("status").asText()).isEqualTo(status);
+        assertUtcMicros(body.get("createdAt").asText());
+    }
+    private static void assertUtcMicros(String value) {
+        assertThat(value).endsWith("Z");
+        var time=OffsetDateTime.parse(value);
+        assertThat(time.getOffset()).isEqualTo(ZoneOffset.UTC);
+        assertThat(time.getNano()%1000).isZero();
+    }
+
     @Test void responseReceivedButServerStillRunningBlocksNextStages() throws Exception {
         var state=new ConcurrencyTestSupport.StopState();
         var calls=new AtomicInteger();

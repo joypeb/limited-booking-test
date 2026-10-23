@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행 T001~T006 구현·지정 검증을 완료했다. T007 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T006만 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T007 이후·push·PR은 이번 담당 범위 밖이다.
+**상태**: 2026-10-23 공통 선행과 US1 T001~T011 구현·지정 검증을 완료했다. T012 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T011까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T012 이후·push·PR은 이번 담당 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -33,11 +33,11 @@
 **목표**: 정상 다섯 작업의 실제 요청·응답과 스키마 밖 의미를 독립 계약으로 검증한다.
 **독립 인수**: 검사기 Unit 및 ApiContractIT 정상 사례를 지정 실행하여 5작업·정규화·수량0·필드/헤더/UTC가 모두 적합하고 정상 요청 위반0이다.
 
-- [ ] T007 [P] [US1] `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 UUID/타입/필수·추가필드/상태·시각·필수 헤더·미디어 타입·default 거부의 정상/단일 결함 fixture를 작성한다. T006 뒤 T008과 독립 파일 작성만 병행할 수 있으며 실행은 순차다. ResourceView는 “id UUID, name 정규화 문자열(코드포인트1~100), capacity/available 정수0~1000”, “available≤capacity”; CreatedReservationView는 “네 필드 필수·추가 필드 거부·cancelledAt 없음”, “status=CONFIRMED”; ReservationView는 “다섯 필드 필수”, “CONFIRMED이면 cancelledAt 명시 null, CANCELLED이면 UTC 값”을 그대로 기대한다.
-- [ ] T008 [P] [US1] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 `resourceSuccessMatchesContract`를 포함한 5작업 정상 HTTP 시험을 작성한다. ADMIN 대상 생성201/USER 조회200·예약201/소유자조회200/취소200, capacity0/1000, strip 전100초과·strip후100/😀/NBSP 허용을 포함한다. 실제 원문 전달·헤더 case-insensitive·JSON 필드순서 동등성을 확인하고 T007과 독립 파일 작성만 병행한다.
-- [ ] T009 [US1] T007~T008 작성 뒤 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`와 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`를 순차 지정 실행하여 누락된 의미 검사의 의도한 RED를 `docs/test-evidence.md`에 기록한다. DB 기동/컴파일 실패 대신 관련 assertion 실패를 확인한다.
-- [ ] T010 [US1] `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`에 스키마와 별도 의미 검사를 최소 구현한다. 시간은 “offset=UTC”, “Z 표현”, “나노초 값은 1000으로 나누어 떨어져야 한다”; 소수부6자리 강제는 금지한다. Location은 body id와 단건경로 일치, Replay는 소문자 false/true, 401 Basic WWW-Authenticate, 429 양의 정수 Retry-After를 필수로 검사한다. 추가 전송헤더는 허용하고 중복 singleton은 거부한다. 성공 application/json·오류 application/problem+json은 charset 파라미터를 구별하며 허용한다. T009 동일 시험 GREEN을 확인한다.
-- [ ] T011 [US1] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java` 정상 부분과 검사기 Unit을 지정 실행해 실제 다섯 교환·DB 수량식·필드/헤더/UTC·요청 위반0·정규화 오거부0을 확인하고 `docs/test-evidence.md`에 MVP 결과와 미검증 오류/변이 범위를 기록한다.
+- [X] T007 [P] [US1] `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 UUID/타입/필수·추가필드/상태·시각·필수 헤더·미디어 타입·default 거부의 정상/단일 결함 fixture를 작성한다. T006 뒤 T008과 독립 파일 작성만 병행할 수 있으며 실행은 순차다. ResourceView는 “id UUID, name 정규화 문자열(코드포인트1~100), capacity/available 정수0~1000”, “available≤capacity”; CreatedReservationView는 “네 필드 필수·추가 필드 거부·cancelledAt 없음”, “status=CONFIRMED”; ReservationView는 “다섯 필드 필수”, “CONFIRMED이면 cancelledAt 명시 null, CANCELLED이면 UTC 값”을 그대로 기대한다.
+- [X] T008 [P] [US1] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 `resourceSuccessMatchesContract`를 포함한 5작업 정상 HTTP 시험을 작성한다. ADMIN 대상 생성201/USER 조회200·예약201/소유자조회200/취소200, capacity0/1000, strip 전100초과·strip후100/😀/NBSP 허용을 포함한다. 실제 원문 전달·헤더 case-insensitive·JSON 필드순서 동등성을 확인하고 T007과 독립 파일 작성만 병행한다.
+- [X] T009 [US1] T007~T008 작성 뒤 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`와 `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`를 순차 지정 실행하여 누락된 의미 검사의 의도한 RED를 `docs/test-evidence.md`에 기록한다. DB 기동/컴파일 실패 대신 관련 assertion 실패를 확인한다.
+- [X] T010 [US1] `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`에 스키마와 별도 의미 검사를 최소 구현한다. 시간은 “offset=UTC”, “Z 표현”, “나노초 값은 1000으로 나누어 떨어져야 한다”; 소수부6자리 강제는 금지한다. Location은 body id와 단건경로 일치, Replay는 소문자 false/true, 401 Basic WWW-Authenticate, 429 양의 정수 Retry-After를 필수로 검사한다. 추가 전송헤더는 허용하고 중복 singleton은 거부한다. 성공 application/json·오류 application/problem+json은 charset 파라미터를 구별하며 허용한다. T009 동일 시험 GREEN을 확인한다.
+- [X] T011 [US1] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java` 정상 부분과 검사기 Unit을 지정 실행해 실제 다섯 교환·DB 수량식·필드/헤더/UTC·요청 위반0·정규화 오거부0을 확인하고 `docs/test-evidence.md`에 MVP 결과와 미검증 오류/변이 범위를 기록한다.
 
 ## Phase 4: US2 — 실패 결과와 오류 응답 신뢰 (P1)
 

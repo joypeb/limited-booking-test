@@ -115,3 +115,8 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ## 9단계 계약 검증 공통 선행
 
 [010 명세](../specs/010-openapi-contract/spec.md)·[계획](../specs/010-openapi-contract/plan.md)·[작업](../specs/010-openapi-contract/tasks.md)을 기준으로 공통 선행 T001~T006만 진행했다. [ApiContractValidator](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)의 고정 명세/명시 operation·status/원문 경계와 [Unit](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java), [HTTP 지원](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java)·[최소 실제 HTTP와 종료 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)을 추가했다. 예상위반·시나리오 값 모델은 불변 경계만 정의했으며 후속 판정 구현과 US1~US4는 미완료다. 실제 명령·RED/GREEN·수·한계는 [실행 증거](../docs/test-evidence.md)를 따른다. 새 업무 도메인·제품/API/SQL 변경은 없다.
+
+
+### 9단계 US1 정상 계약 인수
+
+T007~T011에서 검사기 Unit87건과 실제 업무HTTP6건·기존프로브6건을 지정 실행해 통과했다. `ApiContractValidator`는 스키마와 별도 semantic 단계로 UTC Z/마이크로초 값·이름 정규화/수량 관계·현재상태별 cancelledAt·필수응답헤더를 검사한다. 실제5operation·capacity0/1000·이름 경계/유니코드·원문/헤더case·DBsnapshot·기존종료보호를 확인했다. 선행 절의 US1 미완료는 당시 상태이며 현재 US2~US4/정확한무효요청·전체오류/변이 인수는 미완료다. [실행 증거](../docs/test-evidence.md)와 [작업](../specs/010-openapi-contract/tasks.md)을 따른다.

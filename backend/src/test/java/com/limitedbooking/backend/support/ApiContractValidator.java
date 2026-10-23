@@ -11,11 +11,19 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.math.BigInteger;
 
-/** 제품 코드와 분리된 고정 업무 계약 검사. 의미 검사는 후속 사용자 이야기에서 추가한다. */
+/** 제품 코드와 분리된 고정 업무 계약과 US1 응답 의미 검사. */
 public final class ApiContractValidator {
     private static final Set<String> OPERATIONS=Set.of("POST /api/resources","GET /api/resources/{id}",
             "POST /api/reservations","GET /api/reservations/{id}","POST /api/reservations/{id}/cancel");
+    private static final ObjectMapper JSON=new ObjectMapper();
     private final OpenAPI api;
     private final OpenApiInteractionValidator validator;
     private ApiContractValidator(OpenAPI api) {
@@ -64,7 +72,81 @@ public final class ApiContractValidator {
         collect("request-schema",validator.validateRequest(request.build()),failures);
         collect("response-schema",validator.validateResponse(path,
                 com.atlassian.oai.validator.model.Request.Method.valueOf(method),response.build()),failures);
+        semantic(path,status,responseHeaders,responseBody,failures);
         if(!failures.isEmpty()) throw new AssertionError(String.join("; ",failures));
+    }
+    private static void semantic(String path,int status,Map<String,String> headers,String body,List<String> failures) {
+        String expectedMedia=status<400?"application/json":"application/problem+json";
+        String contentType=header(headers,"Content-Type");
+        if(contentType==null || !contentType.split(";",2)[0].trim().equalsIgnoreCase(expectedMedia))
+            violation(failures,"media-type","/headers/Content-Type");
+        if(status==401) {
+            String challenge=header(headers,"WWW-Authenticate");
+            if(challenge==null || !challenge.matches("(?i)Basic(?:[ \t]+.*)?"))
+                violation(failures,"basic-challenge","/headers/WWW-Authenticate");
+        }
+        if(status==429) {
+            String retry=header(headers,"Retry-After");
+            if(retry==null || !retry.matches("[0-9]+") || new BigInteger(retry).signum()<=0)
+                violation(failures,"positive-integer","/headers/Retry-After");
+        }
+        if(status==201 && path.equals("/api/reservations")) {
+            String replay=header(headers,"Idempotent-Replayed");
+            if(!"false".equals(replay) && !"true".equals(replay))
+                violation(failures,"replay-boolean","/headers/Idempotent-Replayed");
+        }
+        JsonNode json;
+        try { json=body==null?null:JSON.readTree(body); }
+        catch(JsonProcessingException malformed) {
+            violation(failures,"json","/body"); return;
+        }
+        if(json==null || !json.isObject()) return; // 구조 결함은 response-schema 보고서가 담당한다.
+        if(status==201) {
+            String location=header(headers,"Location");
+            if(location==null || !json.path("id").isTextual() || !location.equals(path+"/"+json.path("id").textValue()))
+                violation(failures,"location-id","/headers/Location");
+        }
+        if(status>=400) return; // 오류 본문의 의미 계약은 US2에서 검증한다.
+        if(path.startsWith("/api/resources")) {
+            var name=json.get("name");
+            if(name!=null && name.isTextual()) {
+                String value=name.textValue();
+                int length=value.codePointCount(0,value.length());
+                if(!value.equals(value.strip()) || length<1 || length>100)
+                    violation(failures,"normalized-name","/body/name");
+            }
+            var capacity=json.get("capacity");var available=json.get("available");
+            if(capacity!=null && available!=null && capacity.isIntegralNumber() && available.isIntegralNumber()
+                    && available.bigIntegerValue().compareTo(capacity.bigIntegerValue())>0)
+                violation(failures,"available-capacity","/body/available");
+        } else {
+            utcMicros(json.get("createdAt"),"/body/createdAt",failures);
+            var cancelled=json.get("cancelledAt");
+            if(status!=201) {
+                String state=json.path("status").asText();
+                if("CONFIRMED".equals(state) && cancelled!=null && !cancelled.isNull())
+                    violation(failures,"confirmed-null","/body/cancelledAt");
+                if("CANCELLED".equals(state) && (cancelled==null || cancelled.isNull()))
+                    violation(failures,"cancelled-time","/body/cancelledAt");
+                if(cancelled!=null && !cancelled.isNull()) utcMicros(cancelled,"/body/cancelledAt",failures);
+            }
+        }
+    }
+    private static void utcMicros(JsonNode node,String location,List<String> failures) {
+        if(node==null || !node.isTextual()) return; // 누락/타입은 스키마가 거부한다.
+        String value=node.textValue();
+        try {
+            var time=OffsetDateTime.parse(value);
+            if(!value.endsWith("Z") || !time.getOffset().equals(ZoneOffset.UTC) || time.getNano()%1000!=0)
+                violation(failures,"utc-micros",location);
+        } catch(DateTimeParseException malformed) { violation(failures,"utc-micros",location); }
+    }
+    private static String header(Map<String,String> headers,String name) {
+        return headers.entrySet().stream().filter(e->e.getKey().equalsIgnoreCase(name))
+                .map(Map.Entry::getValue).findFirst().orElse(null);
+    }
+    private static void violation(List<String> failures,String key,String location) {
+        failures.add("semantic:"+key+":"+location);
     }
     public record HttpExchange(String method, String path, Map<String,String> requestHeaders,
             String requestBody, int status, Map<String,String> responseHeaders, String responseBody) {
