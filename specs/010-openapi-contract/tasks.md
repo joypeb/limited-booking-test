@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032 이후·push·PR은 이번 담당 범위 밖이다.
+**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 전체 게이트(`build verifyContract verifyContractDependencies` 종료0, Unit294·IT312·Contract96, 실패/오류/skip0)와 T033 기존 회귀 XML 대조를 완료했다. T034 이후는 진행 중이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032는 메인이 실행했고 T033~T036은 메인 지시로 교체 담당이 순차 수행한다(제품·SQL·Gradle·Wrapper 무변경, 전체 테스트 재실행 없음). push·PR은 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -79,8 +79,8 @@
 
 ## Phase 7: 전체 인수와 문서 동기화
 
-- [ ] T032 T001~T031 완료·고의변이 원복 뒤 `backend/build.gradle` 기준 backend에서 `./gradlew build verifyContract verifyContractDependencies`를 단일 담당자가 순차 실행한다. 신규 Unit/업무Contract·기존프로브 수를 구분하고 각 Test 태스크 현재 listener/XML 일치·실행>0·실패/오류/skip0을 확인한다. 과거193/312나 이전XML을 현재 증거로 복사하지 않는다. 미해결 의존성·json-patch/jackson-coreutils 재유입·테스트Jackson2/런타임Jackson3 경계를 기존 게이트로 확인한다.
-- [ ] T033 T032의 실제 `backend/build/test-results/`와 실행로그에서 기존 `backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java` C01~C11 각10회(110회)·종료지원fixture, ReservationRollbackIT/ReservationCancelIT, RedisFailureIT 계열·RateLimitApiIT·권한/입력 HTTP 회귀의 발견/종료/실패0을 확인해 `docs/test-evidence.md`와 필요한 `docs/concurrency-runs.json` 실행기록을 실제 결과로 갱신한다. 새 경쟁시험 복제·임의제한하향·실패반복/skip은 금지하고 실패 시 원인/최소수정 후 영향검증한다.
+- [X] T032 T001~T031 완료·고의변이 원복 뒤 `backend/build.gradle` 기준 backend에서 `./gradlew build verifyContract verifyContractDependencies`를 단일 담당자가 순차 실행한다. 신규 Unit/업무Contract·기존프로브 수를 구분하고 각 Test 태스크 현재 listener/XML 일치·실행>0·실패/오류/skip0을 확인한다. 과거193/312나 이전XML을 현재 증거로 복사하지 않는다. 미해결 의존성·json-patch/jackson-coreutils 재유입·테스트Jackson2/런타임Jackson3 경계를 기존 게이트로 확인한다.
+- [X] T033 T032의 실제 `backend/build/test-results/`와 실행로그에서 기존 `backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java` C01~C11 각10회(110회)·종료지원fixture, ReservationRollbackIT/ReservationCancelIT, RedisFailureIT 계열·RateLimitApiIT·권한/입력 HTTP 회귀의 발견/종료/실패0을 확인해 `docs/test-evidence.md`와 필요한 `docs/concurrency-runs.json` 실행기록을 실제 결과로 갱신한다. 새 경쟁시험 복제·임의제한하향·실패반복/skip은 금지하고 실패 시 원인/최소수정 후 영향검증한다.
 - [ ] T034 `docs/test-evidence.md`에 모든 실제 명령·종료코드·태스크/클래스별 수·환경·최소재현·정확위반·적용표·단일훼손별 탐지·DTO compile/HTTP RED/원복GREEN·DB/Redis503·PTTL·최종수량/종료·미검증을 단일작성자로 정리한다. `docs/versions.md`, `docs/decisions.md`에 실제 해석버전/선택을 반영하고 `docs/performance.md`는 비용을 측정했을 때만 실제조건/한계와 기록한다. 미측정은 미측정으로 남긴다.
 - [ ] T035 `README.md`, `knowledge/README.md`, `knowledge/rules/api-and-security.md`, `knowledge/rules/development-and-testing.md`, `knowledge/domain/resource.md`, `reservation.md`, `security.md`, `ratelimit.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md` 7절9단계를 순차 동기화한다. 구현/실행/미검증을 구분해 실제 파일·증거만 연결하고 실제 인수 뒤에만 완료표시한다. `docs/openapi.yaml`의 과거 미실행 설명도 사실에 맞추며 정책 변경이 필요하면 먼저 메인보고한다.
 - [ ] T036 `specs/010-openapi-contract/tasks.md` 추적표·적용표와 최종diff/링크/실행증거를 대조해 FR-001~012·US1~4·SC-001~005 누락0, 임시DTO변경0·실패/skip0을 자가검토한다. 변경이유·실제결과·미완료/미검증·핵심코드/테스트·다음한작업을 보고하고 대기한다. Qodana는 미실행후속/게이트제외로 명시하며 커밋·push·PR은 이번 tasks 생성 담당의 범위 밖이며 메인 게이트 후 기존 사용자 승인 범위에서 진행한다.

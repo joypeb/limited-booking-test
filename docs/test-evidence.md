@@ -1785,3 +1785,59 @@ T031은기존Gradle의 *IT/contract태그발견·현재listener/XML·0건/skip�
 기존contract 태그/발견>0·verifyContractDependencies·listener/XML/0skip게이트를그대로사용했고Gradle결함이없어수정하지않았다. 최종ResourceView SHA256은다시원본ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98과일치하며제품DTO/기타제품코드/SQL/OpenAPI/Wrapperdiff0이다. 기본20/60000ms·Redis200ms·Corretto25.0.4/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트를유지했다.
 
 T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종회귀/최종문서동기화/전체자기검토는아직미실행이다. Qodana는사용자지정스킵후속이며통과로세지않는다. push/PR/외부CI없음. prerequisite/checklist PASS, extensions.yml없어전후훅없음, ignore설정변경불필요. `git diff --check`종료0이다.
+
+
+## 2026-10-23 9단계 T032 전체 게이트·T033 기존 회귀 대조
+
+### T032 전체 build·verifyContract·의존성 게이트
+
+- 실행: 메인이 깨끗한 `f07cc9b`(feature/010-openapi-contract)에서 단일 순차 Gradle 그래프로 `cd backend && ./gradlew build verifyContract verifyContractDependencies`를 실행했다. 종료0, `BUILD SUCCESSFUL in 3m 53s`, 14 actionable tasks(7 executed/7 up-to-date). compile/jar류는 up-to-date이고 test·integrationTest·verifyContractDependencies·contractTest는 실제로 실행했다. 경고는 기존 Gradle10 비호환 deprecated 기능·ByteBuddy Unsafe·CDS 안내이며 실패·skip·continue-on-error로 감추지 않았다. 로그 `/tmp/t032.log`.
+- 교체 담당자가 T033에서 결과를 대조했다. 전체 테스트는 재실행하지 않았고 `backend/build/test-results/`의 현재 XML과 로그만 대조했다. XML은 `/private/tmp/010-t032-xml/`에 로컬 보관했으며 이 경로는 커밋하지 않는다.
+- 환경: Corretto25.0.4+7-LTS, Gradle Wrapper9.7.1, Boot4.1.1, macOS27.0.1 aarch64, Docker29.8.2, 소유 PostgreSQL `postgres:18.6-bookworm@sha256:afc7…a24a647c`·Redis `redis:8.10.2-trixie@sha256:2c2d…6bfd6`, UTF-8/UTC, 동적 포트. 9단계 커밋(e098af6 이후)에서 제품 코드·SQL·build.gradle·Wrapper 변경은 0이다. 산출 JAR는 up-to-date(실행JAR 44,156,615 bytes SHA256 `938cc418452c667c6c4a9025237c7b8c12c24b59dc7eb1dd53ab16225af242ed`, plain65,337 bytes `3077f2db193eb06f706cac735b82cde771efc8c9f3a8175f8e5b163d33c4298e`)이며 커밋하지 않는다.
+
+| 태스크 | listener | XML 파일/합계 | 구성 |
+| --- | --- | --- | --- |
+| test | 294, failed0, skipped0 | 14파일, 294/0/0/0 | 기존 Unit193(ResourceRules52·IdempotencyKey56·Cancellation5·UniqueViolation10·ApiExceptionHandler6·ReservationService7/Writer4·RateLimitDecision10/Filter22/HttpLifecycle2/Properties3·ConcurrencyTestSupport13·도구프로브3) + 신규 ApiContractValidatorTest101 |
+| integrationTest | 312, failed0, skipped0 | 20파일, 312/0/0/0 | 8단계와 같은 클래스·수. 신규 9단계 IT 없음 |
+| contractTest | 96, failed0, skipped0 | 4파일, 96/0/0/0 | 업무 계약90(ApiContractIT88·DB503 fixture1·Redis503 fixture1) + 도구 프로브 ToolchainContractIT6 |
+
+- 표의 합계는 XML의 tests/failures/errors/skipped를 클래스별로 합산한 값이며 세 태스크 모두 listener 수와 일치한다. XML timestamp는 모두 2026-10-23T08:09~08:13Z로 이번 그래프의 결과다. 과거 193/312·이전 XML을 복사하지 않았다.
+- 업무 계약 시험 발견 수는 90(>0)이고 프로브6과 구분된다. 기존 Gradle의 *IT+contract 태그 발견·현재 listener/XML 수 일치·0건/skip 거부 게이트를 그대로 통과했다(T031에서 Gradle 무변경 확인).
+- `verifyContractDependencies`는 실행·종료0이다. testCompileClasspath/testRuntimeClasspath/runtimeClasspath의 미해결 edge0과 `json-patch`/`jackson-coreutils` 재유입0을 기존 게이트로 확인했다. 테스트 쪽 계약 도구의 Jackson2와 런타임 Jackson3 경계도 이 게이트와 컴파일·실행 결과로 유지됐다.
+- contractTest 시스템 출력: `contract-copy total=44 controls=44 rejected=44`(사본 훼손44종 각 정상 대조 통과·단일 결함 거부), `contract-resource actualStatus=201 availableTextual=false` 5회(원복된 실제 DTO), 429 독립 판정 `cancel=false count=21 decisionPttl=58652 retryAfter=59`·`cancel=true count=21 decisionPttl=58633 retryAfter=59`, DB 중단 5작업 503(requestViolations=0·responseValid=true), Redis 중단 생성·취소 503(같은 판정), 두 fixture의 `serverIdle=true httpClosed=true stop=false`.
+
+### T033 기존 회귀의 XML 대조
+
+| 대상 | XML 결과 | 확인 내용 |
+| --- | --- | --- |
+| ReservationConcurrencyIT | 115/0/0/0, 28.666초 | `repetition N of 10` 110건 + 종료 지원 fixture5 |
+| ReservationRollbackIT | 7/0/0/0 | UPDATE 후 INSERT 실패, 실제 UNIQUE 롤백, 연결 획득·lock·statement timeout 503 롤백과 같은 키 복구, 미분류 500, 상위 트랜잭션 거부 |
+| ReservationCancelIT | 13/0/0/0 | 복구1회, 중복 취소 시각 보존, 오래된 CONFIRMED 읽기, 복구 timeout·예외·0건 롤백, 취소 후 원래 키 재현, 인코딩 경로2 |
+| Redis 장애 계열 | RedisFailureIT10 + ExistingConnection1 + FirstConnection1 = 12/0/0/0 | 쓰기 pause 중 독립 API, create/cancel/replay의 지연·중단 각3, WRONGTYPE, 실제 DB timeout 뒤 카운트 유지·같은 키 복구, 기본60초 만료 뒤 성공 키 유지(60.35초), 기존 연결·첫 연결 중단 |
+| RateLimitApiIT | 37/0/0/0 | 기본20/60000ms, 인증 실패·독립 API 미집계, 생성·취소 합산, 무효 입력8종 집계, 8KiB fixed/unknown/raw-chunked 12종, 인코딩 취소 경로, 동시 40요청 중 정확히20 허용, 하위500 이중 집계 없음 |
+| 권한·입력 HTTP | SecurityIT7·ResourceApiIT8·ReservationOwnershipIT5·ReservationCreateIT16·IdempotencyIT5 = 41/0/0/0 | 401·403·위조 X-User-Id 무시, 인증 전 413·chunked, 타인/ADMIN 404, 엄격 JSON·이름/수량·키/UUID 경계, 생성·재현·충돌 |
+
+**ReservationConcurrencyIT 115건의 정확한 구성**
+
+- 반복 110건: XML testcase 이름은 `repetition 1 of 10`~`repetition 10 of 10`이며 클래스 안의 11개 `@RepeatedTest(10)` 메서드에서 나온다. 사례 ID는 system-out의 `RUN case=Cxx repetition=n` 줄로 대응시켰다. C01~C11이 각각 정확히 1~10회차(중복0)이고 RUN 110줄, 해당 PATH·CLEANUP이 각 110줄이다.
+- 종료 지원 fixture 5건: `httpTerminationFailurePreventsSpyResetAndBlocksNextSetup()`, `executorTerminationFailurePreventsSpyResetEvenAfterServerBecomesIdle()`, `cleanupWaitsForHttpTerminationBeforeResettingSpies()`, `parentSetupStopsBeforeResetPreparationAndSubmissionAndNullCleanupIsSafe()`, `transportFailureBeforeServiceEntryBlocksResetAndNextSetup()`. 이 fixture들이 남긴 `case=null` CLEANUP 9줄(그중 1줄은 의도한 `failure=IllegalStateException`)과 `FAILED-RUN case=null … HttpTimeoutException: before Service`·빈 PATH 1줄은 fixture의 의도한 종료 실패 주입이다. 업무 회차 기록에는 넣지 않았다.
+- system-out의 `IllegalStateException` 10건은 모두 C11의 `C11 injected INSERT fault`(회차당1)이며 기대한 `500:ok=1` 분포와 일치한다.
+
+| 사례 | 요청/결과 | 10회 모두 같은 분포 | 최종 단일 SQL snapshot(capacity/available/total/CONFIRMED) | elapsedMs |
+| --- | --- | --- | --- | --- |
+| C01 | 100/100, workers10 | 201×10, 409 SOLD_OUT×90 | 10/0/10/10 | 890~1004 |
+| C02 | 10/10 | 201×10 | 1/0/1/1 | 93~188 |
+| C03 | 10/10 | 201×10 | 10/9/1/1 | 92~106 |
+| C04 | 2/2 | 201×1, 409 IDEMPOTENCY_CONFLICT×1 | 두 대상 1/0/1/1과 1/1/0/0 | 75~80 |
+| C05 | 10/10 | 200×10 | 1/1/1/0 | 221~231 |
+| C06 | 2/2 | 200×1, 409 SOLD_OUT×1 | 1/0/2/1 | 274~283 |
+| C07 | 2/2 | 201×2 | 1/0/1/1 | 74~78 |
+| C08 | 2/2 | 201×2 | 2/1/1/1 | 76~87 |
+| C09 | 2/2 | 200×1, 201×1 | 1/0/2/1 | 272~289 |
+| C10 | 2/2 | 200×1, 409 SOLD_OUT×1 | 1/0/2/1 | 339~365 |
+| C11 | 2/2 | 201×1, 500×1(주입) | 2/0/2/2 | 144~161 |
+
+- 110회 모두 `requests=results`, `server=0`, `ownedKeyResets=1`, `redis=10000/60000ms timeout=200/200ms`, 예상 밖 429/503 0, 모든 snapshot에서 `available + CONFIRMED = capacity`이다. 110 CLEANUP 모두 `server=0 http=true failure=none`이다. C07은 10회 모두 정확한 요청 ID의 `decrement …:0` 뒤 `lookup present` 증인이 있고, UNIQUE 경로 증인은 C03·C04·C08의 30회에서 관측됐다.
+- `docs/concurrency-runs.json`은 8단계와 같은 변환 규칙(`/private/tmp/009-record-concurrency.py`의 기준 문구·날짜만 바꾼 로컬 사본)으로 이번 XML에서 재생성했다. command/exitCode/date/unit294/IT312/class115/반복110/fixture5/실패·오류·skip0이다. 경쟁 관련 소스 5개의 SHA256이 8단계 기록과 같고 현재 파일과도 일치하므로 경쟁 시험 소스는 바뀌지 않았다. 바뀐 것은 회차별 실제 관측값(UUID·시간·경로)뿐이다. 스크립트는 110회·사례별1~10·CLEANUP 정상·429/503 0·C07 UPDATE0 증인을 assert한 뒤 기록했다.
+- 새 경쟁 시험 복제·제한 하향·실패 반복·skip은 없다. 실패가 없어 최소 수정·영향 재검증도 필요하지 않았다. 반복 실행은 모든 경쟁 순서의 증명이 아니며 로컬 결과를 운영 규모로 일반화하지 않는다.
+- 미검증·제외: Qodana는 사용자 지시로 이번에 건너뛴 미실행 후속이며 완료·PR·병합 게이트에서 제외한다. 통과로 기록하지 않는다. Property/PIT 확장·k6 부하·외부 CI·push/PR은 실행하지 않았다.
