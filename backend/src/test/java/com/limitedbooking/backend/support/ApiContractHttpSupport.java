@@ -38,12 +38,31 @@ public final class ApiContractHttpSupport implements AutoCloseable {
         stop.stop(firstFailure);
     }
     public ApiContractValidator.HttpExchange send(String method,String path,Map<String,String> headers,String body) throws Exception {
+        return sendFramed(method,path,headers,body,false);
+    }
+    public ApiContractValidator.HttpExchange sendFramed(String method,String path,Map<String,String> headers,String body,boolean chunked) throws Exception {
         guard();
         String id=UUID.randomUUID().toString(); submitted.add(id);
-        var builder=HttpRequest.newBuilder(base.resolve(path)).timeout(Duration.ofSeconds(9))
+        byte[] payload=body==null?new byte[0]:body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        observation.intended(id,payload.length);
+        var builder=HttpRequest.newBuilder(base.resolve(path)).version(HttpClient.Version.HTTP_1_1).timeout(Duration.ofSeconds(9))
                 .header("X-Test-Request-Id",id);
         headers.forEach(builder::header);
-        var request=builder.method(method,body==null?HttpRequest.BodyPublishers.noBody():HttpRequest.BodyPublishers.ofString(body)).build();
+        var source=body==null?HttpRequest.BodyPublishers.noBody():chunked?
+                HttpRequest.BodyPublishers.ofInputStream(()->new java.io.ByteArrayInputStream(payload)):
+                HttpRequest.BodyPublishers.ofByteArray(payload);
+        HttpRequest.BodyPublisher publisher=new HttpRequest.BodyPublisher() {
+            @Override public long contentLength(){return source.contentLength();}
+            @Override public void subscribe(java.util.concurrent.Flow.Subscriber<? super java.nio.ByteBuffer> subscriber) {
+                source.subscribe(new java.util.concurrent.Flow.Subscriber<java.nio.ByteBuffer>() {
+                    @Override public void onSubscribe(java.util.concurrent.Flow.Subscription subscription){subscriber.onSubscribe(subscription);}
+                    @Override public void onNext(java.nio.ByteBuffer buffer){observation.published(id,buffer.remaining());subscriber.onNext(buffer);}
+                    @Override public void onError(Throwable error){subscriber.onError(error);}
+                    @Override public void onComplete(){subscriber.onComplete();}
+                });
+            }
+        };
+        var request=builder.method(method,publisher).build();
         try {
             var response=HttpClientTestSupport.send(client,request);
             return new ApiContractValidator.HttpExchange(method,request.uri().getRawPath(),
@@ -53,6 +72,13 @@ public final class ApiContractHttpSupport implements AutoCloseable {
             if(failure instanceof InterruptedException) Thread.currentThread().interrupt();
             failed(failure);throw failure;
         }
+    }
+    public record Transport(int intendedBytes,int publishedBytes,int receivedBytes,long contentLength,String transferEncoding) { }
+    public Transport transport(ApiContractValidator.HttpExchange exchange) throws InterruptedException {
+        guard();
+        String id=exchange.requestHeaders().entrySet().stream().filter(e->e.getKey().equalsIgnoreCase("X-Test-Request-Id"))
+                .map(Map.Entry::getValue).findFirst().orElseThrow();
+        return observation.transport(id);
     }
     @Override public void close() throws Exception {
         if(closed) return;
@@ -81,6 +107,19 @@ public final class ApiContractHttpSupport implements AutoCloseable {
     public static final class ServerObservation {
         private final Set<String> completed=java.util.concurrent.ConcurrentHashMap.newKeySet();
         private final java.util.concurrent.atomic.AtomicInteger active=new java.util.concurrent.atomic.AtomicInteger();
+        private static final class Transfer {
+            volatile int intended;
+            final java.util.concurrent.atomic.AtomicInteger published=new java.util.concurrent.atomic.AtomicInteger();
+            final java.util.concurrent.atomic.AtomicInteger received=new java.util.concurrent.atomic.AtomicInteger();
+            volatile long length=-1;volatile String encoding;
+        }
+        private final java.util.concurrent.ConcurrentMap<String,Transfer> transfers=new java.util.concurrent.ConcurrentHashMap<>();
+        private Transfer transfer(String id){return transfers.computeIfAbsent(id,key->new Transfer());}
+        public void intended(String id,int bytes){transfer(id).intended=bytes;}
+        public void published(String id,int bytes){transfer(id).published.addAndGet(bytes);}
+        public void receiving(String id,long length,String encoding){var t=transfer(id);t.length=length;t.encoding=encoding;}
+        public void read(String id,int bytes){transfer(id).received.addAndGet(bytes);}
+        public Transport transport(String id){var t=transfer(id);return new Transport(t.intended,t.published.get(),t.received.get(),t.length,t.encoding);}
         public void entered() { active.incrementAndGet(); }
         public void completed(String id) { completed.add(id); active.decrementAndGet(); }
         public boolean idle(Set<String> ids) { return active.get()==0 && completed.containsAll(ids); }

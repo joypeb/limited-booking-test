@@ -120,3 +120,8 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ### 9단계 US1 정상 계약 인수
 
 T007~T011에서 검사기 Unit87건과 실제 업무HTTP6건·기존프로브6건을 지정 실행해 통과했다. `ApiContractValidator`는 스키마와 별도 semantic 단계로 UTC Z/마이크로초 값·이름 정규화/수량 관계·현재상태별 cancelledAt·필수응답헤더를 검사한다. 실제5operation·capacity0/1000·이름 경계/유니코드·원문/헤더case·DBsnapshot·기존종료보호를 확인했다. 선행 절의 US1 미완료는 당시 상태이며 현재 US2~US4/정확한무효요청·전체오류/변이 인수는 미완료다. [실행 증거](../docs/test-evidence.md)와 [작업](../specs/010-openapi-contract/tasks.md)을 따른다.
+
+
+### 9단계 US2 일부 인수
+
+T012~T017에서 불변의정확요청위반multiset·원문JSON/UTF8검사와항상실행하는오류응답검사를추가했다. 알수없는library key/context는예상목록과무관하게실패한다. 실제입력/권한/업무오류·5작업413·두생성415·기본429/판정PTTL까지검증했고관련Unit110(검사기97+기존13), Contract92(업무86+프로브6)가통과했다. GET8192본문의OAS body.unexpected/서버200은표현한계로정확히분리한다. publisher전달바이트는wire전송완료가아니며서버앱read관측과구별한다. T018이후DB/Redis503fixture·시퀀스/변이/전체인수는미완료다. [작업](../specs/010-openapi-contract/tasks.md)·[실행증거](../docs/test-evidence.md)를따른다.

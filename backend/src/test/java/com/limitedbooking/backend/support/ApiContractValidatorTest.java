@@ -253,4 +253,82 @@ class ApiContractValidatorTest {
         fixtures.add(header(resource(),"X-Trace-Id","unit-fixture"));
         return fixtures.stream();
     }
+    private static String invalidProblem() {
+        return "{\"type\":\"about:blank\",\"title\":\"입력 오류\",\"status\":400,\"detail\":\"잘못된 요청입니다\",\"instance\":\"/api/resources\",\"code\":\"INVALID_REQUEST\"}";
+    }
+    private static ApiContractValidator.ValidationFailure required() {
+        return new ApiContractValidator.ValidationFailure("request-schema","validation.request.body.schema.required","/body");
+    }
+    private static ApiContractValidator.ExpectedRequestViolations missingFields(List<ApiContractValidator.ValidationFailure> failures) {
+        return new ApiContractValidator.ExpectedRequestViolations(failures,List.of(),400,"INVALID_REQUEST");
+    }
+    @Test void exactExpectedInvalidRequestPassesAndBaseRemainsStrict() throws Exception {
+        var base=ApiContractValidator.load("business.openapi.yaml");
+        var expected=base.expectInvalidRequest(missingFields(List.of(required(),required())));
+        assertThatCode(()->expected.assertValid("POST","/api/resources",JSON,"{}",400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).doesNotThrowAnyException();
+        assertThatThrownBy(()->base.assertValid("POST","/api/resources",JSON,"{}",400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).isInstanceOf(AssertionError.class);
+    }
+    @Test void missingExtraDuplicateAndUnrelatedExpectedViolationsFail() throws Exception {
+        var base=ApiContractValidator.load("business.openapi.yaml");
+        for(var expected:List.of(List.of(required()),List.of(required(),required(),required()),
+                List.of(new ApiContractValidator.ValidationFailure("request-schema","wrong","/body"),required()),
+                List.of(new ApiContractValidator.ValidationFailure("request-schema",required().key(),"/body/name"),required()))) {
+            assertThatThrownBy(()->base.expectInvalidRequest(missingFields(expected)).assertValid("POST","/api/resources",JSON,
+                    "{}",400,Map.of("Content-Type","application/problem+json"),invalidProblem())).isInstanceOf(AssertionError.class);
+        }
+        assertThatThrownBy(()->base.expectInvalidRequest(missingFields(List.of(required(),required()))).assertValid(
+                "POST","/api/resources",JSON,"{\"name\":\"정상\",\"capacity\":1}",400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).isInstanceOf(AssertionError.class);
+    }
+    @Test void rawDuplicateMustBeObservedAndMatchedExactly() throws Exception {
+        String duplicate="{\"name\":\"앞\",\"name\":\"뒤\",\"capacity\":1}";
+        var base=ApiContractValidator.load("business.openapi.yaml");
+        assertThatThrownBy(()->base.assertValid("POST","/api/resources",JSON,duplicate,400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).isInstanceOf(AssertionError.class).hasMessageContaining("raw");
+        var raw=new ApiContractValidator.ValidationFailure("raw","duplicate-json","/body/name");
+        var expected=new ApiContractValidator.ExpectedRequestViolations(List.of(),List.of(raw),400,"INVALID_REQUEST");
+        assertThatCode(()->base.expectInvalidRequest(expected).assertValid("POST","/api/resources",JSON,duplicate,400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).doesNotThrowAnyException();
+        assertThatThrownBy(()->base.expectInvalidRequest(new ApiContractValidator.ExpectedRequestViolations(List.of(),
+                List.of(raw,raw),400,"INVALID_REQUEST")).assertValid("POST","/api/resources",JSON,duplicate,400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem())).isInstanceOf(AssertionError.class);
+    }
+    @Test void invalidRequestNeverSkipsResponseSchemaOrSemantic() throws Exception {
+        var v=ApiContractValidator.load("business.openapi.yaml").expectInvalidRequest(missingFields(List.of(required(),required())));
+        assertThatThrownBy(()->v.assertValid("POST","/api/resources",JSON,"{}",400,
+                Map.of("Content-Type","application/problem+json"),invalidProblem().replace("about:blank","not a URI").replace("\"title\":\"입력 오류\",","")))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("response-schema").hasMessageContaining("semantic");
+    }
+    @Test void unknownKeyAndMissingContextCannotBeWhitelistedEvenWithExactSentinel() {
+        for(var message:List.of(
+                com.atlassian.oai.validator.report.ValidationReport.Message.create("fixture.unknown","비밀값을 출력하면 안 됨")
+                        .withContext(com.atlassian.oai.validator.report.ValidationReport.MessageContext.create()
+                                .in(com.atlassian.oai.validator.report.ValidationReport.MessageContext.Location.REQUEST).build()).build(),
+                com.atlassian.oai.validator.report.ValidationReport.Message.create("validation.request.body.schema.type","비밀값을 출력하면 안 됨").build())) {
+            var report=com.atlassian.oai.validator.report.ValidationReport.singleton(message);
+            var sentinel=ApiContractValidator.normalizeRequest(report);
+            assertThat(ApiContractValidator.compareRequestReport(report,sentinel)).isNotEmpty();
+            assertThat(ApiContractValidator.compareRequestReport(report,sentinel).toString()).contains(message.getKey()).doesNotContain("비밀값");
+        }
+    }
+    @ParameterizedTest(name="오류응답 훼손 {index}") @org.junit.jupiter.params.provider.ValueSource(strings={"different-path","SELECT password FROM users",
+            TestData.ADMIN_PASSWORD,"java.lang.IllegalStateException at com.example.Test.run(Test.java:12)"})
+    void problemInstanceAndSensitiveDetailsAreRejected(String replacement) throws Exception {
+        var v=ApiContractValidator.load("business.openapi.yaml");
+        var baseline=problem(401);baseline.assertValid(v);
+        {
+            String broken=replacement.equals("different-path")?baseline.responseBody().replace("\"instance\":\"/api/reservations\"","\"instance\":\"/api/resources\""):
+                    baseline.responseBody().replace("요청을 처리할 수 없습니다.",replacement);
+            assertThatThrownBy(()->body(baseline,broken).assertValid(v)).isInstanceOf(AssertionError.class).hasMessageContaining("semantic");
+        }
+    }
+    @Test void positiveRetryAfterMustMatchIndependentDecisionPttl() throws Exception {
+        var v=ApiContractValidator.load("business.openapi.yaml");
+        var baseline=problem(429);
+        assertThatCode(()->v.assertRetryAfter(baseline,60000)).doesNotThrowAnyException();
+        assertThatThrownBy(()->v.assertRetryAfter(header(baseline,"Retry-After","59"),60000))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("decision-pttl");
+    }
 }
