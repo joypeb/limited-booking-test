@@ -6,7 +6,7 @@
 |---|---|---|
 | CPU/OS | arm64, macOS 27.0.1 | 호스트 확인 |
 | JDK | Amazon Corretto25.0.4+7-LTS | Java·Gradle·테스트 실행 확인; preview 제외 |
-| Gradle Wrapper | 9.7.1 | 실제 --version 및 여덟 실행 조합 확인 |
+| Gradle Wrapper | 9.8.0 | 2026-10-23 `./gradlew wrapper --gradle-version 9.8.0` 재생성, 전체 게이트 실행 확인 (이전 9.7.1) |
 | Boot | 4.1.1 | starter 해석·local 기동·동적 컨테이너 앱 HTTP 확인 |
 | Docker | CLI/daemon29.2.1, aarch64 | Desktop 기동·데몬·이미지 내부 실행·실제 연동 확인 |
 | Docker 메모리 | 8,216,915,968 bytes (약7.65GiB) | docker info 실제값 |
@@ -121,3 +121,7 @@ US3 OOM보완최종: 같은버전에서RedisSystemException→RedisCommandExecut
 ### 2026-10-23 9단계 최종 실행 환경
 
 T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyContractDependencies`(둘 다 종료0)는 Corretto25.0.4+7-LTS·Wrapper9.7.1·Boot4.1.1·macOS27.0.1 aarch64·Docker29.8.2에서 실행했다. ContainerTestSupport의 고정 PG18.6-bookworm/Redis8.10.2-trixie digest·Testcontainers2.0.5를 유지했다. 계약 도구는 openapi-request-validator-core3.0.0(Swagger2 converter 제외)·테스트 한정 Jackson2 BOM2.21.8을 그대로 쓰고 런타임은 Jackson3다. 9단계 신규 의존성·버전 변경은 없고 verifyContractDependencies가 미해결 edge0·json-patch/jackson-coreutils 재유입0을 확인했다. Qodana는 미실행이다. T042 수는 Unit298·IT315·Contract102(T032 당시 294·312·96은 historical)이며 XML 대조는 [실행 증거](test-evidence.md)의 T032·T033·T042 절을 따른다. 리뷰 보완의 제품 변경 1건(ResourceController UUID binder)은 의존성·버전과 무관하다.
+
+## 2026-10-23 Gradle Wrapper 9.8.0 갱신
+
+`./gradlew wrapper --gradle-version 9.8.0`으로 Wrapper를 재생성했다(9.7.1 → 9.8.0, `networkTimeout`·`validateDistributionUrl` 등 기존 설정 유지). Corretto25.0.4+7-LTS·Boot4.1.1·Docker29.8.2와 고정 PG18.6/Redis8.10.2 digest를 유지했다. `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·IT315·Contract102, 실패/오류/skip0. 의존성·코드 변경 없음. Gradle10 비호환 deprecated 경고는 기존과 같이 남아 있다. Qodana는 미실행이다.
