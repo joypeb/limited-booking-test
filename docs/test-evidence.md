@@ -1872,3 +1872,16 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - SC 대조: SC-001 적용표 전체 관측(T020), SC-002 정상 오거부·예상 위반 누락·잘못된 오류 통과0(T011~T016·T020), SC-003 44종100% 거부·대조군100% 통과·DTO RED/원복 GREEN(T024~T030), SC-004 최초값·Location 재현과 추가 예약·차감·복구0(T021~T023), SC-005 업무 발견90>0·실패/오류/skip·미원복0·재현 명령 기록(T032~T035). US1~US4 인수 시나리오도 같은 작업에 대응한다.
 - 남은 차이(수정하지 않음): 승인된 `specs/010-openapi-contract/spec.md`의 Status(Draft·구현 미완료)와 research/plan의 "실행 미실시" 문구는 작성 당시 상태다. tasks.md의 "승인된 spec/plan은 수정하지 않는다" 규칙에 따라 그대로 두었으며 갱신 여부는 메인 판단이다. 계획서 13절 프로젝트 최종 체크리스트는 11단계 등 미완료 항목과 묶여 있어 표시하지 않았다.
 - 미완료·미검증: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외), docs/performance.md(미측정), Property/PIT 확장·k6 부하·외부 CI·소비자 주도 계약, 독립 리뷰·push·PR·병합.
+
+
+## 2026-10-23 PR #12 독립 리뷰 보완
+
+기준 head `f84e9f1`. 메인이 전달한 독립 리뷰의 P2-1·P2-2·P3를 TDD로 보완한다. 제품 변경은 P2-1(`ResourceController`)만 허용됐다. OpenAPI·계획서 정책은 바꾸지 않았다. 경로 UUID 400은 기존 규칙이다.
+
+### P2-1 대상 조회 경로의 비정규 UUID
+
+- 원인: `ResourceController.get(@PathVariable UUID)`는 Spring 기본 `StringToUUIDConverter`를 쓴다. 이 변환기는 앞뒤 공백을 trim하고 `UUID.fromString`의 `1-1-1-1-1` 축약형을 받아들인다. `ReservationController`만 8-4-4-4-12 정규식 `@InitBinder`를 갖고 있었다.
+- 시험: `ResourceApiIT.rejectsNonCanonicalUuidPathEvenWhenLenientValueExists`에 `1-1-1-1-1`, `%20`+UUID, UUID+`%20`을 추가했다. 관대한 변환값 `00000001-0001-0001-0001-000000000001`의 대상을 실제로 저장해 200/404 누출과 400을 구분한다. `ApiContractIT.invalidInputs`의 세 경로(대상 GET·예약 GET·취소 POST)에 `1-1-1-1-1`과 `%20`+UUID를 추가했다(+6). 정확한 예상 위반은 기존과 같은 `request-schema:validation.request.parameter.schema.format.uuid@/path/id`다.
+- RED: `cd backend && ./gradlew integrationTest --tests '*ResourceApiIT.rejectsNonCanonicalUuidPath*' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료1. ResourceApiIT 3/3 실패(`expected: 400 but was: 200`), ApiContractIT 34건 중 2건 실패(`path-/api/resources/1-1-1-1-1`, `path-/api/resources/%2010000000-…` 각각 `expected: 400 but was: 404`). 예약 두 경로의 새 사례는 기존 binder로 이미 400이었다. 로그 `/tmp/t037-p21-red.log`.
+- 최소 수정: `ResourceController`에 `ReservationController`와 같은 정규식 `@InitBinder`를 추가했다. 공통 추상화는 만들지 않았다.
+- GREEN: `./gradlew integrationTest --tests '*ResourceApiIT' contractTest --tests '*ApiContractIT.invalidInputMatchesExactContract' --continue` 종료0. ResourceApiIT 11(기존8+신규3), invalidInputs 34, 실패/오류/skip0. 로그 `/tmp/t037-p21-green.log`.

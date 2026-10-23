@@ -360,10 +360,12 @@ class ApiContractIT {
                 valid.substring(0,valid.length()-1)+",\""+field+"\":1}",reservationHeaders,List.of(schema("body.schema.additionalProperties","/body")),List.of()));
         cases.add(new InvalidInput("reservation-duplicate","POST",path,"{\"resourceId\":\""+CONTRACT_ID+"\",\"resourceId\":\""+CONTRACT_ID+"\"}",reservationHeaders,List.of(),List.of(raw("duplicate-json","/body/resourceId"))));
         cases.add(new InvalidInput("reservation-json","POST",path,"{",reservationHeaders,List.of(schema("body.schema.invalidJson","/body")),List.of(raw("json","/body"))));
-        for(String endpoint:List.of("/api/resources/invalid","/api/reservations/invalid","/api/reservations/invalid/cancel")) {
-            cases.add(new InvalidInput("path-"+endpoint,endpoint.endsWith("cancel")?"POST":"GET",endpoint,null,Map.of(),
-                    List.of(schema("parameter.schema.format.uuid","/path/id")),List.of()));
-        }
+        // 1-1-1-1-1은 UUID.fromString이 받아들이는 비정규 표기이고 %20은 앞 공백이다.
+        for(String rawId:List.of("invalid","1-1-1-1-1","%20"+CONTRACT_ID))
+            for(String endpoint:List.of("/api/resources/"+rawId,"/api/reservations/"+rawId,"/api/reservations/"+rawId+"/cancel")) {
+                cases.add(new InvalidInput("path-"+endpoint,endpoint.endsWith("cancel")?"POST":"GET",endpoint,null,Map.of(),
+                        List.of(schema("parameter.schema.format.uuid","/path/id")),List.of()));
+            }
         for(String body:List.of(" ","{}")) cases.add(new InvalidInput("cancel-body-"+body,"POST","/api/reservations/"+CONTRACT_ID+"/cancel",body,Map.of(),List.of(schema("body.unexpected","/body")),List.of(raw("empty-cancel-body","/body"))));
         return cases.stream();
     }

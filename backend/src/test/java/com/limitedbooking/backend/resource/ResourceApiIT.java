@@ -284,6 +284,34 @@ class ResourceApiIT {
         }
     }
 
+    // UUID.fromString은 "1-1-1-1-1"을 00000001-0001-0001-0001-000000000001로 받아들인다.
+    // 그 값의 대상을 실제로 저장해 두어 관대한 변환이 200/404로 새는 것을 400과 구분한다.
+    @ParameterizedTest
+    @ValueSource(strings = {"1-1-1-1-1", "%2000000001-0001-0001-0001-000000000001", "00000001-0001-0001-0001-000000000001%20"})
+    void rejectsNonCanonicalUuidPathEvenWhenLenientValueExists(String rawId) throws Exception {
+        UUID lenient = UUID.fromString("00000001-0001-0001-0001-000000000001");
+        testData.resource(lenient, "관대한 UUID 대상", 1, 1, Instant.EPOCH);
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        try {
+            String path = "/api/resources/" + rawId;
+            var response = HttpClientTestSupport.send(client, HttpRequest.newBuilder(uri(path))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", userAAuth())
+                    .GET()
+                    .build());
+            assertProblem(response, 400, "INVALID_REQUEST", path);
+            var canonical = HttpClientTestSupport.send(client, HttpRequest.newBuilder(uri("/api/resources/" + lenient))
+                    .timeout(Duration.ofSeconds(10))
+                    .header("Authorization", userAAuth())
+                    .GET()
+                    .build());
+            assertThat(canonical.statusCode()).isEqualTo(200);
+            assertThat(testData.resourceCount()).isEqualTo(1);
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
     @Test
     void mapsTransientDatabaseFailureTo503AndSurfacesUnclassifiedSqlDefectAs500() throws Exception {
         var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();

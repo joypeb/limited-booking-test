@@ -85,6 +85,17 @@
 - [X] T035 `README.md`, `knowledge/README.md`, `knowledge/rules/api-and-security.md`, `knowledge/rules/development-and-testing.md`, `knowledge/domain/resource.md`, `reservation.md`, `security.md`, `ratelimit.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md` 7절9단계를 순차 동기화한다. 구현/실행/미검증을 구분해 실제 파일·증거만 연결하고 실제 인수 뒤에만 완료표시한다. `docs/openapi.yaml`의 과거 미실행 설명도 사실에 맞추며 정책 변경이 필요하면 먼저 메인보고한다.
 - [X] T036 `specs/010-openapi-contract/tasks.md` 추적표·적용표와 최종diff/링크/실행증거를 대조해 FR-001~012·US1~4·SC-001~005 누락0, 임시DTO변경0·실패/skip0을 자가검토한다. 변경이유·실제결과·미완료/미검증·핵심코드/테스트·다음한작업을 보고하고 대기한다. Qodana는 미실행후속/게이트제외로 명시하며 커밋·push·PR은 이번 tasks 생성 담당의 범위 밖이며 메인 게이트 후 기존 사용자 승인 범위에서 진행한다.
 
+## Phase 8: PR #12 독립 리뷰 보완 (2026-10-23 메인 지시)
+
+제품 변경은 T037만 허용한다. OpenAPI·계획서 정책은 바꾸지 않는다.
+
+- [X] T037 [P2-1] `backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java` 경로 UUID를 예약 Controller와 같은 정규식 binder로 엄격히 변환한다. `ResourceApiIT`·`ApiContractIT.invalidInputs`의 `1-1-1-1-1`·공백 사례 RED(200/404)→GREEN(400)을 확인한다.
+- [ ] T038 [P2-2] `ApiContractIT`의 400·401·403·404·409·413·415·429 사례 전후에 resources·reservations 전체 행·컬럼 단일 SQL snapshot이 같음을 확인한다.
+- [ ] T039 [P3] `ApiContractDependencyIT`의 `httpClosed`를 실제 값으로 단언하고, cleanup listener가 컨텍스트 종료 뒤 실행되는 실제 순서를 검증·문서화한다.
+- [ ] T040 [P3] `ApiContractValidator` semantic에 Problem title·detail 비어 있지 않음 검사를 추가한다(Unit RED→GREEN).
+- [ ] T041 [P3] `quickstart.md`·`research.md`의 계획/예정 표시를 현재 상태 또는 당시 기록으로 명시한다.
+- [ ] T042 `./gradlew build verifyContract verifyContractDependencies` 1회 실행, XML 수 대조, 증거 기록, 목적별 커밋·push.
+
 ## 전체 계약 적용표와 실행 추적
 
 아래 모든 셀은 최소1회 **실제 HTTP**가 필요하다. T020/T034에서 셀별 사례ID와 관측을 기록한다. 401은 미인증/틀린비밀번호, 예약404는 없음/타인USER_B/ADMIN을 구분한다. 전역413은 GET도 포함한다.
