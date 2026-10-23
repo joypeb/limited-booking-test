@@ -1863,3 +1863,12 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - `docs/performance.md`: 9단계에서는 계약 검사 비용을 별도로 측정하지 않았으므로 작성하지 않았다(미측정). 위 실행 시간은 기능 실행 기록이며 성능 근거가 아니다.
 - 미검증·제외: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외, 통과로 기록하지 않음), Property/PIT 확장(10단계), k6 부하·외부 CI·소비자 주도 계약, push/PR. 승인된 010 spec/plan 문서는 수정하지 않았다.
 - T035에서 `docs/openapi.yaml`의 `info.description` 첫 문장만 "초안·미실행"에서 실제 검증 상태로 바꿨다(스키마·경로·응답 변경 없음). 영향 확인으로 `cd backend && ./gradlew test --tests '*ApiContractValidatorTest'`를 실행해 종료0, 101건 실패/오류/skip0(고정 명세 parse/ref·5 operation 포함)을 확인했다. 이 실행이 `backend/build/test-results/test/`를 덮었으므로 T032 Unit XML 원본은 `/private/tmp/010-t032-xml/test/`를 기준으로 한다. 전체 게이트는 재실행하지 않았다.
+
+### T036 자가검토 (2026-10-23)
+
+- 대상: `e098af6..7ec6397`의 변경 21파일. 제품(`backend/src/main`)·build.gradle·Wrapper·settings diff 0, 변경은 테스트 지원·계약 시험·docs/knowledge/spec 작업 목록·계획서다. `git diff --check e098af6 HEAD` 통과. 변경 Markdown의 로컬 링크473개가 모두 존재한다.
+- 임시 DTO 변경0: `ResourceView.java` SHA256 `ead03247d03efcf03fb95ffa4828643a716a5a7716be28e345808d48fe329e98`이 T027 보관 원본과 같다. 계약 시험 파일에 `@Disabled`·assume류 skip 없음. T032 세 태스크의 실패/오류/skip0.
+- FR 대조: FR-001 고정 명세(T004·T035), FR-002 원문 전달(T005~T006), FR-003 정확 무효 위반·응답 항상 검사(T012~T016), FR-004 적용표 전체·409/503 구분(T020), FR-005 UUID/타입/UTC/관계·정규화(T007~T011·T024), FR-006 미디어·필수 헤더(T010·T025), FR-007 Problem·민감정보·default 거부(T015·T025), FR-008 재전송·현재 상태(T021~T023), FR-009 사본 훼손44종(T024~T026), FR-010 실제 DTO 변이·원복(T027~T030), FR-011 격리 의존성·기본 정책 유지(T018~T019·T032~T033), FR-012 수·버전·증거(T032~T035). 누락0.
+- SC 대조: SC-001 적용표 전체 관측(T020), SC-002 정상 오거부·예상 위반 누락·잘못된 오류 통과0(T011~T016·T020), SC-003 44종100% 거부·대조군100% 통과·DTO RED/원복 GREEN(T024~T030), SC-004 최초값·Location 재현과 추가 예약·차감·복구0(T021~T023), SC-005 업무 발견90>0·실패/오류/skip·미원복0·재현 명령 기록(T032~T035). US1~US4 인수 시나리오도 같은 작업에 대응한다.
+- 남은 차이(수정하지 않음): 승인된 `specs/010-openapi-contract/spec.md`의 Status(Draft·구현 미완료)와 research/plan의 "실행 미실시" 문구는 작성 당시 상태다. tasks.md의 "승인된 spec/plan은 수정하지 않는다" 규칙에 따라 그대로 두었으며 갱신 여부는 메인 판단이다. 계획서 13절 프로젝트 최종 체크리스트는 11단계 등 미완료 항목과 묶여 있어 표시하지 않았다.
+- 미완료·미검증: Qodana(사용자 지시로 이번에 건너뛴 미실행 후속, 게이트 제외), docs/performance.md(미측정), Property/PIT 확장·k6 부하·외부 CI·소비자 주도 계약, 독립 리뷰·push·PR·병합.
