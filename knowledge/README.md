@@ -110,3 +110,8 @@ Gradle test/verify/verifyContract/verifyProperty/deepTest/mutationSmoke의 도�
 ## 8단계 현재 인수 상태 (2026-10-22)
 
 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다. [실행 근거](../docs/test-evidence.md)·[009 작업](../specs/009-redis-rate-limit/tasks.md)을 따른다. 위 날짜별 과거 확인 상태는 당시 기록이다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했다.
+
+
+## 9단계 계약 검증 공통 선행
+
+[010 명세](../specs/010-openapi-contract/spec.md)·[계획](../specs/010-openapi-contract/plan.md)·[작업](../specs/010-openapi-contract/tasks.md)을 기준으로 공통 선행 T001~T006만 진행했다. [ApiContractValidator](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)의 고정 명세/명시 operation·status/원문 경계와 [Unit](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java), [HTTP 지원](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java)·[최소 실제 HTTP와 종료 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)을 추가했다. 예상위반·시나리오 값 모델은 불변 경계만 정의했으며 후속 판정 구현과 US1~US4는 미완료다. 실제 명령·RED/GREEN·수·한계는 [실행 증거](../docs/test-evidence.md)를 따른다. 새 업무 도메인·제품/API/SQL 변경은 없다.

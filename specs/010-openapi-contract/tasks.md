@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 작업 생성만 완료. 모든 체크는 미완료다. 아래 신규 파일은 구현 예정이며 실행 성공을 뜻하지 않는다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 이번에는 구현·실제 위임·브랜치 생성·커밋·push·PR을 하지 않는다. 후속 구현·커밋·push·PR·병합은 이번 tasks 생성 담당의 범위 밖이며, 메인 게이트 후 기존 사용자 승인 범위에서 진행한다.
+**상태**: 2026-10-23 공통 선행 T001~T006 구현·지정 검증을 완료했다. T007 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T006만 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T007 이후·push·PR은 이번 담당 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -16,17 +16,17 @@
 
 ## Phase 1: 준비 — 승인 근거와 현재 기반
 
-- [ ] T001 `AGENTS.md`, `knowledge/README.md`, `knowledge/rules/*.md` 전체와 `knowledge/domain/resource.md`, `reservation.md`, `security.md`, `ratelimit.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md` 2~5절·7절9단계 및 승인된 `specs/010-openapi-contract/` 산출물을 다시 대조하고 저장소 루트·HEAD·브랜치·사용자 diff·Wrapper9.7.1을 확인해 후속 실행 기준을 `docs/test-evidence.md`에 기록한다.
-- [ ] T002 `backend/build.gradle`, `backend/src/test/java/com/limitedbooking/backend/support/ToolchainContractValidator.java`, `backend/src/test/java/com/limitedbooking/backend/common/ToolchainContractIT.java`, 기존 ContainerTestSupport/HttpClientTestSupport/TestData/DatabaseAssertions/RateLimitTestSupport/ConcurrencyTestSupport를 조사해 business.openapi.yaml 복사·contract 태그·발견/결과 게이트·프로브 재사용 경계와 기존 장애/경쟁 회귀 목록을 `docs/test-evidence.md`에 고정한다. 기본 Gradle 수정은 하지 않는다.
+- [X] T001 `AGENTS.md`, `knowledge/README.md`, `knowledge/rules/*.md` 전체와 `knowledge/domain/resource.md`, `reservation.md`, `security.md`, `ratelimit.md`, `한정 수량 예약 백엔드 로컬 개발 계획.md` 2~5절·7절9단계 및 승인된 `specs/010-openapi-contract/` 산출물을 다시 대조하고 저장소 루트·HEAD·브랜치·사용자 diff·Wrapper9.7.1을 확인해 후속 실행 기준을 `docs/test-evidence.md`에 기록한다.
+- [X] T002 `backend/build.gradle`, `backend/src/test/java/com/limitedbooking/backend/support/ToolchainContractValidator.java`, `backend/src/test/java/com/limitedbooking/backend/common/ToolchainContractIT.java`, 기존 ContainerTestSupport/HttpClientTestSupport/TestData/DatabaseAssertions/RateLimitTestSupport/ConcurrencyTestSupport를 조사해 business.openapi.yaml 복사·contract 태그·발견/결과 게이트·프로브 재사용 경계와 기존 장애/경쟁 회귀 목록을 `docs/test-evidence.md`에 고정한다. 기본 Gradle 수정은 하지 않는다.
 
 ## Phase 2: 공통 선행 — 고정 명세와 교환 경계
 
 **차단 조건**: T001~T006 완료 전 사용자 이야기 구현을 시작하지 않는다.
 
-- [ ] T003 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 고정 명세 파싱/참조/버전/5 operation·명시 응답 검사와 정상 교환의 요청·응답 전달 테스트를 작성한다. 제공 void assertValid(method,path,Map<String,String>,String,int,Map<String,String>,String) 골격에서 의도한 미검증 assertion RED를 확인한다. 프로브만 통과한 것을 신규 업무 탐지력으로 세지 않는다.
-- [ ] T004 T003 뒤 `docs/openapi.yaml` 단일 원본을 계획서와 적용표에 맞춰 확정하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`의 parser/ref 로딩·명시 operation/status 선택·원문 SimpleRequest/Response 전달을 최소 구현해 동일 시험 GREEN을 확인한다. 자동 생성/별도 YAML 사본·입력 정규화·default에 의한 미명시 상태 허용을 금지한다. schema 표현 한계는 raw/의미 검사로 분리한다.
-- [ ] T005 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`에 HttpExchange/ExpectedRequestViolations/ValidationFailure/ScenarioExpectation의 테스트 전용 경계를 정하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 body null/빈문자열·실제 raw path·헤더 대소문자·중복 singleton·원문 보존의 RED→최소 구현→GREEN을 추가한다. HttpExchange는 실제 원문, ExpectedRequestViolations는 불변 정확한 library key+location 및 raw rule+location multiset, ValidationFailure는 단계/key/location, ScenarioExpectation은 사전 기대값/독립 관측이며 결과에서 정답을 만들지 않는다. 지정 public 인터페이스는 바꾸지 않는다.
-- [ ] T006 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java`의 원문 capture·중복 singleton의 Map 변환 전 거부·실제 Authorization·동적 소유 DB/Redis·사전 커밋·소유키 초기화·최종 단일 DBsnapshot·유한 종료를 위한 최소 지원을 작성한다. `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 최소 실제 HTTP 시험에서 원문 누락/종료 보호 결함 RED→최소 보완 GREEN을 확인한다. connect3초/request9초/raw socket10초/client await10초/container 종료10초를 유지하고 서버 in-flight도 유한 확인한다. 최초 StopState·원인/suppressed 오류를 보존하고 미종료/전송불확실 뒤 다음 reset·준비·제출0을 검증한다. 기존 package-private 지원 공개화·개발 DB·flushAll·클래스 병렬 실행을 금지한다.
+- [X] T003 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 고정 명세 파싱/참조/버전/5 operation·명시 응답 검사와 정상 교환의 요청·응답 전달 테스트를 작성한다. 제공 void assertValid(method,path,Map<String,String>,String,int,Map<String,String>,String) 골격에서 의도한 미검증 assertion RED를 확인한다. 프로브만 통과한 것을 신규 업무 탐지력으로 세지 않는다.
+- [X] T004 T003 뒤 `docs/openapi.yaml` 단일 원본을 계획서와 적용표에 맞춰 확정하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`의 parser/ref 로딩·명시 operation/status 선택·원문 SimpleRequest/Response 전달을 최소 구현해 동일 시험 GREEN을 확인한다. 자동 생성/별도 YAML 사본·입력 정규화·default에 의한 미명시 상태 허용을 금지한다. schema 표현 한계는 raw/의미 검사로 분리한다.
+- [X] T005 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java`에 HttpExchange/ExpectedRequestViolations/ValidationFailure/ScenarioExpectation의 테스트 전용 경계를 정하고 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidatorTest.java`에 body null/빈문자열·실제 raw path·헤더 대소문자·중복 singleton·원문 보존의 RED→최소 구현→GREEN을 추가한다. HttpExchange는 실제 원문, ExpectedRequestViolations는 불변 정확한 library key+location 및 raw rule+location multiset, ValidationFailure는 단계/key/location, ScenarioExpectation은 사전 기대값/독립 관측이며 결과에서 정답을 만들지 않는다. 지정 public 인터페이스는 바꾸지 않는다.
+- [X] T006 `backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java`의 원문 capture·중복 singleton의 Map 변환 전 거부·실제 Authorization·동적 소유 DB/Redis·사전 커밋·소유키 초기화·최종 단일 DBsnapshot·유한 종료를 위한 최소 지원을 작성한다. `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`의 최소 실제 HTTP 시험에서 원문 누락/종료 보호 결함 RED→최소 보완 GREEN을 확인한다. connect3초/request9초/raw socket10초/client await10초/container 종료10초를 유지하고 서버 in-flight도 유한 확인한다. 최초 StopState·원인/suppressed 오류를 보존하고 미종료/전송불확실 뒤 다음 reset·준비·제출0을 검증한다. 기존 package-private 지원 공개화·개발 DB·flushAll·클래스 병렬 실행을 금지한다.
 
 ## Phase 3: US1 — 문서대로 정상 API 사용 (P1, MVP)
 

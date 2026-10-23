@@ -1498,3 +1498,34 @@ US3 `2adadb2`의 오케스트레이터 독립검토 통과 후 T029~T034를 수�
   - `cd backend && ./gradlew test`: 종료 0 (Unit 193건, 실패 0, 오류 0, skip 0).
   - `cd backend && ./gradlew verify verifyContractDependencies`: 종료 0 (Unit 193건, 일반 IT 312건, 실패 0, 오류 0, skip 0, 계약 의존성 게이트 통과).
 - 문서: `docs/qodana-review.md` 갱신.
+
+
+## 2026-10-23 9단계 공통 선행 T001~T006
+
+T001: prerequisite 종료0, FEATURE_DIR=specs/010-openapi-contract, requirements 체크16/16 PASS. extensions.yml 없음(전후 훅 없음). AGENTS·knowledge README/rules 전체·4 domain·헌법·계획2~5/7절9단계 및 승인 spec/plan/tasks/research/data-model/contracts/quickstart 대조. HEAD e098af6, feature/010-openapi-contract, 독립 worktree 루트 확인, 초기 사용자 diff 없음. backend `./gradlew --version` 종료0: Wrapper9.7.1, Corretto25.0.4+7-LTS, macOS27.0.1 aarch64. 원본9.8 변경 무수정.
+
+T002: build.gradle은 docs/openapi.yaml→business.openapi.yaml 복사, Unit *Test(contract/property 제외), contractTest *IT/contract 태그, maxParallelForks1, 현재 listener/XML 수 일치·0/실패/skip 거부, verifyContractDependencies 재유입 게이트를 제공한다. 기본 Gradle 변경 없음. 기존 ToolchainContractValidator는 본문없는 GET 프로브만 검증하고 ToolchainContractIT 업무 검사는 parser/ref뿐이다. ContainerTestSupport 소유 동적PG/Redis·종료10초, HttpClientTestSupport connect/request/종료 패턴, TestData 사전커밋/reset 순서, DatabaseAssertions 단일 snapshot, RateLimitTestSupport 소유3키, ConcurrencyTestSupport StopState/최초원인/suppressed를 재사용한다. 기존 회귀 대상: ReservationConcurrencyIT110회/종료fixture, ReservationRollbackIT/CancelIT, RedisFailureIT, RateLimitApiIT, SecurityIT/ResourceApiIT. 이번 공통선행은 이 전체 회귀 인수와 구분한다. .gitignore 및 backend/.gitignore의 Java/Gradle 산출물·비밀정보 제외, .dockerignore의 .git/산출물/.env 제외 확인.
+
+T003 RED: `./gradlew test --tests '*ApiContractValidatorTest'` 1차 종료1/6건 중 assertion실패5, 2차 파싱경계 추가 후 종료1/7건 중 assertion실패6, 오류/skip0. 컴파일 및 testClasses 성공. 빈 void 골격의 미검증을 실제 assertion으로 확인했다. 최초 잘못된 cwd 파일쓰기와 sandbox 캐시 잠금 실패는 기능 RED에서 제외하고 올바른 경로/정상 권한 상승으로 실행했다.
+
+T004 GREEN: 동일 Unit명령 종료0, 7건 실패/오류/skip0. 고정 3.0.3 parser/ref·정확5operation·명시status·원문 request/response 전달 구현. docs/openapi.yaml 단일 원본에 default 비허용·UTC 정밀도 설명·Problem 추가필드거부를 반영했다. US1 이후 의미/오류/탐지력은 미구현.
+
+T005: 동일 Unit명령 RED 종료1/11건 중 중복 singleton assertion실패2, GREEN 종료0/11건 실패·오류·skip0. HttpExchange 원문/null/빈문자열/raw path/헤더 보존, Map 이전 중복·case변형 singleton 거부, 불변 예상위반 multiset/시나리오 경계만 구현. 무효요청 허용/의미검사는 후속이며 아직 연결하지 않았다.
+
+T006 RED: `./gradlew contractTest --tests '*ApiContractIT'` 종료1/3건 실패3·skip0. 실제 앱201 후 requestBody=null assertion 및 실제 truncated HTTP IOException 뒤 StopState=false assertion을 확인했다. 서버 지연fixture의 최초 chunked EOF는 기능 RED로 세지 않았다. 응답 stream을 완결한 뒤 `./gradlew contractTest --tests '*ApiContractIT.responseReceivedButServerStillRunningBlocksNextStages'` 종료1/1건 assertion실패1: 실제404 수신 후 close가 in-flight를 검사하지 않아 예외가 없었다. 소유PG/Redis·Spring RANDOM_PORT/실제 Basic 인증 기동 성공.
+
+T006 첫 GREEN: `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 6초. 원문 String과 실제 HttpRequest raw path/headers·HttpResponse status/headers/body를 전달한다. singleton 중복은 List→Map 이전 검사한다. 실제 Authorization으로 ADMIN 생성201/사전커밋된 USER 조회200을 확인한다. 기본 정책20/60000ms·DB풀10/획득3000ms·Redis200ms 및 기존 이미지/digest는 변경하지 않았다.
+
+최종 관련 회귀(순차):
+- `./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest'`: 종료0/24건(신규11+기존13), 실패·오류·skip0, 2초.
+- `./gradlew contractTest --tests '*ApiContractIT' --tests '*ToolchainContractIT'`: 종료0/9건(신규3+기존6), 실패·오류·skip0, 11초. verifyContractDependencies도 종료0. 실제 percent-encoded raw path 유지, 본문 null/빈문자열 구별, 실제201 requestBody 공백/필드순서 보존을 확인했다.
+
+종료 fixture: 실제404 본문을 완결한 뒤 서버 filter 종료만 latch로 보류하고 100ms 시험용 deadline에 close 실패를 확인한다. release는 finally에서 수행하고 서버 idle을10초 내 확인한다. truncated Content-Length 실제HTTP는 IOException 뒤 StopState를 설정하며 서버종료 미확인 cleanup을 원래 IOException의 suppressed로 보존한다(50ms fixture deadline). 두 경우 모두 **새** HTTP 지원 인스턴스에 같은 StopState를 전달해 reset/준비 callback0·submittedCount0·최초원인 보존을 확인했다. 정상 지원은 connect3초/request9초/외부HTTP전체10초/client await10초/server await10초, ContainerTestSupport는 종료10초다. 기존 raw socket read10초는 변경하지 않았고 이번 최소 지원에서 raw socket/chunked/조기응답 전송바이트 관측은 구현·실행하지 않았다(T016 후속).
+
+미완료: T007 이후/US1~US4·전체 적용표·정확한 expected-invalid 요청 판정·schema 밖 의미검사·실제DTO변이·전체 verifyContract 인수. OpenAPI info 첫설명과 나머지 시각필드의 오래된 상태 설명은 T035에서 정리한다. Qodana는 최신 사용자지정 미실행 후속이며 이번 게이트 제외. Property/PIT/부하/외부CI/push/PR 없음.
+
+T006 최종 snapshot 보완 후 `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 12초. 정상 시험의 모든 HTTP/서버 종료 후 준비 대상과 HTTP 생성 대상을 **한 SELECT snapshot**으로 함께 검사: 2행 각각capacity1/available1/예약0, 보존식 적합. 최종 XML의3건 및 앞선Unit XML24건을 대조했다. `git diff --check` 종료0. after_implement 훅은 .specify/extensions.yml 부재로 없음. T001~T006만 완료하며 승인 spec/plan·Gradle·Wrapper·제품코드/SQL은 무수정이다.
+
+T006 커밋 전 수명주기 보완 RED: `./gradlew contractTest --tests '*ApiContractIT.actualTruncatedHttpTransportStopsAndPreservesOriginalFailure'` 종료1/1건 assertion실패1, 6초. 실제 truncated HTTP를 try-with-resources로 실행하자 send IOException을 close가 동일 객체로 다시 던져 Self-suppression IllegalArgumentException이 주예외를 가렸다. send 원인은 StopState에 유지하고 close는 새로 발생한 cleanup만 던지며 기존 원인에 붙인 오류와 독립 wrapper를 보존하도록 최소 수정했다. 범위는 T006이며 기존 정상 GREEN 뒤 발견된 새 결함이다.
+
+수명주기 보완 GREEN: `./gradlew contractTest --tests '*ApiContractIT'` 종료0/3건 실패·오류·skip0, 11초. 동일 truncated HTTP의 try-with-resources 결과는 최초 IOException이며 cleanup suppressed와 다음 인스턴스 StopState의 동일 cause를 확인했다. 나머지 실제 원문·2대상 단일snapshot·서버 in-flight 종료차단 시험도 함께 통과했다. 최종 stage에는 이 최신 수정까지 포함한다.
