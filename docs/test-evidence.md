@@ -1902,3 +1902,15 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - RED: `ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank`(title/detail × `""`/`"   "`)를 추가했다. 정상 401 Problem은 먼저 통과시킨 뒤 한 필드만 바꾼다. `cd backend && ./gradlew test --tests '*ApiContractValidatorTest.problemTitleAndDetailMustNotBeBlank'` 종료1, 4/4 실패(`Expecting code to raise a throwable`). 로그 `/tmp/t037-p3-problem-red.log`.
 - 최소 수정: 오류 응답 semantic에 `semantic:problem-text@/body/title|detail`을 추가했다. 누락·타입 오류는 기존 response-schema가 담당하므로 문자열일 때 blank만 거부한다.
 - GREEN: `./gradlew test --tests '*ApiContractValidatorTest'` 종료0, 105건(기존101+신규4) 실패/오류/skip0. 로그 `/tmp/t037-p3-problem-green.log`.
+
+### P3 의존성 fixture의 실제 종료 단언과 정리 리스너 순서
+
+- `httpClosed=true`는 하드코딩이었다. `ApiContractHttpSupport.isClosed()`를 추가했다. 이 값은 클라이언트 종료와 server in-flight 대기가 오류 없이 끝났을 때만 true다. 두 fixture는 try 밖에서 같은 객체로 `serverIdle`·`httpClosed`·`stop`을 실제 값으로 단언하고 출력한다.
+- 리스너 순서는 바꾸지 않았다. 리뷰는 order 2999가 DirtiesContext(3000)보다 먼저 실행된다고 지적했다. 그러나 spring-test 7.0.9 `TestContextManager.afterTestClass`는 `getReversedTestExecutionListeners()`로 역순 실행한다. 따라서 afterTestClass에서는 DirtiesContext(3000)가 컨텍스트를 먼저 닫고, 그다음 2999 정리 리스너가 컨테이너를 닫는다(소스 jar로 확인). 3001로 바꾸면 컨텍스트가 살아 있는 동안 컨테이너를 닫게 된다. 그래서 2999를 유지하고 실제 순서를 코드 주석과 아래 단언으로 고정했다. 정리 리스너는 `TestContext.hasApplicationContext()`가 false인지 확인한다. 컨텍스트가 아직 캐시에 있으면 컨테이너는 닫되 실패로 드러낸다. 같은 방식을 `ApiContractIT`의 정리 리스너에도 적용했다. 다른 기존 IT의 같은 2999 패턴은 이번 범위에서 바꾸지 않았다.
+- RED: `isClosed()`를 false 스텁으로 두고 Redis fixture 순서를 임시로 3001로 바꿨다. `cd backend && ./gradlew contractTest --tests '*ApiContractDependencyIT' --continue` 종료1, 3건 모두 실패.
+  - DB·Redis fixture: `[HTTP 지원 정상 종료] Expecting value to be true but was false`.
+  - Redis 클래스: `executionError: IllegalStateException: 앱 컨텍스트 종료 전에 소유 컨테이너를 정리했다`.
+  - 2999를 유지한 DB 클래스에서는 순서 오류가 없었다. 로그 `/tmp/t037-p3-close-red.log`.
+- GREEN: 실제 `isClosed()` 구현과 2999 원복(임시 표식 0건) 뒤 `./gradlew test --tests '*ApiContractValidatorTest' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'` 종료0이다.
+  - Unit105·Contract102(ApiContractIT94·DB fixture1·Redis fixture1·프로브6), 실패/오류/skip0.
+  - 출력은 `fixture=DB-stopped serverIdle=true httpClosed=true stop=false`와 Redis-stopped 동일이다. 로그 `/tmp/t037-p3-green.log`.

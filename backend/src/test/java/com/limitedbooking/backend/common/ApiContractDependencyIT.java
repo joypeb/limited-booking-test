@@ -120,10 +120,23 @@ abstract class ContractDependencyFixture {
             throw (Error)failure;
         }
     }
-    void finished(String fixture) {
-        assertThat(observation.idle(Set.of())).isTrue();
-        assertThat(stop.stopped()).isFalse();
-        System.out.println("contract-dependency fixture="+fixture+" serverIdle=true httpClosed=true stop=false");
+    void finished(String fixture,ApiContractHttpSupport http) {
+        boolean serverIdle=observation.idle(Set.of());
+        boolean httpClosed=http.isClosed();
+        boolean stopped=stop.stopped();
+        assertThat(serverIdle).as("server in-flight 0").isTrue();
+        assertThat(httpClosed).as("HTTP 지원 정상 종료").isTrue();
+        assertThat(stopped).isFalse();
+        System.out.println("contract-dependency fixture="+fixture+" serverIdle="+serverIdle+" httpClosed="+httpClosed+" stop="+stopped);
+    }
+    /**
+     * afterTestClass는 리스너 order의 역순으로 실행된다. DirtiesContext(3000)가 앱 컨텍스트를 먼저 닫은 뒤
+     * order 2999인 이 정리가 소유 컨테이너를 닫는다. 순서가 바뀌면 컨테이너는 닫되 실패로 드러낸다.
+     */
+    static void closeContainersAfterContext(TestContext context,ContainerTestSupport containers) {
+        boolean contextStillCached=context.hasApplicationContext();
+        containers.close();
+        if(contextStillCached) throw new IllegalStateException("앱 컨텍스트 종료 전에 소유 컨테이너를 정리했다");
     }
 }
 
@@ -136,10 +149,11 @@ class ApiContractDependencyIT extends ContractDependencyFixture {
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p){properties(CONTAINERS,p);}
     public static class Cleanup extends AbstractTestExecutionListener {
         @Override public int getOrder(){return 2999;}
-        @Override public void afterTestClass(TestContext context){CONTAINERS.close();}
+        @Override public void afterTestClass(TestContext context){closeContainersAfterContext(context,CONTAINERS);}
     }
     @Test void stoppedOwnedDatabaseRejectsAllFiveOperationsWithHealthyRedis() throws Exception {
-        try(var http=new ApiContractHttpSupport(port,observation,stop)) {
+        var http=new ApiContractHttpSupport(port,observation,stop);
+        try(http) {
             prepare(http);
             assertThat(redis.getConnectionFactory()).isNotNull();
             try(var connection=redisFactory.getConnection()){assertThat(connection.ping()).isEqualTo("PONG");}
@@ -156,7 +170,7 @@ class ApiContractDependencyIT extends ContractDependencyFixture {
             try(var connection=redisFactory.getConnection()){assertThat(connection.ping()).isEqualTo("PONG");}
         }
         // 중단 DB에는 snapshot을 조회하지 않는다. 부분반영 롤백 증거는 기존 실제 timeout 회귀와 분리한다.
-        finished("DB-stopped");
+        finished("DB-stopped",http);
     }
 }
 
@@ -169,10 +183,11 @@ class RedisApiContractDependencyIT extends ContractDependencyFixture {
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p){properties(CONTAINERS,p);}
     public static class Cleanup extends AbstractTestExecutionListener {
         @Override public int getOrder(){return 2999;}
-        @Override public void afterTestClass(TestContext context){CONTAINERS.close();}
+        @Override public void afterTestClass(TestContext context){closeContainersAfterContext(context,CONTAINERS);}
     }
     @Test void stoppedOwnedRedisRejectsWritesWithoutChangingDatabaseAndLeavesIndependentApisAvailable() throws Exception {
-        try(var http=new ApiContractHttpSupport(port,observation,stop)) {
+        var http=new ApiContractHttpSupport(port,observation,stop);
+        try(http) {
             prepare(http);
             try(var connection=redisFactory.getConnection()){assertThat(connection.ping()).isEqualTo("PONG");}
             String before=snapshot();
@@ -187,6 +202,6 @@ class RedisApiContractDependencyIT extends ContractDependencyFixture {
         }
         new DatabaseAssertions(database).assertInventoryConserved(RESOURCE);
         assertThat(new TestData(database).resourceCount()).isEqualTo(2);
-        finished("Redis-stopped");
+        finished("Redis-stopped",http);
     }
 }

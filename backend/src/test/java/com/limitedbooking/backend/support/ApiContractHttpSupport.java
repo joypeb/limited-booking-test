@@ -15,6 +15,7 @@ public final class ApiContractHttpSupport implements AutoCloseable {
     private final Set<String> submitted=new HashSet<>();
     private Throwable firstFailure;
     private boolean closed;
+    private boolean closeCompleted;
     public ApiContractHttpSupport(int port, ServerObservation observation, ConcurrencyTestSupport.StopState stop) {
         this(port,observation,stop,Duration.ofSeconds(10));
     }
@@ -22,6 +23,8 @@ public final class ApiContractHttpSupport implements AutoCloseable {
         this.base=URI.create("http://127.0.0.1:"+port); this.observation=observation; this.stop=stop; this.deadline=deadline;
     }
     public int submittedCount() { return submitted.size(); }
+    /** close가 클라이언트 종료와 server in-flight 대기를 오류 없이 끝냈는지 반환한다. */
+    public boolean isClosed() { return closeCompleted; }
     public void reset(Runnable reset) { guard(); reset.run(); }
     public void prepare(Runnable prepare) { guard(); prepare.run(); }
     private void guard() {
@@ -103,6 +106,7 @@ public final class ApiContractHttpSupport implements AutoCloseable {
             if(cleanup instanceof Exception e) throw e;
             if(cleanup instanceof Error e) throw e;
         }
+        closeCompleted=true;
     }
     public static final class ServerObservation {
         private final Set<String> completed=java.util.concurrent.ConcurrentHashMap.newKeySet();

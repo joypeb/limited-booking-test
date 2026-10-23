@@ -47,7 +47,7 @@ class ApiContractIT {
     }
     public static class Cleanup extends AbstractTestExecutionListener {
         @Override public int getOrder(){return 2999;}
-        @Override public void afterTestClass(TestContext context){CONTAINERS.close();}
+        @Override public void afterTestClass(TestContext context){ContractDependencyFixture.closeContainersAfterContext(context,CONTAINERS);}
     }
     @TestConfiguration(proxyBeanMethods=false)
     static class ObservationConfiguration {
