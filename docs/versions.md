@@ -125,3 +125,7 @@ T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyCont
 ## 2026-10-23 Gradle Wrapper 9.8.0 갱신
 
 `./gradlew wrapper --gradle-version 9.8.0`으로 Wrapper를 재생성했다(9.7.1 → 9.8.0, `networkTimeout`·`validateDistributionUrl` 등 기존 설정 유지). Corretto25.0.4+7-LTS·Boot4.1.1·Docker29.8.2와 고정 PG18.6/Redis8.10.2 digest를 유지했다. `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·IT315·Contract102, 실패/오류/skip0. 의존성·코드 변경 없음. Gradle10 비호환 deprecated 경고는 기존과 같이 남아 있다. Qodana는 미실행이다.
+
+## 2026-10-23 10단계 Property·Mutation
+
+새 의존성·버전 변경 없음(QuickTheories 0.26, PIT plugin1.19.0/engine1.22.1/JUnit Platform 지원1.2.3, Corretto25.0.4+7-LTS, Wrapper9.8.0, Boot4.1.1, Docker29.8.2, 고정 PG18.6/Redis8.10.2 digest 유지). 구성 변경: `propertyTest`가 property 태그 `*IT`도 발견, PIT 대상을 세 순수 규칙과 대응 Unit으로 교체하고 `mutators=['STRONGER']`, `features=['-FRECORD']`(RecordFilter가 레코드 canonical 생성자를 제외하기 때문), `excludedMethods=['toString','hashCode','equals']`를 적용했다. QuickTheories `withShrinkCycles(2000)`. 최종 `./gradlew build deepTest mutationSmoke verifyContractDependencies` 종료0: Unit308·IT316·Contract102·Property4, PIT 23/23. 상세는 [실행 증거](test-evidence.md)의 10단계 절.

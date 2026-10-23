@@ -1933,3 +1933,99 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 ### 재리뷰 문서 동기화 (head f37123c 이후)
 
 재리뷰 P2 지적에 따라 README·knowledge(README·도메인4·개발 규칙)·versions·decisions·계획서·tasks의 현재 수를 T042 기준으로 고쳤다. 기준은 Unit298·IT315·Contract102(업무96+프로브6), ApiContractIT94, ResourceApiIT11이다. T032 수(294·312·96, ApiContractIT88, ResourceApiIT8)는 historical로 표시했다. 9단계 최신 절의 "제품 변경 없음"은 `ResourceController` 엄격 UUID binder 1건을 명시하도록 바꿨다. `rg`로 전수 확인한 결과 남은 이전 수치는 날짜가 붙은 당시 기록(4단계 2026-10-17, 8단계 2026-10-22, T018~T033 절)뿐이다. 코드 변경과 테스트 재실행은 없다.
+
+## 2026-10-23 10단계 Property·Mutation (specs/011-property-mutation)
+
+적용 문서: AGENTS.md, knowledge/README.md·rules 전체, domain/reservation·resource·security, 계획서 2~5·6·7절 10단계. 검증 대상: 내부 서비스 순차 속성 검증, seed·축소 재현, 세 순수 규칙 PIT, SQL·소유자·키 비교 고의 변경 탐지. 제품 코드·SQL·API 무변경 목표.
+
+### T001 기준선
+
+- 위치: 브랜치 `feature/011-property-mutation`, 기준 HEAD c71afaa(develop), Docker 29.8.2, Gradle Wrapper 9.8.0.
+- `cd backend && ./gradlew test propertyTest mutationSmoke` → BUILD SUCCESSFUL. `test: tests=298, failed=0, skipped=0`, `propertyTest: tests=3`(ToolchainPropertyTest), `PIT generated=1, killed=1, survived=0, invalid=0`(ToolchainProbe 프로브 대상).
+
+### T002 propertyTest 발견 규칙
+
+- `backend/build.gradle` propertyTest에 `include '**/*IT.class'` 추가(태그 `property` 유지). implementer 실행: `./gradlew propertyTest` BUILD SUCCESSFUL `tests=3`(ToolchainPropertyTest만), `./gradlew integrationTest --tests '*ToolchainSmokeIT'` BUILD SUCCESSFUL `tests=3`(property 제외 유지).
+
+### T003 골격·T004 모델 Unit RED
+
+- T003(scaffolder): `support/ReservationCommand`·`CommandOutcome`·`ReferenceReservationModel`·`ReservationCommandRunner` 골격(null/0 반환). `./gradlew compileTestJava` BUILD SUCCESSFUL. 명령·결과·모델 파일 import 0.
+- T004(test-author): `support/ReferenceReservationModelTest` 10건(손으로 계산한 기대값). orchestrator 독립 실행 `./gradlew test --tests '*ReferenceReservationModelTest'` → BUILD FAILED, `test: tests=10, failed=10, skipped=0`, 대표 `expected CommandOutcome[kind=CREATED, logicalId=0, ...] but was: null`(의도한 assertion RED, 컴파일 오류 아님).
+- T005(test-author): `ReferenceReservationModel`을 Map/List만으로 구현(import는 java.util 4종). orchestrator 확인 `ReferenceReservationModelTest` XML tests=10·failures=0·errors=0·skipped=0(GREEN).
+
+### T006 속성 IT RED
+
+- `reservation/ReservationPropertyIT`(@Tag property, postgresOnly, Cleanup listener, @Transactional 없음). 최초 `webEnvironment=NONE`은 ApplicationContext 로드 실패(RED 아님)로 orchestrator 지시에 따라 실제 Bean 그대로 `MOCK`으로 변경(대체 Bean·자동구성 제외 금지).
+- `./gradlew propertyTest` → ReservationPropertyIT XML tests=1·failures=1. `Property falsified after 1 example(s)`, 축소 최소값 `{0, 0, [Create(A,R1,K1)]}`, `expected CommandOutcome[kind=SOLD_OUT,...] but was: null`(runner 골격 때문의 의도한 assertion RED). 축소가 실제 동작함도 확인.
+
+### T007~T009 실행기 GREEN·REFACTOR·독립 검증
+
+- T007/T008(test-author): `ReservationCommandRunner` — 실제 `ResourceService.create`/`ReservationService.create·get·cancel`, 실행기 자체 ref·논리 ID 대응표, 지정 예외 4종만 결과로 매핑(그 외 전파), 재현 id·createdAt·replayed·취소 시각 관계 assert, 최종 단일 SELECT로 수량·보존식·행 수·(user,key) 중복0·논리 예약별 status/resource/user/key 비교.
+- T009(orchestrator) `./gradlew test --tests '*ReferenceReservationModelTest' propertyTest` 2회: 각 `test: tests=10`, `propertyTest: tests=4, failed=0, skipped=0`, BUILD SUCCESSFUL, `reservation-property attempts=149 seed=20261023 scenario-digest=0a94346b9302de90bf0e4f7f08df3c9cdf71d422710d4c1c620a3abfc1f60bf7`(2회 동일 → 같은 seed 같은 생성 순서).
+- 새 seed 탐색(회귀와 구분): `QT_SEED=777001 ./gradlew propertyTest` → 통과, attempts=149, digest `aa39be67…5321`.
+- 모델 독립성: `ReferenceReservationModel` import는 java.util 4종, `ReservationCommand`·`CommandOutcome` import 0.
+- 한계: Redis·HTTP·인증 우회 내부 서비스 순차 검증. 동시 교차는 ReservationConcurrencyIT 책임.
+- T010(reviewer) f3329b5 리뷰: Critical/High/Medium/Low 0. 기본 seed 149회의 생성 분포 관측(재현266·충돌308·품절304·취소 후 재요청32·중복 취소9·타인 취소71)으로 공허한 통과 우려 점검. reviewer 실행 `./gradlew test --tests '*ReferenceReservationModelTest' propertyTest` 종료0.
+
+### T011~T012 고의 변경 D와 속성 실패 재현
+
+- T011(implementer): `ReservationService.replay`의 `if (!stored.resourceId().equals(resourceId)) throw new IdempotencyConflictException();` 제거(학습용 고의 결함, 커밋 금지). `./gradlew compileJava` 성공.
+- T012(orchestrator) `./gradlew propertyTest` → BUILD FAILED, `propertyTest: tests=4, failed=1`. `Property falsified after 2 example(s)`, `Seed was 20261023`, 명령 #1 `Create(A,R2,K1)`에서 `expected IDEMPOTENCY_CONFLICT but was REPLAYED(logicalId=0, target=R1)`. 같은 seed `QT_SEED=20261023` 재실행: 동일 축소 결과·attempts=125·digest `3206aec8…1fd0`(결정적 재현).
+- 축소 품질 미달: 최소값 `{2, 0, [Create(A,R1,K1), Create(A,R2,K1), Create(A,R1,K1)×5, Create(A,R1,K3), Create(A,R2,K1), Create(A,R1,K1)]}` 10건(SC-002 기준 ≤5, 이론적 최소 2).
+- Advisor 분석 요청은 advisor 프로필(antigravity) 할당량 초과 오류로 실패했다(24시간 후 재설정). orchestrator가 QuickTheories 0.26 소스(`impl/Core.shrink`, `impl/SimpleShrink`, `generators/Lists`)를 직접 확인했다: cycle마다 precursor long 배열의 무작위 인덱스 1개만 축소하며 리스트 크기는 그중 1개 값이다. 200 cycle(중복 hash 제외 실행 123회)에서는 크기 값이 거의 선택되지 않아 원소 값만 최소화되고 길이가 유지됐다. 대응: 생성기 의미를 유지한 채 shrink cycle을 늘리는 실험(test-author).
+- 축소 실험(test-author, ReservationPropertyIT `withShrinkCycles(200→2000)` 한 줄): D 상태 `./gradlew propertyTest` 축소 최소값 `{1, 0, [Create(A,R1,K1), Create(A,R2,K1)]}` 2건(이론적 최소), attempts=152(예시 2 + 중복 hash 제외 축소 실행 150), Gradle 약 7초. orchestrator 독립 재실행 `QT_SEED=20261023 ./gradlew propertyTest` 2회: 동일 최소값·`Seed was 20261023`·attempts=152·digest `a2ff6162…50ef`. SC-002 충족. 통과 시에는 축소가 실행되지 않아 비용 변화가 없다.
+
+### T013 회귀 IT RED·D 상태 전체 탐지(T025 선행 수행)
+
+- T013(test-author): `reservation/ReservationPropertyRegressionIT`(태그 없음, integrationTest) — capacity (1,0), `[Create(A,R1,K1), Create(A,R2,K1)]` 고정, 출처(고의 변경 D·seed 20261023·shrinkCycles 2000) Javadoc 기록. D 상태 `./gradlew integrationTest --tests '*ReservationPropertyRegressionIT'` → `tests=1, failed=1`, 명령 #1 `expected IDEMPOTENCY_CONFLICT but was REPLAYED(0,R1)`(assertion RED).
+- D 상태 `./gradlew test integrationTest --continue` → BUILD FAILED 3m11s. `test: tests=308, failed=3`(ReservationServiceTest.rejectsDifferentResourceBeforeWriter·duplicateAfterWriterReturnsRequeriesAndConflicts, ReservationWriterTest.updateZeroRequeriesKeyAndConflictsBeforeResourceLookup), `integrationTest: tests=316, failed=13`(IdempotencyIT.conflictsBeforeCheckingOtherResourceAvailabilityOrExistence, RateLimitApiIT.countsOwnershipMissingSoldOutAndConflictingRequests, ReservationConcurrencyIT.C04_differentResourcesSameKeyRollsBackLoser 10/10회, ReservationPropertyRegressionIT). 속성 검증 탐지는 T012.
+
+### T014~T015 원복·GREEN
+
+- T014(implementer): D 원복. orchestrator `git diff --exit-code -- backend/src/main` 종료0(출력 없음).
+- T015(orchestrator) `./gradlew integrationTest --tests '*ReservationPropertyRegressionIT' propertyTest` → BUILD SUCCESSFUL, `integrationTest: tests=1, failed=0`, `propertyTest: tests=4, failed=0, skipped=0`, attempts=149·digest `0a94346b…0bf7`(shrinkCycles 변경 전과 동일 → 생성 순서 불변). 기록 구분: 고의 결함 D로 얻은 사례이며 실제 구현 결함은 발견되지 않았다.
+- T016(reviewer) 2a2860d 리뷰: 지적 0. 회귀 IT의 축소 결과 일치·integrationTest 발견, `git diff --exit-code c71afaa -- backend/src/main` 종료0, 통과 경로 attempts·digest 불변 확인. 실패 경로 전체 시간 상한은 미검증(최대 2000 cycle, D 실행 약 7초).
+
+### T017~T018 PIT 대상 교체·게이트·변이 관측
+
+- T017(implementer, build.gradle): pitest 대상=ResourceRules·IdempotencyKey·CancellationDecision, 대상 Unit=대응 세 Test. mutationSmoke에 대상 밖 mutatedClass 거부, `ratio=killed/generated ≥ 0.80`, SURVIVED/INVALID 목록 출력 추가(기존 무효 상태 거부 유지). 게이트 자가검증: 임계값 임시 1.01 → `PIT 탐지율 1.00 < 1.01` BUILD FAILED 확인 후 0.80 원복.
+- T018(orchestrator) `./gradlew mutationSmoke` → BUILD SUCCESSFUL, `PIT generated=12, killed=12, survived=0, invalid=0, ratio=1.00`. 변이: ResourceRules 10(경계·부정 조건 7·13·18행, normalizeName 빈 문자열 반환), IdempotencyKey 1(parse null 반환), CancellationDecision 1(from null 반환).
+- 판단: 기본 변이군에서는 IdempotencyKey 생성자의 키 검증 조건과 CancellationDecision의 switch 매핑에 변이가 생성되지 않았다. 탐지율 100%가 핵심 규칙의 탐지력을 보여 주지 않으므로 원인(변이군·도구 필터)을 조사한다.
+- 원인 조사(implementer 실험, orchestrator 확인): `javap -c -p IdempotencyKey`의 `<init>`에 `ifnull`/`ifne` 분기가 있으나 PIT 1.22.1 `RecordFilter`(pitest-entry)가 `java/lang/Record` 하위 클래스의 `<init>`·생성 메서드 변이를 제외한다. 시도: 기본 12/12 → `STRONGER` 18/18(IdempotencyKey 생성자 여전히 0) → `+features=['-FRECORD']` 27/25, SURVIVED `IdempotencyKey hashCode 0 반환`·NO_COVERAGE `toString 빈 문자열`(컴파일러 생성 메서드, 게이트 실패 유지) → `+excludedMethods=['toString','hashCode','equals']` 23/23 ratio1.00.
+- 최종 변이: IdempotencyKey `<init>` 9행 RemoveConditional EQUAL_IF×2·EQUAL_ELSE×2(null 검사·정규식 두 조건) KILLED, parse·value 반환 변이 KILLED; CancellationDecision SwitchMutator·null 반환 KILLED; 나머지 ResourceRules.
+- 생존 변이 분류: 생존 0 → T019 Unit 보완 해당 없음. 제외·미생성 분류 — (도구 한계) CancellationDecision의 enum 매핑 교체(CANCEL_NOW↔ALREADY_CANCELLED)를 만드는 PIT 변이 연산자가 없다 → US4 수동 고의 변경 E로 보완. (도구 한계) `Objects.requireNonNull` 반환값 버림 호출은 STRONGER의 void 호출 제거 대상이 아니며, 제거해도 `ordinal()`의 NPE로 같은 예외 타입이 되어 `rejectsMissingInternalStatus`(타입만 검사)와는 동등 변이에 해당한다. (규칙 밖) 레코드 toString/hashCode/equals는 컴파일러 생성 메서드로 제외.
+- T020(orchestrator) REFACTOR 후 `./gradlew test mutationSmoke` → BUILD SUCCESSFUL, `test: tests=308, failed=0, skipped=0`, `PIT generated=23, killed=23, survived=0, invalid=0, ratio=1.00`(기준 ≥0.80 충족, 설명되지 않은 생존 0). 최종 설정 `mutators=['STRONGER']`, `features=['-FRECORD']`, `excludedMethods=['toString','hashCode','equals']`. 이 점수는 세 순수 규칙에 한정되며 SQL·동시성·권한 안전성의 근거가 아니다(US4·7단계·보안 IT 담당).
+- T021(reviewer) ac771d3 리뷰: Critical/High/Medium 0, Low 1(tasks.md T026 선행이 T025a가 아님) → orchestrator가 tasks.md 수정. reviewer 독립 `./gradlew mutationSmoke` 종료0, 23/23.
+
+### T022~T025a SQL·소유자·키 비교·매핑 고의 변경 탐지
+
+실행: 각 변경 단독 적용 → `cd backend && ./gradlew test integrationTest propertyTest --continue` → 원복 → `git diff --exit-code -- backend/src/main`. 반복 실행 테스트는 실패 회차 수를 함께 적는다.
+
+- **A. 차감 `AND available > 0` 제거**(ResourceRepository.decrementIfAvailable): BUILD FAILED 3m28s. `test: 308, failed=0`, `integrationTest: 316, failed=93`, `propertyTest: 4, failed=1`. 실패: ReservationCreateIT.soldOutDoesNotKeepKeyAndAllowsAnotherResource, ReservationCancelIT.soldOutKeyCanReserveRestoredInventoryAsNewReservation, RateLimitApiIT.countsOwnershipMissingSoldOutAndConflictingRequests, ReservationConcurrencyIT C01·C03·C04·C05·C06·C07·C09·C10 각 10/10회·C02 9/10회·transportFailureBeforeServiceEntryBlocksResetAndNextSetup, ReservationPropertyIT(최소 `{0, 0, [Create(A,R1,K1)]}`, 원인 `ck_resources_available` CHECK 위반 DataIntegrityViolationException — 품절 409 대신 미분류 예외). Unit은 SQL을 실행하지 않아 미탐지(예상).
+- **B. 취소 `AND status = 'CONFIRMED'` 제거**(ReservationRepository.markCancelled): BUILD FAILED 3m18s. `test: 308, failed=0`, `integrationTest: 316, failed=10`, `propertyTest: 4, failed=0`(attempts=149, digest 기본값과 동일). 실패: ReservationCancelIT.staleConfirmedReadCannotRepeatStatusUpdateOrRecovery(오래된 CONFIRMED 읽기 재현 후크), ReservationConcurrencyIT.C05_tenCancellationsRestoreExactlyOnce 9/10회(1회는 경쟁 순서상 중복 갱신 미발생). 속성 미탐지는 예상(R4: `CancellationDecision`이 이미 취소된 예약을 먼저 반환해 순차 경로에서 관측 불가)이며 결함으로 세지 않는다. 경쟁 탐지는 반복 실행 확률에 의존하나 결정적 후크 테스트가 별도로 탐지했다.
+- **C. 소유자 `AND user_id = :userId` 제거**(ReservationRepository.findByIdAndUser): BUILD FAILED 3m19s. `test: 308, failed=0`, `integrationTest: 316, failed=10`, `propertyTest: 4, failed=1`. C 탐지: ReservationOwnershipIT.otherUserAndAdminCannotDistinguishMissingReservation·cancelProtectsOwnershipAndLeavesInventoryUnchanged, RateLimitApiIT.countsOwnershipMissingSoldOutAndConflictingRequests, ReservationPropertyIT(명령 #13 `Get(B,0)` 기대 RESERVATION_NOT_FOUND). **같은 실행의 SecurityIT 7건은 C와 무관한 `RedisConnectionFailureException: Unable to connect to Redis`**(A·B 실행에서는 통과) — 일시적 환경 실패로 분류하고 숨기지 않는다. 최종 게이트에서 재발 여부를 확인한다.
+- C의 속성 축소: `{1, 0, [Create(A,R1,K1)×13, Get(B,0)]}` 14건(이론적 최소 2건). QuickTheories 0.26 축소는 precursor 값 축소로 리스트 꼬리 절단과 원소값 최소화만 가능하고 **중간 원소 삭제를 하지 못한다**. 중간 12건은 0값으로 축소된 `Create(A,R1,K1)` 재현(상태 무변경)이며 실패 index·원인으로 재현 단계가 특정된다. 도구의 한계로 기록하고 후속 개선 후보(0값을 무동작 명령으로 두는 생성기)만 남긴다. SC-002는 D 사례 기준으로 충족했다.
+- **D. 재요청 대상 비교 제거**: T012·T013 절 참조(test 3·integrationTest 13·속성 실패, 축소 2건).
+- **E. 취소 판단 매핑 교체**(CancellationDecision.from, PIT 연산자 부재 보완): BUILD FAILED 3m16s. `test: 308, failed=4`(CancellationDecisionTest.mapsReservationStatus·repeatsDecisionWithoutStateChange 각 2), `integrationTest: 316, failed=53`(ReservationCancelIT 11건, RateLimitApiIT.replaysAndDuplicateCancelsConsumeQuota…, ReservationConcurrencyIT C05·C06·C09·C10 각 10/10회·transportFailureBeforeServiceEntryBlocksResetAndNextSetup), `propertyTest: failed=1`(최소 `{1, 0, [Create(A,R1,K1)×17, Cancel(A,0)]}` — 중간 원소 삭제 불가 한계로 18건, 원인 `취소 응답 상태 expected CANCELLED but was CONFIRMED`).
+- T026: 다섯 변경 모두 1개 이상 탐지 → 테스트 보완 해당 없음. A·B·C의 각 원복 후 `git diff --exit-code -- backend/src/main` 종료0(implementer 보고, 다음 변경 전 orchestrator diff로 잔존 없음 확인).
+- T027(reviewer, Gradle 미실행 기록 대조): Critical/High/Medium 0, Low 1(E의 ReservationCancelIT 12→11건) 수정. C 실행의 SecurityIT 7건은 `SecurityIT.java:83` Redis 초기화 실패로 C 탐지와 분리한 판단이 타당하다는 확인.
+
+### T028 최종 게이트
+
+- `cd backend && ./gradlew build deepTest mutationSmoke verifyContractDependencies` → 종료0, BUILD SUCCESSFUL 4m13s. `test: tests=308`(기존 298 + ReferenceReservationModelTest 10), `integrationTest: tests=316`(기존 315 + ReservationPropertyRegressionIT 1), `contractTest: tests=102`, `propertyTest: tests=4`(ToolchainPropertyTest 3 + ReservationPropertyIT 1), 모두 failed=0·skipped=0. `PIT generated=23, killed=23, survived=0, invalid=0, ratio=1.00`. 속성 attempts=149·seed 20261023·digest `0a94346b…0bf7`.
+- `git diff --exit-code c71afaa -- backend/src/main` 종료0 — 고의 변경 잔존 없음, 제품 코드 무변경. SecurityIT 포함 전체 통과로 C 실행 중 Redis 연결 실패는 재발하지 않았다(원인 미규명 일시 실패로 남긴다).
+- 미검증: 속성 실패 경로의 전체 시간 상한, 동시 교차(7단계 범위), HTTP 경로의 속성 검증, Qodana(사용자 지시 범위 밖), 외부 CI.
+- 계획서 10단계 체크 항목의 명령 그대로: `./gradlew verifyProperty` → 종료0 3m24s, `test: 308`·`integrationTest: 316`·`propertyTest: 4` 모두 failed=0·skipped=0, attempts=149(0 아님).
+
+### T029 문서 동기화
+
+README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상단 상태·3.1 PIT 행·6.2 표·10단계 체크박스(실행 검증 후 표시)·수행 기록, knowledge/rules/development-and-testing.md, knowledge/domain/reservation.md, knowledge/README.md 목록 설명을 갱신했다.
+
+### T030 전체 로컬 리뷰·T031 Converge
+
+- T030(reviewer) `c71afaa..b29cbe2` 6커밋·26파일: Critical/High/Medium 0, Low 1(spec 상태·research R3의 설계 당시 `NONE` 문구) → spec 상태 갱신·research에 구현 갱신 주석 추가. 역할 범위 위반 0(`backend/src/main` diff 0, build.gradle은 발견 규칙·PIT·게이트 한정, 제품 Bean 대체/mock 0). FR-001~017·SC-001~006 전부 충족 판정.
+- T031(orchestrator) Spec Kit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 정상. spec/plan/tasks·헌법 대비 missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계 추가 없음. 남은 T032~T034는 PR 절차다.
+- T032(orchestrator): `git push -u origin feature/011-property-mutation`, Draft PR #14(base develop) 생성 https://github.com/joypeb/limited-booking-test/pull/14
+- T033 1차(reviewer): OCR v1.13.3 `ocr review --provider chatgpt …` 범위 c71afaa..5c4ff87(26파일, gh pr diff와 일치)에서 LLM provider 인증 부재(`ocr auth login` 필요, 비대화형 세션에서 불가)로 종료1 — 모델 리뷰 미실행, 게시 0. 대응: 같은 OCR의 `ocr delegate`(LLM 없이 파일 선택·규칙 해석, host-agent가 리뷰) 모드로 재개.
+- T033 2차(reviewer): `ocr delegate preview --format json --from c71afaa… --to 5c4ff87… --rule …`, `ocr delegate rule --format json …`로 OCR이 선택·해석한 26파일 전체를 host-agent가 리뷰. 후보 4건(명세 상태 표기·research NONE/MOCK·B 속성 미탐지·실패 경로 시간 상한) 모두 무효/기존 기록된 한계로 판정, 유효 지적 0. PR #14 COMMENT 리뷰 5629011946 게시(본문에 delegate 모드와 범위 명시).
+- T034(orchestrator): PR 라인 코멘트 0·이슈 코멘트 0·리뷰 1(유효 지적 없음). Critical/High·실패 테스트·누락 요구사항 0 → 재할당 없음. Merge는 사용자 승인 대기.

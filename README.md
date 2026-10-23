@@ -62,22 +62,24 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit298 (8단계까지193+계약 검사기105) |
-| `./gradlew verify` | Unit298+일반IT315 (경쟁110+fixture5·Redis 제한/장애·ResourceApiIT11 포함) |
+| `./gradlew test` | Spring 없는 Unit308 (8단계까지193+계약 검사기105+독립 모델10) |
+| `./gradlew verify` | Unit308+일반IT316 (경쟁110+fixture5·Redis 제한/장애·ResourceApiIT11·속성 축소 회귀1 포함) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit298+지정IT3; 9단계 재실행 없음 |
-| `./gradlew verifyContract` | Unit298·일반IT315·Contract102(업무96+프로브6); 2026-10-23 T042 `build verifyContract verifyContractDependencies` 종료0 |
-| `./gradlew verifyProperty` | 구성상 Unit+일반IT+Property; 9단계 재실행 없음 |
-| `./gradlew deepTest` | 네 그룹 구성; 9단계 재실행 없음 |
-| `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit308+지정IT3; 10단계 재실행 없음 |
+| `./gradlew verifyContract` | 구성상 Unit308·일반IT316·Contract102(업무96+프로브6); 10단계 최종 `build deepTest mutationSmoke verifyContractDependencies` 종료0 |
+| `./gradlew verifyProperty` | Unit308+일반IT316+Property4(프로브3+`ReservationPropertyIT`1, 내부 실제149회) |
+| `./gradlew deepTest` | Unit308·일반IT316·Contract102·Property4; 2026-10-23 10단계 T028 종료0 |
+| `./gradlew mutationSmoke` | PIT 별도: ResourceRules·IdempotencyKey·CancellationDecision, 생성23·탐지23·생존0·무효0, 탐지율≥0.80 게이트 |
 
-`contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`+property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
+`contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`·`*IT` 중 property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
 
 ```sh
-QT_SEED=20261013 ./gradlew propertyTest
+QT_SEED=20261023 ./gradlew propertyTest   # 업무 속성 기본 seed (프로브 기본은 20261013)
 ```
 
 정상 Property는 별도 경계0/100과 생성 예산1000 중 실제 assertion101회다. 실제 assertion 최소100회를 검사하며 JUnit3건과 내부 시도 수를 구분한다. 고의 n>50 결함의 100→51 축소와 동일 seed 재실패·원복 통과는 [증거](docs/test-evidence.md)에 기록했다. 결함은 현재 원복 상태다.
+
+10단계 `ReservationPropertyIT`는 실제 PostgreSQL의 서비스 경로에서 명령 1~30건(대상 2개·capacity 0~5·사용자 2·키 3)을 순차 실행해 테스트 전용 독립 모델과 비교한다(Redis·HTTP 우회, 동시 교차는 `ReservationConcurrencyIT`). 실행마다 `reservation-property attempts=… seed=… scenario-digest=…`를 출력한다. 고의 변경으로 얻은 축소 최소 사례는 `ReservationPropertyRegressionIT`에 고정했다. SQL·소유자·키 비교·취소 매핑 고의 변경 5종의 탐지 결과와 PIT 분류는 [증거](docs/test-evidence.md)의 10단계 절을 따른다.
 
 XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/tests/<task>/`, PIT XML/HTML은 `backend/build/reports/pitest/`에 있다. 계약 fixture는 시험 전용이며 업무 OpenAPI 원본은 docs/openapi.yaml이다. 해당 문서 parse/ref 성공만으로 업무 HTTP 준수로 해석하지 않으며, 업무 HTTP 준수는 9단계 `ApiContractIT`·`ApiContractDependencyIT`로 검증한다.
 

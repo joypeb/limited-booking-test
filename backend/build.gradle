@@ -112,6 +112,7 @@ tasks.named('contractTest') { dependsOn tasks.named('verifyContractDependencies'
 tasks.register('propertyTest', Test) {
     group = 'verification'
     include '**/*Test.class'
+    include '**/*IT.class'
     useJUnitPlatform { includeTags 'property' }
     if (System.getenv('QT_SEED')) systemProperty 'QT_SEED', System.getenv('QT_SEED')
     shouldRunAfter tasks.contractTest, tasks.integrationTest
@@ -171,11 +172,24 @@ tasks.register('verify') {
 pitest {
     pitestVersion = '1.22.1'
     junit5PluginVersion = '1.2.3'
-    targetClasses = ['com.limitedbooking.backend.common.ToolchainProbe']
-    targetTests = ['com.limitedbooking.backend.common.ToolchainSmokeTest']
+    targetClasses = [
+        'com.limitedbooking.backend.resource.ResourceRules',
+        'com.limitedbooking.backend.reservation.IdempotencyKey',
+        'com.limitedbooking.backend.reservation.CancellationDecision'
+    ]
+    targetTests = [
+        'com.limitedbooking.backend.resource.ResourceRulesTest',
+        'com.limitedbooking.backend.reservation.IdempotencyKeyTest',
+        'com.limitedbooking.backend.reservation.CancellationDecisionTest'
+    ]
     outputFormats = ['XML', 'HTML']
     timestampedReports = false
     threads = 1
+    mutators = ['STRONGER']
+    // RecordFilter가 레코드 canonical 생성자(IdempotencyKey 키 검증)를 걸러 내므로 그 필터만 끈다.
+    // 컴파일러 생성 record 메서드는 업무 규칙 밖이라 변이 대상에서 제외한다.
+    features = ['-FRECORD']
+    excludedMethods = ['toString', 'hashCode', 'equals']
 }
 
 tasks.named('processTestResources') {
@@ -200,9 +214,28 @@ tasks.register('mutationSmoke') {
         int killed = mutations.findAll { it.@status.text() == 'KILLED' }.size()
         def invalid = mutations.findAll { !(it.@status.text() in ['KILLED', 'SURVIVED']) }
         int survived = mutations.findAll { it.@status.text() == 'SURVIVED' }.size()
-        logger.lifecycle("PIT generated=${generated}, killed=${killed}, survived=${survived}, invalid=${invalid.size()}")
+        double ratio = generated == 0 ? 0.0d : (double) killed / generated
+        logger.lifecycle(String.format(Locale.ROOT, 'PIT generated=%d, killed=%d, survived=%d, invalid=%d, ratio=%.2f',
+                generated, killed, survived, invalid.size(), ratio))
+        mutations.findAll { it.@status.text() == 'SURVIVED' }.each { m ->
+            logger.lifecycle("SURVIVED ${m.mutatedClass.text()}:${m.lineNumber.text()} ${m.mutator.text()} ${m.description.text()}")
+        }
+        invalid.each { m ->
+            logger.lifecycle("INVALID ${m.@status.text()} ${m.mutatedClass.text()}:${m.lineNumber.text()} ${m.mutator.text()} ${m.description.text()}")
+        }
+        def allowedClasses = [
+            'com.limitedbooking.backend.resource.ResourceRules',
+            'com.limitedbooking.backend.reservation.IdempotencyKey',
+            'com.limitedbooking.backend.reservation.CancellationDecision'
+        ] as Set
+        def outside = mutations.collect { it.mutatedClass.text() }.findAll { !(it in allowedClasses) } as Set
+        if (!outside.isEmpty()) throw new GradleException("PIT 대상 밖 변이 클래스: ${outside}")
         if (generated < 1 || killed < 1 || !invalid.isEmpty()) {
             throw new GradleException('PIT 생성/탐지0 또는 NO_COVERAGE/도구 오류')
+        }
+        def minimumKillRatio = 0.80
+        if (ratio < minimumKillRatio) {
+            throw new GradleException(String.format(Locale.ROOT, 'PIT 탐지율 %.2f < %.2f', ratio, minimumKillRatio))
         }
     }
 }
