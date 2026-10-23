@@ -201,3 +201,9 @@ Redis거부의생성/취소/성공키재전송은503·전체행snapshot동일이
 ### 9단계 계약 검증 최종 인수 (2026-10-23)
 
 [계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 예약 생성201·Location·Replay, 소유자 조회·취소200, 409 SOLD_OUT/IDEMPOTENCY_CONFLICT, 타인·ADMIN 404를 고정 OpenAPI로 대조한다(ApiContractIT 94건, T042). 생성→재전송→GET→취소→중복 취소→취소 후 재전송→GET 7교환은 최초 CONFIRMED 4필드·Location을 재현하고 현재 CANCELLED를 반환하며, 최종 단일 SQL snapshot에서 예약1행·복구1회를 확인했다. T032와 T042 전체 게이트에서 기존 경쟁 110회(C01~C11 각10)·종료 fixture5·롤백7·취소13이 다시 통과했고 [110회 기록](../../docs/concurrency-runs.json)을 갱신했다. 앞 절의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
+
+### 10단계 속성·변이 검증 연결 (2026-10-23)
+
+- 순차 정합성: `ReservationPropertyIT`가 생성·재요청·다른 대상 키 재사용·조회·본인/중복/타인 취소·없는 참조·없는 대상을 섞은 1~30건을 실제 서비스·DB로 실행하고 독립 모델과 명령별 결과·최종 수량/보존식/(user,key) 유일성/예약별 상태를 비교한다. 키 우선 판정(기존 키 → 재현/충돌, 그 다음 대상 없음·품절), 실패 키 비보존, 취소 후 같은 키 재요청의 최초 CONFIRMED 재현, 중복 취소의 같은 시각을 함께 검사한다. 동시 교차는 7단계 경쟁 IT 책임이다.
+- 회귀: `ReservationPropertyRegressionIT` — 같은 사용자·키로 다른 대상(품절)을 요청하면 409 충돌(고의 변경 D의 축소 최소 사례).
+- 고의 변경 탐지: 차감 `available > 0` 제거(품절·경쟁·속성), 취소 `status='CONFIRMED'` 제거(오래된 읽기 후크·중복 취소 경쟁; 순차 속성은 관측 불가), 소유자 조건 제거(소유권 IT·속성), 재요청 대상 비교 제거(서비스/Writer Unit·멱등·경쟁·속성), 취소 매핑 교체(Unit·취소·경쟁·속성). 실제 구현 결함은 발견되지 않았다. 근거: [실행 근거](../../docs/test-evidence.md) 10단계 절.

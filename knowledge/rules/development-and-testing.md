@@ -77,3 +77,11 @@ verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성
 ### 9단계 계약 탐지력 적용 (2026-10-23)
 
 계약 검사는 schema·raw JSON·semantic·operation status·scenario 단계로 나누어 진단을 `단계:key@위치`로 남긴다. 무효 요청은 정확한 예상 요청 위반 multiset만 허용하고 응답 검사는 생략하지 않는다. 탐지력은 정상 대조 뒤 응답 사본 한 요소만 바꾸는 44종 훼손과, 실제 DTO의 컴파일 가능한 타입 변이(compile 성공→HTTP schema RED→정확 원복→같은 명령 GREEN)를 따로 기록한다. verifyContract는 업무 계약96(T042, T032 당시 90)과 프로브6을 구분해 발견>0·실패/skip0을 확인한다. 상세는 [010 작업](../../specs/010-openapi-contract/tasks.md)과 [실행 근거](../../docs/test-evidence.md)를 따른다.
+
+
+### 10단계 속성·변이 적용 (2026-10-23)
+
+- 속성 검증은 `ReservationPropertyIT`(property 태그, `propertyTest`가 `*IT`도 발견)에서 실제 PostgreSQL의 서비스 경로를 순차 호출하고 테스트 전용 `ReferenceReservationModel`(java.util만 사용)과 비교한다. 실행기(`ReservationCommandRunner`)는 업무 예외 4종만 결과로 바꾸고 그 외 예외는 전파한다. 실행마다(축소 포함) DB와 대응표를 새로 준비한다. 실제 실행 수·seed·생성 digest를 출력하고 실제 100회 이상을 검사한다.
+- 축소: QuickTheories 0.26은 precursor 값을 하나씩 줄이므로 리스트 길이 축소가 드물고 중간 원소를 삭제하지 못한다. `withShrinkCycles(2000)`을 사용하며, 남은 상태 무변경 명령은 도구 한계로 기록한다. 축소 최소 사례는 출처(고의/실제 결함·seed)와 함께 일반 회귀 IT로 고정한다.
+- PIT: 기본 변이군은 `RecordFilter`로 레코드 canonical 생성자(키 검증)를 제외해 핵심 규칙 변이가 0이었다. 점수만 보지 말고 생성된 변이 목록이 규칙 분기를 덮는지 확인한다. 현재 `STRONGER`·`-FRECORD`·컴파일러 생성 record 메서드 제외를 쓰며, 연산자가 없는 enum 매핑 교체는 수동 고의 변경으로 보완한다.
+- 고의 변경은 한 번에 하나, 커밋 금지, 원복 후 `git diff --exit-code -- backend/src/main`으로 확인한다. 순차 경로에서 관측 불가능한 변경(취소 status 조건)은 경쟁·후크 테스트의 책임으로 분류한다. 상세는 [011 작업](../../specs/011-property-mutation/tasks.md)과 [실행 근거](../../docs/test-evidence.md).

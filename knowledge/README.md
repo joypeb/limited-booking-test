@@ -29,7 +29,7 @@
 
 - [_template.md](domain/_template.md): 새 도메인 문서의 공통 형식. 템플릿 자체는 특정 도메인의 확정 계약이 아니다.
 - [resource.md](domain/resource.md): 예약 대상의 책임·입력·수량 불변식·권한과 코드 포인트 기준 이름 길이. 저장 스키마·읽기/생성 SQL, `ResourceRules` Unit 52건, 4단계 `POST /api/resources`·`GET /api/resources/{id}` HTTP 통합 테스트(`ResourceApiIT` 8건)까지 구현·검증했으며 예약 생성/취소·수량 보존·실제 경쟁과 Redis 독립성을8단계까지 검증했다.
-- [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백의 구현·검증과 취소·경쟁의 설계 지식.
+- [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백·취소·경쟁의 구현·검증과 10단계 속성(독립 모델)·고의 변경 탐지 연결.
 - [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)까지 구현·실행 검증했다. SecurityIT는 취소 입력 검증을 포함해 현재7건이다.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 기준과 US1 limiter/Lua·Unit13/실제RedisIT5 구현·검증 지식. US1~US4와 최종 전체 인수를 완료했다. 실제HTTP37건·장애12건·기존HTTP/110회·종료 reset0을 확인했다.
 - 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계, 실제 경쟁·Redis 제한은7~8단계에서 구현·검증했다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.

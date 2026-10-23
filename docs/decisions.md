@@ -193,3 +193,12 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 - 이유: schema만으로는 중복 키·1.0 정수·UTC 의미·필수 헤더·default의 500 허용·최초/재전송 관계를 증명하지 못한다. 요청 위반을 일괄 무시하면 정상 요청 회귀와 잘못된 오류 응답을 놓친다.
 - 대안: 자동 생성 명세, 반환형 변경, ThreadLocal 전역 허용, 메시지 부분 문자열 허용, 응답 사본만으로 DTO 변이 대체, 스키마를 구현에 맞춰 완화하는 방식은 제외했다. 근거와 세부는 [010 조사](../specs/010-openapi-contract/research.md)를 따른다.
 - 결과·한계: 적용표 전체·사본 훼손44종·실제 `ResourceView` int→String 변이를 탐지했고 T032·T042 전체 게이트가 종료0이다(T042 Unit298·일반IT315·Contract102(업무96+프로브6)). PR #12 리뷰로 발견한 대상 조회 경로의 관대한 UUID 변환은 계약·계획서 4.1의 기존 400 규칙을 따르도록 `ResourceController`에 예약과 같은 엄격 binder를 둔다. 공통 추상화는 만들지 않았다. 정책·OpenAPI 변경은 아니다. 소비자 주도 계약(Pact), Property/PIT 확장, 부하, 외부 CI는 범위 밖이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
+
+## 10단계 속성·변이 검증 구성 (2026-10-23)
+
+- 선택: 실제 PostgreSQL의 `ReservationService`/`ResourceService`를 순차 호출하는 `ReservationPropertyIT`(property 태그)를 QuickTheories 0.26로 만들고, 테스트 전용 Map/List 모델(`ReferenceReservationModel`)과 명령별·최종 상태를 비교한다. `propertyTest`의 발견 규칙에 `*IT`를 추가하고 `integrationTest`의 property 제외는 유지한다. 컨텍스트는 보안 필터 체인이 서블릿 환경을 요구하므로 `MOCK` 웹 환경, Redis 없는 `postgresOnly()`로 기동한다.
+- 이유: 계획서 10단계는 서비스·실제 DB의 순차 정합성과 seed·축소 재현을 요구한다. HTTP 경로는 요청 제한·인증 비용이 섞이고, Writer 직접 호출은 Service의 재현·충돌 분기를 우회한다. 새 도구·태스크를 추가하지 않아 6.2 실행 계약을 유지한다.
+- 고의 결함 선택: 속성 실패 재현은 `ReservationService.replay`의 대상 비교 제거로 만든다. 취소 SQL의 `status='CONFIRMED'` 제거는 `CancellationDecision`이 이미 취소된 예약을 먼저 반환하므로 순차 경로에서 관측되지 않고 경쟁 IT의 책임이다.
+- 축소 설정: QuickTheories 0.26의 `SimpleShrink`는 cycle마다 precursor의 무작위 인덱스 하나만 줄여 리스트 길이 값이 드물게 선택된다. 200 cycle에서는 10건에 머물러 `withShrinkCycles(2000)`으로 올렸고 같은 seed에서 이론적 최소 2건을 결정적으로 얻었다. 통과 시에는 축소가 실행되지 않으며 생성 순서 digest도 바뀌지 않는다.
+- 대안: jqwik(엔진 추가·호환 재검증), 무작위 루프(축소 없음), 모델에 결함 주입(실제 구현 탐지력이 아님), 테스트 자체 delta-debugging 축소(도구 축소로 충분해 불필요한 코드)는 제외했다. 근거는 [011 조사](../specs/011-property-mutation/research.md).
+- PIT 구성: `mutationSmoke` 이름을 유지하고 대상을 ResourceRules·IdempotencyKey·CancellationDecision으로 교체했다. 기본 변이군은 PIT `RecordFilter`가 레코드 canonical 생성자를 제외해 키 검증 변이가 0이었으므로 `mutators=['STRONGER']`, `features=['-FRECORD']`를 적용하고 컴파일러 생성 record 메서드(toString/hashCode/equals)는 규칙 밖이라 제외했다. 게이트는 대상 밖 변이0·무효0·탐지율≥0.80이다. PIT 연산자가 없는 enum 매핑 교체는 수동 고의 변경 E로 탐지력을 확인했다. 점수는 세 순수 규칙에 한정되며 SQL·동시성·권한의 근거로 쓰지 않는다.
