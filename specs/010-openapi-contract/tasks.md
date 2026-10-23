@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 전체 게이트(`build verifyContract verifyContractDependencies` 종료0, Unit294·IT312·Contract96, 실패/오류/skip0)와 T033 기존 회귀 XML 대조를 완료했다. T034~T035 문서 동기화와 T036 자가검토를 완료했다. PR #12 리뷰 보완 T037~T042도 완료했다(최종 게이트 Unit298·IT315·Contract102, 실패/오류/skip0). Qodana는 사용자 지시로 건너뛴 미실행 후속이며 게이트에서 제외한다. 메인 검토·push·PR은 남아 있다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032는 메인이 실행했고 T033~T036은 메인 지시로 교체 담당이 순차 수행한다(제품·SQL·Gradle·Wrapper 무변경, 전체 테스트 재실행 없음). push·PR은 범위 밖이다.
+**상태**: 2026-10-23 공통 선행·US1~US4 T001~T031 구현·지정 검증을 완료했다. T032 전체 게이트(`build verifyContract verifyContractDependencies` 종료0, Unit294·IT312·Contract96, 실패/오류/skip0)와 T033 기존 회귀 XML 대조를 완료했다. T034~T035 문서 동기화와 T036 자가검토를 완료했다. PR #12 리뷰 보완 T037~T042도 완료했다(최종 게이트 Unit298·IT315·Contract102, 실패/오류/skip0). Qodana는 사용자 지시로 건너뛴 미실행 후속이며 게이트에서 제외한다. 메인 재검토·병합은 남아 있다. T032 당시 수는 historical이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T031까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T032는 메인이 실행했고 T033~T036은 메인 지시로 교체 담당이 순차 수행한다(제품·SQL·Gradle·Wrapper 무변경, 전체 테스트 재실행 없음). 이후 PR #12 리뷰 보완 T037~T042에서 메인 허용 범위의 제품 변경 1건(`ResourceController` UUID binder)과 기존 원격 브랜치 push를 수행했다. PR 생성·병합은 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 

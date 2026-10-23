@@ -62,11 +62,11 @@ backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능
 
 | 명령 | 최소 검증 범위·현재 JUnit 수 |
 |---|---|
-| `./gradlew test` | Spring 없는 Unit294 (8단계까지193+계약 검사기101) |
-| `./gradlew verify` | Unit294+일반IT312 (경쟁110+fixture5·Redis 제한/장애 포함) |
+| `./gradlew test` | Spring 없는 Unit298 (8단계까지193+계약 검사기105) |
+| `./gradlew verify` | Unit298+일반IT315 (경쟁110+fixture5·Redis 제한/장애·ResourceApiIT11 포함) |
 | `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit294+지정IT3; 9단계 재실행 없음 |
-| `./gradlew verifyContract` | Unit294+일반IT312+Contract96(업무90+프로브6); 2026-10-23 `build verifyContract verifyContractDependencies` 종료0 |
+| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit298+지정IT3; 9단계 재실행 없음 |
+| `./gradlew verifyContract` | Unit298·일반IT315·Contract102(업무96+프로브6); 2026-10-23 T042 `build verifyContract verifyContractDependencies` 종료0 |
 | `./gradlew verifyProperty` | 구성상 Unit+일반IT+Property; 9단계 재실행 없음 |
 | `./gradlew deepTest` | 네 그룹 구성; 9단계 재실행 없음 |
 | `./gradlew mutationSmoke` | PIT 별도: 생성1·탐지1·NO_COVERAGE0 |
@@ -238,4 +238,4 @@ cd backend
 ./gradlew build verifyContract verifyContractDependencies
 ```
 
-2026-10-23 전체 게이트는 종료0, Unit294·일반IT312·Contract96(업무90+프로브6), 실패/오류/skip0이다. 다섯 작업의 정상·오류 적용표, DB/Redis 중단 503, 응답 사본 단일 훼손44종 거부, 실제 `ResourceView` 타입 변이의 HTTP 실패와 원복 통과를 확인했다. [계약 HTTP 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)·[작업 상태](specs/010-openapi-contract/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 위 T018~T020 진행 절의 미완료 표시는 당시 기록이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이며 통과로 기록하지 않는다. Property/PIT 심화·k6 부하·외부 CI는 후속이다.
+2026-10-23 PR #12 리뷰 보완 후 T042 전체 게이트는 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0이다. ApiContractIT는 94건, ResourceApiIT는 11건이다. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 다섯 작업의 정상·오류 적용표, DB/Redis 중단 503, 응답 사본 단일 훼손44종 거부, 실제 `ResourceView` 타입 변이의 HTTP 실패와 원복 통과를 확인했다. [계약 HTTP 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)·[작업 상태](specs/010-openapi-contract/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 위 T018~T020 진행 절의 미완료 표시는 당시 기록이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이며 통과로 기록하지 않는다. Property/PIT 심화·k6 부하·외부 CI는 후속이다.

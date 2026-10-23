@@ -1929,3 +1929,7 @@ T024~T031만완료한다. T032이후전체build/verifyContract·일반IT최종�
 - 출력: `contract-copy total=44 controls=44 rejected=44`, DB-stopped·Redis-stopped 모두 `serverIdle=true httpClosed=true stop=false`(실제 값 단언), 429 `count=21 decisionPttl=58597/58556 retryAfter=59`.
 - 경쟁: ReservationConcurrencyIT 115/0/0/0이다. RUN 110줄은 C01~C11 각10이고, 모두 `ownedKeyResets=1`이며 예상 밖 429/503은 0이다. 110 CLEANUP이 정상이고 모든 snapshot에서 수량식이 유지됐다. 경쟁 시험 소스가 바뀌지 않았으므로 `docs/concurrency-runs.json`은 T032 회차 기록을 유지한다(이번 회차 값으로 재생성하지 않음).
 - 정책 무변경: OpenAPI 스키마·계획서 정책은 그대로다. 제품 변경은 `ResourceController` binder 1건이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
+
+### 재리뷰 문서 동기화 (head f37123c 이후)
+
+재리뷰 P2 지적에 따라 README·knowledge(README·도메인4·개발 규칙)·versions·decisions·계획서·tasks의 현재 수를 T042 기준으로 고쳤다. 기준은 Unit298·IT315·Contract102(업무96+프로브6), ApiContractIT94, ResourceApiIT11이다. T032 수(294·312·96, ApiContractIT88, ResourceApiIT8)는 historical로 표시했다. 9단계 최신 절의 "제품 변경 없음"은 `ResourceController` 엄격 UUID binder 1건을 명시하도록 바꿨다. `rg`로 전수 확인한 결과 남은 이전 수치는 날짜가 붙은 당시 기록(4단계 2026-10-17, 8단계 2026-10-22, T018~T033 절)뿐이다. 코드 변경과 테스트 재실행은 없다.

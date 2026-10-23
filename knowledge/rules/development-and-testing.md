@@ -76,4 +76,4 @@ verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성
 
 ### 9단계 계약 탐지력 적용 (2026-10-23)
 
-계약 검사는 schema·raw JSON·semantic·operation status·scenario 단계로 나누어 진단을 `단계:key@위치`로 남긴다. 무효 요청은 정확한 예상 요청 위반 multiset만 허용하고 응답 검사는 생략하지 않는다. 탐지력은 정상 대조 뒤 응답 사본 한 요소만 바꾸는 44종 훼손과, 실제 DTO의 컴파일 가능한 타입 변이(compile 성공→HTTP schema RED→정확 원복→같은 명령 GREEN)를 따로 기록한다. verifyContract는 업무 계약90과 프로브6을 구분해 발견>0·실패/skip0을 확인한다. 상세는 [010 작업](../../specs/010-openapi-contract/tasks.md)과 [실행 근거](../../docs/test-evidence.md)를 따른다.
+계약 검사는 schema·raw JSON·semantic·operation status·scenario 단계로 나누어 진단을 `단계:key@위치`로 남긴다. 무효 요청은 정확한 예상 요청 위반 multiset만 허용하고 응답 검사는 생략하지 않는다. 탐지력은 정상 대조 뒤 응답 사본 한 요소만 바꾸는 44종 훼손과, 실제 DTO의 컴파일 가능한 타입 변이(compile 성공→HTTP schema RED→정확 원복→같은 명령 GREEN)를 따로 기록한다. verifyContract는 업무 계약96(T042, T032 당시 90)과 프로브6을 구분해 발견>0·실패/skip0을 확인한다. 상세는 [010 작업](../../specs/010-openapi-contract/tasks.md)과 [실행 근거](../../docs/test-evidence.md)를 따른다.
