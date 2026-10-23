@@ -1595,3 +1595,87 @@ GET8192본문의200은 **OAS표현한계/전역상한후정상GET** 경로다. �
 제품/SQL/OpenAPI/Gradle/Wrapper차이0, 실제서비스예외mock·제품후크·새의존성없음. test-only Redis spy는Lua실호출을그대로실행하고결과만관측한다. 환경은기존Corretto25.0.4+7-LTS/Boot4.1.1/Wrapper9.7.1·고정소유PG18.6/Redis8.10.2·UTF8/UTC·동적포트·20/60000ms·Redis200ms를유지한다. T018이후503fixture·US3시퀀스·US4변이·전체verifyContract·T035설명정리는미완료다. Qodana는사용자지정스킵/후속이며통과로세지않는다. 외부CI/push/PR없음. extensions.yml없어전후훅없음.
 
 마지막unknown진단정리: 알수없는key에도이미해석된안전한parameter/pointer위치가있으면그위치를보존하고없을때만context종류/absent를남긴다. 실패정책은동일하며이진단정리후관련Unit110건을다시실행해종료0·실패/오류/skip0(3초)을확인했다. 위업무HTTP86/프로브6의현재XML과검사기97/종료지원13을대조했다. `git diff --check`종료0.
+
+## 2026-10-23 9단계 US2 T018~T020 의존성 계약과 적용표
+
+기준 HEAD `694106c`, 기존 `feature/010-openapi-contract`·작업트리 깨끗함을 확인했다. `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` 종료0, FEATURE_DIR는 현재 worktree의 specs/010-openapi-contract다. requirements16/16·미체크0, extensions.yml 부재로 전후 훅 없음. AGENTS·knowledge README/rules전체·resource/reservation/security/ratelimit 도메인·계획서2~5절/7절9단계와 승인010산출물을 적용했다. Java·Docker/Gradle 프로젝트의 기존 root/backend ignore 설정을 확인했고 변경하지 않았다. 승인 spec/plan·제품·SQL·Wrapper·정책을 보존한다.
+
+### T018~T019 RED와 GREEN의 구분
+
+- 신규 `common/ApiContractDependencyIT.java` 안의 두 package-private contract 클래스는 각각 별도 정적 ContainerTestSupport와 DynamicPropertySource, RANDOM_PORT 컨텍스트, DirtiesContext 및 컨텍스트 종료 후 소유 컨테이너 close listener를 갖는다. DB 중단을 Redis fixture가 이어받거나 중단 의존성을 재기동해 다른 컨텍스트 포트로 바꾸지 않는다. 기존 개발 DB/Redis·Compose·볼륨에는 접근하지 않는다.
+- RED: `cd backend && ./gradlew contractTest --tests '*ApiContractDependencyIT'` 종료1/2건·assertion실패2·오류/skip0,11초. 컴파일·testClasses 성공 후 “실제 소유 DB 중단”, “실제 소유 Redis 중단”에서 false 기대/true 실제다. 테스트 전용 stopOwned의 빈 골격이 실제 중단을 수행하지 않는 누락을 검출한 것이며 제품503 결함이나 응답검사 탐지 실험으로 세지 않는다.
+- 최소 GREEN: stopOwned에 소유 stop action 실행/future10초·executor 종료확인10초를 구현했다. 실패 시 최초 오류·후속 정리오류를 preserve하고 인터럽트를 복원하며 StopState를 설정한다. 동일 명령 종료0/2건·실패/오류/skip0,29초. DB fixture21.890초·Redis fixture2.694초(XML의 클래스 시간은 컨텍스트 준비도 포함)다. 초기 잘못된 root의 `./gradlew` 경로와 sandbox Gradle 캐시 lock 거부는 환경 실행 실패로 따로 분류하며 RED에 포함하지 않는다. 정상 권한으로 같은 Wrapper를 실행했다.
+- DB: 준비 대상 capacity2/available1·소유자 CONFIRMED 예약1행을 REQUIRES_NEW로 사전 커밋했다. 실제 Redis PING/PONG 뒤 소유 PostgreSQL stop 완료·isRunning=false·Hikari softEvictConnections/totalConnections0을 확인했다. 다섯 작업 모두 실제 JDBC 연결 획득 실패로503·DEPENDENCY_UNAVAILABLE, 유효 요청 위반0·오류 전체 스키마/의미검사 적합이다. 예약 생성 후 Redis count1, 취소 후2로 DB 실패를 보상하지 않고 기본 limiter가 통과함을 확인했다. 두 조회와 대상 생성은 count를 늘리지 않으며 마지막 PING도 PONG이다.
+- Redis: 별도 정상 DB/Redis의 사전 커밋·PING 후 소유 Redis만 stop/isRunning=false로 확인했다. 생성·취소503 각각 모든 resources/reservations 컬럼·행의 단일 SQL JSON snapshot이 거부 전과 동일하다. 각 비교는 HTTP 지원 guard의 서버 종료확인 뒤 수행한다. 이후 같은 장애 중 대상 GET200·소유예약 GET200·ADMIN 대상 POST201의 요청/응답 전체도 계약에 적합하다. 최종 기존 대상 수량 보존·전체 대상2개를 확인했다.
+- 두 fixture 모두 실제 Basic/보안필터/HTTP 원문·공통 ApiContractValidator를 사용한다. 서비스 예외 mock·제품 장애 후크·새 의존성은 없다. HTTP close 후 serverIdle=true/httpClosed=true/stop=false, listener의 소유 컨테이너 정리 성공을 확인했다. DB 중단 중 snapshot은 조회하지 않았다. DB 부분 반영 롤백은 아래 별도 정상 DB의 기존 실제 statement/lock/pool timeout 회귀 근거이며, 이 중단 fixture가 중단된 DB를 정상 조회했다고 주장하지 않는다.
+
+### T020 실제 적용표
+
+아래는 적용표의 모든 셀에 대한 실제 실행 사례 연결이다. 각 행의 응답은 전체 response-schema·semantic 검사를 수행하며 예상 밖500/default 승인·응답 검사 생략은0이다. `I`=ApiContractIT.invalidInputMatchesExactContract, `E`=securityAndBusinessErrorMatchesContract, `B`=actualBodyFramingAndUtf8BoundaryMatchesContract, `M`=unsupportedContentTypeMatchesContract, `L`=defaultRateLimitAndDecisionPttlMatchContract, `D`=ApiContractDependencyIT.stoppedOwnedDatabaseRejectsAllFiveOperationsWithHealthyRedis, `R`=RedisApiContractDependencyIT.stoppedOwnedRedisRejectsWritesWithoutChangingDatabaseAndLeavesIndependentApisAvailable이다.
+
+경로의 `{X}`=`10000000-0000-0000-0000-000000000001`, `{Y}`=`20000000-0000-0000-0000-000000000001`, `{M}`=`99999999-0000-0000-0000-000000000001`, `{D}`=`31000000-0000-0000-0000-000000000001`, `{V}`=`32000000-0000-0000-0000-000000000001`이며 표의 자리표시는 실제 raw path에 이 UUID를 치환한다. `{id}`는 정상 생성 HTTP 응답에서 얻은 실제 UUID이며 해당 조회 요청·Location과 비교했다. `S:` 뒤 key는 `validation.request.` 접두사를 포함한 library key의 약기, `raw:`는 별도 원문 rule이다. `0`은 두 종류 요청 위반 모두0이다. 모든 오류는 Content-Type application/problem+json·type/title/status/detail/instance/code 필수 및 상태/code·instance raw path·민감정보 비노출을 검사한다. 성공 Content-Type은 application/json이다. 추가 charset 파라미터는 허용한다.
+
+| 메서드·raw path | status/code | 실제 사례ID·메서드 | 정확한 예상 요청 위반(대표 셀) | 필수 추가 헤더 |
+| --- | --- | --- | --- | --- |
+| POST /api/resources | 201 | resourceSuccessMatchesContract(capacity0/1000·정규화/Unicode), R:resource-create | 0 | Location=단건경로/body.id |
+| POST /api/resources | 400 INVALID_REQUEST | I:name-blank | raw:normalized-name@/body/name | 없음 |
+| POST /api/resources | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/resources | 0 | Basic WWW-Authenticate |
+| POST /api/resources | 403 FORBIDDEN | E:resource-forbidden | 0 | 없음 |
+| POST /api/resources | 413 PAYLOAD_TOO_LARGE | B:/api/resources 8193 false/true | raw:byte-limit@/body | 없음 |
+| POST /api/resources | 415 UNSUPPORTED_MEDIA_TYPE | M:/api/resources | S:contentType.notAllowed@/headers/Content-Type | 없음 |
+| POST /api/resources | 503 DEPENDENCY_UNAVAILABLE | D:resource-create | 0 | 없음 |
+| GET /api/resources/{id} | 200 | resourceSuccessMatchesContract, R:resource-get({D}) | 0 | 없음 |
+| GET /api/resources/invalid | 400 INVALID_REQUEST | I:path-/api/resources/invalid | S:parameter.schema.format.uuid@/path/id | 없음 |
+| GET /api/resources/{X} | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/resources/{X} | 0 | Basic WWW-Authenticate |
+| GET /api/resources/{M} | 404 NOT_FOUND | E:missing /api/resources/{M} | 0 | 없음 |
+| GET /api/resources/{X} | 413 PAYLOAD_TOO_LARGE | B:/api/resources/{X} 8193 false/true | S:body.unexpected@/body + raw:byte-limit@/body | 없음 |
+| GET /api/resources/{D} | 503 DEPENDENCY_UNAVAILABLE | D:resource-get | 0 | 없음 |
+| POST /api/reservations | 201 | reservationCreateOwnerReadAndCancelMatchContract | 0 | Location=body.id, Idempotent-Replayed=false |
+| POST /api/reservations | 400 INVALID_REQUEST | I:reservation-bad-uuid | S:body.schema.format.uuid@/body/resourceId | 없음 |
+| POST /api/reservations | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations | 0 | Basic WWW-Authenticate |
+| POST /api/reservations | 404 NOT_FOUND | E:missing-create-resource | 0 | 없음 |
+| POST /api/reservations | 409 SOLD_OUT | E:sold-out | 0 | 없음 |
+| POST /api/reservations | 409 IDEMPOTENCY_CONFLICT | E:key-conflict | 0 | 없음 |
+| POST /api/reservations | 413 PAYLOAD_TOO_LARGE | B:/api/reservations 8193 false/true | raw:byte-limit@/body | 없음 |
+| POST /api/reservations | 415 UNSUPPORTED_MEDIA_TYPE | M:/api/reservations | S:contentType.notAllowed@/headers/Content-Type | 없음 |
+| POST /api/reservations | 429 RATE_LIMITED | L:cancel=false | 0 | Retry-After=독립 판정PTTL 올림·최소1초 |
+| POST /api/reservations | 503 DEPENDENCY_UNAVAILABLE | D:reservation-create / R:reservation-create | 0 | 없음 |
+| GET /api/reservations/{id} | 200 | reservationCreateOwnerReadAndCancelMatchContract, R:reservation-get({V}) | 0 | 없음 |
+| GET /api/reservations/invalid | 400 INVALID_REQUEST | I:path-/api/reservations/invalid | S:parameter.schema.format.uuid@/path/id | 없음 |
+| GET /api/reservations/{Y} | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations/{Y} | 0 | Basic WWW-Authenticate |
+| GET /api/reservations/{M} 또는 /api/reservations/{Y} | 404 NOT_FOUND | E:missing /api/reservations/{M}·other-owner USER_B/ADMIN false({Y}) | 0 | 없음 |
+| GET /api/reservations/{Y} | 413 PAYLOAD_TOO_LARGE | B:/api/reservations/{Y} 8193 false/true | S:body.unexpected@/body + raw:byte-limit@/body | 없음 |
+| GET /api/reservations/{V} | 503 DEPENDENCY_UNAVAILABLE | D:reservation-get | 0 | 없음 |
+| POST /api/reservations/{id}/cancel | 200 | reservationCreateOwnerReadAndCancelMatchContract | 0 | 없음 |
+| POST /api/reservations/invalid/cancel | 400 INVALID_REQUEST | I:path-/api/reservations/invalid/cancel | S:parameter.schema.format.uuid@/path/id | 없음 |
+| POST /api/reservations/{Y}/cancel | 401 UNAUTHENTICATED | E:no-auth·wrong-auth /api/reservations/{Y}/cancel | 0 | Basic WWW-Authenticate |
+| POST /api/reservations/{M}/cancel 또는 /api/reservations/{Y}/cancel | 404 NOT_FOUND | E:missing /api/reservations/{M}/cancel·other-owner USER_B/ADMIN true({Y}) | 0 | 없음 |
+| POST /api/reservations/{Y}/cancel | 413 PAYLOAD_TOO_LARGE | B:/api/reservations/{Y}/cancel 8193 false/true | S:body.unexpected@/body + raw:empty-cancel-body@/body + raw:byte-limit@/body | 없음 |
+| POST /api/reservations/{Y}/cancel | 429 RATE_LIMITED | L:cancel=true | 0 | Retry-After=독립 판정PTTL 올림·최소1초 |
+| POST /api/reservations/{V}/cancel | 503 DEPENDENCY_UNAVAILABLE | D:reservation-cancel / R:reservation-cancel | 0 | 없음 |
+
+대표 셀 외 나머지 입력28건의 정확한 multiset은 `invalidInputs()`의 사례ID별 library/raw 불변 목록과 위 T012~T017 기록에 연결된다. 누락 필드 required@/body, capacity minimum/maximum/type@/body/capacity, name type@/body/name, additionalProperties@/body, 생성 키 header.missing/pattern/maxLength@/header/Idempotency-Key, invalidJson@/body, duplicate-json@중복필드 pointer, json@/body, integer-token@/body/capacity, 취소 body.unexpected+empty-cancel-body@/body를 개별 검사한다. 모든 요청 위반을 허용하는 공통 설정은 없다.
+
+원인 분리: E/D/R/L는 유효 입력이므로 요청 위반0이다. B의 정상8192 생성은 위반0/201, GET8192는 표현 한계로 정확한 S:body.unexpected만 허용/200, 취소8192는 S:body.unexpected+raw:empty-cancel-body/400이다. 별도 복합무효인 미인증/틀린인증+8193은 인증보다413 우선, 제한소진+8193도429보다413 우선이며 Redis count21을 늘리지 않는다. 미인증 초과본문을 “유효 입력의401 시험”으로 혼합하지 않았다. framing false=Content-Length·true=길이 미지정 chunked, 멀티바이트8193도 포함한다. 원문·publisher 전달·서버앱 read·framing은 T016의 경계를 보존한다.
+
+종료 근거: 위 업무 모든 사례의 try-with-resources는 HTTP client종료10초·server in-flight10초를 확인한다. 응답 후 server 미종료/실제 truncated HTTP/transport 대기 오류 fixture는 최초 StopState·다음 reset/prepare/send0을 유지한다. D/R의10교환(503은DB5+Redis2,독립정상3)도 정상 종료를 기록했다. 중단 fixture의 준비·snapshot은 guard 경로이며 다음 시험은 다른 컨텍스트·다른 소유 컨테이너다.
+
+### T020 최종 지정 인수·XML 대조
+
+backend에서 다음 명령을 순차 Test 태스크로 실행했다. 종료0, 총2분36초이며 listener와 XML 수가 일치했다. JUnit 클래스 병렬실행은 false다.
+
+```sh
+./gradlew test --tests '*ApiContractValidatorTest' --tests '*ConcurrencyTestSupportTest' --tests '*RateLimit*Test' integrationTest --tests '*RedisFailureIT' --tests '*ReservationRollbackIT' --tests '*RateLimitApiIT' contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT' --tests '*ToolchainContractIT'
+```
+
+| 태스크 | 실제 클래스별 수 | 합계/실패/오류/skip |
+| --- | --- | --- |
+| test | 검사기97·ConcurrencyTestSupport13·RateLimitDecision10/Filter22/Lifecycle2/Properties3 | 147/0/0/0 |
+| integrationTest | ExistingConnectionRedisFailure1·FirstConnectionRedisFailure1·RedisFailure10·RateLimitApi37·ReservationRollback7 | 56/0/0/0 |
+| contractTest | ApiContractIT86·ApiContractDependencyIT1·RedisApiContractDependencyIT1·ToolchainContractIT6 | 94/0/0/0 |
+
+현재 XML은 backend/build/test-results/{test,integrationTest,contractTest}/TEST-*.xml에 있으며 전부 이번 실행의 timestamp다. DB fixture20.758초·Redis fixture2.089초·기존업무17.192초·프로브0.035초다. 신규2건은503 HTTP7교환(DB5+Redis2)과독립정상3교환을 포함하므로 테스트수/HTTP교환수를 혼동하지 않는다. 기존 Redis 장애12건에는 실제지연/중단2컨텍스트/WRONGTYPE/OOM·DB실패카운터유지·기본60초만료가 포함되고 모두통과했다. 정상DB의ReservationRollback7은 실제UPDATE후INSERT실패/유일위반·잠금/문장/풀timeout503뒤롤백/같은키복구·내부결함500을 별도로 확인했다. 이 회귀는 중단DB의사후snapshot이 아니다.
+
+최종429 독립관측은 생성count21/PTTL58256ms/Retry-After59초, 취소count21/PTTL58524ms/59초였다. 응답후TTL을정답으로재조회하지않았다. ApiContractIT의server미종료·transport대기·truncated전송fixture와Unit종료지원13+RateLimitLifecycle2가 최초원인보존/인터럽트/다음reset·prepare·send0회귀를 유지했다. verifyContractDependencies도종료0이며새라이브러리·제품·SQL·OpenAPI·Wrapper·제한정책변경없음이다.
+
+T018~T020만 완료 체크했다. T021이후 생성재현시퀀스/US4훼손·실제DTO변이/전체build verifyContract인수와단계전체완료는미완료다. Qodana는사용자지정스킵/후속이며통과로세지않는다. 이번에는전체경쟁110회·Property/PIT·부하·외부CI·push/PR을실행하지않았다. extensions.yml은여전히없어after_implement훅없음이다. 다음한작업은메인의T018~T020검토후T021시퀀스이며담당범위밖으로진행하지않는다.

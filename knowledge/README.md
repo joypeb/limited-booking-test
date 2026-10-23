@@ -125,3 +125,7 @@ T007~T011에서 검사기 Unit87건과 실제 업무HTTP6건·기존프로브6�
 ### 9단계 US2 일부 인수
 
 T012~T017에서 불변의정확요청위반multiset·원문JSON/UTF8검사와항상실행하는오류응답검사를추가했다. 알수없는library key/context는예상목록과무관하게실패한다. 실제입력/권한/업무오류·5작업413·두생성415·기본429/판정PTTL까지검증했고관련Unit110(검사기97+기존13), Contract92(업무86+프로브6)가통과했다. GET8192본문의OAS body.unexpected/서버200은표현한계로정확히분리한다. publisher전달바이트는wire전송완료가아니며서버앱read관측과구별한다. T018이후DB/Redis503fixture·시퀀스/변이/전체인수는미완료다. [작업](../specs/010-openapi-contract/tasks.md)·[실행증거](../docs/test-evidence.md)를따른다.
+
+### 9단계 US2 의존성 계약 (T018~T020)
+
+[의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB 중단과 Redis 중단을 별도 소유 컨테이너·컨텍스트로 격리한다. 실제 DB 중단의5API503·정상Redis, Redis 중단의예약생성/취소503·업무전체행무변경·대상생성/두조회정상을 고정 OpenAPI와 대조한다. 중단 DB의 사후snapshot은 조회하지 않고 기존 실제timeout 롤백회귀와 근거를 구분한다. 전체 오류 적용표·지정검증수·정리는 [실행 증거](../docs/test-evidence.md)의 T018~T020 절을 따른다. 제품/SQL/정책변경없음. T021 이후·전체9단계 인수는 미완료이며 Qodana는 사용자지정스킵/후속이다.

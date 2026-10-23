@@ -222,3 +222,7 @@ US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분�
 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다.
 
 부모 setup은 첫 StopState 검사 뒤에만 소유 Redis 키와 DB를 초기화한다. 기본 정책과 성공/소유권/취소/수량 계약을 유지하며 기존 HTTP를 실제 Redis로 전환했다. 순수 대상 API/DB 시험은 Redis 없이 검증한다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)를 따른다. 위 날짜별 중간 인수의 후속·대기 표시는 해당 시점 기록이다. 이번 절차는 최신 사용자 지시의 Spec Kit를 적용했다.
+
+## 9단계 계약 검증 진행 (2026-10-23, T018~T020)
+
+고정 OpenAPI 검사기와 실제 업무 HTTP의 정상·입력/권한/품절·제한·DB/Redis503 적용표를 검증했다. [의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB/Redis 중단을 각각 별도 소유 컨테이너·컨텍스트로 격리하며, Redis 장애의쓰기503·DB무변경·독립API정상을 확인한다. [실행 증거](docs/test-evidence.md)의 T018~T020 절에 지정명령·수·정리·적용표가 있다. 생성 재현 시퀀스·실제DTO변이·전체9단계 인수(T021 이후)는 미완료이며 Qodana는 사용자지정스킵/후속이다.

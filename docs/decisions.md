@@ -181,3 +181,7 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 - 이유: 기존 성공·실패·수량·멱등성 기대값을 유지하며 제한 연결의 회귀와 종료 불확실 후 데이터 초기화0을 증명한다. 혼재한 취소 입력 사례만 ResourceApiIT에서 SecurityIT로 옮겼다.
 - 대안: 429/503로 업무기대값 대체·제한mock·FLUSHALL·내부서비스대체·순서검사 전에 reset을 수행하는 방식은 제외했다.
 - 결과·한계: 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. 이번8단계는 최신 사용자 지시의 Spec Kit를 적용했고 과거 superpowers 기준/실행증거는 보존한다. 운영성능/모든 경쟁순서의 증명이 아니며 업무전체 자동계약/Property/PIT·부하·외부CI는 후속이다.
+
+## 9단계 의존성 계약 fixture 격리 (2026-10-23, T018~T020)
+
+실제 DB 중단과 Redis 중단을 `ApiContractDependencyIT.java`의 두 별도 contract 클래스·소유 컨테이너·Spring 컨텍스트로 분리한다. 각 시험이 정상 준비를 사전 커밋한 뒤 해당 소유 의존성만 유한하게 중단한다. 중단 후 재기동 포트나 개발 DB로 우회하지 않는다. 서비스 예외 mock 대신 실제 HTTP·Basic·필터와 원문 검사기를 사용한다. DB 중단은 풀 기존 연결을 비우고 Redis 통과/5API503을 검사하며, 중단 DB의 사후 snapshot을 주장하지 않는다. Redis 중단은 정상 DB의 전체 업무 행 단일 SQL snapshot으로 두 쓰기 무변경을 확인하고 독립3API 성공도 검사한다. DB 실제 timeout 롤백·카운터 유지는 기존 회귀와 별개 근거로 연결한다. 제품·SQL·정책 변경 없음. 실행 수/RED·GREEN/미검증은 [증거](test-evidence.md)의 T018~T020 절을 따른다.

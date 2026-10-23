@@ -1,8 +1,8 @@
 # Tasks: 고정 OpenAPI와 실제 업무 API 계약 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [검증 모델](data-model.md), [검사 계약](contracts/validation-contract.md), [실행 안내](quickstart.md).
-**상태**: 2026-10-23 공통 선행·US1과 US2 일부 T001~T017 구현·지정 검증을 완료했다. T018 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
-**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T017까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T018 이후·push·PR은 이번 담당 범위 밖이다.
+**상태**: 2026-10-23 공통 선행·US1과 US2 일부 T001~T020 구현·지정 검증을 완료했다. T021 이후는 미착수이며 아래 후속 신규 파일은 예정이다. 실행 근거는 docs/test-evidence.md를 따른다. 승인된 spec/plan은 수정하지 않는다.
+**절차**: 최신 사용자 Spec Kit 지시를 적용한다. 작업 생성 당시 구현·위임·브랜치 생성·커밋·외부 작업은 하지 않았다. 이후 메인 지시로 T001~T020까지 구현·검증하며 목적 단위 로컬 커밋은 허용한다. T021 이후·push·PR은 이번 담당 범위 밖이다.
 
 ## 형식과 공통 실행 계약
 
@@ -50,9 +50,9 @@
 - [X] T015 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 각5작업 미인증/틀린비밀번호401·대상생성 USER403·없는대상/예약404·타인 USER_B/ADMIN 조회/취소404·품절409 SOLD_OUT·동일키다른대상409 IDEMPOTENCY_CONFLICT를 실제 인증/필터로 추가한다. 유효 입력의 요청위반0, Problem “type/title/status/detail/instance/code 필수”, HTTP/status/code·실제 instance path 일치·유효 URI type(about:blank 포함)·시험비밀/SQL/스택 비노출을 확인한다. 예시 문구를 바이트 고정하지 않는다. 검사 누락 RED→최소 검사기 보완 GREEN을 확인한다.
 - [X] T016 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 두 생성 text/plain415와 다섯작업8193 UTF-8바이트413을 Content-Length/길이미지정 chunked 각각으로 추가한다. 생성8192 유효JSON 성공·8193거부, GET/cancel8192 후속검증 도달(cancel400), 멀티바이트·미인증/틀린인증+초과413·제한소진+초과413을 확인한다. raw framing과 payload 원문을 구분하고 조기종료 시 전송예정/실제수신 관측 차이를 기록한다. 각 무효 요청의 정확한 schema/raw 위반과 응답 전체를 검사하며 보완 누락 RED→최소 지원/검사기 GREEN을 확인한다.
 - [X] T017 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`에 예약 생성/취소 각각 기본20/60000ms 소진429 RATE_LIMITED·DB무변경을 추가한다. test-only 독립 판정PTTL로 “max(1,ceil(ms/1000))” Retry-After와 비교하고 응답 뒤 PTTL 재조회로 정답을 만들지 않는다. `backend/src/test/java/com/limitedbooking/backend/support/ApiContractHttpSupport.java`에 필요한 최소 관측만 재사용/보완하며 검사 누락 RED→GREEN을 확인한다.
-- [ ] T018 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java`에 contract 태그·별도 소유 컨테이너/컨텍스트의 실제 DB503 fixture를 작성한다. 정상 준비 뒤 소유 DB 중단·기존 풀 연결 정리로 실제 JDBC 실패를 만들고 Redis 정상·limiter 통과 상태에서 다섯작업503 DEPENDENCY_UNAVAILABLE 전체 계약을 검사한다. mock 서비스 예외로 대체하지 않는다. 컴파일 가능한 시험/지원의 의도한 관측·검사 누락 RED 후 최소 보완 GREEN을 확인한다. 중단 DB에서 snapshot 조회를 강제하지 않고 별도 정상연결/기존 timeout 회귀로 부분반영 없음을 확인한다.
-- [ ] T019 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java`에 별도 소유 Redis 중단·정상DB fixture를 추가해 정상인증/입력의 생성·취소503과 거부 전후 business snapshot 동일을 확인한다. 같은 fixture에서 대상 생성·두GET은 정상이어야 한다. 라이프사이클/검사 누락 RED→최소 보완 GREEN을 확인하고 기존 RedisFailureIT 지연/중단/첫·기존연결/WRONGTYPE/OOM·DB실패카운터유지 회귀를 보존한다. timeout 뒤 queued Lua count0을 강제하거나 DB실패 카운터를 보상하지 않는다.
-- [ ] T020 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`와 `ApiContractDependencyIT.java`를 순차 지정 실행하고 아래 적용표 각 셀을 실제 사례ID/메서드/raw path/status/code/정확한 위반/필수헤더/종료 결과로 `docs/test-evidence.md`에 채운다. 원인 분리된 유효입력 선행거부와 의도적 복합무효 요청을 구별하고 예정 셀 누락·500/default 통과·응답검사 생략0을 확인한다.
+- [X] T018 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java`에 contract 태그·별도 소유 컨테이너/컨텍스트의 실제 DB503 fixture를 작성한다. 정상 준비 뒤 소유 DB 중단·기존 풀 연결 정리로 실제 JDBC 실패를 만들고 Redis 정상·limiter 통과 상태에서 다섯작업503 DEPENDENCY_UNAVAILABLE 전체 계약을 검사한다. mock 서비스 예외로 대체하지 않는다. 컴파일 가능한 시험/지원의 의도한 관측·검사 누락 RED 후 최소 보완 GREEN을 확인한다. 중단 DB에서 snapshot 조회를 강제하지 않고 별도 정상연결/기존 timeout 회귀로 부분반영 없음을 확인한다.
+- [X] T019 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java`에 별도 소유 Redis 중단·정상DB fixture를 추가해 정상인증/입력의 생성·취소503과 거부 전후 business snapshot 동일을 확인한다. 같은 fixture에서 대상 생성·두GET은 정상이어야 한다. 라이프사이클/검사 누락 RED→최소 보완 GREEN을 확인하고 기존 RedisFailureIT 지연/중단/첫·기존연결/WRONGTYPE/OOM·DB실패카운터유지 회귀를 보존한다. timeout 뒤 queued Lua count0을 강제하거나 DB실패 카운터를 보상하지 않는다.
+- [X] T020 [US2] `backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java`와 `ApiContractDependencyIT.java`를 순차 지정 실행하고 아래 적용표 각 셀을 실제 사례ID/메서드/raw path/status/code/정확한 위반/필수헤더/종료 결과로 `docs/test-evidence.md`에 채운다. 원인 분리된 유효입력 선행거부와 의도적 복합무효 요청을 구별하고 예정 셀 누락·500/default 통과·응답검사 생략0을 확인한다.
 
 ## Phase 5: US3 — 최초 생성 결과와 현재 상태 구분 (P1)
 

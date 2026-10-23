@@ -112,3 +112,7 @@ US3 OOM보완최종: 같은버전에서RedisSystemException→RedisCommandExecut
 ### 2026-10-22 8단계 최종 실행 환경
 
 2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 오케스트레이터 최종 독립검토·PR·병합은 아직 수행하지 않았다. Corretto25.0.4+7-LTS·Wrapper9.7.1·Boot4.1.1·Framework7.0.9/Security7.1.1/SDR4.1.1/Lettuce7.5.2.RELEASE·Testcontainers2.0.5·Docker29.8.2·고정PG18.6/Redis8.10.2 digest를 유지했다. 신규의존성/버전변경없음. 풀10/획득3000ms·READ COMMITTED/lock2s/statement5s·Redis기본20/60000ms/명령접속200ms 실제값을검사했다. 위 과거 중간인수의 미실행 표시는 당시기록이다.
+
+### 2026-10-23 9단계 T018~T020 지정 검증 환경
+
+`java -version`은 Corretto25.0.4.7.1/build25.0.4+7-LTS, Wrapper 파일과 실행은9.7.1·Boot plugin4.1.1을 유지했다. ContainerTestSupport의 고정 PG18.6-bookworm/Redis8.10.2-trixie digest·동적 포트·Testcontainers2.0.5 및 기존 계약 라이브러리를 그대로 사용한다. 새로운 의존성·버전 변경은 없다. 두 중단 fixture에서 실제 Hikari10/획득3000ms·Redis 기본20/60000ms·명령/연결200ms를 검사했다. UTF-8/UTC와 JUnit 클래스 병렬실행 false를 유지한다. 지정 실행 수·종료·기존timeout 회귀는 [실행 증거](test-evidence.md)의 T018~T020 절에 기록한다. 전체9단계/전체verifyContract 인수·Qodana 통과를 의미하지 않는다.
