@@ -1,0 +1,36 @@
+# load 전용 프로필: 별도 DB reservation_load, localhost(127.0.0.1) 전용이다.
+# 요청 제한값은 실행 시 반드시 지정한다(LOAD_RATE_LIMIT: 부하 100000, 제한 시험 20). 기본값이 없어 누락 시 기동이 실패한다.
+# 근거: 계획서 3.2절, 11단계(specs/012-load-security-recovery).
+server:
+  address: 127.0.0.1
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/reservation_load
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 200ms
+      connect-timeout: 200ms
+reservation:
+  rate-limit:
+    limit: ${LOAD_RATE_LIMIT}
+    window: ${LOAD_RATE_WINDOW:60000ms}
+  security:
+    admin-password: ${ADMIN_PASSWORD}
+    user-a-password: ${USER_A_PASSWORD}
+    user-b-password: ${USER_B_PASSWORD}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
