@@ -2082,3 +2082,8 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 ### T027 전체 로컬 리뷰·T028 Converge
 - T027(reviewer, develop 대비 전체 diff 정적 리뷰): Critical/High 0, Medium 1(low phase 시계)·Low 2(quickstart·plan) → `00a784a`·`f8d71a3` 반영. 이전 6건 해소 확인, 제품 변경은 `application.yaml` 소켓 상한·`application-load.yaml`뿐, `.env`·비밀정보 커밋 없음.
 - T028 Speckit Converge: `check-prerequisites.sh --json --require-tasks --include-tasks` 종료0. FR-001~020·SC-001~008·US1~3 수용 시나리오·plan 대상 파일·헌법 MUST를 현재 코드·설정·스크립트·문서와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. FR-018(병목 1개 변경)은 판정 미달이 없어 조건 미발생으로 판단했다.
+
+### T029~T031 PR·OCR 리뷰
+- T029: push `feature/012-load-security-recovery`, Draft PR [#15](https://github.com/joypeb/limited-booking-test/pull/15)(base develop `ea2e058`, head `a05f0a4`). GitHub Actions·외부 CI는 사용하지 않았다(체크 없음).
+- T030(reviewer): Alibaba Open Code Review `ocr delegate preview --from ea2e058 --to a05f0a4 --exclude 'docs/performance-runs/**'`·`ocr delegate rule` 종료0, OCR 선택 11개+보충 27개=38개 파일 검토, 외부 LLM 호출 `ocr review` 미사용. 후보 3건은 이미 수정된 항목으로 제외, **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5637612391 게시.
+- T031: PR 리뷰 코멘트·이슈 코멘트 0건, Critical/High·실패 테스트·누락 요구사항 0. 추가 수정 없음. Merge는 사용자 승인 대기.
