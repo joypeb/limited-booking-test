@@ -1,0 +1,28 @@
+BEGIN
+DO
+CREATE VIEW
+수량 불변식 위반 행 (0행 기대)
+ id | capacity | available | confirmed | cancelled 
+----+----------+-----------+-----------+-----------
+(0 rows)
+
+사용자·키 중복 그룹 (0행 기대)
+ user_id | idempotency_key | duplicates 
+---------+-----------------+------------
+(0 rows)
+
+대상별 요약
+                  id                  | capacity | available | confirmed | cancelled 
+--------------------------------------+----------+-----------+-----------+-----------
+ e9f98b8a-0c9b-431c-aba3-3f1303786fc5 |     1000 |       950 |        50 |         0
+(1 row)
+
+전체 예약·고유 키 요약
+ total_reservations | unique_user_keys | distinct_keys 
+--------------------+------------------+---------------
+                 50 |               50 |            50
+(1 row)
+
+불변식 PASS
+시나리오 최종 DB PASS
+COMMIT
