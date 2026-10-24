@@ -1,0 +1,28 @@
+BEGIN
+DO
+CREATE VIEW
+수량 불변식 위반 행 (0행 기대)
+ id | capacity | available | confirmed | cancelled 
+----+----------+-----------+-----------+-----------
+(0 rows)
+
+사용자·키 중복 그룹 (0행 기대)
+ user_id | idempotency_key | duplicates 
+---------+-----------------+------------
+(0 rows)
+
+대상별 요약
+                  id                  | capacity | available | confirmed | cancelled 
+--------------------------------------+----------+-----------+-----------+-----------
+ 1a0c180a-70af-4ada-a27c-5ca36c9325d2 |      100 |        75 |        25 |         0
+(1 row)
+
+전체 예약·고유 키 요약
+ total_reservations | unique_user_keys | distinct_keys 
+--------------------+------------------+---------------
+                 25 |               25 |            25
+(1 row)
+
+불변식 PASS
+시나리오 최종 DB FAIL
+ERROR:  division by zero
