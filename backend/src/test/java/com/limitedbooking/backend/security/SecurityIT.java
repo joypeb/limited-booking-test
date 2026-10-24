@@ -3,6 +3,10 @@ package com.limitedbooking.backend.security;
 import com.limitedbooking.backend.support.ContainerTestSupport;
 import com.limitedbooking.backend.support.HttpClientTestSupport;
 import com.limitedbooking.backend.support.TestData;
+import com.limitedbooking.backend.support.LogCapture;
+import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.List;
+import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -355,6 +359,124 @@ class SecurityIT {
         } finally {
             HttpClientTestSupport.close(client);
         }
+    }
+
+    @Test
+    void reservationPathsIgnoreSpoofedUserIdHeader() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        var jdbc = new JdbcTemplate(dataSource);
+        try {
+            var resourceResponse = securityRequest(client, "POST", "/api/resources",
+                    TestData.ADMIN_USERNAME, TestData.ADMIN_PASSWORD,
+                    "{\"name\":\"위조 검증 좌석\",\"capacity\":3}", null, null);
+            assertThat(resourceResponse.statusCode()).isEqualTo(201);
+            UUID resourceId = UUID.fromString(JSON.readTree(resourceResponse.body()).get("id").asString());
+            var ids = new ArrayList<UUID>();
+            for (UUID spoofed : List.of(TestData.USER_B_ID, TestData.ADMIN_ID)) {
+                var response = securityRequest(client, "POST", "/api/reservations",
+                        TestData.USER_A_USERNAME, TestData.USER_A_PASSWORD,
+                        "{\"resourceId\":\"" + resourceId + "\"}", "spoof-" + ids.size(), spoofed);
+                assertThat(response.statusCode()).isEqualTo(201);
+                ids.add(UUID.fromString(JSON.readTree(response.body()).get("id").asString()));
+            }
+            assertThat(jdbc.queryForList("SELECT user_id FROM reservations WHERE resource_id=?", UUID.class, resourceId))
+                    .containsExactlyInAnyOrder(TestData.USER_A_ID, TestData.USER_A_ID);
+            assertThat(jdbc.queryForObject("SELECT available FROM resources WHERE id=?", Integer.class, resourceId)).isEqualTo(1);
+            for (UUID id : ids) {
+                String path = "/api/reservations/" + id;
+                assertThat(securityRequest(client, "GET", path, TestData.USER_A_USERNAME,
+                        TestData.USER_A_PASSWORD, null, null, null).statusCode()).isEqualTo(200);
+                assertProblem(securityRequest(client, "GET", path, TestData.USER_B_USERNAME,
+                        TestData.USER_B_PASSWORD, null, null, TestData.USER_A_ID), 404, "NOT_FOUND", path);
+                var before = jdbc.queryForList("SELECT * FROM reservations WHERE resource_id=? ORDER BY id", resourceId);
+                assertProblem(securityRequest(client, "POST", path + "/cancel", TestData.USER_B_USERNAME,
+                        TestData.USER_B_PASSWORD, null, null, TestData.USER_A_ID), 404, "NOT_FOUND", path + "/cancel");
+                assertThat(jdbc.queryForList("SELECT * FROM reservations WHERE resource_id=? ORDER BY id", resourceId))
+                        .isEqualTo(before);
+                assertThat(jdbc.queryForObject("SELECT available FROM resources WHERE id=?", Integer.class, resourceId))
+                        .isEqualTo(1 + ids.indexOf(id));
+                var ownGet = securityRequest(client, "GET", path, TestData.USER_A_USERNAME,
+                        TestData.USER_A_PASSWORD, null, null, TestData.USER_B_ID);
+                assertThat(ownGet.statusCode()).isEqualTo(200);
+                assertThat(JSON.readTree(ownGet.body()).get("status").asString()).isEqualTo("CONFIRMED");
+                var ownCancel = securityRequest(client, "POST", path + "/cancel", TestData.USER_A_USERNAME,
+                        TestData.USER_A_PASSWORD, null, null, TestData.USER_B_ID);
+                assertThat(ownCancel.statusCode()).isEqualTo(200);
+                assertThat(JSON.readTree(ownCancel.body()).get("status").asString()).isEqualTo("CANCELLED");
+            }
+            assertThat(jdbc.queryForObject("SELECT available FROM resources WHERE id=?", Integer.class, resourceId)).isEqualTo(3);
+            assertThat(jdbc.queryForList("SELECT status FROM reservations WHERE resource_id=?", String.class, resourceId))
+                    .containsExactlyInAnyOrder("CANCELLED", "CANCELLED");
+            new com.limitedbooking.backend.support.DatabaseAssertions(dataSource).assertInventoryConserved(resourceId);
+        } finally {
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    @Test
+    void rejectedRequestsDoNotLogPasswordsOrAuthorizationValues() throws Exception {
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+        // 실제 필터의 요청 로그를 활성화해 테스트 순서와 무관하게 빈 캡처를 거부한다.
+        var requestLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
+                org.springframework.security.web.FilterChainProxy.class);
+        var previousLevel = requestLogger.getLevel();
+        String wrongPassword = "log-check-wrong-password";
+        var secrets = new ArrayList<>(List.of(TestData.ADMIN_PASSWORD, TestData.USER_A_PASSWORD,
+                TestData.USER_B_PASSWORD, wrongPassword));
+        for (String[] account : new String[][]{
+                {TestData.ADMIN_USERNAME, TestData.ADMIN_PASSWORD},
+                {TestData.USER_A_USERNAME, TestData.USER_A_PASSWORD},
+                {TestData.USER_B_USERNAME, TestData.USER_B_PASSWORD},
+                {TestData.ADMIN_USERNAME, wrongPassword}}) {
+            secrets.add(HttpClientTestSupport.basicAuth(account[0], account[1]).substring("Basic ".length()));
+        }
+        try (var capture = LogCapture.attachToRoot()) {
+            requestLogger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+            assertProblem(securityRequest(client, "POST", "/api/resources", TestData.ADMIN_USERNAME,
+                    wrongPassword, "{}", null, null), 401, "UNAUTHENTICATED", "/api/resources");
+            assertProblem(securityRequest(client, "GET", "/api/resources/" + TestData.USER_B_ID,
+                    null, null, null, null, null), 401, "UNAUTHENTICATED", "/api/resources/" + TestData.USER_B_ID);
+            assertProblem(securityRequest(client, "POST", "/api/resources", TestData.USER_B_USERNAME,
+                    TestData.USER_B_PASSWORD, "{\"name\":\"금지\",\"capacity\":1}", null, null),
+                    403, "FORBIDDEN", "/api/resources");
+            assertProblem(securityRequest(client, "POST", "/api/resources", TestData.ADMIN_USERNAME,
+                    TestData.ADMIN_PASSWORD, "x".repeat(8193), null, null), 413, "PAYLOAD_TOO_LARGE", "/api/resources");
+            for (String invalid : List.of("{", "{\"name\":\"좌석\",\"capacity\":1,\"unknown\":true}")) {
+                assertProblem(securityRequest(client, "POST", "/api/resources", TestData.ADMIN_USERNAME,
+                        TestData.ADMIN_PASSWORD, invalid, null, null), 400, "INVALID_REQUEST", "/api/resources");
+            }
+            assertThat(testData.resourceCount()).isZero();
+            var resource = securityRequest(client, "POST", "/api/resources", TestData.ADMIN_USERNAME,
+                    TestData.ADMIN_PASSWORD, "{\"name\":\"로그 검증 좌석\",\"capacity\":1}", null, null);
+            assertThat(resource.statusCode()).isEqualTo(201);
+            String resourceId = JSON.readTree(resource.body()).get("id").asString();
+            assertThat(securityRequest(client, "POST", "/api/reservations", TestData.USER_A_USERNAME,
+                    TestData.USER_A_PASSWORD, "{\"resourceId\":\"" + resourceId + "\"}", "log-check", null)
+                    .statusCode()).isEqualTo(201);
+            // ListAppender는 호출 스레드에서 동기 실행되므로 응답 이후 별도 대기가 필요 없다.
+            assertThat(capture.size()).as("실제 로그 캡처 이벤트 수").isPositive();
+            var events = capture.renderedEvents();
+            for (int index = 0; index < events.size(); index++) {
+                String event = events.get(index);
+                assertThat(secrets.stream().noneMatch(event::contains))
+                        .as("로그 이벤트 %d의 비밀정보 비노출", index).isTrue();
+            }
+            System.out.println("S11 captured events=" + events.size());
+        } finally {
+            requestLogger.setLevel(previousLevel);
+            HttpClientTestSupport.close(client);
+        }
+    }
+
+    private HttpResponse<String> securityRequest(HttpClient client, String method, String path,
+            String username, String password, String body, String key, UUID spoofedUserId) throws Exception {
+        var builder = HttpRequest.newBuilder(uri(path)).timeout(Duration.ofSeconds(10));
+        if (username != null) builder.header("Authorization", HttpClientTestSupport.basicAuth(username, password));
+        if (key != null) builder.header("Idempotency-Key", key);
+        if (spoofedUserId != null) builder.header("X-User-Id", spoofedUserId.toString());
+        if (body != null) builder.header("Content-Type", "application/json");
+        return HttpClientTestSupport.send(client, builder.method(method, body == null
+                ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body)).build());
     }
 
     private URI uri(String path) {
