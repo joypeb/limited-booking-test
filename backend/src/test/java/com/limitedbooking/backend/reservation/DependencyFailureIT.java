@@ -204,19 +204,33 @@ class DependencyFailureIT {
     }
 
     private CommittedReservation awaitCommitted(String key) throws InterruptedException {
-        long deadline = System.nanoTime() + COMMIT_BOUND.toNanos();
-        while (System.nanoTime() < deadline) {
-            var rows = jdbc.query("SELECT id, created_at FROM reservations WHERE user_id=? AND idempotency_key=?",
-                    (rs, row) -> new CommittedReservation(rs.getObject("id", UUID.class),
-                            rs.getObject("created_at", OffsetDateTime.class).toInstant()), TestData.USER_A_ID, key);
-            if (!rows.isEmpty()) {
-                assertThat(rows).hasSize(1);
-                return rows.getFirst();
+        long started = System.nanoTime();
+        long deadline = started + COMMIT_BOUND.toNanos();
+        int previousQueryTimeout = jdbc.getQueryTimeout();
+        try {
+            while (true) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) break;
+                // JDBC는 초 단위이므로 올림하되, 조회 직후 실제 관측 시각도 검사한다.
+                jdbc.setQueryTimeout((int) Math.max(1L,
+                        Math.ceilDiv(remaining, Duration.ofSeconds(1).toNanos())));
+                var rows = jdbc.query("SELECT id, created_at FROM reservations WHERE user_id=? AND idempotency_key=?",
+                        (rs, row) -> new CommittedReservation(rs.getObject("id", UUID.class),
+                                rs.getObject("created_at", OffsetDateTime.class).toInstant()), TestData.USER_A_ID, key);
+                long observedAt = System.nanoTime();
+                assertThat(Duration.ofNanos(observedAt - started))
+                        .as("F6 DB 조회 반환 시점의 커밋 관측 경과").isLessThanOrEqualTo(COMMIT_BOUND);
+                if (!rows.isEmpty()) {
+                    assertThat(rows).hasSize(1);
+                    return rows.getFirst();
+                }
+                remaining = deadline - observedAt;
+                if (remaining > 0) Thread.sleep(Duration.ofNanos(Math.min(Duration.ofMillis(100).toNanos(), remaining)));
             }
-            long remaining = deadline - System.nanoTime();
-            if (remaining > 0) Thread.sleep(Duration.ofNanos(Math.min(Duration.ofMillis(100).toNanos(), remaining)));
+            throw new AssertionError("F6 5초 안에 DB 커밋을 확인하지 못함");
+        } finally {
+            jdbc.setQueryTimeout(previousQueryTimeout);
         }
-        throw new AssertionError("F6 5초 안에 DB 커밋을 확인하지 못함");
     }
 
     private UUID resource(int capacity) throws Exception {
