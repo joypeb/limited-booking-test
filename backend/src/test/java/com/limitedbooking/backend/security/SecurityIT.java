@@ -4,6 +4,13 @@ import com.limitedbooking.backend.support.ContainerTestSupport;
 import com.limitedbooking.backend.support.HttpClientTestSupport;
 import com.limitedbooking.backend.support.TestData;
 import com.limitedbooking.backend.support.LogCapture;
+import com.limitedbooking.backend.support.DatabaseAssertions;
+import jakarta.servlet.Filter;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.ArrayList;
@@ -39,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DirtiesContext
+@Import(SecurityIT.RequestCompletionConfiguration.class)
 @TestExecutionListeners(
         listeners = SecurityIT.DependencyCleanup.class,
         mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
@@ -63,7 +71,51 @@ class SecurityIT {
     @Autowired org.springframework.data.redis.core.StringRedisTemplate redis;
     @Autowired com.limitedbooking.backend.ratelimit.RateLimitProperties rateLimitPolicy;
     @Autowired org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory redisFactory;
+    @Autowired RequestCompletion requestCompletion;
+    private int securityRequestsSent;
     TestData testData;
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class RequestCompletionConfiguration {
+        @Bean RequestCompletion requestCompletion() { return new RequestCompletion(); }
+
+        @Bean FilterRegistrationBean<Filter> securityRequestCompletionFilter(RequestCompletion completion) {
+            Filter filter = (request, response, chain) -> {
+                completion.started();
+                try {
+                    chain.doFilter(request, response);
+                } finally {
+                    completion.completed();
+                }
+            };
+            var registration = new FilterRegistrationBean<>(filter);
+            registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+            return registration;
+        }
+    }
+
+    /** 본문 상한·보안 필터의 후처리가 끝난 뒤 완료 수를 기록한다. */
+    static final class RequestCompletion {
+        private static final Duration COMPLETION_BOUND = Duration.ofSeconds(5);
+        private long started;
+        private long completed;
+
+        synchronized void started() { started++; }
+        synchronized long startedCount() { return started; }
+        synchronized void completed() { completed++; notifyAll(); }
+
+        synchronized void awaitCompleted(long expected) throws InterruptedException {
+            long deadline = System.nanoTime() + COMPLETION_BOUND.toNanos();
+            while (completed < expected) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    throw new AssertionError("필터 후처리 완료 5초 상한 초과: expected="
+                            + expected + ", completed=" + completed);
+                }
+                java.util.concurrent.TimeUnit.NANOSECONDS.timedWait(this, remaining);
+            }
+        }
+    }
 
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry properties) {
@@ -386,13 +438,14 @@ class SecurityIT {
                 String path = "/api/reservations/" + id;
                 assertThat(securityRequest(client, "GET", path, TestData.USER_A_USERNAME,
                         TestData.USER_A_PASSWORD, null, null, null).statusCode()).isEqualTo(200);
+                var database = new DatabaseAssertions(dataSource);
+                String before = database.businessRows();
                 assertProblem(securityRequest(client, "GET", path, TestData.USER_B_USERNAME,
                         TestData.USER_B_PASSWORD, null, null, TestData.USER_A_ID), 404, "NOT_FOUND", path);
-                var before = jdbc.queryForList("SELECT * FROM reservations WHERE resource_id=? ORDER BY id", resourceId);
+                assertThat(database.businessRows()).as("위조 GET 전후 대상·예약 전체 행").isEqualTo(before);
                 assertProblem(securityRequest(client, "POST", path + "/cancel", TestData.USER_B_USERNAME,
                         TestData.USER_B_PASSWORD, null, null, TestData.USER_A_ID), 404, "NOT_FOUND", path + "/cancel");
-                assertThat(jdbc.queryForList("SELECT * FROM reservations WHERE resource_id=? ORDER BY id", resourceId))
-                        .isEqualTo(before);
+                assertThat(database.businessRows()).as("위조 취소 전후 대상·예약 전체 행").isEqualTo(before);
                 assertThat(jdbc.queryForObject("SELECT available FROM resources WHERE id=?", Integer.class, resourceId))
                         .isEqualTo(1 + ids.indexOf(id));
                 var ownGet = securityRequest(client, "GET", path, TestData.USER_A_USERNAME,
@@ -415,7 +468,6 @@ class SecurityIT {
 
     @Test
     void rejectedRequestsDoNotLogPasswordsOrAuthorizationValues() throws Exception {
-        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         // 실제 필터의 요청 로그를 활성화해 테스트 순서와 무관하게 빈 캡처를 거부한다.
         var requestLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
                 org.springframework.security.web.FilterChainProxy.class);
@@ -430,6 +482,11 @@ class SecurityIT {
                 {TestData.ADMIN_USERNAME, wrongPassword}}) {
             secrets.add(HttpClientTestSupport.basicAuth(account[0], account[1]).substring("Basic ".length()));
         }
+        // 앞선 테스트의 후처리를 배제한 뒤 이번 테스트가 보낸 요청만 기다린다.
+        long completedBefore = requestCompletion.startedCount();
+        requestCompletion.awaitCompleted(completedBefore);
+        int sentBefore = securityRequestsSent;
+        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         try (var capture = LogCapture.attachToRoot()) {
             requestLogger.setLevel(ch.qos.logback.classic.Level.DEBUG);
             assertProblem(securityRequest(client, "POST", "/api/resources", TestData.ADMIN_USERNAME,
@@ -453,7 +510,8 @@ class SecurityIT {
             assertThat(securityRequest(client, "POST", "/api/reservations", TestData.USER_A_USERNAME,
                     TestData.USER_A_PASSWORD, "{\"resourceId\":\"" + resourceId + "\"}", "log-check", null)
                     .statusCode()).isEqualTo(201);
-            // ListAppender는 호출 스레드에서 동기 실행되므로 응답 이후 별도 대기가 필요 없다.
+            // 응답 수신 뒤 실행되는 필터 finally의 로그까지 캡처한 후 검사한다.
+            requestCompletion.awaitCompleted(completedBefore + securityRequestsSent - sentBefore);
             assertThat(capture.size()).as("실제 로그 캡처 이벤트 수").isPositive();
             var events = capture.renderedEvents();
             for (int index = 0; index < events.size(); index++) {
@@ -475,6 +533,7 @@ class SecurityIT {
         if (key != null) builder.header("Idempotency-Key", key);
         if (spoofedUserId != null) builder.header("X-User-Id", spoofedUserId.toString());
         if (body != null) builder.header("Content-Type", "application/json");
+        securityRequestsSent++;
         return HttpClientTestSupport.send(client, builder.method(method, body == null
                 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body)).build());
     }
