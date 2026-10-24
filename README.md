@@ -241,3 +241,22 @@ cd backend
 ```
 
 2026-10-23 PR #12 리뷰 보완 후 T042 전체 게이트는 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0이다. ApiContractIT는 94건, ResourceApiIT는 11건이다. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 다섯 작업의 정상·오류 적용표, DB/Redis 중단 503, 응답 사본 단일 훼손44종 거부, 실제 `ResourceView` 타입 변이의 HTTP 실패와 원복 통과를 확인했다. [계약 HTTP 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)·[작업 상태](specs/010-openapi-contract/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 위 T018~T020 진행 절의 미완료 표시는 당시 기록이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이며 통과로 기록하지 않는다. Property/PIT 심화·k6 부하·외부 CI는 후속이다.
+
+## 11단계 부하·보안·장애 복구 (2026-10-24)
+
+- 보안: [SecurityIT](backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)에 예약 경로 `X-User-Id` 위조 무시와 로그 비밀번호·Authorization 비노출 검사를 추가했다. 기존 충족 항목과의 연결은 [검증 계약](specs/012-load-security-recovery/contracts/verification-contract.md) C1.
+- 장애 복구: [DependencyFailureIT](backend/src/test/java/com/limitedbooking/backend/reservation/DependencyFailureIT.java)가 DB 연결 차단+종료·pause·취소 잠금·커밋 후 응답 유실을 재현해 503·응답 시간 상한·부분 저장 없음·같은 키 복구를 검사한다. DB 정지 시 무한 대기 결함을 pgjdbc `socketTimeout=7`로 수정했다(`application.yaml`).
+- 부하: load 프로필과 `reservation_load` DB를 쓰는 [load 스크립트](load/README.md). 앱은 제한값을 필수로 받는다.
+
+```sh
+# 비밀번호 환경 변수를 셸에 export한 뒤(커밋 금지) 저장소 루트에서
+docker compose up -d --wait
+./load/prepare-db.sh
+(cd backend && LOAD_RATE_LIMIT=100000 ./gradlew bootRun --args='--spring.profiles.active=load')   # 별도 터미널
+LOAD_RATE_LIMIT=100000 ./load/run.sh low run1        # low|high|replay
+# 제한 시험: 앱을 LOAD_RATE_LIMIT=20으로 재기동한 뒤
+LOAD_RATE_LIMIT=20 ./load/run.sh rate-limit run1
+docker compose down                                   # 볼륨 삭제 없음
+```
+
+최종 게이트 `./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks` 종료0(Unit308·일반IT322·Contract102·Property4, PIT 23/23). 부하 결과·판정·한계는 [성능 기록](docs/performance.md), 실행 근거는 [test-evidence](docs/test-evidence.md) 11단계 절. 로컬 수치는 운영 규모로 일반화하지 않는다. CI·README 최종본은 12단계다.

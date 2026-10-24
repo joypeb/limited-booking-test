@@ -11,7 +11,7 @@
 | Docker | CLI/daemon29.2.1, aarch64 | Desktop 기동·데몬·이미지 내부 실행·실제 연동 확인 |
 | Docker 메모리 | 8,216,915,968 bytes (약7.65GiB) | docker info 실제값 |
 | Compose | 착수 CLI v5.1.0 → Desktop 기동 후 v5.6.0 | 최종 version 출력·up/down·PostgreSQL 보존 확인 |
-| k6 | 2.3.0, go1.27.1, darwin/arm64 | 누락 도구만 brew install 후 버전 확인; 부하 미실시 |
+| k6 | 2.3.0, go1.27.1, darwin/arm64 | 1단계 설치·버전 확인. 2026-10-24 11단계에서 threshold 종료 코드(고의 불일치 종료99)·`--summary-export`·`expectedStatuses`·시나리오 태그 threshold를 실제 실행으로 확인 |
 | PostgreSQL | postgres:18.6-bookworm, arm64 | 내부18.6 출력·local 표식 보존·격리 IT 확인 |
 | Redis | redis:8.10.2-trixie, arm64 | 내부8.10.2 출력·local health·격리 set/get 확인 |
 | Jupiter | 6.0.3 | Boot BOM dependencyInsight·네 테스트 그룹 실행 확인 |
@@ -129,3 +129,7 @@ T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyCont
 ## 2026-10-23 10단계 Property·Mutation
 
 새 의존성·버전 변경 없음(QuickTheories 0.26, PIT plugin1.19.0/engine1.22.1/JUnit Platform 지원1.2.3, Corretto25.0.4+7-LTS, Wrapper9.8.0, Boot4.1.1, Docker29.8.2, 고정 PG18.6/Redis8.10.2 digest 유지). 구성 변경: `propertyTest`가 property 태그 `*IT`도 발견, PIT 대상을 세 순수 규칙과 대응 Unit으로 교체하고 `mutators=['STRONGER']`, `features=['-FRECORD']`(RecordFilter가 레코드 canonical 생성자를 제외하기 때문), `excludedMethods=['toString','hashCode','equals']`를 적용했다. QuickTheories `withShrinkCycles(2000)`. 최종 `./gradlew build deepTest mutationSmoke verifyContractDependencies` 종료0: Unit308·IT316·Contract102·Property4, PIT 23/23. 상세는 [실행 증거](test-evidence.md)의 10단계 절.
+
+## 2026-10-24 11단계 부하·보안·장애 복구
+
+새 Gradle 의존성·버전 변경 없음(Corretto25.0.4+7-LTS, Wrapper9.8.0, Boot4.1.1, Docker Desktop29.8.2, 고정 PG18.6/Redis8.10.2 digest 유지). k6 v2.3.0(darwin/arm64)을 실제 부하에 사용했다. 구성 변경: 공통 `application.yaml`에 pgjdbc `socketTimeout=7`(초, DB 서버 정지 시 무한 대기 수정), 신규 `application-load.yaml`(reservation_load, `LOAD_RATE_LIMIT` 필수). Testcontainers의 `DockerClient` pause/unpause를 테스트에서 사용한다. 실행 결과는 [실행 근거](test-evidence.md) 11단계 절과 [성능 기록](performance.md).

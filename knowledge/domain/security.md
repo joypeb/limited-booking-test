@@ -138,3 +138,9 @@ limiter.check 안의확인된Redis의존성만503으로변환하고후속chain�
 ### 9단계 계약 검증 최종 인수 (2026-10-23)
 
 [계약 HTTP 시험](../../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)이 실제 Authorization과 보안 필터로 미인증·틀린 비밀번호 401(Basic WWW-Authenticate), USER의 대상 생성 403, 타인·ADMIN 예약 404, 인증 전 8193바이트 413(Content-Length·chunked)을 검증한다. 모든 오류는 `application/problem+json` 6필드와 status·code·instance 대응, 시험 비밀번호·SQL·스택 비노출을 확인한다. 미명시 500/default는 거부한다. T042에서 SecurityIT7·ResourceApiIT11·OwnershipIT5 회귀도 통과했다(T032 당시 ResourceApiIT8은 historical 값). 앞 절의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. [실행 근거](../../docs/test-evidence.md)의 9단계 절과 [010 작업](../../specs/010-openapi-contract/tasks.md)을 따른다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다.
+
+### 11단계 보안 경계 확장 (2026-10-24)
+
+- 예약 경로 위조: `SecurityIT.reservationPathsIgnoreSpoofedUserIdHeader` — USER_A가 `X-User-Id: USER_B/ADMIN`으로 생성해도 DB `user_id`는 USER_A, USER_B의 GET/취소는 404·업무 행 무변경, 같은 위조 헤더의 USER_A 본인 GET/취소는 200. 고의 변경(신원 해석이 헤더 우선)에서 RED.
+- 로그 비노출: `SecurityIT.rejectedRequestsDoNotLogPasswordsOrAuthorizationValues` — Logback 루트 캡처(`support/LogCapture`)로 401·403·413·400·201 요청 동안 비밀번호 원문·Basic 값 부재를 검사한다. 테스트 전용 최외곽 필터의 완료 수로 필터 후처리까지 기다리고 빈 캡처를 거부한다. 고의 변경(요청 중·체인 종료 50ms 뒤 Authorization INFO 출력)에서 각각 RED. Tomcat이 System.err로 직접 쓰는 출력은 범위 밖이다.
+- 기존 충족 항목(타인 404·본문 userId/알 수 없는 필드·UUID 400·401·403·413·응답 비노출)은 재작성하지 않고 [012 검증 계약](../../specs/012-load-security-recovery/contracts/verification-contract.md) C1 표로 연결했다. 근거: [실행 근거](../../docs/test-evidence.md) 11단계 절.
