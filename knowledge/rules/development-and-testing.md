@@ -85,3 +85,11 @@ verifyContractDependencies는 금지 모듈 검출에 앞서 미해결 의존성
 - 축소: QuickTheories 0.26은 precursor 값을 하나씩 줄이므로 리스트 길이 축소가 드물고 중간 원소를 삭제하지 못한다. `withShrinkCycles(2000)`을 사용하며, 남은 상태 무변경 명령은 도구 한계로 기록한다. 축소 최소 사례는 출처(고의/실제 결함·seed)와 함께 일반 회귀 IT로 고정한다.
 - PIT: 기본 변이군은 `RecordFilter`로 레코드 canonical 생성자(키 검증)를 제외해 핵심 규칙 변이가 0이었다. 점수만 보지 말고 생성된 변이 목록이 규칙 분기를 덮는지 확인한다. 현재 `STRONGER`·`-FRECORD`·컴파일러 생성 record 메서드 제외를 쓰며, 연산자가 없는 enum 매핑 교체는 수동 고의 변경으로 보완한다.
 - 고의 변경은 한 번에 하나, 커밋 금지, 원복 후 `git diff --exit-code -- backend/src/main`으로 확인한다. 순차 경로에서 관측 불가능한 변경(취소 status 조건)은 경쟁·후크 테스트의 책임으로 분류한다. 상세는 [011 작업](../../specs/011-property-mutation/tasks.md)과 [실행 근거](../../docs/test-evidence.md).
+
+### 11단계 장애·보안 검증 적용 (2026-10-24)
+
+- 장애 주입은 테스트 소유 컨테이너에만 한다. 연결 중단은 관리 연결의 `ALLOW_CONNECTIONS false`+`pg_terminate_backend`, 응답 정지는 컨테이너 pause, 잠금은 별도 연결 `FOR UPDATE`로 재현하고 try/finally·close에서 복구한다. 컨테이너 stop/restart는 포트가 바뀌어 같은 컨텍스트의 재연결을 검증할 수 없으므로 쓰지 않는다.
+- 장애 응답은 상태·code·비노출과 함께 실제 경과를 상한(잠금 4·연결 6·정지 12초)과 비교한다. HTTP 클라이언트 상한(20초)은 판정 상한보다 길게 두어 무한 대기를 시간 초과 실패로 드러낸다.
+- 응답 유실은 DB 커밋 관측(예산 제한) 뒤 응답 미수신 close로만 재현한다. 클라이언트 중단만으로 커밋을 추정하지 않는다.
+- 이미 올바른 동작을 검증하는 새 테스트는 제품 코드 일시 고의 변경으로 RED를 확인하고 원복한다(신원 헤더 우선, Authorization 로그, 취소 lock_timeout 제거, 재현 표시 false, 연결 계열 503 분류 제거).
+- 로그 비노출 검사는 메모리 appender 캡처, 빈 캡처 거부, 요청 처리 완료(최외곽 테스트 필터) 대기 뒤 판정한다.

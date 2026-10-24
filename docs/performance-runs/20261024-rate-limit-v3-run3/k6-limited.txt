@@ -1,0 +1,105 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load/rate-limit.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 10s max duration (incl. graceful stop):
+              * rate_limit: 5 iterations for each of 1 VUs (maxDuration: 10s)
+
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    iterations
+    ✓ 'count==5' count=5
+
+    limited_429
+    ✓ 'count==5' count=5
+
+    unexpected
+    ✓ 'count==0' count=0
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 5       14.965624/s
+    checks_succeeded...: 100.00% 5 out of 5
+    checks_failed......: 0.00%   0 out of 5
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201....................: 0      0/s
+    limited_429....................: 5      14.965624/s
+    unexpected.....................: 0      0/s
+    unexpected_rate................: 0.00%  0 out of 5
+
+    HTTP
+    http_req_blocked...............: min=2µs     med=3µs     p(50)=3µs     p(95)=178.39µs p(99)=213.28µs max=222µs  
+    http_req_connecting............: min=0s      med=0s      p(50)=0s      p(95)=141.59µs p(99)=169.92µs max=177µs  
+    http_req_duration..............: min=66.18ms med=66.46ms p(50)=66.46ms p(95)=66.93ms  p(99)=67.03ms  max=67.05ms
+      { expected_response:true }...: min=66.18ms med=66.46ms p(50)=66.46ms p(95)=66.93ms  p(99)=67.03ms  max=67.05ms
+    http_req_failed................: 0.00%  0 out of 5
+    http_req_receiving.............: min=91µs    med=133µs   p(50)=133µs   p(95)=192.2µs  p(99)=194.44µs max=195µs  
+    http_req_sending...............: min=13µs    med=16µs    p(50)=16µs    p(95)=26µs     p(99)=27.6µs   max=28µs   
+    http_req_tls_handshaking.......: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=0s       max=0s     
+    http_req_waiting...............: min=66.03ms med=66.24ms p(50)=66.24ms p(95)=66.74ms  p(99)=66.83ms  max=66.85ms
+    http_reqs......................: 5      14.965624/s
+
+    EXECUTION
+    iteration_duration.............: min=66.33ms med=66.65ms p(50)=66.65ms p(95)=67.19ms  p(99)=67.24ms  max=67.25ms
+    iterations.....................: 5      14.965624/s
+
+    NETWORK
+    data_received..................: 2.6 kB 7.7 kB/s
+    data_sent......................: 1.6 kB 4.6 kB/s
+
+
+  █ SCENARIO: rate_limit 
+
+    checks_total.......: 5       14.965624/s
+    checks_succeeded...: 100.00% 5 out of 5
+    checks_failed......: 0.00%   0 out of 5
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201................: 0      0/s
+    limited_429................: 5      14.965624/s
+    unexpected.................: 0      0/s
+    unexpected_rate............: 0.00%  0 out of 5
+
+    HTTP
+    http_req_blocked...........: min=2µs     med=3µs     p(50)=3µs     p(95)=178.39µs p(99)=213.28µs max=222µs  
+    http_req_connecting........: min=0s      med=0s      p(50)=0s      p(95)=141.59µs p(99)=169.92µs max=177µs  
+    http_req_duration..........: min=66.18ms med=66.46ms p(50)=66.46ms p(95)=66.93ms  p(99)=67.03ms  max=67.05ms
+    http_req_failed............: 0.00%  0 out of 5
+    http_req_receiving.........: min=91µs    med=133µs   p(50)=133µs   p(95)=192.2µs  p(99)=194.44µs max=195µs  
+    http_req_sending...........: min=13µs    med=16µs    p(50)=16µs    p(95)=26µs     p(99)=27.6µs   max=28µs   
+    http_req_tls_handshaking...: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=0s       max=0s     
+    http_req_waiting...........: min=66.03ms med=66.24ms p(50)=66.24ms p(95)=66.74ms  p(99)=66.83ms  max=66.85ms
+    http_reqs..................: 5      14.965624/s
+
+    EXECUTION
+    iteration_duration.........: min=66.33ms med=66.65ms p(50)=66.65ms p(95)=67.19ms  p(99)=67.24ms  max=67.25ms
+    iterations.................: 5      14.965624/s
+
+    NETWORK
+    data_received..............: 2.6 kB 7.7 kB/s
+    data_sent..................: 1.6 kB 4.6 kB/s
+
+
+
+
+running (00.3s), 0/1 VUs, 5 complete and 0 interrupted iterations
+rate_limit ✓ [ 100% ] 1 VUs  00.3s/10s  5/5 iters, 5 per VU

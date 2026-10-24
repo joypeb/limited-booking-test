@@ -2029,3 +2029,61 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 - T033 1차(reviewer): OCR v1.13.3 `ocr review --provider chatgpt …` 범위 c71afaa..5c4ff87(26파일, gh pr diff와 일치)에서 LLM provider 인증 부재(`ocr auth login` 필요, 비대화형 세션에서 불가)로 종료1 — 모델 리뷰 미실행, 게시 0. 대응: 같은 OCR의 `ocr delegate`(LLM 없이 파일 선택·규칙 해석, host-agent가 리뷰) 모드로 재개.
 - T033 2차(reviewer): `ocr delegate preview --format json --from c71afaa… --to 5c4ff87… --rule …`, `ocr delegate rule --format json …`로 OCR이 선택·해석한 26파일 전체를 host-agent가 리뷰. 후보 4건(명세 상태 표기·research NONE/MOCK·B 속성 미탐지·실패 경로 시간 상한) 모두 무효/기존 기록된 한계로 판정, 유효 지적 0. PR #14 COMMENT 리뷰 5629011946 게시(본문에 delegate 모드와 범위 명시).
 - T034(orchestrator): PR 라인 코멘트 0·이슈 코멘트 0·리뷰 1(유효 지적 없음). Critical/High·실패 테스트·누락 요구사항 0 → 재할당 없음. Merge는 사용자 승인 대기.
+
+## 2026-10-24 11단계 로컬 부하·보안·장애 복구 (specs/012-load-security-recovery)
+
+적용 문서: AGENTS.md, knowledge/README.md, knowledge/rules 전체, knowledge/domain/security·reservation·resource·ratelimit, 계획서 2~5·6·7절 11단계·13절, 헌법 I~V. 검증 대상: 실제 인증 경로 보안(US1), DB 장애·응답 유실 복구(US2), 로컬 부하(US3). 브랜치 `feature/012-load-security-recovery`(기준 develop `ea2e058`). 환경: Apple M3 Pro arm64·Corretto 25.0.4+7·Gradle 9.8.0·Docker Desktop 29.8.2·k6 v2.3.0.
+
+### Spec Kit 진행
+- Specify·Clarify(설계 모호점 9건, 업무 정책 질문 0)·Plan(research/data-model/contracts/quickstart)·Checklist(requirements 16/16, verification 20/20)·Tasks(T001~T031)·Analyze(FR20·SC8 모두 작업 매핑, 모순 0) → `914a44c`.
+- Explorer 갭 분석: 보안 항목 대부분 기존 충족, 예약 경로 위조·로그 비노출·DB 연결 중단·응답 유실·취소 잠금이 미검증. Advisor: 장애 재현 방식·소켓 상한·상한 수치·응답 유실·로그 캡처 방식 의견(Clarifications 반영).
+
+### T001·T002 기준선·환경
+- `./gradlew test integrationTest --tests '*SecurityIT' --tests '*ReservationRollbackIT' --tests '*ReservationCancelIT'` 종료0: Unit308, IT27, 실패/오류/skip0.
+- `k6 version` v2.3.0, Docker 29.8.2. `docker compose config -q`는 필수 비밀번호 변수 없이는 종료1(의도된 필수 값), 임시 값(저장소 밖 파일, 미커밋)으로 `docker compose up -d --wait` healthy.
+
+### US1 보안 (T003~T009)
+- 신규 `SecurityIT.reservationPathsIgnoreSpoofedUserIdHeader`(S4), `rejectedRequestsDoNotLogPasswordsOrAuthorizationValues`(S11, 캡처 12건), 지원 `support/LogCapture`. 첫 실행 GREEN(9건).
+- RED(고의 변경, 커밋 없음·각각 원복 후 `git diff --exit-code -- backend/src/main/java` 0):
+  - S4 신원 해석이 `X-User-Id` 우선 → S4만 실패(소유자 USER_B/ADMIN UUID).
+  - S11 인증 후 Authorization INFO 출력 → S11만 실패.
+  - S11b 체인 종료 50ms 뒤 Authorization INFO 출력(리뷰 Medium 대응 검증) → S11만 실패.
+- 리뷰(T009) Medium 2건(응답 이후 후처리 로그 관측, 위조 GET 전후 DB 비교) 반영 `6df3ec3`. `SecurityIT`·`ReservationOwnershipIT`·`ReservationCreateIT` 9+5+16 통과.
+- 항목→테스트 연결은 [검증 계약](../specs/012-load-security-recovery/contracts/verification-contract.md) C1(S1~S11).
+
+### US2 의존성 장애 (T010~T017)
+- 신규 `DependencyFailureIT`(4건)·`support/PostgresFaults`. 첫 실행: F4(pause) **RED** — `HttpTimeoutException`(HTTP 20초까지 응답 없음). F1~F3(연결 차단+종료)·F5(취소 잠금)·F6(응답 유실) GREEN.
+- 실제 결함 수정 `594ddb0`: 공통 `application.yaml` pgjdbc `socketTimeout: 7`. 같은 시험 GREEN: F4 7.09초 503·재개 후 첫 생성 0.08초 201.
+- 관측 경과(GREEN): F1 0.07초, F2 3.08초, F4 7.09초, F5 2.10초, F6 커밋 관측 0.11초·재시도 0.07초. 상한 6/6/12/4/5초.
+- RED(고의 변경, 각각 원복): 취소 `SET LOCAL lock_timeout` 제거 → F5 5.12초>4초 실패; 재현 replayed=false → F6 실패; 연결 계열 503 분류 제거(`DataAccessResourceFailureException`·`CannotCreateTransactionException`) → F1·F4 500 실패.
+- 리뷰(T017) Medium 1건(커밋 폴링 상한 사후 검사) 반영 `c459a93`, 재실행 4건 통과.
+- 영향 범위 `./gradlew verify verifyContract` 종료0(4분24초): Unit308·IT322·Contract102, 실패/오류/skip0.
+
+### US3 부하 (T018~T024)
+- T018 `application-load.yaml`(`a9a93dc`): `LOAD_RATE_LIMIT` 미설정 기동 실패(`APPLICATION FAILED TO START`), 100000 설정 시 health UP·127.0.0.1:8080 LISTEN·reservation_load Flyway V1 success. 앱은 `bootJar` 산출물을 `java -jar … --spring.profiles.active=load`로 실행.
+- T019 `load/`(`90cb0fd`, 리뷰 보완 `5f33e4a`). T020 판정기 RED: `EXPECT_CREATED=999 ./load/run.sh high selfcheck` k6 종료99, 보존식을 깬 고의 UPDATE 후 `check-invariants.sql` 종료3.
+- T021 판정 실행(매회 reset): low v3×3, high×3, replay×3(제한 100000/60초), rate-limit v3×3(20/60초) 모두 종료0·DB PASS. low p95 141.3/133.4/112.6ms(최대 VU 10), high 201=1000·SOLD_OUT 409=1000·기타0, replay 성공500·고유50·불일치0, rate-limit 201=20·429=5·429 전후 업무 행 동일. 판정 제외 실행(초기 스크립트 low/rate-limit, 하네스 오류 rate-limit v2)과 사유는 [성능 기록](performance.md).
+- T022 해당 없음(미달 없음). T023 [performance.md](performance.md) `b1b16c8` 이후 갱신. 결과 파일 비밀번호 원문 검색 0건.
+- 리뷰(T024) Medium 2건(low VU 겹침, 429 DB 무변경 직접 비교)·Low 1건(setup 표기) 반영.
+- 전체 리뷰(T027) Medium 1건(low phase 시계가 setup 포함)→`00a784a` 수정 후 low v3 재측정, Low 2건(quickstart 필수 변수·plan 폐기 설계)→plan·quickstart 동기화. Critical/High 0.
+
+### T026 최종 게이트
+- `./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks` 종료0(4분31초): Unit308·일반IT322·Contract102·Property4(총736), PIT generated23·killed23·survived0·invalid0, 실패/오류/skip0. 실행 전 `git diff --exit-code -- backend/src/main` 0(고의 변경 잔존 없음). 이후 변경은 `load/`·문서뿐이며 Gradle 대상 코드는 무변경.
+
+### 발견한 결함 구분
+- 실제 구현 결함 1건: DB 서버 정지 시 예약 생성 무한 대기(F4) → 소켓 읽기 상한 수정.
+- 테스트·스크립트·문서 결함(리뷰 발견) 9건: 로그 관측 종료 시점, 위조 GET 전후 비교, 커밋 폴링 상한, low VU 겹침, 429 DB 비교, 보고서 setup 표기, low phase 시계, quickstart 필수 변수, plan 폐기 설계 — 모두 수정.
+- 측정 하네스 오류 1건: rate-limit v2가 이전 앱을 대상으로 실행(무효 처리, 재실행).
+- 학습용 고의 변경 7종(S4·S11·S11b·F5·F6·F1~F3 분류 제거·판정기 2종)은 모두 탐지 후 원복.
+
+### 미검증·한계
+- Tomcat의 System.err 직접 출력 로그, 네트워크 분할·패킷 손실, 장기 Flyway 마이그레이션의 소켓 상한 영향, 처리량 정체(약100 req/s)의 원인(BCrypt 가설, 미프로파일링), 운영 규모 일반화, CI(12단계), Qodana.
+
+### T027 전체 로컬 리뷰·T028 Converge
+- T027(reviewer, develop 대비 전체 diff 정적 리뷰): Critical/High 0, Medium 1(low phase 시계)·Low 2(quickstart·plan) → `00a784a`·`f8d71a3` 반영. 이전 6건 해소 확인, 제품 변경은 `application.yaml` 소켓 상한·`application-load.yaml`뿐, `.env`·비밀정보 커밋 없음.
+- T028 Speckit Converge: `check-prerequisites.sh --json --require-tasks --include-tasks` 종료0. FR-001~020·SC-001~008·US1~3 수용 시나리오·plan 대상 파일·헌법 MUST를 현재 코드·설정·스크립트·문서와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. FR-018(병목 1개 변경)은 판정 미달이 없어 조건 미발생으로 판단했다.
+
+### T029~T031 PR·OCR 리뷰
+- T029: push `feature/012-load-security-recovery`, Draft PR [#15](https://github.com/joypeb/limited-booking-test/pull/15)(base develop `ea2e058`, head `a05f0a4`). GitHub Actions·외부 CI는 사용하지 않았다(체크 없음).
+- T030(reviewer): Alibaba Open Code Review `ocr delegate preview --from ea2e058 --to a05f0a4 --exclude 'docs/performance-runs/**'`·`ocr delegate rule` 종료0, OCR 선택 11개+보충 27개=38개 파일 검토, 외부 LLM 호출 `ocr review` 미사용. 후보 3건은 이미 수정된 항목으로 제외, **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5637612391 게시.
+- T031: PR 리뷰 코멘트·이슈 코멘트 0건, Critical/High·실패 테스트·누락 요구사항 0. 추가 수정 없음. Merge는 사용자 승인 대기.

@@ -1,0 +1,125 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load/reservation-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 10m30s max duration (incl. graceful stop):
+              * replay: 50 iterations for each of 10 VUs (maxDuration: 10m0s, exec: replay, gracefulStop: 30s)
+
+
+running (00m01.0s), 10/10 VUs, 87 complete and 0 interrupted iterations
+replay   [  17% ] 10 VUs  00m00.9s/10m0s  087/500 iters, 50 per VU
+
+running (00m02.0s), 10/10 VUs, 178 complete and 0 interrupted iterations
+replay   [  36% ] 10 VUs  00m01.9s/10m0s  178/500 iters, 50 per VU
+
+running (00m03.0s), 10/10 VUs, 277 complete and 0 interrupted iterations
+replay   [  55% ] 10 VUs  00m02.9s/10m0s  277/500 iters, 50 per VU
+
+running (00m04.0s), 10/10 VUs, 385 complete and 0 interrupted iterations
+replay   [  77% ] 10 VUs  00m03.9s/10m0s  385/500 iters, 50 per VU
+
+running (00m05.0s), 02/10 VUs, 496 complete and 0 interrupted iterations
+replay   [  99% ] 10 VUs  00m04.9s/10m0s  496/500 iters, 50 per VU
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_success
+    ✓ 'count==500' count=500
+
+    id_mismatch
+    ✓ 'count==0' count=0
+
+    iterations
+    ✓ 'count==500' count=500
+
+    unexpected
+    ✓ 'count==0' count=0
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 501     98.423495/s
+    checks_succeeded...: 100.00% 501 out of 501
+    checks_failed......: 0.00%   0 out of 501
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    http_success...................: 500    98.227041/s
+    id_mismatch....................: 0      0/s
+    unexpected.....................: 0      0/s
+    unexpected_rate................: 0.00%  0 out of 501
+
+    HTTP
+    http_req_blocked...............: min=0s      med=3µs     p(50)=3µs     p(95)=5µs      p(99)=660µs    max=781µs   
+    http_req_connecting............: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=625µs    max=762µs   
+    http_req_duration..............: min=67.16ms med=94.61ms p(50)=94.61ms p(95)=123.67ms p(99)=144.37ms max=208.95ms
+      { expected_response:true }...: min=67.16ms med=94.61ms p(50)=94.61ms p(95)=123.67ms p(99)=144.37ms max=208.95ms
+    http_req_failed................: 0.00%  0 out of 501
+    http_req_receiving.............: min=8µs     med=62µs    p(50)=62µs    p(95)=285µs    p(99)=914µs    max=6.59ms  
+    http_req_sending...............: min=2µs     med=13µs    p(50)=13µs    p(95)=23µs     p(99)=60µs     max=175µs   
+    http_req_tls_handshaking.......: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=0s       max=0s      
+    http_req_waiting...............: min=67.04ms med=94.51ms p(50)=94.51ms p(95)=123.4ms  p(99)=144.31ms max=208.73ms
+    http_reqs......................: 501    98.423495/s
+
+    EXECUTION
+    iteration_duration.............: min=70.09ms med=94.82ms p(50)=94.82ms p(95)=123.8ms  p(99)=144.62ms max=209.1ms 
+    iterations.....................: 500    98.227041/s
+    vus............................: 2      min=2        max=10
+    vus_max........................: 10     min=10       max=10
+
+    NETWORK
+    data_received..................: 275 kB 54 kB/s
+    data_sent......................: 153 kB 30 kB/s
+
+
+  █ SCENARIO: replay 
+
+    checks_total.......: 500     98.227041/s
+    checks_succeeded...: 100.00% 500 out of 500
+    checks_failed......: 0.00%   0 out of 500
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    http_success...............: 500    98.227041/s
+    id_mismatch................: 0      0/s
+    unexpected.................: 0      0/s
+    unexpected_rate............: 0.00%  0 out of 500
+
+    HTTP
+    http_req_blocked...........: min=0s      med=3µs     p(50)=3µs     p(95)=5µs      p(99)=660.59µs max=781µs   
+    http_req_connecting........: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=625.74µs max=762µs   
+    http_req_duration..........: min=69.95ms med=94.62ms p(50)=94.62ms p(95)=123.67ms p(99)=144.46ms max=208.95ms
+    http_req_failed............: 0.00%  0 out of 500
+    http_req_receiving.........: min=8µs     med=62µs    p(50)=62µs    p(95)=286.44µs p(99)=914.04µs max=6.59ms  
+    http_req_sending...........: min=2µs     med=13µs    p(50)=13µs    p(95)=23µs     p(99)=60.01µs  max=175µs   
+    http_req_tls_handshaking...: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=0s       max=0s      
+    http_req_waiting...........: min=69.89ms med=94.52ms p(50)=94.52ms p(95)=123.41ms p(99)=144.4ms  max=208.73ms
+    http_reqs..................: 500    98.227041/s
+
+    EXECUTION
+    iteration_duration.........: min=70.09ms med=94.82ms p(50)=94.82ms p(95)=123.8ms  p(99)=144.62ms max=209.1ms 
+    iterations.................: 500    98.227041/s
+
+    NETWORK
+    data_received..............: 274 kB 54 kB/s
+    data_sent..................: 153 kB 30 kB/s
+
+
+
+
+running (00m05.1s), 00/10 VUs, 500 complete and 0 interrupted iterations
+replay ✓ [ 100% ] 10 VUs  00m05.0s/10m0s  500/500 iters, 50 per VU

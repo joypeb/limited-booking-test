@@ -207,3 +207,10 @@ Redis거부의생성/취소/성공키재전송은503·전체행snapshot동일이
 - 순차 정합성: `ReservationPropertyIT`가 생성·재요청·다른 대상 키 재사용·조회·본인/중복/타인 취소·없는 참조·없는 대상을 섞은 1~30건을 실제 서비스·DB로 실행하고 독립 모델과 명령별 결과·최종 수량/보존식/(user,key) 유일성/예약별 상태를 비교한다. 키 우선 판정(기존 키 → 재현/충돌, 그 다음 대상 없음·품절), 실패 키 비보존, 취소 후 같은 키 재요청의 최초 CONFIRMED 재현, 중복 취소의 같은 시각을 함께 검사한다. 동시 교차는 7단계 경쟁 IT 책임이다.
 - 회귀: `ReservationPropertyRegressionIT` — 같은 사용자·키로 다른 대상(품절)을 요청하면 409 충돌(고의 변경 D의 축소 최소 사례).
 - 고의 변경 탐지: 차감 `available > 0` 제거(품절·경쟁·속성), 취소 `status='CONFIRMED'` 제거(오래된 읽기 후크·중복 취소 경쟁; 순차 속성은 관측 불가), 소유자 조건 제거(소유권 IT·속성), 재요청 대상 비교 제거(서비스/Writer Unit·멱등·경쟁·속성), 취소 매핑 교체(Unit·취소·경쟁·속성). 실제 구현 결함은 발견되지 않았다. 근거: [실행 근거](../../docs/test-evidence.md) 10단계 절.
+
+### 11단계 의존성 장애·응답 유실 복구 (2026-10-24)
+
+- `DependencyFailureIT`(테스트 소유 PostgreSQL·Redis, `support/PostgresFaults`): 연결 차단+강제 종료 중 생성·취소 503(상한 6초), DB pause 중 생성 503(12초), 대상 행 잠금 중 확정 예약 취소 503(4초), 모두 업무 행 무변경. 장애 제거 뒤 같은 키 생성 201·`Idempotent-Replayed: false`(실패 키 비보존), 실패했던 취소 200·수량 1회 복구.
+- 응답 유실: raw socket으로 생성 요청 후 DB에서 (user,key) 커밋을 5초 예산 안에 확인하고 응답을 읽지 않고 닫는다. 같은 키 재시도는 같은 id·createdAt·Replayed true, 예약 1건·수량 1 감소.
+- 실제 결함: DB 서버 정지 시 서버측 timeout이 동작하지 않아 생성 요청이 무한 대기했다. pgjdbc `socketTimeout=7`로 수정(lock 2 < statement 5 < socket 7초). 생성 잠금 시간 초과는 기존 `ReservationRollbackIT.lockTimeoutIs503AndSameKeyRecovers`가 담당한다.
+- 부하에서의 정합성(로컬): 수량 1000·50VU·2000회에서 201=1000·SOLD_OUT 409=1000, 재요청 키50×10에서 고유 예약 50, 모든 실행 뒤 보존식 위반 0([성능 기록](../../docs/performance.md)).

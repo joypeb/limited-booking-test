@@ -54,3 +54,12 @@
 ### 테스트 PostgreSQL 연결 모드 (2026-10-21)
 
 `ContainerTestSupport`의 로컬 소유 PostgreSQL은 TLS 인증서를 구성하지 않는 `ssl=off` fixture다. 컨테이너 JDBC URL에 `sslmode=disable`을 명시해 준비 확인·Flyway·Hikari·직접 JDBC의 불필요한 SSL 협상을 제거한다. 이 규칙은 앱 기본/local 설정이나 외부 DB의 TLS 정책을 바꾸지 않는다. 실제 서버 설정과 연결의 비TLS 여부는 DatabaseSupportIT에서 검사한다. 최초 SSL 협상08P01의 비정상 응답 발생원은 미확정이며 이 설정을 원인 규명으로 표현하지 않는다. 결정·실행·한계는 docs/decisions.md와 docs/test-evidence.md를 따른다.
+
+### 11단계 부하 실행 적용 (2026-10-24)
+
+- load 프로필(`application-load.yaml`)은 `LOAD_RATE_LIMIT` 필수 환경 변수(기본값 없음)로 제한값을 받는다. 부하 100000/60초, 제한 시험 20/60초로 앱을 따로 기동한다.
+- `load/prepare-db.sh`가 같은 PostgreSQL에 `reservation_load`를 없을 때만 만들고 Flyway는 앱 기동 시 적용한다. `load/reset.sh`는 reservation_load와 USER_A·USER_B 제한 키만 초기화한다.
+- `load/run.sh <시나리오> <label>`이 reset → k6(`--summary-export`) → `check-invariants.sql`을 실행하고 `docs/performance-runs/<날짜>-<시나리오>-<label>/`에 결과·meta(commit·dirty·제한값·이미지·종료 코드)를 남긴다. 기존 결과 디렉터리를 덮어쓰지 않는다. k6 또는 DB 검사 비0이면 비0 종료.
+- 원시 출력은 원문을 보존하며 `.gitattributes`로 해당 경로만 공백 검사에서 제외한다. 결과에 비밀번호·Authorization 값이 없음을 커밋 전에 검사한다.
+- 제한값을 바꿔 앱을 재기동할 때는 이전 프로세스 종료와 `127.0.0.1:8080` LISTEN 해제를 확인한 뒤 기동한다. 실행기는 서버의 실제 제한값을 조회하지 못하므로 기록값과 실제 값이 어긋날 수 있다(2026-10-24 rate-limit v2 무효 실행).
+- 판정기 자체를 고의 불일치(`EXPECT_CREATED=999`)와 보존식 위반 데이터로 실패시켜 종료 코드 반영을 확인한다. 상세는 [load 안내](../../load/README.md)·[성능 기록](../../docs/performance.md).

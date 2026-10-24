@@ -1,0 +1,180 @@
+{
+    "metrics": {
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 501,
+            "value": 0
+        },
+        "http_req_duration": {
+            "p(50)": 94.619,
+            "p(95)": 123.679,
+            "p(99)": 144.371,
+            "max": 208.95,
+            "min": 67.164,
+            "med": 94.619
+        },
+        "vus": {
+            "value": 2,
+            "min": 2,
+            "max": 10
+        },
+        "vus_max": {
+            "value": 10,
+            "min": 10,
+            "max": 10
+        },
+        "checks": {
+            "passes": 501,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "p(50)": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0
+        },
+        "http_req_blocked": {
+            "min": 0,
+            "med": 0.003,
+            "p(50)": 0.003,
+            "p(95)": 0.005,
+            "p(99)": 0.66,
+            "max": 0.781
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(99)": 144.371,
+            "max": 208.95,
+            "min": 67.164,
+            "med": 94.619,
+            "p(50)": 94.619,
+            "p(95)": 123.679
+        },
+        "unexpected_rate": {
+            "passes": 0,
+            "fails": 501,
+            "value": 0
+        },
+        "http_req_receiving": {
+            "med": 0.062,
+            "p(50)": 0.062,
+            "p(95)": 0.285,
+            "p(99)": 0.914,
+            "max": 6.595,
+            "min": 0.008
+        },
+        "data_received": {
+            "count": 274525,
+            "rate": 53931.55696932645
+        },
+        "iteration_duration": {
+            "p(50)": 94.8211255,
+            "p(95)": 123.8093643,
+            "p(99)": 144.62381023999995,
+            "max": 209.107834,
+            "min": 70.098166,
+            "med": 94.8211255
+        },
+        "id_mismatch": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "unexpected": {
+            "rate": 0,
+            "count": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_sending": {
+            "max": 0.175,
+            "min": 0.002,
+            "med": 0.013,
+            "p(50)": 0.013,
+            "p(95)": 0.023,
+            "p(99)": 0.06
+        },
+        "iterations": {
+            "count": 500,
+            "rate": 98.2270411972069,
+            "thresholds": {
+                "count==500": false
+            }
+        },
+        "http_reqs": {
+            "count": 501,
+            "rate": 98.42349527960131
+        },
+        "http_req_connecting": {
+            "min": 0,
+            "med": 0,
+            "p(50)": 0,
+            "p(95)": 0,
+            "p(99)": 0.625,
+            "max": 0.762
+        },
+        "http_req_waiting": {
+            "min": 67.049,
+            "med": 94.515,
+            "p(50)": 94.515,
+            "p(95)": 123.405,
+            "p(99)": 144.319,
+            "max": 208.731
+        },
+        "data_sent": {
+            "count": 153305,
+            "rate": 30117.393101475605
+        },
+        "http_success": {
+            "count": 500,
+            "rate": 98.2270411972069,
+            "thresholds": {
+                "count==500": false
+            }
+        }
+    },
+    "setup_data": {
+        "resources": [
+            "528e452b-626b-417e-a7c2-23bc728b0b2c"
+        ]
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "checks": {
+                    "응답 상태·계약이 예상과 일치": {
+                        "name": "응답 상태·계약이 예상과 일치",
+                        "path": "::setup::응답 상태·계약이 예상과 일치",
+                        "id": "172518ef6d9758ba657264af2660f4de",
+                        "passes": 1,
+                        "fails": 0
+                    }
+                },
+                "name": "setup",
+                "path": "::setup",
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {}
+            }
+        },
+        "checks": {
+            "응답 상태·계약이 예상과 일치": {
+                "passes": 500,
+                "fails": 0,
+                "name": "응답 상태·계약이 예상과 일치",
+                "path": "::응답 상태·계약이 예상과 일치",
+                "id": "e337360bfdff7736e279d47d008502e5"
+            }
+        }
+    }
+}

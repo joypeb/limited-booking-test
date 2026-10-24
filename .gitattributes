@@ -1,0 +1,2 @@
+# k6·psql 원시 출력은 실행 증거이므로 줄 끝 공백을 보존한다.
+docs/performance-runs/** -whitespace
