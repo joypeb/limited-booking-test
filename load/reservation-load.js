@@ -24,14 +24,13 @@ function expectedCount(name, fallback) {
 const configurations = {
   low: {
     scenarios: {
-      warmup: { executor: 'constant-vus', vus: 10, duration: '30s', exec: 'low', gracefulStop: '45s' },
-      measure: { executor: 'constant-vus', vus: 10, duration: '2m', startTime: '30s', exec: 'low', gracefulStop: '45s' },
+      low: { executor: 'constant-vus', vus: 10, duration: '2m30s', exec: 'low', gracefulStop: '45s' },
     },
     thresholds: {
-      'http_req_duration{scenario:measure}': ['p(95)<500'],
-      'unexpected_rate{scenario:measure}': ['rate<0.01'],
-      'checks{scenario:measure}': ['rate>0.99'],
-      'http_reqs{scenario:measure}': ['count>0'],
+      'http_req_duration{phase:measure}': ['p(95)<500'],
+      'unexpected_rate{phase:measure}': ['rate<0.01'],
+      'checks{phase:measure}': ['rate>0.99'],
+      'http_reqs{phase:measure}': ['count>0'],
     },
   },
   high: {
@@ -64,20 +63,23 @@ export function setup() {
 }
 
 export function low(data) {
+  // 경계에 걸친 반복도 시작 시각으로 분류하며 생성·취소에 같은 phase를 유지한다.
+  const phase = exec.instance.currentTestRunDuration < 30000 ? 'warmup' : 'measure';
+  const tags = { phase };
   const username = __VU % 2 === 1 ? 'USER_A' : 'USER_B';
   const resourceId = data.resources[(__VU + __ITER - 1) % data.resources.length];
   const key = `${RUN_ID}-${__VU}-${__ITER}-${exec.scenario.name}`;
-  const response = createReservation(resourceId, key, username);
-  created.add(response.status === 201 ? 1 : 0);
-  if (!classify(response, 201, (r) => createdBodyIsValid(r, resourceId))) return;
+  const response = createReservation(resourceId, key, username, tags);
+  created.add(response.status === 201 ? 1 : 0, tags);
+  if (!classify(response, 201, (r) => createdBodyIsValid(r, resourceId), tags)) return;
   const id = responseJson(response).id;
-  const cancelled = cancelReservation(id, username);
-  cancelledCount.add(cancelled.status === 200 ? 1 : 0);
+  const cancelled = cancelReservation(id, username, tags);
+  cancelledCount.add(cancelled.status === 200 ? 1 : 0, tags);
   classify(cancelled, 200, (r) => {
     const body = responseJson(r);
     return body && body.id === id && body.resourceId === resourceId
       && body.status === 'CANCELLED' && typeof body.cancelledAt === 'string';
-  });
+  }, tags);
 }
 
 export function high(data) {

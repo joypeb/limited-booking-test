@@ -67,15 +67,97 @@ else
   printf 'reset_exit=%s\nk6_exit=not_run\ncheck_exit=not_run\n' "$reset_status" >> "$meta"
   exit "$reset_status"
 fi
-script=load/reservation-load.js
-if [[ "$scenario" == rate-limit ]]; then script=load/rate-limit.js; fi
-# k6 실패 뒤에도 최종 DB를 검사하고 파이프의 k6·tee 종료 코드를 각각 저장한다.
-set +e
-k6 run --summary-mode=full --summary-export "$result_dir/summary.json" -e "SCENARIO=$scenario" "$script" 2>&1 | tee "$result_dir/k6.txt"
-pipeline_status=("${PIPESTATUS[@]}")
-set -e
-k6_status=${pipeline_status[0]}
-tee_status=${pipeline_status[1]}
+rate_status=0
+record_rate_failure() {
+  if [[ "$1" -ne 0 && "$rate_status" -eq 0 ]]; then rate_status=$1; fi
+}
+snapshot_load_db() {
+  docker compose exec -T postgres psql -X -qAt -U "$POSTGRES_USER" -d reservation_load -v ON_ERROR_STOP=1 <<'SQL'
+SELECT jsonb_build_object(
+  'resources', (SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY r.id), '[]'::jsonb) FROM resources r),
+  'reservations', (SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id), '[]'::jsonb) FROM reservations v)
+)::text;
+SQL
+}
+run_rate_phase() {
+  local phase=$1
+  set +e
+  k6 run --summary-mode=full --summary-export "$result_dir/summary-$phase.json" \
+    -e "SCENARIO=$scenario" -e "PHASE=$phase" -e "RESOURCE_ID=${resource_id:-}" \
+    load/rate-limit.js 2>&1 | tee "$result_dir/k6-$phase.txt"
+  local phase_pipeline=("${PIPESTATUS[@]}")
+  set -e
+  phase_k6_status=${phase_pipeline[0]}
+  phase_tee_status=${phase_pipeline[1]}
+  record_rate_failure "$phase_k6_status"
+  record_rate_failure "$phase_tee_status"
+}
+if [[ "$scenario" == rate-limit ]]; then
+  # reset 이후 지연 없이 같은 60초 창에서 두 단계를 연속 실행한다.
+  rate_started=$SECONDS
+  run_rate_phase fill
+  fill_k6_status=$phase_k6_status
+  fill_tee_status=$phase_tee_status
+  k6_status=$phase_k6_status
+  tee_status=$phase_tee_status
+  before_status=not_run
+  lookup_status=not_run
+  limited_k6_status=not_run
+  limited_tee_status=not_run
+  after_status=not_run
+  compare_status=not_run
+  limited_db_unchanged=false
+  if [[ "$rate_status" -eq 0 ]]; then
+    before_status=0
+    snapshot_load_db > "$result_dir/before-limited.txt" 2> "$result_dir/before-limited-error.txt" || before_status=$?
+    record_rate_failure "$before_status"
+    lookup_status=0
+    resource_id=$(docker compose exec -T postgres psql -X -qAt -U "$POSTGRES_USER" -d reservation_load \
+      -v ON_ERROR_STOP=1 -c 'SELECT id FROM resources ORDER BY id' 2> "$result_dir/resource-id-error.txt") || lookup_status=$?
+    if [[ "$lookup_status" -eq 0 && ! "$resource_id" =~ ^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$ ]]; then
+      echo 'fill 뒤 대상 행이 정확히 1건이어야 합니다.' >&2
+      lookup_status=1
+    fi
+    record_rate_failure "$lookup_status"
+    if [[ "$rate_status" -eq 0 ]]; then
+      run_rate_phase limited
+      limited_k6_status=$phase_k6_status
+      limited_tee_status=$phase_tee_status
+      k6_status=$limited_k6_status
+      tee_status=$limited_tee_status
+      after_status=0
+      snapshot_load_db > "$result_dir/after-limited.txt" 2> "$result_dir/after-limited-error.txt" || after_status=$?
+      record_rate_failure "$after_status"
+      if [[ "$after_status" -eq 0 ]]; then
+        compare_status=0
+        cmp -s "$result_dir/before-limited.txt" "$result_dir/after-limited.txt" || compare_status=$?
+        if [[ "$compare_status" -eq 0 ]]; then limited_db_unchanged=true; fi
+        record_rate_failure "$compare_status"
+      fi
+    fi
+  fi
+  rate_elapsed=$((SECONDS - rate_started))
+  window_status=0
+  if [[ "$rate_elapsed" -ge 60 ]]; then window_status=1; fi
+  record_rate_failure "$window_status"
+  {
+    # 실행하지 못한 단계도 명시하고 모든 판정 코드를 보존한다.
+    printf 'fill_k6_exit=%s\nfill_tee_exit=%s\n' "$fill_k6_status" "$fill_tee_status"
+    printf 'limited_k6_exit=%s\nlimited_tee_exit=%s\n' "$limited_k6_status" "$limited_tee_status"
+    printf 'before_snapshot_exit=%s\nresource_lookup_exit=%s\nafter_snapshot_exit=%s\n' "$before_status" "$lookup_status" "$after_status"
+    printf 'limited_db_compare_exit=%s\nlimited_db_unchanged=%s\n' "$compare_status" "$limited_db_unchanged"
+    printf 'rate_elapsed_seconds=%s\nrate_window_exit=%s\n' "$rate_elapsed" "$window_status"
+  } >> "$meta"
+else
+  # k6 실패 뒤에도 최종 DB를 검사하고 파이프의 k6·tee 종료 코드를 각각 저장한다.
+  set +e
+  k6 run --summary-mode=full --summary-export "$result_dir/summary.json" -e "SCENARIO=$scenario" \
+    load/reservation-load.js 2>&1 | tee "$result_dir/k6.txt"
+  pipeline_status=("${PIPESTATUS[@]}")
+  set -e
+  k6_status=${pipeline_status[0]}
+  tee_status=${pipeline_status[1]}
+fi
 check_status=0
 if docker compose exec -T postgres psql -X -U "$POSTGRES_USER" -d reservation_load \
   -v ON_ERROR_STOP=1 -v "scenario=$scenario" < load/check-invariants.sql > "$result_dir/check.txt" 2>&1; then
@@ -89,6 +171,7 @@ fi
   printf 'reset_exit=%s\nk6_exit=%s\ncheck_exit=%s\ntee_exit=%s\n' "$reset_status" "$k6_status" "$check_status" "$tee_status"
 } >> "$meta"
 printf '결과: %s\n' "$result_dir"
+if [[ "$rate_status" -ne 0 ]]; then exit "$rate_status"; fi
 if [[ "$k6_status" -ne 0 ]]; then exit "$k6_status"; fi
 if [[ "$check_status" -ne 0 ]]; then exit "$check_status"; fi
 if [[ "$tee_status" -ne 0 ]]; then exit "$tee_status"; fi

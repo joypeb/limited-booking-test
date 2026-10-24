@@ -35,12 +35,12 @@ export function responseJson(response) {
 }
 
 // HTTP마다 한 번만 호출해 분모를 요청 수로 유지한다. 응답·인증 값은 출력하지 않는다.
-export function classify(response, status, valid = () => true) {
+export function classify(response, status, valid = () => true, tags = {}) {
   const ok = check(response, {
     '응답 상태·계약이 예상과 일치': (r) => r.status === status && valid(r),
-  });
-  unexpected.add(ok ? 0 : 1);
-  unexpectedRate.add(!ok);
+  }, tags);
+  unexpected.add(ok ? 0 : 1, tags);
+  unexpectedRate.add(!ok, tags);
   return ok;
 }
 
@@ -56,19 +56,19 @@ export function createResource(name, capacity) {
   return responseJson(response).id;
 }
 
-export function createReservation(resourceId, key, username) {
+export function createReservation(resourceId, key, username, tags = {}) {
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(key)) throw new Error('생성 키 형식·길이가 유효하지 않습니다.');
   return http.post(`${BASE_URL}/api/reservations`, JSON.stringify({ resourceId }), {
     headers: {
       Authorization: authorization(username), 'Content-Type': 'application/json', 'Idempotency-Key': key,
-    }, timeout: '20s', tags: { name: 'POST /api/reservations' },
+    }, timeout: '20s', tags: { ...tags, name: 'POST /api/reservations' },
   });
 }
 
-export function cancelReservation(id, username) {
+export function cancelReservation(id, username, tags = {}) {
   return http.post(`${BASE_URL}/api/reservations/${id}/cancel`, null, {
     headers: { Authorization: authorization(username) },
-    timeout: '20s', tags: { name: 'POST /api/reservations/{id}/cancel' },
+    timeout: '20s', tags: { ...tags, name: 'POST /api/reservations/{id}/cancel' },
   });
 }
 
