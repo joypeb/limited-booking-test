@@ -2078,3 +2078,7 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 
 ### 미검증·한계
 - Tomcat의 System.err 직접 출력 로그, 네트워크 분할·패킷 손실, 장기 Flyway 마이그레이션의 소켓 상한 영향, 처리량 정체(약100 req/s)의 원인(BCrypt 가설, 미프로파일링), 운영 규모 일반화, CI(12단계), Qodana.
+
+### T027 전체 로컬 리뷰·T028 Converge
+- T027(reviewer, develop 대비 전체 diff 정적 리뷰): Critical/High 0, Medium 1(low phase 시계)·Low 2(quickstart·plan) → `00a784a`·`f8d71a3` 반영. 이전 6건 해소 확인, 제품 변경은 `application.yaml` 소켓 상한·`application-load.yaml`뿐, `.env`·비밀정보 커밋 없음.
+- T028 Speckit Converge: `check-prerequisites.sh --json --require-tasks --include-tasks` 종료0. FR-001~020·SC-001~008·US1~3 수용 시나리오·plan 대상 파일·헌법 MUST를 현재 코드·설정·스크립트·문서와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. FR-018(병목 1개 변경)은 판정 미달이 없어 조건 미발생으로 판단했다.

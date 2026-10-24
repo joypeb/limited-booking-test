@@ -1,7 +1,7 @@
 # Tasks: 로컬 부하·보안·의존성 장애 복구 검증
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [검증 계약](contracts/verification-contract.md), [실행 안내](quickstart.md)
-**상태**: 2026-10-24 T001~T026 완료(T022는 미달 없음으로 해당 없음, T021 측정은 Codex 샌드박스 네트워크 제한 가능성으로 orch가 직접 실행). T027~T031 리뷰·Converge·PR 진행. 실행 근거는 docs/test-evidence.md 11단계 절.
+**상태**: 2026-10-24 T001~T026 완료(T022는 미달 없음으로 해당 없음, T021 측정은 Codex 샌드박스 네트워크 제한 가능성으로 orch가 직접 실행). T027 전체 로컬 리뷰(Critical/High 0, Medium1·Low2 반영)·T028 Converge(Converged, 추가 작업 0) 완료. T029~T031 PR·OCR 리뷰 진행. 실행 근거는 docs/test-evidence.md 11단계 절.
 
 ## 형식과 공통 실행 계약
 
@@ -68,8 +68,8 @@
 
 - [X] T025 (orch) 문서 동기화: `docs/test-evidence.md` 11단계 절, `docs/versions.md`(k6·소켓 상한), `docs/decisions.md`(장애 재현 방식·소켓 상한·load 설정), README(DependencyFailureIT·load 절차), 계획서(상단 현재 상태·3.1 k6·5.3 소켓 상한(적용 시)·6.2 수·11단계 체크박스·13절 해당 항목), `knowledge/rules/environment-and-records.md`·`development-and-testing.md`, `knowledge/domain/security.md`·`reservation.md`, `knowledge/README.md` 요약. — 선행: T017·T024
 - [X] T026 (orch) 최종 게이트 `cd backend && ./gradlew build deepTest mutationSmoke verifyContractDependencies` 종료0·그룹별 수·실패0·skip0, `git diff --exit-code -- backend/src/main`(고의 변경 잔존 없음) 기록. — 선행: T025
-- [ ] T027 (rev) 전체 로컬 독립 리뷰(develop 대비 diff). 지적은 orch가 원인별 재할당 후 재검증. — 선행: T026
-- [ ] T028 (orch) Spec Kit Converge. Converged가 아니면 추가 작업 분배·검증 후 재실행. — 선행: T027
+- [X] T027 (rev) 전체 로컬 독립 리뷰(develop 대비 diff). 지적은 orch가 원인별 재할당 후 재검증. — 선행: T026
+- [X] T028 (orch) Spec Kit Converge. Converged가 아니면 추가 작업 분배·검증 후 재실행. — 선행: T027
 - [ ] T029 (orch) push·Draft PR(develop 대상) 생성. — 선행: T028
 - [ ] T030 (rev) Codex의 Alibaba Open Code Review를 `ocr delegate` 방식으로 PR 정확 diff에 실행, 유효 항목만 GitHub PR Review API로 파일·라인 코멘트 게시. — 선행: T029
 - [ ] T031 (orch) PR 코멘트 조회·분류·재할당, 수정 후 테스트·필요 Spec Kit 검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 대기. — 선행: T030
