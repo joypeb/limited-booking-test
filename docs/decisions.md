@@ -202,3 +202,17 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 - 축소 설정: QuickTheories 0.26의 `SimpleShrink`는 cycle마다 precursor의 무작위 인덱스 하나만 줄여 리스트 길이 값이 드물게 선택된다. 200 cycle에서는 10건에 머물러 `withShrinkCycles(2000)`으로 올렸고 같은 seed에서 이론적 최소 2건을 결정적으로 얻었다. 통과 시에는 축소가 실행되지 않으며 생성 순서 digest도 바뀌지 않는다.
 - 대안: jqwik(엔진 추가·호환 재검증), 무작위 루프(축소 없음), 모델에 결함 주입(실제 구현 탐지력이 아님), 테스트 자체 delta-debugging 축소(도구 축소로 충분해 불필요한 코드)는 제외했다. 근거는 [011 조사](../specs/011-property-mutation/research.md).
 - PIT 구성: `mutationSmoke` 이름을 유지하고 대상을 ResourceRules·IdempotencyKey·CancellationDecision으로 교체했다. 기본 변이군은 PIT `RecordFilter`가 레코드 canonical 생성자를 제외해 키 검증 변이가 0이었으므로 `mutators=['STRONGER']`, `features=['-FRECORD']`를 적용하고 컴파일러 생성 record 메서드(toString/hashCode/equals)는 규칙 밖이라 제외했다. 게이트는 대상 밖 변이0·무효0·탐지율≥0.80이다. PIT 연산자가 없는 enum 매핑 교체는 수동 고의 변경 E로 탐지력을 확인했다. 점수는 세 순수 규칙에 한정되며 SQL·동시성·권한의 근거로 쓰지 않는다.
+
+## 11단계 DB 소켓 읽기 상한 (2026-10-24)
+
+- 선택: 공통 `application.yaml`에 `spring.datasource.hikari.data-source-properties.socketTimeout: 7`(pgjdbc, 초)을 둔다.
+- 이유: `DependencyFailureIT.pausedDatabaseRejectsCreateWithin12sWithoutPartialWrite`가 PostgreSQL 컨테이너 pause 중 예약 생성이 응답 없이 HTTP 클라이언트 20초 상한까지 대기함을 재현했다(RED, HttpTimeoutException). `statement_timeout`·`lock_timeout`은 서버 타이머라 서버 정지 시 동작하지 않고, Hikari 연결 획득 3초는 이미 얻은 연결의 읽기를 제한하지 않는다. 수정 후 같은 시험이 7.1초에 503 `DEPENDENCY_UNAVAILABLE`, 부분 저장 없음, 재개 후 같은 키 201로 통과했다.
+- 값: lock 2초 < statement 5초 < socket 7초. 5초 이하이면 서버의 정상 statement timeout보다 먼저 소켓이 끊기고, 길수록 정지 시 체류 시간이 늘어난다. 업무 조회는 단건 PK 조회라 7초 상한과 충돌하지 않는다.
+- 대안: 앱 레벨 요청 timeout(스레드 중단·트랜잭션 상태 불명확), Hikari validationTimeout 조정(획득 단계만 제한), 테스트 상한 완화(결함 은폐)는 제외했다.
+- 결과·한계: 실제 pause·연결 차단으로 검증했으나 네트워크 분할·패킷 손실 시뮬레이션은 하지 않았다. 계획서 5.3절·AGENTS.md·`knowledge/rules/domain-and-transactions.md`에 반영했다. API·SQL·오류 계약 변경 없음.
+
+## 11단계 의존성 장애 재현 방식 (2026-10-24)
+
+- 선택: 연결 중단은 테스트 소유 PostgreSQL의 관리 연결에서 `ALTER DATABASE … ALLOW_CONNECTIONS false` + `pg_terminate_backend`, 응답 정지는 컨테이너 pause, 잠금은 별도 연결의 `FOR UPDATE`, 응답 유실은 raw socket 전송 후 DB 커밋 폴링 확인 뒤 응답 미수신 close로 재현한다(`support/PostgresFaults`, `DependencyFailureIT`).
+- 이유: 컨테이너 stop/restart는 동적 포트가 바뀌어 같은 앱 컨텍스트의 재연결을 검증할 수 없다. 응답 유실은 제품 후크 없이 클라이언트 쪽에서만 재현하고 커밋을 DB로 확인한다(계획서 11단계).
+- 대안: NOLOGIN(기존 연결 유지), 테스트 전용 지연 필터(웹 계층 침투), mock 예외(실제 드라이버 경로 미검증)는 제외했다. 근거는 [012 조사](../specs/012-load-security-recovery/research.md).

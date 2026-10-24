@@ -90,7 +90,7 @@ cd backend
 - 실패한 트랜잭션 안에서 예외를 삼키고 계속 조회하지 않는다. 다른 PK·FK·연결 오류를 멱등 재요청으로 취급하거나 무제한 재시도하지 않는다.
 - 생성과 취소의 갱신 잠금 순서는 `resource → reservation`이다. 취소는 대상 행을 `FOR UPDATE`로 잠근 뒤 소유자·`CONFIRMED` 조건으로 상태를 갱신한다.
 - 취소 상태 갱신 1건일 때만 수량을 복구한다. 복구는 `available < capacity` 조건을 사용하고 0건이면 불변식 위반으로 전체 롤백한다.
-- 초기 로컬 설정은 lock timeout 2초, statement timeout 5초, 풀 최대 10개, 연결 획득 대기 3초다. DB timeout은 트랜잭션 시작 시 `SET LOCAL`로 적용한다. 장애·잠금 시간 초과는 503과 전체 롤백으로 처리한다.
+- 초기 로컬 설정은 lock timeout 2초, statement timeout 5초, 풀 최대 10개, 연결 획득 대기 3초다. DB timeout은 트랜잭션 시작 시 `SET LOCAL`로 적용한다. DB 서버 정지 시 무한 대기를 막기 위해 드라이버 소켓 읽기 상한 7초(statement 5초보다 길게)를 공통 설정에 둔다(2026-10-24 11단계). 장애·잠금 시간 초과는 503과 전체 롤백으로 처리한다.
 
 ## API와 보안 계약
 

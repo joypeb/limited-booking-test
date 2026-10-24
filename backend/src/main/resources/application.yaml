@@ -1,6 +1,11 @@
 spring:
   application:
     name: backend
+  datasource:
+    hikari:
+      data-source-properties:
+        # 서버 정지 시 무한 대기 방지: 소켓 읽기 상한(초), statement 5초보다 길게 둔다.
+        socketTimeout: 7
   data:
     redis:
       timeout: 200ms

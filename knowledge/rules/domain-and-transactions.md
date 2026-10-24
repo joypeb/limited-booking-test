@@ -54,6 +54,7 @@ Java 25 `String.strip()`의 `Character.isWhitespace(int)` 기준으로 이름 �
 - 생성과 취소의 갱신 잠금 순서는 `resource → reservation`이다. 취소의 최초 소유자 조회로 예약 행을 먼저 잠그지 않는다.
 - 중복 취소는 200과 동일한 취소 시각을 반환한다. 상태·수량 복구는 함께 커밋한다.
 - 초기값은 lock timeout 2초, statement timeout 5초, 풀 최대 10개, 연결 획득 대기 3초다. 각 트랜잭션 시작 시 DB timeout을 `SET LOCAL`로 적용한다.
+- 서버측 timeout은 DB 서버가 정지하면 동작하지 않는다. 공통 `application.yaml`의 pgjdbc `socketTimeout=7`(초)이 읽기 대기를 제한한다. lock 2초 < statement 5초 < socket 7초 순서를 유지해 정상 서버 timeout을 앞지르지 않는다. 근거·재현은 [012 조사](../../specs/012-load-security-recovery/research.md) R3와 `DependencyFailureIT`.
 - DB 의존성 장애·잠금 시간 초과는 503과 전체 롤백이다. 분류하지 못한 내부 결함을 409·503으로 숨기지 않는다.
 
 ### 2026-10-14 저장 길이 보장 범위 명확화
