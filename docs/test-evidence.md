@@ -2062,16 +2062,17 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 ### US3 부하 (T018~T024)
 - T018 `application-load.yaml`(`a9a93dc`): `LOAD_RATE_LIMIT` 미설정 기동 실패(`APPLICATION FAILED TO START`), 100000 설정 시 health UP·127.0.0.1:8080 LISTEN·reservation_load Flyway V1 success. 앱은 `bootJar` 산출물을 `java -jar … --spring.profiles.active=load`로 실행.
 - T019 `load/`(`90cb0fd`, 리뷰 보완 `5f33e4a`). T020 판정기 RED: `EXPECT_CREATED=999 ./load/run.sh high selfcheck` k6 종료99, 보존식을 깬 고의 UPDATE 후 `check-invariants.sql` 종료3.
-- T021 판정 실행(매회 reset): low v2×3, high×3, replay×3(제한 100000/60초), rate-limit v3×3(20/60초) 모두 종료0·DB PASS. low p95 141.3/111.8/119.4ms, high 201=1000·SOLD_OUT 409=1000·기타0, replay 성공500·고유50·불일치0, rate-limit 201=20·429=5·429 전후 업무 행 동일. 판정 제외 실행(초기 스크립트 low/rate-limit, 하네스 오류 rate-limit v2)과 사유는 [성능 기록](performance.md).
+- T021 판정 실행(매회 reset): low v3×3, high×3, replay×3(제한 100000/60초), rate-limit v3×3(20/60초) 모두 종료0·DB PASS. low p95 141.3/133.4/112.6ms(최대 VU 10), high 201=1000·SOLD_OUT 409=1000·기타0, replay 성공500·고유50·불일치0, rate-limit 201=20·429=5·429 전후 업무 행 동일. 판정 제외 실행(초기 스크립트 low/rate-limit, 하네스 오류 rate-limit v2)과 사유는 [성능 기록](performance.md).
 - T022 해당 없음(미달 없음). T023 [performance.md](performance.md) `b1b16c8` 이후 갱신. 결과 파일 비밀번호 원문 검색 0건.
 - 리뷰(T024) Medium 2건(low VU 겹침, 429 DB 무변경 직접 비교)·Low 1건(setup 표기) 반영.
+- 전체 리뷰(T027) Medium 1건(low phase 시계가 setup 포함)→`00a784a` 수정 후 low v3 재측정, Low 2건(quickstart 필수 변수·plan 폐기 설계)→plan·quickstart 동기화. Critical/High 0.
 
 ### T026 최종 게이트
 - `./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks` 종료0(4분31초): Unit308·일반IT322·Contract102·Property4(총736), PIT generated23·killed23·survived0·invalid0, 실패/오류/skip0. 실행 전 `git diff --exit-code -- backend/src/main` 0(고의 변경 잔존 없음). 이후 변경은 `load/`·문서뿐이며 Gradle 대상 코드는 무변경.
 
 ### 발견한 결함 구분
 - 실제 구현 결함 1건: DB 서버 정지 시 예약 생성 무한 대기(F4) → 소켓 읽기 상한 수정.
-- 테스트·스크립트 결함(리뷰 발견) 6건: 로그 관측 종료 시점, 위조 GET 전후 비교, 커밋 폴링 상한, low VU 겹침, 429 DB 비교, 보고서 setup 표기 — 모두 수정.
+- 테스트·스크립트·문서 결함(리뷰 발견) 9건: 로그 관측 종료 시점, 위조 GET 전후 비교, 커밋 폴링 상한, low VU 겹침, 429 DB 비교, 보고서 setup 표기, low phase 시계, quickstart 필수 변수, plan 폐기 설계 — 모두 수정.
 - 측정 하네스 오류 1건: rate-limit v2가 이전 앱을 대상으로 실행(무효 처리, 재실행).
 - 학습용 고의 변경 7종(S4·S11·S11b·F5·F6·F1~F3 분류 제거·판정기 2종)은 모두 탐지 후 원복.
 
