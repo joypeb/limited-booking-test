@@ -44,7 +44,7 @@ LOAD_RATE_LIMIT=100000 ./load/run.sh replay 1
 | replay | 10VU×50회, VU별 키5개×10회 | HTTP 201=500, id 불일치0·Replay 헤더 정확, DB 고유 예약50 |
 | rate-limit | fill 1VU×20회 → limited 1VU×5회, 대상 수량100 | fill 모두201·limited 모두 RATE_LIMITED 429, Retry-After 정수≥1, 429 전후 DB 전체 행 동일·예약20 |
 
-low는 단일 `constant-vus` 시나리오로 10VU를 2분30초 유지하고 마지막 반복 완료에 최대45초 유예를 둔다. 반복 시작 시 `exec.instance.currentTestRunDuration`이 30000ms 미만이면 `phase=warmup`, 이후는 `phase=measure`다. 생성·취소와 checks·오류율에 같은 phase를 붙이고 threshold는 `phase:measure`만 평가한다. 경계에 걸친 반복은 시작 시각으로 분류하므로 warmup에서 시작한 취소가 30초 뒤에 끝나도 warmup에 속한다. 별도 warmup VU가 겹쳐 추가되는 구간은 없다. 예상 품절은 `SOLD_OUT`인 409만 인정한다. 429·503·500·timeout은 high에서 모두 실패다.
+low는 단일 `constant-vus` 시나리오로 10VU를 2분30초 유지하고 마지막 반복 완료에 최대45초 유예를 둔다. 반복 시작 시 시나리오 시작부터의 경과(`Date.now() - exec.scenario.startTime`)가 30000ms 미만이면 `phase=warmup`, 이후는 `phase=measure`다. setup 소요 시간은 이 30초에 포함하지 않는다. 생성·취소와 checks·오류율에 같은 phase를 붙이고 threshold는 `phase:measure`만 평가한다. 경계에 걸친 반복은 시작 시각으로 분류하므로 warmup에서 시작한 취소가 30초 뒤에 끝나도 warmup에 속한다. 별도 warmup VU가 겹쳐 추가되는 구간은 없다. 예상 품절은 `SOLD_OUT`인 409만 인정한다. 429·503·500·timeout은 high에서 모두 실패다.
 
 제한 시험은 앱을 종료한 뒤 원래 제한값으로 **재기동**한다.
 

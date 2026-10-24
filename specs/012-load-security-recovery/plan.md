@@ -97,12 +97,12 @@ docs/performance-runs/               # 실행별 k6 summary JSON·DB 검사 결�
 7. **결함 발견 시**: 500 등 계약 밖 응답이 나오면 원인(예외 종류·SQLSTATE)을 재현 기록하고 implementer가 `ApiExceptionHandler`의 분류를 최소로 확장(08/57 연결 계열만, 미분류는 500 유지).
 8. **load 설정(US3)**: `application-load.yaml` = 127.0.0.1:8080, `jdbc:postgresql://127.0.0.1:5432/reservation_load`, 자격 증명 환경 변수, 풀 10/3초, Redis 127.0.0.1:6379·200ms, `reservation.rate-limit.limit: ${LOAD_RATE_LIMIT}`·`window: ${LOAD_RATE_WINDOW:60000ms}`(limit 기본값 없음), 보안 비밀번호 환경 변수, health만 노출.
 9. **k6 시나리오**: 공통 `lib.js`가 ADMIN으로 대상 생성(setup). 상태 분류 Counter(`created_201`, `sold_out_409`, `unexpected`)와 Rate(`unexpected_rate`).
-   - low: `warmup`(constant-vus 10, 30s) + `measure`(constant-vus 10, 2m, startTime 30s). 반복마다 새 키 생성→취소, 대상 10개 순환. threshold `http_req_duration{scenario:measure}` p(95)<500, `unexpected_rate{scenario:measure}` rate<0.01.
+   - low: 단일 `low`(constant-vus 10, 2m30s). 반복 시작 시각이 시나리오 시작 후 30초 미만이면 `phase:warmup`, 이후 `phase:measure` 태그(생성·취소 공통). 반복마다 새 키 생성→취소, 대상 10개 순환. threshold `http_req_duration{phase:measure}` p(95)<500, `unexpected_rate{phase:measure}` rate<0.01. (2026-10-24 리뷰 보완: 별도 warmup/measure 시나리오는 종료 유예 동안 최대 20VU가 겹쳐 폐기)
    - high: shared-iterations 50VU·2000회, 대상 1개·수량 1000. `expectedStatuses(201,409)`, 409 본문 code 검사. threshold `created_201 count==${EXPECT_CREATED:-1000}`, `sold_out_409 count==1000`, `unexpected count==0`.
    - replay: per-vu-iterations 10VU×50회, VU별 키 5개를 순환해 키당 10회 전송(총 500요청·고유 키 50, 대상 수량 충분). VU 안에서 최초 id 대비 불일치 Counter. threshold `id_mismatch count==0`, `unexpected count==0`. DB 검사로 고유 예약 = 50.
-   - rate-limit: 앱을 `LOAD_RATE_LIMIT=20`으로 재기동, USER_A 제한 키 삭제 후 1VU 25회 생성(서로 다른 키). 1~20 비429, 21~25 429·`Retry-After` 정수≥1. DB 검사 예약 수 = 201 수.
+   - rate-limit: 앱을 `LOAD_RATE_LIMIT=20`으로 재기동(이전 프로세스 종료·8080 해제 확인), reset 후 같은 60초 창에서 `PHASE=fill`(1VU 20회, 모두 201) → 업무 행 전체 스냅샷 → `PHASE=limited`(5회, 모두 429·`RATE_LIMITED`·`Retry-After` 정수≥1) → 스냅샷 `cmp` 동일 → 불변식·최종 상태(예약 20) 검사.
 10. **판정·저장**: `run.sh <scenario>`가 reset → `k6 run --summary-export` → `psql -f check-invariants.sql`(위반 행 0이 아니면 비0) → `docs/performance-runs/<date>-<scenario>-<n>/`에 summary.json·check.txt·meta.txt(commit·제한값·이미지). k6 비0 또는 검사 비0이면 스크립트 비0.
-11. **고의 기대 불일치**: `EXPECT_CREATED=999 ./load/run.sh high`가 비0 종료하는지 1회 확인(SC-007).
+11. **고의 기대 불일치**: `LOAD_RATE_LIMIT=100000 EXPECT_CREATED=999 ./load/run.sh high selfcheck`가 비0 종료하는지 1회 확인(SC-007).
 
 ## 역할 분담
 

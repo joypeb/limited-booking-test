@@ -14,10 +14,10 @@ docker compose up -d --wait
 ./load/prepare-db.sh
 # 부하용 제한값으로 앱 실행(별도 터미널)
 (cd backend && LOAD_RATE_LIMIT=100000 ./gradlew bootRun --args='--spring.profiles.active=load')
-./load/run.sh low 1     # low|high|replay, 실행 번호
-EXPECT_CREATED=999 ./load/run.sh high selfcheck   # 비0 종료 기대
-# 제한 시험: 앱을 LOAD_RATE_LIMIT=20 으로 재기동 후
-./load/run.sh rate-limit 1
+LOAD_RATE_LIMIT=100000 ./load/run.sh low run1     # low|high|replay, 실행 label
+LOAD_RATE_LIMIT=100000 EXPECT_CREATED=999 ./load/run.sh high selfcheck   # 비0 종료 기대
+# 제한 시험: 앱 종료·8080 해제 확인 후 LOAD_RATE_LIMIT=20 으로 재기동
+LOAD_RATE_LIMIT=20 ./load/run.sh rate-limit run1
 docker compose down      # 볼륨 삭제 없음
 ```
 결과: `docs/performance-runs/<run-id>/`, 보고서: `docs/performance.md`. 상세 절차는 `load/README.md`.

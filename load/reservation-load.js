@@ -63,8 +63,9 @@ export function setup() {
 }
 
 export function low(data) {
-  // 경계에 걸친 반복도 시작 시각으로 분류하며 생성·취소에 같은 phase를 유지한다.
-  const phase = exec.instance.currentTestRunDuration < 30000 ? 'warmup' : 'measure';
+  // setup 시간을 제외한 시나리오 시작 기준 30초다. 경계의 반복도 시작 시각으로 분류한다.
+  // 생성·취소에는 이 반복에서 결정한 같은 phase를 유지한다.
+  const phase = Date.now() - exec.scenario.startTime < 30000 ? 'warmup' : 'measure';
   const tags = { phase };
   const username = __VU % 2 === 1 ? 'USER_A' : 'USER_B';
   const resourceId = data.resources[(__VU + __ITER - 1) % data.resources.length];
