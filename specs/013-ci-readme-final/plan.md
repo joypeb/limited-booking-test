@@ -80,7 +80,7 @@ Phase 1 재확인: 설계 산출물이 계약·규칙을 바꾸지 않으며 위
 
 ### D6. 코드 기준점과 최종 실행 (US4, orch)
 
-- 기준점 B: US1~US3의 워크플로·스크립트·(필요 시) 제품 수정이 커밋된 뒤, 새 환경 재현까지 통과한 커밋. 이후 커밋은 `README.md`·`docs/`·`specs/`·`knowledge/`·계획서·AGENTS.md만 변경 가능(`git diff --name-only B..HEAD`로 확인).
+- 기준점 B: US1~US3의 워크플로·스크립트·(필요 시) 제품 수정이 커밋된 뒤, 새 환경 재현까지 통과한 커밋. 이후 커밋은 `README.md`·`docs/`·`specs/`·`knowledge/`·계획서·AGENTS.md와 정적 검사 도구 `scripts/check-*.sh`(Gradle·k6 결과에 영향 없음)만 변경 가능(`git diff --name-only B..HEAD`로 확인). 실행 중 `load/run.sh` 결함 수정으로 B를 `c4585ed`→`3ddf007`로 갱신했고 백엔드 diff가 없어 Gradle 결과는 유지, k6만 재실행했다.
 - B의 깨끗한 작업 트리에서: `cd backend && ./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks`(실행 수·PIT 기록) → 원래 제한 20/60초 IT 지정 실행 `./gradlew integrationTest --tests '*SecurityIT' --tests '*RateLimitApiIT' --tests '*RedisRateLimitIT' --tests '*RedisFailureIT'`(각 IT의 제한 설정값 확인 근거 기록) → k6 low·high·replay(100000/60초)·rate-limit(20/60초) 각 1회(`load/run.sh`, meta의 commit=B·dirty=false 확인).
 - 고의 결함 잔존: `git status --porcelain` 비어 있음, `git diff --exit-code B -- backend load compose.yaml .github`, `backend/src/main`에서 고의 표식(`고의`, `INTENTIONAL`, `DELIBERATE`, `FIXME-RED`) 검색 0건, 위 전체 테스트 통과.
 
