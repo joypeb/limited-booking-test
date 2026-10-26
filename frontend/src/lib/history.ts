@@ -24,9 +24,14 @@ export function readHistory(storage: Storage): HistoryEntry[] {
   try {
     const parsed: unknown = JSON.parse(storage.getItem(HISTORY_STORAGE_KEY) ?? "[]");
     if (!Array.isArray(parsed)) return [];
-    const entries = parsed.map(cleanEntry).filter((entry): entry is HistoryEntry => entry !== null)
+    const entries = parsed
+      .map(cleanEntry)
+      .filter((entry): entry is HistoryEntry => entry !== null)
       .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
-    return entries.filter((entry, index) => entries.findIndex((other) => other.kind === entry.kind && other.id === entry.id) === index).slice(0, 50);
+    return entries
+      .filter((entry, index) => entries.findIndex((other) =>
+        other.kind === entry.kind && other.id === entry.id) === index)
+      .slice(0, 50);
   } catch {
     return [];
   }
@@ -37,7 +42,8 @@ export function recordHistory(storage: Storage, entry: HistoryEntry): HistoryEnt
   const current = readHistory(storage);
   if (!clean) return current;
   const entries = [clean, ...current.filter((other) => other.kind !== clean.kind || other.id !== clean.id)]
-    .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt)).slice(0, 50);
+    .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt))
+    .slice(0, 50);
   try {
     storage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(entries));
   } catch {

@@ -12,9 +12,12 @@ export function RecentHistory() {
         <ul className="space-y-3">
           {history.map((entry) => {
             const kind = entry.kind === "resource" ? "대상" : "예약";
+            const description = [kind, entry.id];
+            if (entry.name !== undefined) description.push(entry.name);
+            description.push(entry.account, entry.recordedAt);
             return (
               <li key={`${entry.kind}:${entry.id}`} className="space-y-2 break-all">
-                <p>{[kind, entry.id, ...(entry.name !== undefined ? [entry.name] : []), entry.account, entry.recordedAt].join(" · ")}</p>
+                <p>{description.join(" · ")}</p>
                 <button type="button" disabled={!credentials} className={secondaryButtonClassName}
                   aria-label={`${kind} ${entry.id} 다시 조회`} onClick={() => selectEntry(entry)}>다시 조회</button>
               </li>
