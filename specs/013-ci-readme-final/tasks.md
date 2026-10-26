@@ -1,7 +1,7 @@
 # Tasks: CI·재현 가능한 실행 안내·최종 검증 기록
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [검증 계약](contracts/verification-contract.md), [실행 안내](quickstart.md)
-**상태**: 2026-10-26 T001~T030 완료. 리뷰 지적은 검사기 보완(2f451c8·c4585ed·0b5749e)·요약 스크립트(b88df61)·문서(d992d3b·0d176ac)로 반영. 실행 중 실제 결함 1건(`load/run.sh` git_dirty 항상 true)을 발견·수정(3ddf007)해 기준점을 c4585ed→3ddf007로 갱신(백엔드 동일). T031 이후 진행 중. 실행 근거는 docs/test-evidence.md 12단계 절.
+**상태**: 2026-10-26 T001~T030 완료. 리뷰 지적은 검사기 보완(2f451c8·c4585ed·0b5749e)·요약 스크립트(b88df61)·문서(d992d3b·0d176ac)로 반영. 실행 중 실제 결함 1건(`load/run.sh` git_dirty 항상 true)을 발견·수정(3ddf007)해 기준점을 c4585ed→3ddf007로 갱신(백엔드 동일). T031 전체 로컬 리뷰(Critical/High/Medium 0, Low 2 반영)·T032 Converge(Converged, 추가 작업 0) 완료. T033 이후 진행 중. 실행 근거는 docs/test-evidence.md 12단계 절.
 
 ## 형식과 공통 실행 계약
 
@@ -77,8 +77,8 @@
 ## Phase 8: 기록 동기화·전체 검증
 
 - [X] T030 (orch) 기록 동기화(plan D8): decisions·versions·performance·test-evidence·계획서(6.2 수치, 12단계·13절 체크박스는 실제 검증 항목만, 사람 항목·외부 미실행 사유, 진행 기록 행)·knowledge(README 목록, environment-and-records 문서 책임 표·CI 규칙, development-and-testing의 CI 적용)·AGENTS.md CI 현황. 세 검사 스크립트 재실행 PASS, 링크 확인. 커밋. — 선행: T029
-- [ ] T031 (rev) 전체 로컬 리뷰: develop 대비 전체 diff를 spec·contracts·헌법 기준으로 리뷰(Critical/High/Medium/Low). 지적은 orch가 분류해 재할당·재검증. — 선행: T030
-- [ ] T032 (orch) Spec Kit Converge. Converged가 아니면 추가 작업 분배·검증 후 재실행. — 선행: T031
+- [X] T031 (rev) 전체 로컬 리뷰: develop 대비 전체 diff를 spec·contracts·헌법 기준으로 리뷰(Critical/High/Medium/Low). 지적은 orch가 분류해 재할당·재검증. — 선행: T030
+- [X] T032 (orch) Spec Kit Converge. Converged가 아니면 추가 작업 분배·검증 후 재실행. — 선행: T031
 
 ## Phase 9: GitHub PR
 

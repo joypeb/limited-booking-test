@@ -2155,3 +2155,8 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 ### 미검증·한계
 - GitHub Actions 실제 실행(Draft PR에서 확인 예정), 외부에서 테스트 실패가 job 실패로 전파되는지(실패 커밋 push 미승인), deep-tests 외부 실행(기본 브랜치 반영 후), 운영 규모 성능·네트워크 분할·Tomcat System.err·Qodana(기존 한계 유지).
 - 사용자 수행 대기: AI 없는 5분 시연, AI 없는 작은 변경, AI 없는 주요 선택 설명([시연 자료](demo.md)).
+
+### T024·T029·T031 리뷰와 T032 Converge
+- T024(최종 실행 기록): 수치·SHA·dirty·종료 코드가 원시 결과와 일치, run.sh 수정 정확(결과 디렉터리 생성 실패 시 종료1 유지), 기준점 갱신 판단 타당, 결과물 비밀정보 0. T029(US5): Medium 1(추적표 검사가 assertion 호출을 테스트로 오인) → `0b5749e`, Low 3(R19 statement timeout 연결·장기 마이그레이션 미검증 누락·demo 절 인용) → `0d176ac`.
+- T031(reviewer, `42b74fa...873daec` 전체): Critical/High/Medium 0, Low 2(허용 경로 문구·진행표 남은 작업) → `1cf48b6`. backend 변경 0, 검사 3종 PASS(7·6·5), 22개 커밋 규칙 충족, `.env`·자격 증명·개인 경로 추가 없음.
+- T032 Speckit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 종료0. FR-001~017·SC-001~008·US1~5 수용 시나리오 21개·plan D1~D8·헌법 I~V를 현재 상태와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. 외부 run 의무(FR-006·SC-001·SC-002)는 기존 T033·T034로 계획되어 있다.
