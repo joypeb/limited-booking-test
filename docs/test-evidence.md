@@ -2160,3 +2160,10 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 - T024(최종 실행 기록): 수치·SHA·dirty·종료 코드가 원시 결과와 일치, run.sh 수정 정확(결과 디렉터리 생성 실패 시 종료1 유지), 기준점 갱신 판단 타당, 결과물 비밀정보 0. T029(US5): Medium 1(추적표 검사가 assertion 호출을 테스트로 오인) → `0b5749e`, Low 3(R19 statement timeout 연결·장기 마이그레이션 미검증 누락·demo 절 인용) → `0d176ac`.
 - T031(reviewer, `42b74fa...873daec` 전체): Critical/High/Medium 0, Low 2(허용 경로 문구·진행표 남은 작업) → `1cf48b6`. backend 변경 0, 검사 3종 PASS(7·6·5), 22개 커밋 규칙 충족, `.env`·자격 증명·개인 경로 추가 없음.
 - T032 Speckit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 종료0. FR-001~017·SC-001~008·US1~5 수용 시나리오 21개·plan D1~D8·헌법 I~V를 현재 상태와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. 외부 run 의무(FR-006·SC-001·SC-002)는 기존 T033·T034로 계획되어 있다.
+
+### T033~T036 PR·외부 CI·OCR 리뷰
+- T033: push `feature/013-ci-readme-final`, Draft PR [#17](https://github.com/joypeb/limited-booking-test/pull/17)(base develop `42b74fa`, head `4b692f3`). verify run [40269778342](https://github.com/joypeb/limited-booking-test/actions/runs/40269778342)(event pull_request) **success**: ubuntu-24.04, setup-java가 Corretto **25.0.5**+0.9(linux-x64)를 설치(로컬 25.0.4와 패치 차이), `./gradlew --no-daemon verifyContract` BUILD SUCCESSFUL 6m18s·11 tasks executed, test 308·integrationTest 322·contractTest 102 실패/skip 0. artifact `verify-test-reports`(969,277 bytes)를 내려받아 XML 대조: test 15파일 308·integrationTest 22파일 322·contractTest 4파일 102, 실패·오류·skip 0. 시간 상한 시험(DependencyFailureIT 등)도 x86_64 runner에서 통과했다.
+- T034: deep-tests 외부 실행은 미실행(대기). workflow_dispatch는 기본 브랜치(main)에 워크플로가 있어야 하며 main 반영은 사용자 승인 사항이다.
+- T035(reviewer): Alibaba Open Code Review `ocr delegate preview --from 42b74fa… --to 4b692f3… --exclude 'docs/performance-runs/**' --format json`·`ocr delegate rule --format json <선택 8개>` 종료0, OCR 선택 8개+보충 64개=72개 파일 검토, `ocr review`(외부 LLM)·OCR Actions 미사용. **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5647455906 게시.
+- T036: PR 리뷰 1건(COMMENTED)·라인 코멘트 0·이슈 코멘트 0. Critical/High·실패 테스트·누락 요구사항 0으로 추가 수정 없음. Merge는 사용자 승인 대기.
+- 이후 문서 기록 커밋의 push로 verify가 다시 실행될 수 있으며, 그 결과는 PR 체크에서 확인한다(코드 변경 없음).

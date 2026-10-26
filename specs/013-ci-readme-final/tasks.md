@@ -1,7 +1,7 @@
 # Tasks: CI·재현 가능한 실행 안내·최종 검증 기록
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [검증 계약](contracts/verification-contract.md), [실행 안내](quickstart.md)
-**상태**: 2026-10-26 T001~T030 완료. 리뷰 지적은 검사기 보완(2f451c8·c4585ed·0b5749e)·요약 스크립트(b88df61)·문서(d992d3b·0d176ac)로 반영. 실행 중 실제 결함 1건(`load/run.sh` git_dirty 항상 true)을 발견·수정(3ddf007)해 기준점을 c4585ed→3ddf007로 갱신(백엔드 동일). T031 전체 로컬 리뷰(Critical/High/Medium 0, Low 2 반영)·T032 Converge(Converged, 추가 작업 0) 완료. T033 이후 진행 중. 실행 근거는 docs/test-evidence.md 12단계 절.
+**상태**: 2026-10-26 T001~T030 완료. 리뷰 지적은 검사기 보완(2f451c8·c4585ed·0b5749e)·요약 스크립트(b88df61)·문서(d992d3b·0d176ac)로 반영. 실행 중 실제 결함 1건(`load/run.sh` git_dirty 항상 true)을 발견·수정(3ddf007)해 기준점을 c4585ed→3ddf007로 갱신(백엔드 동일). T031 전체 로컬 리뷰(Critical/High/Medium 0, Low 2 반영)·T032 Converge(Converged, 추가 작업 0) 완료. T033 Draft PR #17·verify run 40269778342 success, T035 OCR delegate 리뷰(유효 지적 0, 리뷰 5647455906), T036 코멘트 0건으로 추가 수정 없음. T034 deep-tests 외부 실행은 main 반영(사용자 승인) 후 대기. Merge는 사용자 승인 대기. 실행 근거는 docs/test-evidence.md 12단계 절.
 
 ## 형식과 공통 실행 계약
 
@@ -82,10 +82,10 @@
 
 ## Phase 9: GitHub PR
 
-- [ ] T033 (orch) push·Draft PR(develop 대상) 생성. verify run 자동 실행 결과(run id·결론·JDK·그룹별 수·artifact)를 확인·기록. 실패 시 원인 분류·재할당. — 선행: T032
+- [X] T033 (orch) push·Draft PR(develop 대상) 생성. verify run 자동 실행 결과(run id·결론·JDK·그룹별 수·artifact)를 확인·기록. 실패 시 원인 분류·재할당. — 선행: T032
 - [ ] T034 (orch) deep-tests 외부 run: main 반영 전에는 수동 트리거 불가 → 미실행(대기)으로 기록하고 사용자에게 보고. 반영 후 사용자 지시 시 `gh workflow run deep-tests.yml` 1회 실행·기록. — 선행: T033
-- [ ] T035 (rev) PR의 정확한 diff를 Codex의 Open Code Review **ocr delegate** 방식으로 리뷰하고, 유효 항목만 GitHub PR Review API/`gh`로 파일·라인 코멘트 게시. Actions 사용 금지, 코드 수정 금지. — 선행: T033
-- [ ] T036 (orch) PR 코멘트 조회·분류 → 해당 에이전트 재할당 → 수정 후 테스트·필요 Spec Kit 검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 대기. — 선행: T035
+- [X] T035 (rev) PR의 정확한 diff를 Codex의 Open Code Review **ocr delegate** 방식으로 리뷰하고, 유효 항목만 GitHub PR Review API/`gh`로 파일·라인 코멘트 게시. Actions 사용 금지, 코드 수정 금지. — 선행: T033
+- [X] T036 (orch) PR 코멘트 조회·분류 → 해당 에이전트 재할당 → 수정 후 테스트·필요 Spec Kit 검증·재리뷰. Critical/High·실패 테스트·누락 요구사항 0까지 반복. Merge는 사용자 승인 대기. — 선행: T035
 
 ## 의존성과 병행
 
