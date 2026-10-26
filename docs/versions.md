@@ -133,3 +133,18 @@ T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyCont
 ## 2026-10-24 11단계 부하·보안·장애 복구
 
 새 Gradle 의존성·버전 변경 없음(Corretto25.0.4+7-LTS, Wrapper9.8.0, Boot4.1.1, Docker Desktop29.8.2, 고정 PG18.6/Redis8.10.2 digest 유지). k6 v2.3.0(darwin/arm64)을 실제 부하에 사용했다. 구성 변경: 공통 `application.yaml`에 pgjdbc `socketTimeout=7`(초, DB 서버 정지 시 무한 대기 수정), 신규 `application-load.yaml`(reservation_load, `LOAD_RATE_LIMIT` 필수). Testcontainers의 `DockerClient` pause/unpause를 테스트에서 사용한다. 실행 결과는 [실행 근거](test-evidence.md) 11단계 절과 [성능 기록](performance.md).
+
+## 2026-10-26 12단계 CI·최종 검증
+
+새 Gradle 의존성·버전 변경 없음(Corretto 25.0.4+7-LTS, Wrapper 9.8.0, Boot 4.1.1, Docker 29.8.2, Compose v5.6.0, k6 v2.3.0, 고정 PG 18.6/Redis 8.10.2 digest — 두 digest는 linux/amd64·arm64 포함 OCI index로 확인).
+
+| CI 구성 요소 | 고정 값 | 확인 |
+|---|---|---|
+| runner | `ubuntu-24.04` | 실제 run 결과는 test-evidence 12단계 절 |
+| actions/checkout | v7.0.1 `3d3c42e5aac5ba805825da76410c181273ba90b1` | `gh api …/commits/<tag>` 일치(리뷰어 재확인) |
+| actions/setup-java | v6.1.0 `b843ebf9b913146b38da2eaa7aeddf76074ae1ad` (corretto, '25') | 입력 이름을 해당 SHA의 action.yml로 확인 |
+| gradle/actions/setup-gradle | v6.4.0 `3f5f9adaf7d9fecd50b5935e54106014257a94e6` | 기본 캐시 사용 |
+| actions/upload-artifact | v7.0.2 `cf430e030ddbb5b0abf93d22962f4752f3646cd9` | 입력 이름 확인 |
+| actionlint(로컬 정적 검사) | `rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` | Docker로 실행, 현재 워크플로 오류 0 |
+
+CI 실제 JDK: run 40269778342에서 setup-java가 Amazon Corretto 25.0.5+0.9(linux-x64)를 설치했다(`java-version: '25'`는 최신 25 패치를 받는다). 로컬 25.0.4와 패치가 다르며 같은 결과(Unit308·IT322·Contract102)를 확인했다. 패치 고정은 하지 않았다.

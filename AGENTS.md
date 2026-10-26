@@ -140,5 +140,5 @@ cd backend
 - 로컬 DB는 named volume으로 보관한다. 기본 종료 절차에 볼륨 삭제를 넣지 않는다.
 - 구현하며 `docs/versions.md`, `docs/decisions.md`, `docs/test-evidence.md`, `docs/performance.md`, README·OpenAPI를 실제 상태에 맞게 관리한다. 문서 루트 선택은 일관되게 기록한다.
 - 실행 명령·종료 코드·테스트 수·환경 버전·seed·경쟁 조건·미검증 범위를 기록한다. 계획 체크박스는 실제 실행과 검증 후에만 표시한다.
-- CI 파일 작성과 외부 CI 성공을 구분한다. push·공개·외부 workflow 실행은 사용자가 별도로 지시했을 때 수행한다.
+- CI 파일 작성과 외부 CI 성공을 구분한다. push·공개·외부 workflow 실행은 사용자가 별도로 지시했을 때 수행한다. 2026-10-26 12단계에서 `.github/workflows/verify.yml`(PR·push에서 `verifyContract`)과 `deep-tests.yml`(수동 `propertyTest mutationSmoke`)을 두었다. 외부 실행 결과는 docs/test-evidence.md 12단계 절을 따른다.
 - 완료 보고에는 변경 이유, 실제 검증 결과, 미완료·미검증 사항, 사용자가 읽을 핵심 코드·SQL·테스트, 다음 한 작업을 담는다. 실행하지 않은 검증을 통과했다고 보고하지 않는다.

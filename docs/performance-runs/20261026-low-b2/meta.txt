@@ -1,0 +1,22 @@
+started_utc=2026-10-26T04:12:07Z
+git_commit=3ddf007a1482799f7017fcc31f53591dba6437cf
+git_dirty=false
+scenario=low
+label=b2
+run_id=20261026T041207Z-91501
+base_url=http://127.0.0.1:8080
+load_rate_limit_recorded=100000
+load_rate_window_recorded=60000ms
+expect_created=1000
+expect_sold_out=1000
+k6_version=k6 v2.3.0 (commit/devel, go1.27.1, darwin/arm64)
+java_version=openjdk version "25.0.4" 2026-07-21 LTS
+architecture=arm64
+compose_images:
+postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+redis:8.10.2-trixie@sha256:2c2dff791878316e3b083188be0d578423b24813cdda5de0e80ea4f7b3e6bfd6
+finished_utc=2026-10-26T04:14:39Z
+reset_exit=0
+k6_exit=0
+check_exit=0
+tee_exit=0

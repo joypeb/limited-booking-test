@@ -216,3 +216,20 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 - 선택: 연결 중단은 테스트 소유 PostgreSQL의 관리 연결에서 `ALTER DATABASE … ALLOW_CONNECTIONS false` + `pg_terminate_backend`, 응답 정지는 컨테이너 pause, 잠금은 별도 연결의 `FOR UPDATE`, 응답 유실은 raw socket 전송 후 DB 커밋 폴링 확인 뒤 응답 미수신 close로 재현한다(`support/PostgresFaults`, `DependencyFailureIT`).
 - 이유: 컨테이너 stop/restart는 동적 포트가 바뀌어 같은 앱 컨텍스트의 재연결을 검증할 수 없다. 응답 유실은 제품 후크 없이 클라이언트 쪽에서만 재현하고 커밋을 DB로 확인한다(계획서 11단계).
 - 대안: NOLOGIN(기존 연결 유지), 테스트 전용 지연 필터(웹 계층 침투), mock 예외(실제 드라이버 경로 미검증)는 제외했다. 근거는 [012 조사](../specs/012-load-security-recovery/research.md).
+
+## 12단계 CI 구성 (2026-10-26)
+
+- 위치·트리거: `.github/workflows/verify.yml`은 pull_request·push(develop, main)에서 `./gradlew --no-daemon verifyContract`를 실행한다. `deep-tests.yml`은 workflow_dispatch 전용으로 `./gradlew --no-daemon propertyTest mutationSmoke`를 실행한다(사용자 결정 2026-10-26). OCR 리뷰는 Actions로 실행하지 않는다.
+- deep 명령: `deepTest`/`verifyProperty`는 verify가 이미 실행하는 Unit·IT·Contract를 중복하므로 6.2절의 seed 재현 태스크 `propertyTest`와 PIT를 택했다. 단독 실행은 Unit/IT/Contract 회귀를 포함하지 않는다.
+- 실행 환경: GitHub 호스팅 `ubuntu-24.04`(latest 계열 금지), JDK는 로컬과 같은 Amazon Corretto 25. 고정 PostgreSQL·Redis digest가 amd64를 포함한 OCI index임을 확인해 이미지를 바꾸지 않았다. 대안 `ubuntu-24.04-arm`은 x86_64 재현성 확인 가치가 낮아 택하지 않았다.
+- 공급망·권한: action은 커밋 SHA로 고정(태그 주석), `permissions: contents: read`, secret 미사용, seed 입력은 env로만 받아 정수 검사.
+- 실패 은닉 방지: `continue-on-error`·`|| true`·태스크 제외 금지. 보고서는 `if: always()` 업로드. 이 성질은 `scripts/check-workflows.sh`(actionlint 1.7.12 고정 digest + W2~W7)로 검사하고 결함 사본으로 탐지력을 확인했다. 외부에서 실패 테스트가 job 실패로 전파되는지는 실패 커밋 push가 승인 범위 밖이라 미검증이다.
+- 경로 대응: 계획서의 Maven `target/pit-reports`·failsafe reports는 Gradle `backend/build/reports/pitest`·`backend/build/test-results/propertyTest`로 대응한다. seed·실제 시도 수는 테스트 코드를 바꾸지 않고 XML `<system-out>`에서 `.github/scripts/property-summary.sh`로 추출한다.
+- 제약: workflow_dispatch는 워크플로가 기본 브랜치에 있어야 하므로 deep-tests 외부 실행은 main 반영 후 가능하다. 임시 자동 트리거는 추가하지 않는다.
+
+## 12단계 문서·재현 검증 방식 (2026-10-26)
+
+- README·추적표·워크플로는 사람이 읽고 끝내지 않도록 `scripts/check-readme.sh`·`scripts/check-traceability.sh`·`scripts/check-workflows.sh`로 RED→GREEN 판정한다. 정적 휴리스틱이며 의미 검증은 새 환경 재현·리뷰가 담당한다.
+- 새 환경 재현은 로컬 저장소의 새 clone(디렉터리 이름으로 Compose 프로젝트·볼륨 분리)과 `env -i` 셸에서 README 코드 블록을 그대로 추출해 실행한다. 임시 프로젝트 볼륨만 정리하고 기존 로컬 볼륨은 보존한다.
+- 최종 기준점: 애플리케이션·테스트·load·Compose·워크플로가 더 바뀌지 않는 커밋에서 심화 전체·PIT·원래 제한 IT·k6를 실행한다. k6는 11단계 3회 판정을 유지하고 12단계는 최종 코드 회귀 확인으로 시나리오당 1회 실행한다(규칙 문서의 3회 측정 절차와의 차이).
+- `load/run.sh`의 dirty 판정 결함을 고쳐 기준점이 바뀌었으나 백엔드 diff가 없어 Gradle 결과는 유지하고 k6만 재실행했다.

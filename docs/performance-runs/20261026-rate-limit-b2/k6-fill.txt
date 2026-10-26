@@ -1,0 +1,110 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load/rate-limit.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 45s max duration (incl. graceful stop):
+              * rate_limit: 20 iterations for each of 1 VUs (maxDuration: 45s)
+
+
+running (01.0s), 1/1 VUs, 9 complete and 0 interrupted iterations
+rate_limit   [  45% ] 1 VUs  00.8s/45s  09/20 iters, 20 per VU
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    created_201
+    ✓ 'count==20' count=20
+
+    iterations
+    ✓ 'count==20' count=20
+
+    unexpected
+    ✓ 'count==0' count=0
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 21      11.158888/s
+    checks_succeeded...: 100.00% 21 out of 21
+    checks_failed......: 0.00%   0 out of 21
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201....................: 20     10.627512/s
+    limited_429....................: 0      0/s
+    unexpected.....................: 0      0/s
+    unexpected_rate................: 0.00%  0 out of 21
+
+    HTTP
+    http_req_blocked...............: min=1µs     med=2µs     p(50)=2µs     p(95)=232µs    p(99)=1.31ms   max=1.58ms  
+    http_req_connecting............: min=0s      med=0s      p(50)=0s      p(95)=196µs    p(99)=199.2µs  max=200µs   
+    http_req_duration..............: min=81.97ms med=83.23ms p(50)=83.23ms p(95)=119.74ms p(99)=158.27ms max=167.91ms
+      { expected_response:true }...: min=81.97ms med=83.23ms p(50)=83.23ms p(95)=119.74ms p(99)=158.27ms max=167.91ms
+    http_req_failed................: 0.00%  0 out of 21
+    http_req_receiving.............: min=194µs   med=245µs   p(50)=245µs   p(95)=404µs    p(99)=408.8µs  max=410µs   
+    http_req_sending...............: min=10µs    med=11µs    p(50)=11µs    p(95)=188µs    p(99)=224.8µs  max=234µs   
+    http_req_tls_handshaking.......: min=0s      med=0s      p(50)=0s      p(95)=0s       p(99)=0s       max=0s      
+    http_req_waiting...............: min=81.73ms med=82.95ms p(50)=82.95ms p(95)=119.3ms  p(99)=157.71ms max=167.31ms
+    http_reqs......................: 21     11.158888/s
+
+    EXECUTION
+    iteration_duration.............: min=82.12ms med=83.33ms p(50)=83.33ms p(95)=90.29ms  p(99)=114.8ms  max=120.92ms
+    iterations.....................: 20     10.627512/s
+    vus............................: 1      min=1       max=1
+    vus_max........................: 1      min=1       max=1
+
+    NETWORK
+    data_received..................: 12 kB  6.1 kB/s
+    data_sent......................: 6.6 kB 3.5 kB/s
+
+
+  █ SCENARIO: rate_limit 
+
+    checks_total.......: 20      10.627512/s
+    checks_succeeded...: 100.00% 20 out of 20
+    checks_failed......: 0.00%   0 out of 20
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201................: 20     10.627512/s
+    limited_429................: 0      0/s
+    unexpected.................: 0      0/s
+    unexpected_rate............: 0.00%  0 out of 20
+
+    HTTP
+    http_req_blocked...........: min=1µs     med=2µs     p(50)=2µs     p(95)=14.44µs p(99)=188.48µs max=232µs   
+    http_req_connecting........: min=0s      med=0s      p(50)=0s      p(95)=9.99µs  p(99)=161.99µs max=200µs   
+    http_req_duration..........: min=81.97ms med=83.18ms p(50)=83.18ms p(95)=90.1ms  p(99)=113.81ms max=119.74ms
+    http_req_failed............: 0.00%  0 out of 20
+    http_req_receiving.........: min=194µs   med=235.5µs p(50)=235.5µs p(95)=394.8µs p(99)=406.96µs max=410µs   
+    http_req_sending...........: min=10µs    med=11µs    p(50)=11µs    p(95)=42.09µs p(99)=195.61µs max=234µs   
+    http_req_tls_handshaking...: min=0s      med=0s      p(50)=0s      p(95)=0s      p(99)=0s       max=0s      
+    http_req_waiting...........: min=81.73ms med=82.94ms p(50)=82.94ms p(95)=89.88ms p(99)=113.42ms max=119.3ms 
+    http_reqs..................: 20     10.627512/s
+
+    EXECUTION
+    iteration_duration.........: min=82.12ms med=83.33ms p(50)=83.33ms p(95)=90.29ms p(99)=114.8ms  max=120.92ms
+    iterations.................: 20     10.627512/s
+
+    NETWORK
+    data_received..............: 11 kB  5.8 kB/s
+    data_sent..................: 6.3 kB 3.4 kB/s
+
+
+
+
+running (01.9s), 0/1 VUs, 20 complete and 0 interrupted iterations
+rate_limit ✓ [ 100% ] 1 VUs  01.7s/45s  20/20 iters, 20 per VU

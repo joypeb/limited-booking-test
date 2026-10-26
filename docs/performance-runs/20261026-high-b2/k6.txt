@@ -1,0 +1,179 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: load/reservation-load.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 50 max VUs, 15m30s max duration (incl. graceful stop):
+              * high: 2000 iterations shared among 50 VUs (maxDuration: 15m0s, exec: high, gracefulStop: 30s)
+
+
+running (00m01.0s), 50/50 VUs, 51 complete and 0 interrupted iterations
+high   [   3% ] 50 VUs  00m00.9s/15m0s  0051/2000 shared iters
+
+running (00m02.0s), 50/50 VUs, 147 complete and 0 interrupted iterations
+high   [   7% ] 50 VUs  00m01.9s/15m0s  0147/2000 shared iters
+
+running (00m03.0s), 50/50 VUs, 229 complete and 0 interrupted iterations
+high   [  11% ] 50 VUs  00m02.9s/15m0s  0229/2000 shared iters
+
+running (00m04.0s), 50/50 VUs, 312 complete and 0 interrupted iterations
+high   [  16% ] 50 VUs  00m03.9s/15m0s  0312/2000 shared iters
+
+running (00m05.0s), 50/50 VUs, 400 complete and 0 interrupted iterations
+high   [  20% ] 50 VUs  00m04.9s/15m0s  0400/2000 shared iters
+
+running (00m06.0s), 50/50 VUs, 494 complete and 0 interrupted iterations
+high   [  25% ] 50 VUs  00m05.9s/15m0s  0494/2000 shared iters
+
+running (00m07.0s), 50/50 VUs, 582 complete and 0 interrupted iterations
+high   [  29% ] 50 VUs  00m06.9s/15m0s  0582/2000 shared iters
+
+running (00m08.0s), 50/50 VUs, 656 complete and 0 interrupted iterations
+high   [  33% ] 50 VUs  00m07.9s/15m0s  0656/2000 shared iters
+
+running (00m09.0s), 50/50 VUs, 744 complete and 0 interrupted iterations
+high   [  37% ] 50 VUs  00m08.9s/15m0s  0744/2000 shared iters
+
+running (00m10.0s), 50/50 VUs, 828 complete and 0 interrupted iterations
+high   [  41% ] 50 VUs  00m09.9s/15m0s  0828/2000 shared iters
+
+running (00m11.0s), 50/50 VUs, 907 complete and 0 interrupted iterations
+high   [  45% ] 50 VUs  00m10.9s/15m0s  0907/2000 shared iters
+
+running (00m12.0s), 50/50 VUs, 996 complete and 0 interrupted iterations
+high   [  50% ] 50 VUs  00m11.9s/15m0s  0996/2000 shared iters
+
+running (00m13.0s), 50/50 VUs, 1079 complete and 0 interrupted iterations
+high   [  54% ] 50 VUs  00m12.9s/15m0s  1079/2000 shared iters
+
+running (00m14.0s), 50/50 VUs, 1165 complete and 0 interrupted iterations
+high   [  58% ] 50 VUs  00m13.9s/15m0s  1165/2000 shared iters
+
+running (00m15.0s), 50/50 VUs, 1254 complete and 0 interrupted iterations
+high   [  63% ] 50 VUs  00m14.9s/15m0s  1254/2000 shared iters
+
+running (00m16.0s), 50/50 VUs, 1329 complete and 0 interrupted iterations
+high   [  66% ] 50 VUs  00m15.9s/15m0s  1329/2000 shared iters
+
+running (00m17.0s), 50/50 VUs, 1427 complete and 0 interrupted iterations
+high   [  71% ] 50 VUs  00m16.9s/15m0s  1427/2000 shared iters
+
+running (00m18.0s), 50/50 VUs, 1519 complete and 0 interrupted iterations
+high   [  76% ] 50 VUs  00m17.9s/15m0s  1519/2000 shared iters
+
+running (00m19.0s), 50/50 VUs, 1607 complete and 0 interrupted iterations
+high   [  80% ] 50 VUs  00m18.9s/15m0s  1607/2000 shared iters
+
+running (00m20.0s), 50/50 VUs, 1686 complete and 0 interrupted iterations
+high   [  84% ] 50 VUs  00m19.9s/15m0s  1686/2000 shared iters
+
+running (00m21.0s), 50/50 VUs, 1780 complete and 0 interrupted iterations
+high   [  89% ] 50 VUs  00m20.9s/15m0s  1780/2000 shared iters
+
+running (00m22.0s), 50/50 VUs, 1871 complete and 0 interrupted iterations
+high   [  94% ] 50 VUs  00m21.9s/15m0s  1871/2000 shared iters
+
+running (00m23.0s), 50/50 VUs, 1945 complete and 0 interrupted iterations
+high   [  97% ] 50 VUs  00m22.9s/15m0s  1945/2000 shared iters
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    created_201
+    ✓ 'count==1000' count=1000
+
+    iterations
+    ✓ 'count==2000' count=2000
+
+    sold_out_409
+    ✓ 'count==1000' count=1000
+
+    unexpected
+    ✓ 'count==0' count=0
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2001    85.472499/s
+    checks_succeeded...: 100.00% 2001 out of 2001
+    checks_failed......: 0.00%   0 out of 2001
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201....................: 1000   42.714892/s
+    sold_out_409...................: 1000   42.714892/s
+    unexpected.....................: 0      0/s
+    unexpected_rate................: 0.00%  0 out of 2001
+
+    HTTP
+    http_req_blocked...............: min=1µs      med=4µs      p(50)=4µs      p(95)=6µs      p(99)=510µs    max=679µs   
+    http_req_connecting............: min=0s       med=0s       p(50)=0s       p(95)=0s       p(99)=487µs    max=648µs   
+    http_req_duration..............: min=76.71ms  med=580.25ms p(50)=580.25ms p(95)=697.16ms p(99)=748.78ms max=829.47ms
+      { expected_response:true }...: min=76.71ms  med=580.25ms p(50)=580.25ms p(95)=697.16ms p(99)=748.78ms max=829.47ms
+    http_req_failed................: 0.00%  0 out of 2001
+    http_req_receiving.............: min=9µs      med=205µs    p(50)=205µs    p(95)=537µs    p(99)=1.01ms   max=23.2ms  
+    http_req_sending...............: min=3µs      med=17µs     p(50)=17µs     p(95)=31µs     p(99)=70µs     max=477µs   
+    http_req_tls_handshaking.......: min=0s       med=0s       p(50)=0s       p(95)=0s       p(99)=0s       max=0s      
+    http_req_waiting...............: min=76.54ms  med=580.14ms p(50)=580.14ms p(95)=696.91ms p(99)=748.36ms max=829.27ms
+    http_reqs......................: 2001   85.472499/s
+
+    EXECUTION
+    iteration_duration.............: min=280.08ms med=580.54ms p(50)=580.54ms p(95)=697.69ms p(99)=749.14ms max=829.76ms
+    iterations.....................: 2000   85.429784/s
+    vus............................: 50     min=50        max=50
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 1.0 MB 44 kB/s
+    data_sent......................: 631 kB 27 kB/s
+
+
+  █ SCENARIO: high 
+
+    checks_total.......: 2000    85.429784/s
+    checks_succeeded...: 100.00% 2000 out of 2000
+    checks_failed......: 0.00%   0 out of 2000
+
+    ✓ 응답 상태·계약이 예상과 일치
+
+    CUSTOM
+    created_201................: 1000   42.714892/s
+    sold_out_409...............: 1000   42.714892/s
+    unexpected.................: 0      0/s
+    unexpected_rate............: 0.00%  0 out of 2000
+
+    HTTP
+    http_req_blocked...........: min=1µs      med=4µs      p(50)=4µs      p(95)=6µs      p(99)=510.02µs max=679µs   
+    http_req_connecting........: min=0s       med=0s       p(50)=0s       p(95)=0s       p(99)=487.01µs max=648µs   
+    http_req_duration..........: min=279.83ms med=580.31ms p(50)=580.31ms p(95)=697.23ms p(99)=748.78ms max=829.47ms
+    http_req_failed............: 0.00%  0 out of 2000
+    http_req_receiving.........: min=9µs      med=205µs    p(50)=205µs    p(95)=537.14µs p(99)=1.01ms   max=23.2ms  
+    http_req_sending...........: min=3µs      med=17µs     p(50)=17µs     p(95)=31.04µs  p(99)=70µs     max=477µs   
+    http_req_tls_handshaking...: min=0s       med=0s       p(50)=0s       p(95)=0s       p(99)=0s       max=0s      
+    http_req_waiting...........: min=279.63ms med=580.14ms p(50)=580.14ms p(95)=696.97ms p(99)=748.36ms max=829.27ms
+    http_reqs..................: 2000   85.429784/s
+
+    EXECUTION
+    iteration_duration.........: min=280.08ms med=580.54ms p(50)=580.54ms p(95)=697.69ms p(99)=749.14ms max=829.76ms
+    iterations.................: 2000   85.429784/s
+
+    NETWORK
+    data_received..............: 1.0 MB 44 kB/s
+    data_sent..................: 631 kB 27 kB/s
+
+
+
+
+running (00m23.4s), 00/50 VUs, 2000 complete and 0 interrupted iterations
+high ✓ [ 100% ] 50 VUs  00m23.3s/15m0s  2000/2000 shared iters
