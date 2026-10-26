@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-한정 수량 예약의 정합성(예약·취소·재시도·경쟁·의존성 장애)을 localhost에서 재현 가능하게 검증하는 Java 25·Spring Boot 4.1.1·Gradle 9.8.0 백엔드다. 0~11단계(도구·저장·규칙·인증·예약 생성/취소·경쟁·Redis 제한·계약·Property/PIT·부하/보안/장애 복구)를 완료했다. 12단계(CI·README·최종 검증)도 완료했고 사용자 시연·작은 변경·설명만 대기 중이다. 설계 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다.
+한정 수량 예약의 정합성(예약·취소·재시도·경쟁·의존성 장애)을 localhost에서 재현 가능하게 검증하는 Java 25·Spring Boot 4.1.1·Gradle 9.8.0 백엔드다. 0~11단계(도구·저장·규칙·인증·예약 생성/취소·경쟁·Redis 제한·계약·Property/PIT·부하/보안/장애 복구)를 완료했다. 12단계(CI·README·최종 검증)도 완료했고 사용자 시연·작은 변경·설명만 대기 중이다. 2026-10-26 사용자 지시로 localhost 전용 [브라우저 콘솔](#브라우저-콘솔frontend)을 추가했다. 설계 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다.
 
 ## Quick Start
 
@@ -177,6 +177,28 @@ PostgreSQL named volume은 보존한다. 볼륨 삭제 옵션은 기본 절차�
 - Property 재현: `QT_SEED=<정수> ./gradlew propertyTest`. 실행마다 `seed=`·`attempts=`·`scenario-digest=`를 출력한다.
 - 정적 검사(저장소 루트): `scripts/check-workflows.sh`(워크플로, Docker 필요), `scripts/check-readme.sh`(이 문서의 명령·경로·수치 대조).
 - 계약 검증 의존성: `./gradlew verifyContractDependencies`.
+
+## 브라우저 콘솔(frontend)
+
+2026-10-26 사용자 지시로 추가한 localhost 전용 조작 콘솔이다(Next.js 16.4.3·Tailwind 4.3.3, [도메인 문서](knowledge/domain/frontend-console.md), [명세](specs/014-frontend-console/spec.md)). 백엔드 API 5개를 화면에서 호출하고 상태·필드·`Location`·`Idempotent-Replayed`·`Retry-After`·오류 `code`를 원문으로 보여 준다. 브라우저는 같은 출처의 콘솔 서버(`/api/backend/...`)만 호출하고 콘솔 서버가 계약 경로만 백엔드로 전달한다(백엔드 CORS 없음). 비밀번호는 탭 메모리에만 있어 새로고침하면 다시 입력한다. 목록 API가 없으므로 이 브라우저에서 다룬 식별자를 최근 기록으로 보여 준다.
+
+Node.js 20.9 이상(검증: v26.11.1)이 필요하다. 위 Quick Start로 백엔드를 띄운 뒤 다른 터미널에서 실행한다.
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+`http://127.0.0.1:3000`을 연다. 백엔드 주소는 서버 환경 변수 `BACKEND_BASE_URL`(기본 `http://127.0.0.1:8080`, 루프백만 허용), 콘솔 포트를 바꾸면 `CONSOLE_PORT`도 같은 값으로 둔다.
+
+| 명령(`frontend/`) | 범위 |
+|---|---|
+| `npm test` | Unit·Proxy(실제 HTTP 가짜 업스트림)·Component, 0건·skip·실패 거부 게이트 |
+| `npm run lint` / `npm run typecheck` / `npm run build` | ESLint / `next typegen` + `tsc` / 프로덕션 빌드 |
+| `npm run test:e2e` | Playwright, 실제 백엔드 대상(아래 격리 절차) |
+
+E2E는 로컬 개발 DB를 쓰지 않는다. 같은 Compose의 `reservation_e2e` DB와 Redis DB 1을 백엔드 환경 변수로 지정하고, 비밀번호는 셸 환경 변수(`ADMIN_PASSWORD` 등)로 준다. 절차는 [실행 안내](specs/014-frontend-console/quickstart.md) 3절이며, 요청 제한(20회/60초) 때문에 연속 실행 사이에 60초 이상 둔다. 실행 근거는 [실행 증거](docs/test-evidence.md) 14단계 절이다.
 
 ## CI
 

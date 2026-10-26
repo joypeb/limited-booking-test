@@ -32,6 +32,7 @@
 - [reservation.md](domain/reservation.md): 예약 생성·멱등 재현·트랜잭션·롤백·취소·경쟁의 구현·검증과 10단계 속성(독립 모델)·고의 변경 탐지, 11단계 DB 장애·응답 유실 복구·부하 정합성 연결.
 - [security.md](domain/security.md): 로컬 고정 계정 Basic 인증·권한·고정 UUID Principal·인증 앞단 8KiB 본문 상한 필터·공통 `problem+json` 오류 처리의 설계 및 4단계 구현·검증 지식 (`SecurityIT` 6건). 예약 소유권 조회·취소(6단계)와 Redis 요청 제한(8단계)까지 구현·실행 검증했다. SecurityIT는 취소 입력 검증을 포함해 현재7건이다.
 - [ratelimit.md](domain/ratelimit.md): Redis 고정 창·처리 순서·장애의 기준과 US1 limiter/Lua·Unit13/실제RedisIT5 구현·검증 지식. US1~US4와 최종 전체 인수를 완료했다. 실제HTTP37건·장애12건·기존HTTP/110회·종료 reset0을 확인했다.
+- [frontend-console.md](domain/frontend-console.md): 2026-10-26 사용자 지시로 추가한 localhost 브라우저 콘솔(`frontend/`). 같은 출처 전달 계층(경로 허용 목록·Host/Origin 검사·원바이트·`WWW-Authenticate` 이름 변경), 메모리 전용 자격 증명, 백엔드 응답만 표시, 최근 식별자 기록과 Unit·Proxy·Component·실제 백엔드 E2E 검증.
 - 예약 생성 API·쓰기 트랜잭션·성공 키·장애 롤백은5단계에서 구현했다. 조회·취소는6단계, 실제 경쟁·Redis 제한은7~8단계에서 구현·검증했다. 1단계 도구 프로브의 실제 HTTP·DB·Redis 최소 검증과 업무 기능 검증을 구분한다.
 - [2단계 명세](../specs/003-define-db-schema/spec.md): 대상·예약 저장 제약, 전체 저장 속성 조회, 테스트 전용 초기화와 수량 보존 검사 요구사항. 명세 품질 검토와 저장 기반 구현·실행 검증을 완료했다.
 - [2단계 구현 계획](../specs/003-define-db-schema/plan.md): 데이터 모델·저장 계층 계약·검증 안내를 연결한다. 설계와 실제 저장 코드·SQL·테스트·실행 증거를 연결한다.
