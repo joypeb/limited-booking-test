@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { isJsonNumberLiteral, isUuid, resourceCreateBody } from "@/lib/api/bodies";
-import { callBackend } from "@/lib/api/client";
-import type { ApiResult } from "@/lib/api/types";
 import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
+import { useBackendRequest } from "./useBackendRequest";
 
 const inputClassName = "w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600";
 const submitClassName = "rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50";
@@ -16,29 +15,12 @@ export function ResourcePanel() {
 }
 
 function ResourcePanelContent() {
-  const { credentials, generation, getGeneration } = useConsole();
+  const { result, requestsDisabled, send } = useBackendRequest();
   const [name, setName] = useState("");
   const [capacityText, setCapacityText] = useState("");
   const [invalidCapacity, setInvalidCapacity] = useState(false);
   const [resourceId, setResourceId] = useState("");
   const [invalidId, setInvalidId] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [result, setResult] = useState<ApiResult | null>(null);
-  const inFlight = useRef(false);
-
-  async function send(method: "GET" | "POST", path: string, body?: string) {
-    if (!credentials || inFlight.current) return;
-    inFlight.current = true;
-    setPending(true);
-    try {
-      const response = await callBackend({ method, path, body, credentials });
-      if (getGeneration() === generation) setResult(response);
-    } finally {
-      inFlight.current = false;
-      if (getGeneration() === generation) setPending(false);
-    }
-  }
-
   function lookup(id = resourceId) {
     if (!isUuid(id)) {
       setInvalidId(true);
@@ -46,7 +28,7 @@ function ResourcePanelContent() {
     }
     setInvalidId(false);
     setResourceId(id);
-    return send("GET", `resources/${id}`);
+    return send({ method: "GET", path: `resources/${id}` });
   }
 
   function create() {
@@ -55,10 +37,9 @@ function ResourcePanelContent() {
       return;
     }
     setInvalidCapacity(false);
-    return send("POST", "resources", resourceCreateBody(name, capacityText));
+    return send({ method: "POST", path: "resources", body: resourceCreateBody(name, capacityText) });
   }
 
-  const requestsDisabled = !credentials || pending;
   const resultBody = result?.ok ? result.body : undefined;
   const resultId = resultBody !== null
     && typeof resultBody === "object"

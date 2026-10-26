@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ConsoleProvider } from "@/components/ConsoleProvider";
 import { CredentialsPanel } from "@/components/CredentialsPanel";
 import { ResourcePanel } from "@/components/ResourcePanel";
@@ -13,7 +14,9 @@ export default function Home() {
         <ConsoleProvider>
           <CredentialsPanel />
           <ResourcePanel />
-          <ReservationCreatePanel />
+          <Suspense fallback={<p>예약 생성 화면을 불러오는 중입니다.</p>}>
+            <ReservationCreatePanel />
+          </Suspense>
           <ReservationPanel />
           <RecentHistory />
         </ConsoleProvider>
