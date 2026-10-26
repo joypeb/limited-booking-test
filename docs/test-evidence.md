@@ -2087,3 +2087,83 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 - T029: push `feature/012-load-security-recovery`, Draft PR [#15](https://github.com/joypeb/limited-booking-test/pull/15)(base develop `ea2e058`, head `a05f0a4`). GitHub Actions·외부 CI는 사용하지 않았다(체크 없음).
 - T030(reviewer): Alibaba Open Code Review `ocr delegate preview --from ea2e058 --to a05f0a4 --exclude 'docs/performance-runs/**'`·`ocr delegate rule` 종료0, OCR 선택 11개+보충 27개=38개 파일 검토, 외부 LLM 호출 `ocr review` 미사용. 후보 3건은 이미 수정된 항목으로 제외, **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5637612391 게시.
 - T031: PR 리뷰 코멘트·이슈 코멘트 0건, Critical/High·실패 테스트·누락 요구사항 0. 추가 수정 없음. Merge는 사용자 승인 대기.
+
+## 2026-10-26 12단계 CI·README·최종 검증 (specs/013-ci-readme-final)
+
+### Spec Kit 진행
+- 헌법 1.0.0→1.0.1(PATCH): TODO(CI_CONTEXT)를 사용자 결정(verify는 PR·push 실행, deep-tests 수동)으로 명확화.
+- Specify(5 US·FR-017)·Clarify(사용자 질문 2건 답변, 설계 모호점 12건을 Explorer 갭 분석·Advisor 의견·실제 확인으로 해소)·Plan·Checklist(품질16/16, 검증22/22)·Tasks(T001~T036)·Analyze(FR↔작업·계약 ID 매핑 누락 0) 순서로 진행했다.
+- Explorer의 "고정 digest가 arm64 전용" 추정은 `docker buildx imagetools inspect`로 기각했다(두 digest 모두 amd64·arm64 OCI index). Advisor의 "Property 실제 attempts 미출력" 지적은 `ReservationPropertyIT`의 `finally` 출력으로 사실이 아님을 확인했다.
+- GitHub `workflow_dispatch`는 기본 브랜치에 파일이 있어야 하므로 deep-tests 외부 실행은 main 반영 후로 미뤘다.
+
+### T001 환경
+- 기준 HEAD `0ec12e8`. Corretto 25.0.4+7-LTS, Gradle 9.8.0, macOS 27.0.1 aarch64, Docker 29.8.2(CPU 11, 메모리 8,319,369,216 bytes), Compose v5.6.0, k6 v2.3.0. 5432·6379·8080 LISTEN 없음.
+
+### US1 verify CI (T003~T008)
+- RED: `scripts/check-workflows.sh` 워크플로 부재 시 종료1 `FAIL W0`.
+- GREEN: `.github/workflows/verify.yml`(ubuntu-24.04, Corretto 25, setup-gradle, action SHA 고정, `contents: read`, 45분, `./gradlew --no-daemon verifyContract`, `if: always()` 보고서 artifact). 첫 검사는 업로드 경로 표기(`/` vs `/**`)로 W6 FAIL → 수정 후 PASS.
+- VERIFY: 결함 사본 W1(알 수 없는 키)·W2(`continue-on-error`)·W4(`@v7`)·W6(`verify`로 명령 변경) 각각 종료1. 로컬 동등 실행 `cd backend && ./gradlew --no-daemon verifyContract` 종료0, 4m33s, test 308·integrationTest 322·contractTest 102, 실패·오류·skip 0(XML 대조).
+- REVIEW(T008): Critical/High 0, Medium 3(실행 단계 `if` 건너뛰기·브랜치 부정 패턴·job 수준 쓰기 권한의 거짓 PASS)·Low 1(다중 YAML 문서) → 검사기 보완 `2f451c8`. 재리뷰에서 Medium 5·Low 2 추가(아래 US2·US3 포함) → `b88df61`·`c4585ed`. 최종 재확인에서 차단 이슈 0.
+
+### US2 deep-tests 수동 워크플로 (T009~T013)
+- RED: W7 추가 후 종료1 `FAIL W7`(파일 부재).
+- GREEN: `.github/workflows/deep-tests.yml`(workflow_dispatch 전용, `qt_seed`는 env로 받아 정수 검사 후 `QT_SEED`, `./gradlew --no-daemon propertyTest mutationSmoke`, 요약·Property/PIT 보고서 always 업로드, cancel-in-progress false)과 `.github/scripts/property-summary.sh`.
+- VERIFY: push 트리거 추가 사본 W7 FAIL. 로컬 동등 실행 종료0(propertyTest 4, 실패·skip 0, PIT generated 23·killed 23·survived 0·invalid 0). 요약 스크립트가 이번 실행 XML에서 `seed=20261023`·`attempts=149`·digest `0a94346b…0bf7`·프로브 `generated-attempts=101`을 추출(종료0), XML 부재 종료1, 보완 후 attempts=99 사본 종료1.
+- 외부 실행: 미실행(기본 브랜치 반영 전 수동 트리거 불가).
+
+### US3 README Quick Start와 새 환경 재현 (T014~T018)
+- RED: `scripts/check-readme.sh` 갱신 전 README 종료1(R1 Quick Start 없음, R2, R6 IT322 없음). GREEN: README 재구성 후 PASS 6.
+- 새 환경 재현(T017): `b2cec9d`를 `/private/tmp/lb-fresh-20261026T034419Z/lbfresh`에 새 clone(Compose 프로젝트 `lbfresh`, 새 named volume), `env -i`(HOME·PATH만) 셸에서 README 순서대로 실행.
+  - 1 필요 환경 종료0, 2 `.env.example` 복사·새 값·export 종료0, 3 `up -d --wait` 종료0(postgres·redis healthy), 5a bootRun → 6 health `{"groups":["liveness","readiness"],"status":"UP"}`, 4 `flyway_schema_history` v1 success t.
+  - 7 API 흐름: README 코드 블록을 그대로 추출해 실행(종료0). 201(available 2) → 201 Replayed false CONFIRMED → 201 Replayed true 같은 id·createdAt → 200 CONFIRMED cancelledAt null → USER_B 404 `NOT_FOUND` → 200 CANCELLED → 200 같은 cancelledAt → 201 Replayed true CONFIRMED(최초 재현) → 200 available 2. 계약 C4 9단계 100% 일치.
+  - 5b `./gradlew bootJar` → `backend-0.0.1-SNAPSHOT.jar` `java -jar` 실행에서도 같은 9단계 결과.
+  - 8 `docker compose down` 종료0 후 `lbfresh_postgres_data`·기존 `limited-booking_postgres_data` 모두 남음 확인. 이후 임시 프로젝트만 `docker compose -p lbfresh down -v`로 정리. 로그에서 비밀번호 검색 0건.
+  - 발견: health 응답에 groups 포함, curl 본문 뒤 줄바꿈 없음 → README 수정 `d992d3b` 후 새 clone에서 바뀐 7단계 블록 재실행(9개 응답 모두 기대값·줄 시작).
+
+### US4 최종 기준점 (T019~T024)
+- 기준점 B=`c4585ed`(깨끗한 트리)에서 `cd backend && ./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks` 종료0, 4m32s. XML: test 308·integrationTest 322·contractTest 102·propertyTest 4, 실패·오류·skip 0. PIT generated 23·killed 23·survived 0·invalid 0·ratio 1.00. 속성 attempts 149·seed 20261023.
+- 원래 제한(20/60초) IT: `./gradlew integrationTest --tests '*SecurityIT' --tests '*RateLimitApiIT' --tests '*RedisRateLimitIT' --tests '*RedisFailureIT'` 종료0, 1m37s, 63건(SecurityIT 9·RateLimitApiIT 37·RedisRateLimitIT 5·RedisFailureIT 10·Existing/FirstConnectionRedisFailureIT 각1) 실패·skip 0. 적용값 근거: `SecurityIT`의 `assertSettings(…, 20)`, `RedisRateLimitIT` 출력 `default limit=20 windowMs=60000 count=22 firstTtl=59999`.
+- k6(load/README 절차, 사용자 로컬 Compose 프로젝트 `limited-booking`·기존 볼륨, `reservation_load`는 이 볼륨에 없어 `prepare-db.sh`가 생성): B의 깨끗한 clone에서 low·high·replay 실행 → 모두 k6 종료0·DB PASS였으나 실행 직전 `git status --porcelain` 0줄인데 meta `git_dirty=true`.
+  - **실제 결함**: `load/run.sh`가 meta.txt를 결과 디렉터리 안에 쓰기 시작한 뒤 `git status`를 조회해 결과 디렉터리 자신 때문에 항상 dirty였다(11단계 meta 포함). 수정 `3ddf007`(생성 전 상태 저장). 경로 고정 사본 검증: 깨끗함 true→false, 추적 수정·미추적 true 유지.
+- 기준점 B′=`3ddf007`(백엔드는 B와 동일: `git diff c4585ed 3ddf007 -- backend` 없음, 변경은 `load/run.sh`뿐이라 위 Gradle 결과 유효). 깨끗한 clone에서 각 1회:
+
+| 시나리오 | 제한 | 결과 | 지표 |
+|---|---|---|---|
+| low | 100000/60초 | k6 0·DB PASS·dirty false | 측정 p50 113.9·p95 141.4·p99 163.8ms, 예상 외 0, 전체 12,832 요청 85.0/s |
+| high | 100000/60초 | k6 0·DB PASS·dirty false | 201=1000, SOLD_OUT 409=1000, 예상 외 0, p95 697.2ms |
+| replay | 100000/60초 | k6 0·DB PASS·dirty false | HTTP 성공 500, id 불일치 0, p95 128.7ms |
+| rate-limit | 20/60초(앱 재기동) | 모든 단계 종료0·DB 비교 0·dirty false | fill 201=20, limited 5건 429, 429 전후 DB 동일 |
+
+  - 결과: `docs/performance-runs/20261026-*-b2/`. `*-final12/`는 결함 재현(`c4585ed`, dirty=true 표기 오류, 판정은 통과) 기록이다. 결과 디렉터리 비밀번호·Authorization 값 0건. 종료 후 `docker compose down`(볼륨 보존).
+- 고의 결함 잔존(T023): B′에서 작업 트리 깨끗함, `git diff --exit-code 3ddf007 -- backend load compose.yaml .github` 0, `backend/src/main`의 고의 표식(`고의|INTENTIONAL|DELIBERATE|FIXME-RED`) 0건, 위 전체 테스트 통과.
+
+### 실제로 발견한 AI 구현 결함 (재현 → 원인 → 탐지 → 수정 → 한계)
+모두 AI가 작성한 코드에서 개발 중 리뷰·시험으로 발견한 실제 결함이며 학습용 고의 변경이 아니다. 근거는 각 커밋과 이 문서의 해당 단계 절이다.
+
+| 단계 | 재현 | 원인 | 탐지 테스트 | 수정 | 한계 |
+|---|---|---|---|---|---|
+| 1 (검증 하네스) | 헤더 뒤 본문이 멈추면 HTTP 테스트가 끝나지 않음(Corretto 25에서 12,009ms 후 Future pending) | `HttpRequest.timeout`은 본문 완료를 제한하지 않음 | `HttpClientCleanupIT` | `6772606` sendAsync+Future.get(10초)·취소 | 테스트 클라이언트 범위, 앱 코드 결함 아님 |
+| 5 | `resourceId`에 Base64 22/24자·앞뒤 공백 UUID가 201 | Jackson 기본 UUID 역직렬화가 계약보다 관대 | `ReservationCreateIT` UUID 5사례(4 RED) | `0d89ac7` 명시적 JsonCreator로 원문 36자 검사 | 다른 입력 경로는 9단계 binder로 별도 보완 |
+| 6 | `/api/reservations/{id}/%63ancel`에 `{}` 본문 → 400 대신 200·실제 취소 | raw URI 필터와 디코딩된 MVC 매칭 차이 | `ReservationCancelIT` 인코딩 경로 회귀 2건 RED | `d44935b` Handler에서 캐시 본문 검사 | 다른 인코딩 우회 전수 증명 아님(StrictHttpFirewall 유지) |
+| 2026-10-21 계약 도구 보안 게이트(빌드) | 없는 의존성 버전 주입 시 보안 의존성 검사가 종료0 | 미해결 의존성 edge를 금지 모듈 부재로 판정 | init script 주입 재현(종료0→1) | `0d37600` 미해결 edge 선거부 | Gradle 해석 범위 내 |
+| 9 | `GET /api/resources/1-1-1-1-1`·앞뒤 공백 UUID가 400 대신 200/404 | 기본 StringToUUIDConverter의 trim·축약형 허용, 대상 Controller만 binder 누락 | `ResourceApiIT.rejectsNonCanonicalUuidPathEvenWhenLenientValueExists` 3/3 RED, `ApiContractIT` 2건 | `0bd3b6b` 엄격 binder | 경로 변수 UUID에 한정 |
+| 11 | DB 컨테이너 pause 시 예약 생성이 응답 없이 20초 클라이언트 timeout까지 대기 | 서버측 statement/lock timeout은 서버 정지 시 동작 안 함, 드라이버 소켓 읽기 상한 없음 | `DependencyFailureIT` F4 RED | `594ddb0` pgjdbc socketTimeout 7초 → 7.09초 503 | 장기 마이그레이션의 상한 영향 미측정 |
+| 12 (부하 하네스) | 깨끗한 트리에서도 meta `git_dirty=true` | meta 파일 생성 후 git status 조회 | 깨끗한 clone 실행 3회(porcelain 0→dirty true) | `3ddf007` 생성 전 상태 저장 | 11단계 meta의 dirty 표기는 신뢰 불가로 정정 |
+
+- 고의 변이 검증(구분): 10단계 SQL 차감 조건·취소 status·소유자·키 비교·취소 매핑 5종, 11단계 신원 헤더·로그·lock_timeout·재현 표시·503 분류·판정기 7종, PIT 23/23은 모두 학습·탐지력 확인용이며 위 결함 목록에 넣지 않았다.
+
+### 미검증·한계
+- GitHub Actions 실제 실행(Draft PR에서 확인 예정), 외부에서 테스트 실패가 job 실패로 전파되는지(실패 커밋 push 미승인), deep-tests 외부 실행(기본 브랜치 반영 후), 운영 규모 성능·네트워크 분할·Tomcat System.err·Qodana(기존 한계 유지).
+- 사용자 수행 대기: AI 없는 5분 시연, AI 없는 작은 변경, AI 없는 주요 선택 설명([시연 자료](demo.md)).
+
+### T024·T029·T031 리뷰와 T032 Converge
+- T024(최종 실행 기록): 수치·SHA·dirty·종료 코드가 원시 결과와 일치, run.sh 수정 정확(결과 디렉터리 생성 실패 시 종료1 유지), 기준점 갱신 판단 타당, 결과물 비밀정보 0. T029(US5): Medium 1(추적표 검사가 assertion 호출을 테스트로 오인) → `0b5749e`, Low 3(R19 statement timeout 연결·장기 마이그레이션 미검증 누락·demo 절 인용) → `0d176ac`.
+- T031(reviewer, `42b74fa...873daec` 전체): Critical/High/Medium 0, Low 2(허용 경로 문구·진행표 남은 작업) → `1cf48b6`. backend 변경 0, 검사 3종 PASS(7·6·5), 22개 커밋 규칙 충족, `.env`·자격 증명·개인 경로 추가 없음.
+- T032 Speckit Converge: `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` 종료0. FR-001~017·SC-001~008·US1~5 수용 시나리오 21개·plan D1~D8·헌법 I~V를 현재 상태와 대조했다. missing/partial/contradicts/unrequested 0 → **Converged**, tasks.md에 Convergence 단계를 추가하지 않았다. 외부 run 의무(FR-006·SC-001·SC-002)는 기존 T033·T034로 계획되어 있다.
+
+### T033~T036 PR·외부 CI·OCR 리뷰
+- T033: push `feature/013-ci-readme-final`, Draft PR [#17](https://github.com/joypeb/limited-booking-test/pull/17)(base develop `42b74fa`, head `4b692f3`). verify run [40269778342](https://github.com/joypeb/limited-booking-test/actions/runs/40269778342)(event pull_request) **success**: ubuntu-24.04, setup-java가 Corretto **25.0.5**+0.9(linux-x64)를 설치(로컬 25.0.4와 패치 차이), `./gradlew --no-daemon verifyContract` BUILD SUCCESSFUL 6m18s·11 tasks executed, test 308·integrationTest 322·contractTest 102 실패/skip 0. artifact `verify-test-reports`(969,277 bytes)를 내려받아 XML 대조: test 15파일 308·integrationTest 22파일 322·contractTest 4파일 102, 실패·오류·skip 0. 시간 상한 시험(DependencyFailureIT 등)도 x86_64 runner에서 통과했다.
+- T034: deep-tests 외부 실행은 미실행(대기). workflow_dispatch는 기본 브랜치(main)에 워크플로가 있어야 하며 main 반영은 사용자 승인 사항이다.
+- T035(reviewer): Alibaba Open Code Review `ocr delegate preview --from 42b74fa… --to 4b692f3… --exclude 'docs/performance-runs/**' --format json`·`ocr delegate rule --format json <선택 8개>` 종료0, OCR 선택 8개+보충 64개=72개 파일 검토, `ocr review`(외부 LLM)·OCR Actions 미사용. **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5647455906 게시.
+- T036: PR 리뷰 1건(COMMENTED)·라인 코멘트 0·이슈 코멘트 0. Critical/High·실패 테스트·누락 요구사항 0으로 추가 수정 없음. Merge는 사용자 승인 대기.
+- 이후 문서 기록 커밋의 push로 verify가 다시 실행될 수 있으며, 그 결과는 PR 체크에서 확인한다(코드 변경 없음).

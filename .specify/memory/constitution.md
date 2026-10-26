@@ -1,3 +1,10 @@
+<!--
+Sync Impact Report (2026-10-26)
+- Version: 1.0.0 → 1.0.1 (PATCH: TODO(CI_CONTEXT)를 사용자 결정으로 명확화, 원칙 의미 불변)
+- Modified: 기술·운영 제약과 확인 상태 — CI 위치·트리거·외부 실행 기록 기준
+- Templates: plan/spec/tasks 템플릿 변경 불필요 (✅ 확인)
+- Deferred: TODO(RATIFICATION_DATE) 사용자 확인 필요
+-->
 # 한정 수량 예약 백엔드 개발 헌법
 
 ## Core Principles
@@ -102,9 +109,11 @@ k6는 threshold 종료 코드와 최종 DB 검사로 판정한다.
   예약 API·SQL·Redis·심화 테스트 기반과 CI 설정은 발견되지 않았다.
   `backend/build.gradle`의 `test`는 JUnit Platform을 사용하지만
   계획된 테스트 분류별 태스크는 아직 없다. 이 확인은 테스트 실행 성공의 증거가 아니다.
-- 계획서 7절 12단계의 verify/deep-tests CI는 예정이며,
-  `.specify/workflows/`는 Spec Kit 작업 절차다. CI 파일 작성과 외부 CI 성공을 구분한다.
-  TODO(CI_CONTEXT): 별도 CI 설정이 있는지 사용자에게 확인 중이다.
+- 계획서 7절 12단계의 verify/deep-tests CI는 `.github/workflows/`에 둔다.
+  `.specify/workflows/`는 Spec Kit 작업 절차이며 CI가 아니다. CI 파일 작성과 외부 CI 성공을 구분한다.
+  2026-10-26 사용자 결정: verify는 pull_request·push(develop/main)에서 GitHub Actions로 실행하고,
+  deep-tests는 workflow_dispatch 수동 실행만 둔다. 코드 리뷰(OCR)는 GitHub Actions로 실행하지 않는다.
+  외부 실행 결과는 실제 run 기록이 있을 때만 성공으로 기록한다.
 
 ## 개발 절차와 검토 기준
 
@@ -145,4 +154,4 @@ Spec Kit 헌법 명령 자체는 헌법 파일만 변경하며,
 계획·작업·리뷰·통합 전에 해당 변경의 헌법 준수와 미해결 사항을 확인한다.
 실행하지 않은 검증과 외부 CI는 통과로 기록하지 않는다.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): 사용자 확인 필요 | **Last Amended**: 2026-10-13
+**Version**: 1.0.1 | **Ratified**: TODO(RATIFICATION_DATE): 사용자 확인 필요 | **Last Amended**: 2026-10-26

@@ -28,6 +28,10 @@
 | `docs/test-evidence.md` | 명령·종료 코드·테스트 수·seed·경쟁/장애 조건·미검증 |
 | `docs/performance.md` | 기기·설정·데이터·부하 조건·결과·DB 검사·한계 |
 | 프로젝트 README | 실제 환경 설정·실행·API 흐름·검증·종료 절차 |
+| `docs/traceability.md` | 규칙 → 대상 클래스 → 테스트 → 명령 → 증거 추적표와 검증하지 않은 범위(12단계) |
+| `docs/demo.md` | 5분 시연 대본·작은 변경 연습 안내·사용자 수행 기록 칸(12단계) |
+| `.github/workflows/` | verify(PR·push)·deep-tests(수동) CI 정의. 파일 존재는 외부 실행 성공이 아니다 |
+| `scripts/check-*.sh` | 워크플로·README·추적표의 정적 검사(RED→GREEN 판정 도구) |
 
 - 규칙 → 실제 클래스/SQL → 테스트 → 명령 → 증거를 연결한다. 아직 없는 파일과 명령은 예정·미구현으로 표시한다.
 - 실행 기록에는 날짜·단계·대상 커밋(없으면 명시)·환경·기대값·변경·명령·종료 코드·테스트 수·seed·최소 재현·문제·선택 이유·미완료·다음 한 작업·실제 시간을 적는다.
@@ -63,3 +67,10 @@
 - 원시 출력은 원문을 보존하며 `.gitattributes`로 해당 경로만 공백 검사에서 제외한다. 결과에 비밀번호·Authorization 값이 없음을 커밋 전에 검사한다.
 - 제한값을 바꿔 앱을 재기동할 때는 이전 프로세스 종료와 `127.0.0.1:8080` LISTEN 해제를 확인한 뒤 기동한다. 실행기는 서버의 실제 제한값을 조회하지 못하므로 기록값과 실제 값이 어긋날 수 있다(2026-10-24 rate-limit v2 무효 실행).
 - 판정기 자체를 고의 불일치(`EXPECT_CREATED=999`)와 보존식 위반 데이터로 실패시켜 종료 코드 반영을 확인한다. 상세는 [load 안내](../../load/README.md)·[성능 기록](../../docs/performance.md).
+
+### 12단계 CI·재현 적용 (2026-10-26)
+
+- CI는 계획서 6.2절의 기존 Gradle 태스크만 호출한다(verify: `verifyContract`, deep-tests: `propertyTest mutationSmoke`). runner·JDK·action은 버전/SHA로 고정하고 `continue-on-error`·실패 무시를 두지 않으며 보고서는 always 업로드한다. 워크플로 변경 시 `scripts/check-workflows.sh`를 실행한다.
+- 외부 run은 실제 run id·결론·실행 수를 확인한 경우에만 성공으로 기록한다. workflow_dispatch 워크플로는 기본 브랜치에 있어야 실행된다.
+- README 명령을 바꾸면 `scripts/check-readme.sh`와 함께 바뀐 절차를 새 clone·깨끗한 셸에서 다시 실행한다. 새 환경 재현은 디렉터리 이름으로 Compose 프로젝트를 분리하고 임시 프로젝트 볼륨만 정리한다.
+- `load/run.sh`의 meta `git_dirty`는 결과 디렉터리 생성 전 상태다(2026-10-26 수정). 이전 meta의 dirty 표기는 신뢰하지 않는다. 연속 실행에서 dirty=false를 유지하려면 결과 디렉터리를 실행 사이에 작업 트리 밖으로 옮기거나 깨끗한 clone을 사용한다.

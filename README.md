@@ -1,33 +1,219 @@
 # 한정 수량 예약 백엔드
 
-Java25·Spring Boot4.1.1·Gradle9.8.0의 localhost CLI/API 개발 프로젝트다. 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다. 1단계 도구 최소 실행, 2단계 저장 기반, 3단계 순수 규칙의 Unit 실행, 4단계 로컬 Basic 인증·권한·8KiB 본문 상한·예약 대상 생성/조회 API 및 통합 테스트(`SecurityIT`·`ResourceApiIT`)를 검증했다. 5단계 예약 생성·성공 키 재현·전체 롤백을 구현했다. 6단계 소유자 조회·취소·수량 복구·롤백을 구현하고 검증했다. 7단계 실제 경쟁 11종110회와 종료 실패 격리를 검증했다. 8단계 Redis limiter/Lua·HTTP 제한·실제 장애·기존 회귀와 최종 빌드/verify/의존성 검사를 완료했다.
+한정 수량 예약의 정합성(예약·취소·재시도·경쟁·의존성 장애)을 localhost에서 재현 가능하게 검증하는 Java 25·Spring Boot 4.1.1·Gradle 9.8.0 백엔드다. 0~11단계(도구·저장·규칙·인증·예약 생성/취소·경쟁·Redis 제한·계약·Property/PIT·부하/보안/장애 복구)를 완료했다. 12단계(CI·README·최종 검증)는 대부분 완료했고 deep-tests 외부 실행과 사용자 시연·작은 변경만 대기 중이다. 설계 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다.
 
-## 로컬 환경
+## Quick Start
 
-`.env.example`을 참고해 루트 `.env`에 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `USER_A_PASSWORD`, `USER_B_PASSWORD`를 설정한다. 값은 공유·커밋하지 않는다. Compose 보간이 호스트 JVM에도 자동 전달되지는 않는다. IDE에서는 같은 환경 변수를 별도로 설정한다.
+저장소 루트에서 실행한다. 아래 명령은 `127.0.0.1`에서만 동작하며 외부 공개용이 아니다.
 
-프로젝트 루트에서:
+### 1. 필요 환경
+
+| 항목 | 확인 명령 |
+|---|---|
+| JDK 25 | `java -version` |
+| Docker와 Compose | `docker compose version` |
+| curl | `curl --version` |
+
+API 흐름은 curl과 셸 기본 도구(awk·sed)만 사용한다. k6는 [부하 시험](#부하-시험)에서만 필요하다.
+
+### 2. 환경 변수
 
 ```sh
-docker compose up -d --wait --wait-timeout 120
+cp .env.example .env
+# .env에 POSTGRES_USER, POSTGRES_PASSWORD, ADMIN_PASSWORD, USER_A_PASSWORD, USER_B_PASSWORD 값을 채운다(커밋 금지).
 set -a
 source .env
 set +a
-cd backend
-./gradlew bootRun --args='--spring.profiles.active=local' -Dfile.encoding=UTF-8 -Duser.timezone=UTC
 ```
 
-앱은 127.0.0.1:8080, PostgreSQL은 127.0.0.1:5432/reservation_local, Redis는 127.0.0.1:6379다. 앱 준비 상한60초, HTTP 연결3초·전체10초로 health를 확인한다. health만 노출하고 상세값은 숨긴다. `ADMIN`·`USER_A`·`USER_B`는 고정 UUID Principal과 환경 변수 주입 비밀번호(BCrypt 보관)를 사용한다. UTF-8/UTC를 사용한다.
+Compose의 `.env` 보간은 호스트 JVM에 자동 전달되지 않는다. 앱을 실행할 셸에서 위처럼 export한다. IDE에서 실행하면 같은 변수를 별도로 설정한다.
+
+### 3. Compose 시작과 준비 대기
+
+```sh
+docker compose up -d --wait --wait-timeout 120
+docker compose ps
+```
+
+`--wait`는 서비스 healthcheck가 통과할 때까지 기다린다. `docker compose ps`에서 `postgres`와 `redis`가 healthy여야 한다.
+
+### 4. 마이그레이션
+
+별도 명령은 없다. 다음 단계에서 앱이 기동할 때 Flyway가 스키마를 적용한다. 앱 기동 뒤 적용 이력을 확인한다.
+
+```sh
+docker compose exec -T postgres sh -c 'psql -X -U "$POSTGRES_USER" -d reservation_local -c "SELECT version, success FROM flyway_schema_history ORDER BY installed_rank"'
+```
+
+`success`가 모두 `t`여야 한다.
+
+### 5. 애플리케이션 실행
+
+방법 a. Gradle로 실행한다.
+
+```sh
+cd backend
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+방법 b. jar를 만들어 실행한다.
+
+```sh
+cd backend
+./gradlew bootJar
+java -jar build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
+```
+
+앱은 별도 터미널에서 실행하고 두 터미널 모두 2단계의 환경 변수를 export해야 한다.
+
+### 6. health 확인
 
 ```sh
 curl --connect-timeout 3 --max-time 10 --fail http://127.0.0.1:8080/actuator/health
 ```
 
-앱은 Ctrl-C로 정상 종료하고 프로젝트 루트에서 `docker compose down`으로 서비스만 종료한다. PostgreSQL named volume은 보존한다. 볼륨 삭제 옵션은 기본 절차에 넣지 않는다. Redis 재시작 후 키 보존은 요구하지 않는다. 테스트는 별도 동적 컨테이너를 쓰며 개발 DB를 재사용하지 않는다.
+`status`가 `UP`이어야 한다(실제 응답 예: `{"groups":["liveness","readiness"],"status":"UP"}`). health만 노출하며 상세값은 숨긴다.
 
-## 검증 상태
+### 7. API 전체 흐름
 
-실제 검증 기록은 [실행 증거](docs/test-evidence.md), 도구 조합은 [버전](docs/versions.md)에서 확인한다. 네 분류 태스크와 현재 실행 결과/XML 게이트를 구성했다. 실행0건·실패·skip·누락 결과는 비성공이다. Test 결과 캐시 및 UP-TO-DATE 재사용은 끄고 실제 실행을 확인한다. 일반 build/check는 순수 Unit만 실행하며 전체 심화 검증을 뜻하지 않는다.
+환경 변수를 export한 터미널에서 실행한다. 계정은 `ADMIN`·`USER_A`·`USER_B`(대소문자 구분)이며 `-u "<계정>:$<계정>_PASSWORD"`로 Basic 인증한다. 응답의 Location 헤더에서 id를 꺼내므로 jq가 필요 없다. 생성·취소는 사용자당 20회/60초로 제한되며 아래 흐름은 5회를 쓴다.
+
+```sh
+BASE=http://127.0.0.1:8080
+api() { curl --connect-timeout 3 --max-time 10 -sS -w '\n' "$@"; }
+loc() { awk 'tolower($1)=="location:"{print $2}' | tr -d '\r' | sed 's#.*/##'; }
+K1="readme-$(date +%s)"
+
+# 1. ADMIN이 capacity 2인 대상을 만든다.
+R=$(api -i -u "ADMIN:$ADMIN_PASSWORD" -H 'Content-Type: application/json' \
+  -d '{"name":"readme-demo","capacity":2}' "$BASE/api/resources"); printf '%s\n' "$R"
+RES_ID=$(printf '%s\n' "$R" | loc)
+
+# 2. USER_A가 예약한다(최초).
+R=$(api -i -u "USER_A:$USER_A_PASSWORD" -H 'Content-Type: application/json' -H "Idempotency-Key: $K1" \
+  -d "{\"resourceId\":\"$RES_ID\"}" "$BASE/api/reservations"); printf '%s\n' "$R"
+RSV_ID=$(printf '%s\n' "$R" | loc)
+
+# 3. 같은 요청을 다시 보낸다(재현).
+api -i -u "USER_A:$USER_A_PASSWORD" -H 'Content-Type: application/json' -H "Idempotency-Key: $K1" \
+  -d "{\"resourceId\":\"$RES_ID\"}" "$BASE/api/reservations"
+
+# 4. 소유자가 조회한다.
+api -i -u "USER_A:$USER_A_PASSWORD" "$BASE/api/reservations/$RSV_ID"
+
+# 5. 다른 사용자가 같은 id를 조회한다.
+api -i -u "USER_B:$USER_B_PASSWORD" "$BASE/api/reservations/$RSV_ID"
+
+# 6. 소유자가 취소한다(본문 없음).
+api -i -u "USER_A:$USER_A_PASSWORD" -X POST "$BASE/api/reservations/$RSV_ID/cancel"
+
+# 7. 같은 취소를 다시 보낸다.
+api -i -u "USER_A:$USER_A_PASSWORD" -X POST "$BASE/api/reservations/$RSV_ID/cancel"
+
+# 8. 단계 2를 다시 보낸다(취소 후에도 최초 응답 재현).
+api -i -u "USER_A:$USER_A_PASSWORD" -H 'Content-Type: application/json' -H "Idempotency-Key: $K1" \
+  -d "{\"resourceId\":\"$RES_ID\"}" "$BASE/api/reservations"
+
+# 9. 대상의 잔여 수량을 확인한다.
+api -i -u "USER_A:$USER_A_PASSWORD" "$BASE/api/resources/$RES_ID"
+```
+
+| 단계 | 기대 |
+|---|---|
+| 1 | 201, `Location: /api/resources/<id>`, `available` 2 |
+| 2 | 201, `Idempotent-Replayed: false`, `status` `CONFIRMED` |
+| 3 | 201, 단계 2와 같은 id·필드, `Idempotent-Replayed: true` |
+| 4 | 200, `CONFIRMED`, `cancelledAt` null |
+| 5 | 404, `code` `NOT_FOUND`(존재 여부 비노출) |
+| 6 | 200, `CANCELLED`, `cancelledAt` 값 |
+| 7 | 200, 단계 6과 같은 `cancelledAt` |
+| 8 | 201, 단계 2와 같은 id, `CONFIRMED`(최초 응답 재현), `Idempotent-Replayed: true` |
+| 9 | 200, `available` 2(취소로 1개 복구, 중복 취소는 복구하지 않음) |
+
+### 8. 종료
+
+앱은 Ctrl-C로 종료하고 프로젝트 루트에서 서비스만 내린다.
+
+```sh
+docker compose down
+```
+
+PostgreSQL named volume은 보존한다. 볼륨 삭제 옵션은 기본 절차에 넣지 않는다. Redis 재시작 뒤 키 보존은 요구하지 않는다. 테스트는 별도 동적 컨테이너를 쓰며 개발 DB를 재사용하지 않는다.
+
+## 준비 대기·healthcheck·health·접속 URL
+
+| 구분 | 대상 | 의미 |
+|---|---|---|
+| Compose `--wait` | `docker compose up -d --wait` | 서비스의 healthcheck가 통과할 때까지 명령이 대기한다. 앱은 포함하지 않는다. |
+| 서비스 healthcheck | postgres `pg_isready`, redis `redis-cli ping` | 컨테이너 안에서 2초 간격으로 실행되며 서버 수락 여부만 본다. |
+| 앱 `/actuator/health` | 호스트에서 실행한 앱 | 앱 기동과 DB·Redis 연결을 반영한다. 앱 준비 상한 60초, 응답 상세는 숨긴다. |
+
+| 접속 | 주소 |
+|---|---|
+| 앱 | `127.0.0.1:8080` |
+| PostgreSQL(호스트) | `127.0.0.1:5432`의 `reservation_local` (부하 시험은 `reservation_load`) |
+| Redis(호스트) | `127.0.0.1:6379` |
+| Compose 내부 | 서비스 이름 `postgres`, `redis` (앱은 호스트에서 실행하므로 사용하지 않음) |
+| 테스트 | Testcontainers 동적 포트, 앱은 `RANDOM_PORT`. 개발 Compose와 무관 |
+
+모든 포트는 `127.0.0.1`에만 바인딩한다.
+
+## 테스트 실행
+
+`backend/`에서 실행한다. Unit은 JDK 25만 필요하다. IT·Contract·Property는 Docker가 필요하며 Testcontainers가 별도 동적 컨테이너를 만든다(개발 Compose 불필요). 실행 0건·실패·skip은 모두 비성공이다.
+
+| 명령 | 범위·현재 JUnit 수 |
+|---|---|
+| `./gradlew test` | Spring 없는 Unit308 |
+| `./gradlew verify` | Unit308 + 일반IT322 (경쟁110회·Redis 제한/장애 포함) |
+| `./gradlew verifyContract` | Unit308·IT322·Contract102 (고정 OpenAPI 3.0.3 대 실제 HTTP) |
+| `./gradlew verifyProperty` | Unit308·IT322·Property4 |
+| `./gradlew deepTest` | Unit308·IT322·Contract102·Property4 |
+| `./gradlew mutationSmoke` | PIT 23/23 탐지(생존 0), 탐지율 ≥ 0.80 게이트 |
+
+위 수는 11단계 최종 게이트 `./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks`(종료 0)의 값이며 근거는 [test-evidence](docs/test-evidence.md)다.
+
+- 보고서: XML `backend/build/test-results/<task>/`, HTML `backend/build/reports/tests/<task>/`, PIT `backend/build/reports/pitest/`.
+- Property 재현: `QT_SEED=<정수> ./gradlew propertyTest`. 실행마다 `seed=`·`attempts=`·`scenario-digest=`를 출력한다.
+- 정적 검사(저장소 루트): `scripts/check-workflows.sh`(워크플로, Docker 필요), `scripts/check-readme.sh`(이 문서의 명령·경로·수치 대조).
+- 계약 검증 의존성: `./gradlew verifyContractDependencies`.
+
+## CI
+
+| 워크플로 | 트리거 | 실행 | 산출물 |
+|---|---|---|---|
+| `.github/workflows/verify.yml` | `pull_request`·`push` (develop, main) | `./gradlew --no-daemon verifyContract` (Java 25 Corretto) | `verify-test-reports` |
+| `.github/workflows/deep-tests.yml` | `workflow_dispatch`만 (`qt_seed` 선택 입력) | `./gradlew --no-daemon propertyTest mutationSmoke` | `deep-property-reports`, `deep-pit-reports` |
+
+`deep-tests.yml`은 기본 브랜치에 반영된 뒤 수동 실행할 수 있고, Unit/IT/Contract 회귀는 `verify.yml`이 맡는다. 재현 정보 요약은 `.github/scripts/property-summary.sh`가 만든다. 외부 실행 결과: Draft PR #17의 [verify run 40269778342](https://github.com/joypeb/limited-booking-test/actions/runs/40269778342)(pull_request, head 4b692f3, 2026-10-26)이 success다. ubuntu-24.04·Corretto 25.0.5에서 `verifyContract` 6분 18초, Unit308·IT322·Contract102, 실패·skip 0이고 artifact `verify-test-reports`를 올렸다. `deep-tests.yml`은 기본 브랜치 반영 전이라 외부에서 실행하지 않았다(미실행). 외부에서 테스트 실패가 job 실패로 전파되는지는 검증하지 않았다.
+
+## 부하 시험
+
+[load/README.md](load/README.md)의 k6 스크립트(`low`·`high`·`replay`·`rate-limit`)를 `reservation_load` DB와 `load` 프로필로 실행하고 threshold 종료 코드와 최종 DB 검사로 판정한다. 결과와 한계는 [성능 기록](docs/performance.md)을 따르며 로컬 수치를 운영 규모로 일반화하지 않는다.
+
+## 문서 지도
+
+- [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>): 설계 기준(2~5절 규칙·API·DB).
+- [knowledge/README.md](knowledge/README.md): 작업 규칙과 도메인 지식.
+- [docs/openapi.yaml](docs/openapi.yaml): 고정 OpenAPI 3.0.3.
+- [docs/decisions.md](docs/decisions.md), [docs/versions.md](docs/versions.md), [docs/test-evidence.md](docs/test-evidence.md), [docs/performance.md](docs/performance.md).
+- [specs/](specs/): 단계별 명세·계획·작업·계약.
+
+## 단계별 기록
+
+날짜별 상세 수치는 당시 기록이며 현재 수는 [테스트 실행](#테스트-실행)을 따른다. 근거는 [실행 증거](docs/test-evidence.md)다.
+
+- **2단계 저장 기반**: [업무 V1](backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)이 resources/reservations와 수량·유일성·FK·상태 제약을 만든다. [ResourceRepository](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)·[ReservationRepository](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)가 저장값을 다룬다. 적용된 V1은 편집하지 않는다. [2단계 안내](specs/003-define-db-schema/quickstart.md).
+- **3단계 순수 규칙**: [ResourceRules](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)(수량 0~1000·이름 1~100자), [IdempotencyKey](backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java), [CancellationDecision](backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java). [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md).
+- **4단계 로컬 인증·대상 API**: [SecurityConfig](backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)의 고정 UUID `ADMIN`·`USER_A`·`USER_B` 무상태 Basic 인증(BCrypt), 8KiB 본문 상한, 공통 오류 계약. [4단계 계약](specs/005-auth-resource-api/contracts/auth-resource-contract.md).
+- **5단계 예약 생성**: [ReservationController](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java)·[Service](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationService.java)·[Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java). 성공한 예약 행이 키 기록이며 같은 키·같은 대상은 최초 201을 재현하고 다른 대상은 409다. 실패한 키는 보존하지 않는다. [검증 안내](specs/006-reservation-create/quickstart.md).
+- **6단계 조회·취소**: 소유자만 조회·취소하고 타인은 관리자에게도 404다. 취소와 수량 1 복구는 Writer의 단일 트랜잭션이며 중복 취소는 시각·수량을 유지한다. [6단계 안내](specs/007-reservation-cancel/quickstart.md).
+- **7단계 경쟁**: [ReservationConcurrencyIT](backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)가 실제 HTTP·PostgreSQL에서 C01~C11을 각 10회(110회) 실행한다. [110회 기록](docs/concurrency-runs.json). Qodana(2026-10-20) 지적 분류는 [검토 기록](docs/qodana-review.md)이며 Qodana 실행은 사용자 지시에 따른 미실행 후속이다.
+- **8단계 Redis 제한**: 사용자별 고정 창 Lua limiter, 생성·취소 합산 20회/60초, 초과 429+`Retry-After`, Redis 장애 503·DB 무변경(실제 장애는 [RedisFailureIT](backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)). 연결/명령 timeout 200ms. [작업 상태](specs/009-redis-rate-limit/tasks.md).
+- **9단계 계약 검증**: 고정 [OpenAPI 3.0.3](docs/openapi.yaml)을 기대값으로 실제 요청·응답 원문을 [검사기](backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)가 검사한다. 응답 사본 훼손 44종 거부와 DTO 타입 변이 탐지를 확인했다. [계약 의존성 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java).
+- **10단계 Property·PIT**: `ReservationPropertyIT`가 서비스 경로의 명령 1~30건을 독립 모델과 비교하고 고의 결함의 축소 사례를 `ReservationPropertyRegressionIT`에 고정했다. PIT는 순수 규칙 23/23 탐지다.
+- **11단계 부하·보안·장애 복구**: [SecurityIT](backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)에 `X-User-Id` 위조 무시·로그 비밀 비노출을, [DependencyFailureIT](backend/src/test/java/com/limitedbooking/backend/reservation/DependencyFailureIT.java)에 DB 연결 중단·응답 정지(pause)·취소 잠금 시간 초과·커밋 후 응답 유실의 503·같은 키 복구 시험을 추가했다(Redis 장애는 8단계 [RedisFailureIT](backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)). DB 정지 시 무한 대기를 pgjdbc `socketTimeout=7`로 막았다. [검증 계약](specs/012-load-security-recovery/contracts/verification-contract.md).
+- **12단계 CI·README·최종 검증**: CI 워크플로, README Quick Start(새 환경 재현), 최종 기준점 전체 재실행, 추적표, AI 결함 기록, 시연 자료를 완료했다. verify 외부 실행은 성공했고 deep-tests 외부 실행과 사용자 시연·작은 변경은 대기 중이다. [실행 근거](docs/test-evidence.md). [명세](specs/013-ci-readme-final/spec.md).
 
 ## PostgreSQL 보존 표식
 
@@ -55,208 +241,3 @@ SQL
 commit 전 오류는 rollback하고 연결을 닫는다. commit 응답 유실은 새 연결로 같은 UUID를 조회한다. 행이 없으면 준비 미완료, 같은 값이면 준비 commit 확인, 값 불일치나 접속/구조 불명은 인수 보류다. 재시작 중단은 동일 volume과 commit 표식을 확인한 뒤 down→up→조회 전체를 다시 수행한다. 상세 조건은 [복구 계약](specs/002-setup-test-toolchain/contracts/validation-contract.md)을 따른다.
 
 성공 후 실행 담당자는 소유가 확인된 이번 UUID의 행만 `DELETE FROM toolchain_smoke.retention_probe WHERE id='<이번 UUID>';`로 정리한다. 실패 표식은 원인 조사·증거 확보 전에 지우지 않는다. schema/DB 전체 초기화나 volume 제거는 하지 않는다.
-
-## 테스트 실행
-
-backend/에서 실행한다. Unit은 Java25만 필요하다. IT는 실행 가능한 Docker가 추가로 필요하며 개발 Compose 기동은 IT의 선행 조건이 아니다. Testcontainers는 별도 동적 포트·격리 DB를 생성하고 성공/실패 후 이번 자원을 정리한다. 테스트 소유 PostgreSQL은 TLS를 구성하지 않으며 JDBC URL에 `sslmode=disable`을 명시한다. 앱 기본/local 설정이나 외부 DB의 TLS 정책에는 적용하지 않는다.
-
-| 명령 | 최소 검증 범위·현재 JUnit 수 |
-|---|---|
-| `./gradlew test` | Spring 없는 Unit308 (8단계까지193+계약 검사기105+독립 모델10) |
-| `./gradlew verify` | Unit308+일반IT316 (경쟁110+fixture5·Redis 제한/장애·ResourceApiIT11·속성 축소 회귀1 포함) |
-| `./gradlew test --tests '*ToolchainSmokeTest'` | 지정Unit3 |
-| `./gradlew test integrationTest --tests '*ToolchainSmokeIT'` | 구성상 Unit308+지정IT3; 10단계 재실행 없음 |
-| `./gradlew verifyContract` | 구성상 Unit308·일반IT316·Contract102(업무96+프로브6); 10단계 최종 `build deepTest mutationSmoke verifyContractDependencies` 종료0 |
-| `./gradlew verifyProperty` | Unit308+일반IT316+Property4(프로브3+`ReservationPropertyIT`1, 내부 실제149회) |
-| `./gradlew deepTest` | Unit308·일반IT316·Contract102·Property4; 2026-10-23 10단계 T028 종료0 |
-| `./gradlew mutationSmoke` | PIT 별도: ResourceRules·IdempotencyKey·CancellationDecision, 생성23·탐지23·생존0·무효0, 탐지율≥0.80 게이트 |
-
-`contractTest`는 `*IT`+contract 태그만, `propertyTest`는 `*Test`·`*IT` 중 property 태그만 실행한다. 이름/태그 필터는 실행 대상을 정하며 공유 test source의 컴파일 범위를 줄이지 않는다. 지정 사례 옵션은 해당 Test 태스크 바로 뒤에 둔다. 최초 실행 근거는 --rerun-tasks로 남겼다.
-
-```sh
-QT_SEED=20261023 ./gradlew propertyTest   # 업무 속성 기본 seed (프로브 기본은 20261013)
-```
-
-정상 Property는 별도 경계0/100과 생성 예산1000 중 실제 assertion101회다. 실제 assertion 최소100회를 검사하며 JUnit3건과 내부 시도 수를 구분한다. 고의 n>50 결함의 100→51 축소와 동일 seed 재실패·원복 통과는 [증거](docs/test-evidence.md)에 기록했다. 결함은 현재 원복 상태다.
-
-10단계 `ReservationPropertyIT`는 실제 PostgreSQL의 서비스 경로에서 명령 1~30건(대상 2개·capacity 0~5·사용자 2·키 3)을 순차 실행해 테스트 전용 독립 모델과 비교한다(Redis·HTTP 우회, 동시 교차는 `ReservationConcurrencyIT`). 실행마다 `reservation-property attempts=… seed=… scenario-digest=…`를 출력한다. 고의 변경으로 얻은 축소 최소 사례는 `ReservationPropertyRegressionIT`에 고정했다. SQL·소유자·키 비교·취소 매핑 고의 변경 5종의 탐지 결과와 PIT 분류는 [증거](docs/test-evidence.md)의 10단계 절을 따른다.
-
-XML은 `backend/build/test-results/<task>/`, HTML은 `backend/build/reports/tests/<task>/`, PIT XML/HTML은 `backend/build/reports/pitest/`에 있다. 계약 fixture는 시험 전용이며 업무 OpenAPI 원본은 docs/openapi.yaml이다. 해당 문서 parse/ref 성공만으로 업무 HTTP 준수로 해석하지 않으며, 업무 HTTP 준수는 9단계 `ApiContractIT`·`ApiContractDependencyIT`로 검증한다.
-
-Container 시작120초·자원별 종료10초, HTTP 연결3초·요청10초를 사용한다. 시험 migration 실패는 적용 metadata 확인·실패 컨테이너 정리 후 새 격리 DB에서 정상 migration/insert/select를 다시 검증한다. 실패 DB repair/clean이나 개발 DB 초기화는 하지 않는다. 프로세스 중단으로 cleanup이 실행되지 않았다면 로그의 실행 UUID/컨테이너 ID를 대조해 이번 시험 자원만 정리한다. 정리 불명은 인수 보류다.
-
-도구 프로브는 후속 순수 업무 규칙으로 대체할 예정이다. 업무 스키마와 두 읽기 Repository SQL, 4단계 예약 대상 생성(`ResourceRepository.insert`)·조회·로컬 인증·8KiB 상한·공통 오류 계약을 검증했다. 예약 생성 쓰기 SQL·멱등 응답·전체 롤백을5단계에서 검증했다. 취소 쓰기·소유권·롤백은6단계에서 검증했다. 실제 경쟁 반복은7단계에서 검증했다. 요청 제한·부하·외부 CI는 미검증이다. Gradle10 및 configuration cache 호환성도 검증하지 않았다.
-
-최종 리뷰에서 끝나지 않는 실제 HTTP 응답의 종료 회귀 IT를 추가했다. 앱 IT 클라이언트는 shutdownNow 후 최대10초 awaitTermination을 사용하며 초과는 실패다. 2026-10-13 최초 조합은 일반IT4/총13이며, 이후 종료 회귀로14건, PR 적대적 리뷰의 본문 정체 회귀로15건이 됐다.
-
-앱 IT와 계약 fixture의 문자열 응답 요청은 공통 지원 코드의 sendAsync→Future.get(10초)로 본문 완료까지 기다린다. timeout/중단은 요청 Future를 취소하고 finally에서 클라이언트 등 소유 자원을 정리한다. HttpRequest.timeout만으로는 응답 헤더 이후 본문 정체를 제한하지 못함을 실제 회귀로 확인했다.
-
-## 2단계 저장 기반
-
-[업무 V1](backend/src/main/resources/db/migration/V1__create_reservation_schema.sql)은 resources/reservations와 수량·필수값·PK·사용자/키 유일성·FK·상태/취소시각·길이·대상 인덱스를 생성한다. [대상 조회·생성](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRepository.java)과 [예약 조회](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationRepository.java)는 저장값을 다룬다. 2단계 자체는 생성·취소 트랜잭션이나 예약 HTTP API를 제공하지 않는다. 생성 HTTP/트랜잭션은 아래5단계에서 추가했다.
-
-```sh
-./gradlew test integrationTest --tests '*SchemaIT' --tests '*ResourceRepositoryIT' --tests '*ReservationRepositoryIT' --tests '*DatabaseSupportIT'
-```
-
-4단계까지 구성은 Unit116+일반IT92(1단계 6 + 2단계 72 + 4단계 14)다. 네 클래스의 fresh/reapplied 두 모드에서 같은 사례를 검증하며, 후자는 validate·migrate0건·표식/이력/구조 보존을 확인한다. [TestData](backend/src/test/java/com/limitedbooking/backend/support/TestData.java)는 전달한 테스트 DataSource에서 독립 커밋과 예약→대상 초기화 한 트랜잭션을 제공한다. [수량 검사](backend/src/test/java/com/limitedbooking/backend/support/DatabaseAssertions.java)는 SELECT1회로 보존식을 관측하고 불일치·대상 부재를 실패시킨다. 고의 SQL 실패의 마이그레이션 전체 롤백·새 DB 복구와 초기화 롤백·장애 제거 후 재요청도 검증한다.
-
-업무 V1이 추가되어 이후 local 앱 기동은 해당 DB에 V1을 적용한다. 이번 단계는 Testcontainers 소유 DB에서만 실행했으며 기존 reservation_local의 실제 적용/전환은 검증하지 않았다. 적용된 V1은 편집하지 않는다. 상세 재현은 [2단계 안내](specs/003-define-db-schema/quickstart.md), 실행 결과는 [증거](docs/test-evidence.md)를 따른다. 3단계 순수 입력 규칙과 4단계 로컬 인증·예약 대상 API는 아래와 같이 구현했다.
-
-## 3단계 순수 규칙
-
-[ResourceRules](backend/src/main/java/com/limitedbooking/backend/resource/ResourceRules.java)는 수량0~1000과 strip 후 코드 포인트1~100 이름을 검사한다. [IdempotencyKey](backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java)는 parse와 직접 생성 모두에서 키를 검증하고 원문을 보존한다. [CancellationDecision](backend/src/main/java/com/limitedbooking/backend/reservation/CancellationDecision.java)은 현재 상태에 따른 판단만 반환한다.
-
-```sh
-./gradlew test --tests 'com.limitedbooking.backend.resource.ResourceRulesTest'
-./gradlew test --tests 'com.limitedbooking.backend.reservation.IdempotencyKeyTest'
-./gradlew test --tests 'com.limitedbooking.backend.reservation.CancellationDecisionTest'
-./gradlew test
-```
-
-2026-10-15 전체 Unit116건(이름/수량52·키56·판단5·프로브3), 실패·오류·skip0을 확인했다. [규칙 계약](specs/004-validate-domain-rules/contracts/rules-contract.md)과 [RED/GREEN 증거](docs/test-evidence.md)를 함께 읽는다. 사용자 설명 인수(T029)는 2026-10-16 설명 후 명시적 완료 지시로 처리했다. 독립 재설명 시험은 미실시다.
-
-## 4단계 로컬 인증과 예약 대상 API
-
-[SecurityConfig](backend/src/main/java/com/limitedbooking/backend/security/SecurityConfig.java)·[LocalIdentityResolver](backend/src/main/java/com/limitedbooking/backend/security/LocalIdentityResolver.java)는 고정 UUID를 가진 `ADMIN`·`USER_A`·`USER_B` 로컬 무상태 Basic 인증(BCrypt)과 `Principal` 단일 신뢰를 제공한다. [RequestBodyLimitFilter](backend/src/main/java/com/limitedbooking/backend/common/RequestBodyLimitFilter.java)는 인증 앞단에서 실제 스트림 읽기 `8,192바이트(8KiB)` 상한(`413 PAYLOAD_TOO_LARGE`)과 재사용 가능한 요청 래퍼를 제공하고, [ApiExceptionHandler](backend/src/main/java/com/limitedbooking/backend/common/ApiExceptionHandler.java)는 Jackson 3 엄격 JSON 역직렬화 및 전 구간 공통 `application/problem+json` 응답을 처리한다. [ResourceController](backend/src/main/java/com/limitedbooking/backend/resource/ResourceController.java)·[ResourceService](backend/src/main/java/com/limitedbooking/backend/resource/ResourceService.java)·[ClockConfig](backend/src/main/java/com/limitedbooking/backend/common/ClockConfig.java)는 UTC `Clock`과 `ResourceRules`를 사용해 예약 대상 생성(`POST /api/resources` `201`)과 단건 조회(`GET /api/resources/{id}` `200`/`404`)를 제공한다.
-
-```sh
-./gradlew integrationTest --tests 'com.limitedbooking.backend.security.SecurityIT' --tests 'com.limitedbooking.backend.resource.ResourceApiIT'
-./gradlew verify
-```
-
-2026-10-17 `SecurityIT` 6건·`ResourceApiIT` 8건 및 `./gradlew verify`(Unit 116 + 일반 IT 92, 실패·오류·skip 0) 통과를 확인했다. 상세 계약은 [4단계 계약](specs/005-auth-resource-api/contracts/auth-resource-contract.md)과 [실행 증거](docs/test-evidence.md)를 따른다. 5단계 구현은 아래와 같다.
-
-
-## 5단계 예약 생성·성공 키·롤백
-
-[ReservationController](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java)는 인증 UUID와 `resourceId`만 받아 `POST /api/reservations`를 제공한다. `Idempotency-Key`는 ASCII 영문·숫자·밑줄·하이픈1~64자다. 최초/재현 모두201·Location과 id/resourceId/status/createdAt 네 필드를 반환하며 `Idempotent-Replayed`만 false/true로 구분한다. 같은 사용자·키의 다른 대상은409, 실패한 키는 보존하지 않는다.
-
-[Service](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationService.java)는 트랜잭션 밖 선조회·복구를, 별도 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)는 READ COMMITTED의 조건부 차감·INSERT RETURNING을 담당한다. 저장 UTC 마이크로초 값을 사용하며 취소된 준비 행도 최초 CONFIRMED로 재현한다. timeout은 SET LOCAL lock2s/statement5s, 풀10/획득3s다. 정확한 사용자·키 유일 위반만 전체 롤백 뒤 재조회한다.
-
-```sh
-curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
-  -H 'Content-Type: application/json' -H 'Idempotency-Key: booking-1' \
-  -d '{"resourceId":"<생성한 대상 UUID>"}' http://127.0.0.1:8080/api/reservations
-```
-
-같은 명령을 다시 보내면 최초 성공을 재현한다. Location의 예약 GET과 취소 API는 아래6단계에서 구현했다. 위 curl은 로컬 사용 안내이고 이번 실행은 격리 Testcontainers HTTP로 검증했다.
-
-```sh
-./gradlew test integrationTest --tests '*ReservationCreateIT' --tests '*IdempotencyIT' --tests '*ReservationRollbackIT'
-./gradlew verify
-```
-
-정확한 실행 결과와 미검증 범위는 [5단계 증거](docs/test-evidence.md) 및 [검증 안내](specs/006-reservation-create/quickstart.md)를 따른다. 실제 경쟁 반복(7단계), Redis 제한(8단계), 업무 자동 계약·속성·변이·부하는 후속이다.
-
-
-## 6단계 소유자 조회·취소
-
-[ReservationController](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationController.java)의 `GET /api/reservations/{id}`와 `POST /api/reservations/{id}/cancel`은 소유자의 현재 상태를 반환한다. 타인 예약은 관리자에게도404다. 확정 상태의 `cancelledAt`은 null을 포함하고, 취소되면 저장된 UTC 취소 시각을 반환한다. 취소 본문은 비어 있어야 한다.
-
-```sh
-curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
-  http://127.0.0.1:8080/api/reservations/<예약-UUID>
-curl --connect-timeout 3 --max-time 10 --user "USER_A:$USER_A_PASSWORD" \
-  -X POST http://127.0.0.1:8080/api/reservations/<예약-UUID>/cancel
-cd backend
-./gradlew test integrationTest --tests '*ReservationOwnershipIT' --tests '*ReservationCancelIT'
-./gradlew verify
-```
-
-취소와 수량1 복구는 [Writer](backend/src/main/java/com/limitedbooking/backend/reservation/ReservationWriter.java)의 단일 트랜잭션으로 커밋한다. 중복 취소는 시각·수량을 유지한다. 원래 생성 키의 재요청은 최초201/CONFIRMED를 재현하고 GET은 CANCELLED다. 지정IT18·일반verify(Unit137/IT138)·local CLI 11단계를 통과했다. [실행 증거](docs/test-evidence.md), [6단계 안내](specs/007-reservation-cancel/quickstart.md)를 참조한다. 이후7단계 경쟁 검증을 완료했으며 아래 기록을 참조한다.
-
-## 7단계 경쟁 정합성 검증
-
-[ReservationConcurrencyIT](backend/src/test/java/com/limitedbooking/backend/reservation/ReservationConcurrencyIT.java)는 실제 Basic 인증·HTTP·격리 PostgreSQL에서 C01~C11 각10회를 실행한다. 수량10/요청100, 동일키10요청, 대상간 키충돌, 중복취소, 생성·취소 일반경쟁/두 강제순서, 차감후 INSERT실패를 검사한다. 지정 인수의 최종 수와 전체 회귀 결과는 아래 실행 증거에 기록하며 [실행 증거](docs/test-evidence.md)·[회차 기록](docs/concurrency-runs.json)에서 조건과 결과를 확인한다.
-
-```sh
-cd backend
-./gradlew test integrationTest --tests '*ReservationConcurrencyIT'
-./gradlew verify
-```
-
-요청작업자 최대10·Hikari풀10/획득3000ms, 공통제한100건120초/그외30초, 장벽5초·HTTP9/10초·종료10초다. 표본 연결 최대는10ms 관측이며 운영 성능으로 일반화하지 않는다. 최초 종료 실패를 보존하여 다음 회차 DB초기화/준비/제출을 막는다. 제품/API/SQL 스키마 변경은 없고, 다음 작업은8단계 Redis 요청 제한이다. 업무 OpenAPI 자동대조·Property/PIT심화·부하·외부CI는 미검증이다.
-
-
-### 2026-10-21 최종 리뷰 보완 확인
-
-최종 일반 verify Unit150·IT257(경쟁110회+지원fixture5 포함), 실패/오류/skip0. 종료/전송실패 차단·모든 오류/결과 보존·호출별 고유ID와 C07 경로기록을 보완했다. 제품·API·스키마는 유지한다. [최종 실행 증거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 이전 날짜의 실행 수는 당시 기록이다. Redis·심화·부하·외부CI는 후속이다.
-
-Qodana 2026-10-20 지적의 수정/추가 검토 분류와 잔여 의존성은 [Qodana 검토 기록](docs/qodana-review.md), 실제 실행 결과와 한계는 [검증 기록](docs/test-evidence.md)을 참조한다.
-
-계약 검증 의존성 보안 확인은 backend/에서 `./gradlew verifyContractDependencies`로 실행한다. `contractTest`에도 이 검사가 선행한다. 고정 OpenAPI3.0.3 지원을 유지하며 Swagger2 변환기는 포함하지 않는다.
-
-
-PR 게시 직전 최신 develop 통합 검증에서는 기존 앱 기동 IT의 SSL 협상08P01로 실패했다. 이후 테스트 소유 비TLS PostgreSQL URL에 `sslmode=disable`을 명시하고 관측 도구 없이 `verifyContract build`를 실행해 Unit156·일반IT257·Contract6 전부 통과했다. 최초 비정상 응답의 발생원은 여전히 미확정이며, 이번 대응의 범위와 한계는 [최신 실행 기록](docs/test-evidence.md)을 참조한다.
-
-
-## 8단계 US1 중간검토 (2026-10-22)
-
-사용자별 고정 창 limiter/Lua·판정/설정 검증을 구현했다. 기본20/60000ms·연결/명령200ms이며 실제Redis에서 동시40건의 허용20/거부20, TTL비연장·격리·별도3/1000ms 만료를 확인했다. `backend/`에서 `./gradlew test integrationTest --tests '*RedisRateLimitIT'`를 실행해 일반Unit169/지정RedisIT5, 실패·오류·skip0이었다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)를 따른다.
-
-당시 US1 인수는 최소 Redis 컨텍스트이며 HTTP/Basic/DB업무 검증이 아니었다. US1 오케스트레이터 독립 중간검토를 통과했고 아래 US2 인수로 이어졌다.
-
-
-### 2026-10-22 사용자 지정 Qodana 후속 이관
-
-사용자가 Qodana 인증·실행에 대해 “나중에 할거야”라고 명시했다. 이에 T037은 미완료 후속으로 유지하며 이번 8단계 완료·PR·병합 게이트에서 제외한다. Qodana는 미실행이며 통과·지적0으로 기록하지 않는다. qodana.yaml의 JVM2026.2·Java25·recommended·any0·라이선스 설정은 유지한다. 나머지 기능·경쟁·장애·build/verify/의존성 검사와 독립리뷰 게이트는 그대로다.
-
-
-## 8단계 US2 실제 HTTP 인수 (2026-10-22)
-
-Security 체인에 인가→RateLimitFilter→취소 검증 순서를 연결했다. 생성·취소는 기본20회/60초를 합산하고 정상·인코딩 경로·잘못된 입력·재전송을 각1회 집계한다. 실제429의 Retry-After는 같은 Lua 반환PTTL로 계산한다. 미인증·본문초과·독립API는 제한 스크립트를 호출하지 않는다.
-
-`backend/`에서 `./gradlew integrationTest --tests '*RateLimitApiIT'` 종료0·37건·실패/오류/skip0. 기본동시40건은201 20건·429 20건/count40, 모든종료 뒤 DB available20/CONFIRMED20이었다. [실행 증거](docs/test-evidence.md)·[작업 상태](specs/009-redis-rate-limit/tasks.md)를 따른다.
-
-US2 오케스트레이터 중간검토를 기다린다. Redis 의존성503 분류/실제장애·기존postgresOnly 시험전환/110회·최종build/verify/의존성은 아직 미완료다. Qodana는 사용자지정 미완료 후속이다.
-
-
-## 8단계 US3 실제 장애 인수 (2026-10-22)
-
-확인된 Redis 연결·명령timeout·WRONGTYPE·정형OOM만503으로변환한다. 직렬화/스크립트/미분류결함·후속chain오류는그대로전파하고인터럽트를복원한다. 실제CLIENT PAUSE1000 WRITE·기존연결중단·첫접속전중단·WRONGTYPE·maxmemory/noeviction OOM,DB의실제5초statement timeout과전체롤백/카운트유지·기본60초TTL뒤성공키재현을인수했다.
-
-관련Unit37건통과,OOM보완을포함한US3전체장애12건+US2회귀37건의49건지정인수를실제통과했다. 각실행의명령/XML수·한계는 [실행증거](docs/test-evidence.md)에구분했다. 전체verify/빌드·기존110회는아직실행하지않았으며 US3 오케스트레이터 중간검토를 기다린다. Qodana는미실행후속범위다.
-
-
-## 8단계 최종 구현 인수 (2026-10-22)
-
-2026-10-22 8단계 구현·실행 인수 완료: `./gradlew build verify verifyContractDependencies` 종료0, 일반 Unit193·IT312, 실패/오류/skip0. IT에는 기본 Redis5·HTTP제한37·실제장애12·경쟁110회와 종료지원fixture5가 포함된다. T001~T036/T038 37개 완료, Qodana T037만 사용자 “나중에 할거야” 지시에 따른 미실행 후속이며 이번 완료·PR·병합 게이트에서 제외한다. 이 요약은 구현·실행 인수 시점의 기록이다. 이후 PR·독립 리뷰·병합 결과는 해당 PR과 최종 보고에서 확인한다.
-
-부모 setup은 첫 StopState 검사 뒤에만 소유 Redis 키와 DB를 초기화한다. 기본 정책과 성공/소유권/취소/수량 계약을 유지하며 기존 HTTP를 실제 Redis로 전환했다. 순수 대상 API/DB 시험은 Redis 없이 검증한다. [작업 상태](specs/009-redis-rate-limit/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)를 따른다. 위 날짜별 중간 인수의 후속·대기 표시는 해당 시점 기록이다. 이번 절차는 최신 사용자 지시의 Spec Kit를 적용했다.
-
-## 9단계 계약 검증 진행 (2026-10-23, T018~T020)
-
-고정 OpenAPI 검사기와 실제 업무 HTTP의 정상·입력/권한/품절·제한·DB/Redis503 적용표를 검증했다. [의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)은 DB/Redis 중단을 각각 별도 소유 컨테이너·컨텍스트로 격리하며, Redis 장애의쓰기503·DB무변경·독립API정상을 확인한다. [실행 증거](docs/test-evidence.md)의 T018~T020 절에 지정명령·수·정리·적용표가 있다. 생성 재현 시퀀스·실제DTO변이·전체9단계 인수(T021 이후)는 미완료이며 Qodana는 사용자지정스킵/후속이다.
-
-
-## 9단계 계약 검증 최종 인수 (2026-10-23)
-
-고정 [OpenAPI 3.0.3](docs/openapi.yaml)을 기대값으로 실제 HTTP 요청·응답 원문을 [검사기](backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)에 전달한다. 검사기는 OpenAPI schema, raw JSON(중복 키·정수 토큰·단일 문서), UTC 마이크로초·Location·Replay·WWW-Authenticate·Retry-After·Problem 6필드 의미, 명시 status만 허용하는 operation 검사, 최초/재전송 시나리오 비교를 함께 수행한다. 무효 요청은 정확한 예상 요청 위반만 허용하고 오류 응답은 항상 전체 검사한다.
-
-```sh
-cd backend
-./gradlew contractTest --tests '*ApiContractIT' --tests '*ApiContractDependencyIT'
-./gradlew build verifyContract verifyContractDependencies
-```
-
-2026-10-23 PR #12 리뷰 보완 후 T042 전체 게이트는 종료0, Unit298·일반IT315·Contract102(업무96+프로브6), 실패/오류/skip0이다. ApiContractIT는 94건, ResourceApiIT는 11건이다. T032 당시 Unit294·IT312·Contract96은 historical 값이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. 다섯 작업의 정상·오류 적용표, DB/Redis 중단 503, 응답 사본 단일 훼손44종 거부, 실제 `ResourceView` 타입 변이의 HTTP 실패와 원복 통과를 확인했다. [계약 HTTP 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)·[작업 상태](specs/010-openapi-contract/tasks.md)·[실행 근거](docs/test-evidence.md)·[110회 기록](docs/concurrency-runs.json)을 따른다. 위 T018~T020 진행 절의 미완료 표시는 당시 기록이다. Qodana는 사용자 지시로 건너뛴 미실행 후속이며 통과로 기록하지 않는다. Property/PIT 심화·k6 부하·외부 CI는 후속이다.
-
-## 11단계 부하·보안·장애 복구 (2026-10-24)
-
-- 보안: [SecurityIT](backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)에 예약 경로 `X-User-Id` 위조 무시와 로그 비밀번호·Authorization 비노출 검사를 추가했다. 기존 충족 항목과의 연결은 [검증 계약](specs/012-load-security-recovery/contracts/verification-contract.md) C1.
-- 장애 복구: [DependencyFailureIT](backend/src/test/java/com/limitedbooking/backend/reservation/DependencyFailureIT.java)가 DB 연결 차단+종료·pause·취소 잠금·커밋 후 응답 유실을 재현해 503·응답 시간 상한·부분 저장 없음·같은 키 복구를 검사한다. DB 정지 시 무한 대기 결함을 pgjdbc `socketTimeout=7`로 수정했다(`application.yaml`).
-- 부하: load 프로필과 `reservation_load` DB를 쓰는 [load 스크립트](load/README.md). 앱은 제한값을 필수로 받는다.
-
-```sh
-# 비밀번호 환경 변수를 셸에 export한 뒤(커밋 금지) 저장소 루트에서
-docker compose up -d --wait
-./load/prepare-db.sh
-(cd backend && LOAD_RATE_LIMIT=100000 ./gradlew bootRun --args='--spring.profiles.active=load')   # 별도 터미널
-LOAD_RATE_LIMIT=100000 ./load/run.sh low run1        # low|high|replay
-# 제한 시험: 앱을 LOAD_RATE_LIMIT=20으로 재기동한 뒤
-LOAD_RATE_LIMIT=20 ./load/run.sh rate-limit run1
-docker compose down                                   # 볼륨 삭제 없음
-```
-
-최종 게이트 `./gradlew build deepTest mutationSmoke verifyContractDependencies --rerun-tasks` 종료0(Unit308·일반IT322·Contract102·Property4, PIT 23/23). 부하 결과·판정·한계는 [성능 기록](docs/performance.md), 실행 근거는 [test-evidence](docs/test-evidence.md) 11단계 절. 로컬 수치는 운영 규모로 일반화하지 않는다. CI·README 최종본은 12단계다.
