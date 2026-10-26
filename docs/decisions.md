@@ -233,3 +233,16 @@ US3 오케스트레이터 코드검토의 OOM누락은 실제HTTP500 RED 후503 
 - 새 환경 재현은 로컬 저장소의 새 clone(디렉터리 이름으로 Compose 프로젝트·볼륨 분리)과 `env -i` 셸에서 README 코드 블록을 그대로 추출해 실행한다. 임시 프로젝트 볼륨만 정리하고 기존 로컬 볼륨은 보존한다.
 - 최종 기준점: 애플리케이션·테스트·load·Compose·워크플로가 더 바뀌지 않는 커밋에서 심화 전체·PIT·원래 제한 IT·k6를 실행한다. k6는 11단계 3회 판정을 유지하고 12단계는 최종 코드 회귀 확인으로 시나리오당 1회 실행한다(규칙 문서의 3회 측정 절차와의 차이).
 - `load/run.sh`의 dirty 판정 결함을 고쳐 기준점이 바뀌었으나 백엔드 diff가 없어 Gradle 결과는 유지하고 k6만 재실행했다.
+
+## 14단계 로컬 브라우저 콘솔 설계 (2026-10-26)
+
+- 범위: 2026-10-26 사용자 지시로 `frontend/`에 localhost 전용 조작 콘솔(Next.js 16.4.3 App Router + TypeScript, Tailwind 4.3.3)을 추가했다. 헌법 1.0.1 → 1.1.0(원칙 VI). 백엔드 코드·OpenAPI·SQL은 바꾸지 않았다. 근거: [specs/014](../specs/014-frontend-console/spec.md) Clarifications, Advisor 반대 의견.
+- 전달 방식: 백엔드에 CORS를 추가하지 않고(규칙 유지) 같은 출처 Route Handler(`/api/backend/[...path]`)가 계약 경로 5개만 전달한다. `rewrites`는 헤더 이름 변경·출처 검사·허용 목록이 불가해, `proxy.ts`는 응답 전달·오류 변환이 더 단순하지 않아 택하지 않았다.
+- CSRF·DNS rebinding: 비밀번호는 React 상태에만 두고 매 요청 명시적 `Authorization`으로 보내 자동 첨부 자격 증명이 없다. 추가로 Host 루프백 허용 목록(rebinding 방어, Origin==Host 단순 비교는 무력하다는 Advisor 지적 반영)·Origin·`Sec-Fetch-Site`(same-origin/none)를 검사한다.
+- 401: `WWW-Authenticate`를 그대로 두면 브라우저 인증창이 뜨고, 제거하면 계약 관찰이 불가하므로 `X-Upstream-WWW-Authenticate`로 이름을 바꿔 전달·표시한다.
+- 입력: 이름·생성 키를 다듬지 않고, 수량은 JSON 숫자 문법이면 원문을 본문에 그대로 넣는다. Java `strip()`과 JS `trim()`의 공백 정의 차이 때문에 클라이언트 중복 검증은 불일치를 만든다. 경로 식별자는 UUID 형식만 전달한다(경로 조작 방지).
+- 장애: 전달 계층 호출 상한 10초(백엔드 소켓 7초보다 김) 504, 연결 실패 502로 백엔드 503과 구분. 자동 재시도 없음.
+- 보안 헤더: nosniff·no-referrer·`X-Frame-Options: DENY`·`frame-ancestors 'none'`. 스크립트 CSP는 프레임워크 인라인 스크립트 nonce 설계가 필요해 제외했다.
+- 테스트 분리: Unit·Proxy(실제 `node:http` 가짜 업스트림)·Component(jsdom, fetch 경계만 대체)·E2E(Playwright, 실제 백엔드). E2E는 로컬 개발 DB를 쓰지 않도록 별도 Compose 프로젝트·`reservation_e2e`·Redis DB 1을 환경 변수 덮어쓰기로 쓴다(백엔드 무변경). Vitest 결과 게이트가 0건·skip·todo·실패를 거부한다.
+- 버전: 템플릿 조합(react 19.3.0·typescript 5.9.3)을 유지하고 `@types/node`만 vitest peer 충돌로 26.6.5로 올렸다([versions](versions.md)).
+- 제외: 프런트엔드 CI job(기존 CI 결정 변경이라 사용자 결정 대기), 목록 API(백엔드 범위 밖 → 이 브라우저의 최근 식별자 기록으로 대체).

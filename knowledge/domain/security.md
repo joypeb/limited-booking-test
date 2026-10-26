@@ -49,7 +49,7 @@ localhost 비브라우저 API의 인증·ADMIN 권한·소유권과 공통 본�
 
 인증된 UUID로 소유권을 검사한다. 인증 재시도에는 독립 멱등 키가 없으며 예약 생성 키는 reservation 소관이다. 본문 제한은 Content-Length만 의존하지 않고 실제 읽기·chunked를 검사하고 상한 이하 본문을 후속 처리에서 재사용한다. 인증 뒤 예약 쓰기 제한에 진입한 잘못된 입력·재요청도 카운트된다.
 
-CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 허용은 추가하지 않는다. 외부 공개 시 TLS·인증·CSRF는 별도 설계다. 필터·인증 예외도 동일 오류 계약이고 SQL·스택·비밀번호를 노출하지 않는다. security가 DB 트랜잭션을 시작하지 않으며 DB/Redis 장애 분류는 관련 기능의 계약을 따른다.
+CSRF 비활성화는 localhost CLI/API 클라이언트 전제이며 CORS 전체 허용은 추가하지 않는다. 외부 공개 시 TLS·인증·CSRF는 별도 설계다. 2026-10-26 추가한 localhost 브라우저 콘솔은 이 전제를 바꾸지 않는다: 브라우저는 콘솔 서버 전달 계층만 호출하고, 백엔드에는 CORS를 추가하지 않는다([frontend-console](frontend-console.md)). 필터·인증 예외도 동일 오류 계약이고 SQL·스택·비밀번호를 노출하지 않는다. security가 DB 트랜잭션을 시작하지 않으며 DB/Redis 장애 분류는 관련 기능의 계약을 따른다.
 
 ## 7. 검증할 사례와 실제 증거
 
