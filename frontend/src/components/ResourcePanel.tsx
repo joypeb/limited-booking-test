@@ -7,12 +7,15 @@ import type { ApiResult } from "@/lib/api/types";
 import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
 
+const inputClassName = "w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600";
+const submitClassName = "rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50";
+
 export function ResourcePanel() {
   const { generation } = useConsole();
-  return <ResourceEditor key={generation} />;
+  return <ResourcePanelContent key={generation} />;
 }
 
-function ResourceEditor() {
+function ResourcePanelContent() {
   const { credentials, generation, getGeneration } = useConsole();
   const [name, setName] = useState("");
   const [capacityText, setCapacityText] = useState("");
@@ -55,8 +58,14 @@ function ResourceEditor() {
     return send("POST", "resources", resourceCreateBody(name, capacityText));
   }
 
-  const resultId = result?.ok && result.body !== null && typeof result.body === "object"
-    && "id" in result.body && typeof result.body.id === "string" ? result.body.id : undefined;
+  const requestsDisabled = !credentials || pending;
+  const resultBody = result?.ok ? result.body : undefined;
+  const resultId = resultBody !== null
+    && typeof resultBody === "object"
+    && "id" in resultBody
+    && typeof resultBody.id === "string"
+    ? resultBody.id
+    : undefined;
 
   return (
     <section aria-label="예약 대상" className="space-y-4 rounded-xl border border-slate-300 bg-white p-6">
@@ -66,11 +75,11 @@ function ResourceEditor() {
         void create();
       }}>
         <label className="grid gap-1">대상 이름
-          <input className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600" type="text" value={name} onChange={(event) => setName(event.target.value)} />
+          <input className={inputClassName} type="text" value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="grid gap-1">최초 수량
           <input
-            className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600"
+            className={inputClassName}
             type="text"
             inputMode="decimal"
             value={capacityText}
@@ -83,26 +92,26 @@ function ResourceEditor() {
           />
         </label>
         {invalidCapacity && <p id="resource-capacity-error" role="alert">최초 수량은 숫자 표기여야 합니다</p>}
-        <button type="submit" disabled={!credentials || pending} className="rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50">대상 생성</button>
+        <button type="submit" disabled={requestsDisabled} className={submitClassName}>대상 생성</button>
       </form>
       <form className="space-y-3" onSubmit={(event) => {
         event.preventDefault();
         void lookup();
       }}>
         <label className="grid gap-1">대상 식별자
-          <input className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600" value={resourceId} aria-invalid={invalidId} aria-describedby={invalidId ? "resource-id-error" : undefined} onChange={(event) => {
+          <input className={inputClassName} value={resourceId} aria-invalid={invalidId} aria-describedby={invalidId ? "resource-id-error" : undefined} onChange={(event) => {
             setResourceId(event.target.value);
             setInvalidId(false);
           }} />
         </label>
         {invalidId && <p id="resource-id-error" role="alert">식별자는 UUID 형식이어야 합니다</p>}
-        <button type="submit" disabled={!credentials || pending} className="rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50">대상 조회</button>
+        <button type="submit" disabled={requestsDisabled} className={submitClassName}>대상 조회</button>
       </form>
       <ResultView title="예약 대상" result={result}>
         {resultId !== undefined && (
           <button
             type="button"
-            disabled={!credentials || pending}
+            disabled={requestsDisabled}
             className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50"
             onClick={() => { void lookup(resultId); }}
           >대상 다시 조회</button>
