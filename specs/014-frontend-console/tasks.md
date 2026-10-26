@@ -94,8 +94,8 @@
 ### 로컬 리뷰 반영(T043 결과: Critical/High 0, Medium 3, Low 1)
 
 - [X] T043a (orch) 계약 갱신: C1.1 OPTIONS·HEAD 명시 처리, C1.3 스트림 상한·10초 전체 기한, data-model·C2.2 생성 키 전송 차단, spec FR-008·US2-5, quickstart E2E 백엔드 18080. — 선행: T043
-- [ ] T043b (scaf) `playwright.config.ts` webServer `env.BACKEND_BASE_URL` = `E2E_BACKEND_BASE_URL ?? 'http://127.0.0.1:18080'`. — 선행: T043a
-- [ ] T043c (ta) RED: 생성 키 차단(Component), 미종료·길이 미지정 스트림 상한 초과 즉시 413·본문 읽기 기한 504(Proxy), Route Handler OPTIONS·HEAD 출처 검사 후 404(Proxy), 실제 Next HTTP 경계의 OPTIONS·HEAD 404·DELETE 405(E2E), E2E 지원 코드의 백엔드 주소 가드(8080이면 실패, 기본 18080). — 선행: T043b
+- [X] T043b (scaf) `playwright.config.ts` webServer `env.BACKEND_BASE_URL` = `E2E_BACKEND_BASE_URL ?? 'http://127.0.0.1:18080'`. — 선행: T043a
+- [X] T043c (ta) RED: 생성 키 차단(Component), 미종료·길이 미지정 스트림 상한 초과 즉시 413·본문 읽기 기한 504(Proxy), Route Handler OPTIONS·HEAD 출처 검사 후 404(Proxy), 실제 Next HTTP 경계의 OPTIONS·HEAD 404·DELETE 405(E2E), E2E 지원 코드의 백엔드 주소 가드(8080이면 실패, 기본 18080). — 선행: T043b
 - [ ] T043d (impl) GREEN: ReservationCreatePanel 키 차단, forward 스트림 누적 상한·전체 기한, route.ts OPTIONS·HEAD export. — 선행: T043c
 - [ ] T043e (orch) 검증·기록·커밋, (rev) 재리뷰. — 선행: T043d
 - [ ] T044 (orch) 리뷰 분류 → 해당 담당 재할당(테스트 누락 ta, 구현 impl, 문서 orch) → 재검증. Critical/High 0까지 반복. — 선행: T043

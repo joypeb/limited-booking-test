@@ -226,3 +226,16 @@ describe("예약 실패 구분과 자동 재시도 금지", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("HTTP 헤더로 원문 전송할 수 없는 생성 키", () => {
+  it.each([" key", "key ", "키한글", "a\tb"])("키 %j는 변형해 보내지 않고 차단 이유를 안내한다", async (key) => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async () => response());
+    vi.stubGlobal("fetch", fetchMock);
+    const setup = await prepare();
+    await fillAttempt(setup, key);
+    expect(setup.panel.getByRole("textbox", { name: "생성 키" })).toHaveValue(key);
+    await setup.user.click(setup.panel.getByRole("button", { name: "예약" }));
+    expect(setup.panel.getByRole("alert")).toHaveTextContent("생성 키는 앞뒤 공백 없이 HTTP 헤더로 보낼 수 있는 ASCII 문자여야 합니다");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

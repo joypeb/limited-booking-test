@@ -203,3 +203,65 @@ describe("전달 계층의 실제 HTTP 계약", () => {
     expect(target.received).toHaveLength(0);
   });
 });
+
+async function responseWithinDeadline(pending: Promise<Response>): Promise<Response | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      pending,
+      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 900); }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+describe("종료되지 않은 요청 본문 스트림의 제한", () => {
+  it("길이 없는 스트림이 누적 상한을 넘으면 종료를 기다리지 않고 1초 안에 413을 반환한다", async () => {
+    const server = await upstream();
+    let streamController!: ReadableStreamDefaultController<Uint8Array>;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+        controller.enqueue(new Uint8Array(512));
+        controller.enqueue(new Uint8Array(513));
+      },
+    });
+    const init: RequestInit & { duplex: "half" } = { body, duplex: "half" };
+    const request = consoleRequest("POST", ["resources"], init);
+    expect(request.headers.has("Content-Length")).toBe(false);
+    const started = performance.now();
+    const pending = forward(request, ["resources"], { baseUrl: server.baseUrl, maxBodyBytes: 1024 });
+    try {
+      const response = await responseWithinDeadline(pending);
+      expect(response, "미종료 스트림의 종료를 기다리지 않고 413을 반환해야 한다").not.toBeNull();
+      expect(performance.now() - started).toBeLessThan(1000);
+      if (response) await expectProblem(response, 413, "CONSOLE_PAYLOAD_TOO_LARGE", server.baseUrl);
+      expect(server.received).toHaveLength(0);
+    } finally {
+      streamController.error(new Error("테스트의 미종료 스트림 정리"));
+      await pending.catch(() => undefined);
+    }
+  }, 1500);
+
+  it("아무 데이터도 보내지 않는 미종료 스트림은 본문 읽기 기한 200ms로 504를 반환한다", async () => {
+    const server = await upstream();
+    let streamController!: ReadableStreamDefaultController<Uint8Array>;
+    const body = new ReadableStream<Uint8Array>({ start(controller) { streamController = controller; } });
+    const init: RequestInit & { duplex: "half" } = { body, duplex: "half" };
+    const request = consoleRequest("POST", ["resources"], init);
+    expect(request.headers.has("Content-Length")).toBe(false);
+    const started = performance.now();
+    const pending = forward(request, ["resources"], { baseUrl: server.baseUrl, timeoutMs: 200 });
+    try {
+      const response = await responseWithinDeadline(pending);
+      expect(response, "요청 본문을 읽는 동안에도 전체 기한이 적용되어야 한다").not.toBeNull();
+      expect(performance.now() - started).toBeLessThan(1000);
+      if (response) await expectProblem(response, 504, "CONSOLE_UPSTREAM_TIMEOUT", server.baseUrl);
+      expect(server.received).toHaveLength(0);
+    } finally {
+      streamController.error(new Error("테스트의 미종료 스트림 정리"));
+      await pending.catch(() => undefined);
+    }
+  }, 1500);
+});

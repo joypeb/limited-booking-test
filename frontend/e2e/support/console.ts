@@ -18,10 +18,26 @@ export function passwords(): Record<Account, string> {
   return values as Record<Account, string>;
 }
 
+export function e2eBackendBaseUrl(): URL {
+  let url: URL;
+  try {
+    url = new URL(process.env.E2E_BACKEND_BASE_URL ?? "http://127.0.0.1:18080");
+  } catch {
+    throw new Error("E2E_BACKEND_BASE_URL이 유효한 URL이 아닙니다. 전용 백엔드의 루프백 주소를 지정하세요.");
+  }
+  if (url.port === "8080") {
+    throw new Error("개발 DB 보호: E2E 백엔드 포트 8080은 사용할 수 없습니다. 전용 백엔드 포트 18080을 사용하세요.");
+  }
+  if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) {
+    throw new Error("개발 DB 보호: E2E_BACKEND_BASE_URL의 호스트는 루프백(127.0.0.1·localhost·[::1])이어야 합니다.");
+  }
+  return url;
+}
+
 export async function assertBackendReady() {
   // 목록 수집 시에는 실행하지 않고 beforeAll에서 호출한다.
+  const baseUrl = e2eBackendBaseUrl();
   passwords();
-  const baseUrl = process.env.BACKEND_BASE_URL ?? "http://127.0.0.1:8080";
   let response: Response;
   try {
     response = await fetch(new URL("/actuator/health", baseUrl), {
