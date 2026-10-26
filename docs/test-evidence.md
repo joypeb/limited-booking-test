@@ -2167,3 +2167,11 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 - T035(reviewer): Alibaba Open Code Review `ocr delegate preview --from 42b74fa… --to 4b692f3… --exclude 'docs/performance-runs/**' --format json`·`ocr delegate rule --format json <선택 8개>` 종료0, OCR 선택 8개+보충 64개=72개 파일 검토, `ocr review`(외부 LLM)·OCR Actions 미사용. **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5647455906 게시.
 - T036: PR 리뷰 1건(COMMENTED)·라인 코멘트 0·이슈 코멘트 0. Critical/High·실패 테스트·누락 요구사항 0으로 추가 수정 없음. Merge는 사용자 승인 대기.
 - 이후 문서 기록 커밋의 push로 verify가 다시 실행될 수 있으며, 그 결과는 PR 체크에서 확인한다(코드 변경 없음).
+
+### 2026-10-26 병합 후 외부 CI (T034)
+- 사용자가 PR #17을 승인·병합(develop `31bbff7`)하고 main 반영(`9e6a11b`)을 완료했다.
+- push verify: develop [40287542511](https://github.com/joypeb/limited-booking-test/actions/runs/40287542511)·main [40289671284](https://github.com/joypeb/limited-booking-test/actions/runs/40289671284) 모두 success.
+- deep-tests 수동 1회: `gh workflow run deep-tests.yml --ref main`(qt_seed 미지정) → [40289776529](https://github.com/joypeb/limited-booking-test/actions/runs/40289776529) **success**(2026-10-26T08:04:30Z~08:06:24Z). Corretto 25.0.5+0.9 linux-x64, `./gradlew --no-daemon propertyTest mutationSmoke` BUILD SUCCESSFUL 1m25s, propertyTest 4 실패/skip 0, PIT generated 23·killed 23·survived 0·invalid 0. 모든 단계 success(요약·두 업로드 포함).
+- artifact를 내려받아 확인: `deep-property-reports`(25,355 bytes)의 `property-summary.txt` — 프로브 seed 20261013·generated-attempts 101, 업무 seed 20261023·attempts 149·scenario-digest `0a94346b9302de90bf0e4f7f08df3c9cdf71d422710d4c1c620a3abfc1f60bf7`, 합계 tests 4 실패/오류/skip 0. `deep-pit-reports`(11,452 bytes)의 `mutations.xml` 23건 모두 KILLED.
+- **플랫폼 간 seed 재현**: x86_64 runner의 digest가 로컬 arm64 실행(T012·T020)과 동일하다. 같은 seed가 같은 명령 열을 생성함을 두 아키텍처에서 확인했다.
+- 남은 미검증: 외부에서 테스트 실패가 job 실패로 전파되는지(실패 커밋 push 미승인). 사용자 수행 대기: AI 없는 시연·작은 변경·설명.

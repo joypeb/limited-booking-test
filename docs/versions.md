@@ -147,4 +147,4 @@ T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyCont
 | actions/upload-artifact | v7.0.2 `cf430e030ddbb5b0abf93d22962f4752f3646cd9` | 입력 이름 확인 |
 | actionlint(로컬 정적 검사) | `rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` | Docker로 실행, 현재 워크플로 오류 0 |
 
-CI 실제 JDK: run 40269778342에서 setup-java가 Amazon Corretto 25.0.5+0.9(linux-x64)를 설치했다(`java-version: '25'`는 최신 25 패치를 받는다). 로컬 25.0.4와 패치가 다르며 같은 결과(Unit308·IT322·Contract102)를 확인했다. 패치 고정은 하지 않았다.
+CI 실제 JDK: run 40269778342에서 setup-java가 Amazon Corretto 25.0.5+0.9(linux-x64)를 설치했다(`java-version: '25'`는 최신 25 패치를 받는다). 로컬 25.0.4와 패치가 다르며 같은 결과(Unit308·IT322·Contract102, deep-tests의 Property4·digest 동일·PIT 23/23)를 확인했다. 패치 고정은 하지 않았다.
