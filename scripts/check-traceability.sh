@@ -5,7 +5,9 @@
 # HTML 주석은 표로 보지 않는다. 복잡한 중첩 Markdown/참조형 링크는 미지원이다.
 # 대상 경로는 저장소 루트, 증거 링크는 입력 문서 디렉터리(기본 docs/) 기준이다.
 # Gradle 판정은 check-readme.sh R3의 리터럴 선언/옵션 목록을 복제한다.
-# Java는 파일·메서드 이름의 정적 존재만 확인한다. JUnit 발견/실행이나
+# Java는 클래스 범위와 JUnit annotation이 붙은 메서드 선언을 정적으로 확인한다.
+# 중첩/동일 파일 클래스와 한 줄 선언을 지원한다. 상속·합성 annotation은
+# 해석하지 않는다. Java 컴파일러나 JUnit 발견/실행을 대신하지 않으며
 # 규칙·대상·시험·증거 사이 의미상 타당성은 이 검사로 증명하지 않는다.
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
@@ -125,9 +127,6 @@ value_options = {'--tests', '--args', '--init-script', '-I', '--project-dir', '-
                  '--configuration-cache-problems', '--dependency-verification', '--write-verification-metadata',
                  '--exclude-task', '-x', '--include-build', '--project-cache-dir', '--priority', '-D', '-P'}
 separators = {';', '&&', '||', '|', '&', '(', ')', '<', '>', '>>', '<<'}
-sources = collections.defaultdict(list)
-for source in pathlib.Path('backend/src/test').rglob('*.java'):
-    sources[source.stem].append(source)
 source_text = {}
 
 
@@ -139,20 +138,116 @@ def java_text(path):
     return source_text[path]
 
 
+test_annotations = {name: 'org.junit.jupiter.api.' + name
+                    for name in ('Test', 'RepeatedTest', 'TestFactory', 'TestTemplate')}
+test_annotations['ParameterizedTest'] = 'org.junit.jupiter.params.ParameterizedTest'
+classes = []
+
+
+def index_java(path):
+    source = java_text(path)
+    package = re.search(r'\bpackage\s+([\w.]+)\s*;', source)
+    package = package[1] if package else ''
+    imports = set(re.findall(r'\bimport\s+([\w.*]+)\s*;', source))
+    tokens = re.findall(r'[A-Za-z_$][\w$]*|[^\s]', source)
+    pairs, stack = {}, []
+    for index, token in enumerate(tokens):
+        if token in ('(', '{', '['):
+            stack.append((token, index))
+        elif token in (')', '}', ']') and stack:
+            opening, start = stack.pop()
+            if opening + token in ('()', '{}', '[]'):
+                pairs[start] = index
+
+    def annotated_method(start, end):
+        cursor, junit = start, False
+        # Annotation 인자의 괄호/배열을 건너뛴다. 주석·문자열은 이미 제거했다.
+        while cursor < end:
+            if tokens[cursor] == '@':
+                cursor += 1
+                names = []
+                while cursor < end and (re.fullmatch(r'[\w$]+', tokens[cursor]) or tokens[cursor] == '.'):
+                    names.append(tokens[cursor])
+                    cursor += 1
+                    if cursor >= end or tokens[cursor] != '.':
+                        break
+                    names.append('.')
+                    cursor += 1
+                annotation = ''.join(names)
+                simple = annotation.rsplit('.', 1)[-1]
+                full = test_annotations.get(simple)
+                if full and (annotation == full or annotation == simple and
+                             (full in imports or full.rsplit('.', 1)[0] + '.*' in imports)):
+                    junit = True
+                if cursor < end and tokens[cursor] == '(':
+                    cursor = pairs.get(cursor, end) + 1
+            elif tokens[cursor] in ('public', 'protected', 'private', 'static', 'final', 'abstract', 'synchronized', 'native', 'strictfp', 'default'):
+                cursor += 1
+            else:
+                break
+        if not junit:
+            return None
+        signature = tokens[cursor:end]
+        if '(' not in signature or any(token in signature[:signature.index('(')] for token in ('=', 'class', 'interface', 'enum', 'record', 'new')):
+            return None
+        paren = signature.index('(')
+        # 반환 타입 + 메서드 이름이 필요하다. foo.bar(...) 같은 호출은 거부한다.
+        if paren < 2 or signature[paren - 2] == '.' or not re.fullmatch(r'[A-Za-z_$][\w$]*', signature[paren - 1]):
+            return None
+        return signature[paren - 1]
+
+    local = []
+    for index, token in enumerate(tokens[:-1]):
+        if token not in ('class', 'interface', 'enum', 'record') or index and tokens[index - 1] == '.':
+            continue
+        name = tokens[index + 1]
+        if not re.fullmatch(r'[A-Za-z_$][\w$]*', name):
+            continue
+        body = index + 2
+        while body < len(tokens) and tokens[body] not in ('{', ';'):
+            if tokens[body] in ('(', '[') and body in pairs:
+                body = pairs[body]
+            body += 1
+        if body not in pairs or tokens[body] != '{':
+            continue
+        end = pairs[body]
+        parents = [item['name'] for item in local if item['body'] < body < item['end']]
+        aliases = {name, '.'.join(parents + [name]), '$'.join(parents + [name])}
+        aliases |= {package + '.' + alias for alias in list(aliases)} if package else set()
+        methods = set()
+        cursor = start = body + 1
+        while cursor < end:
+            token = tokens[cursor]
+            if token in ('(', '[') and cursor in pairs:
+                cursor = pairs[cursor] + 1
+                continue
+            if token in ('{', ';'):
+                method = annotated_method(start, cursor)
+                if method:
+                    methods.add(method)
+                if token == '{':
+                    cursor = pairs.get(cursor, end)
+                start = cursor + 1
+            cursor += 1
+        item = dict(name=name, body=body, end=end, aliases=aliases, methods=methods, path=path)
+        local.append(item)
+    classes.extend(local)
+
+
+for path in pathlib.Path('backend/src/test').rglob('*.java'):
+    index_java(path)
+
+
 def matches_filter(pattern):
-    for name, paths in sources.items():
-        for path in paths:
-            source = java_text(path)
-            package = re.search(r'\bpackage\s+([\w.]+)\s*;', source)
-            full = f'{package[1]}.{name}' if package else name
-            if any(fnmatch.fnmatchcase(candidate, pattern) for candidate in (name, full)):
+    for item in classes:
+        if item['methods'] and any(fnmatch.fnmatchcase(alias, pattern) for alias in item['aliases']):
+            return True
+        if '.' in pattern:
+            class_pattern, method_pattern = pattern.rsplit('.', 1)
+            if any(fnmatch.fnmatchcase(alias, class_pattern) for alias in item['aliases']) and any(
+                fnmatch.fnmatchcase(method, method_pattern) for method in item['methods']
+            ):
                 return True
-            if '.' in pattern:
-                class_pattern, method_pattern = pattern.rsplit('.', 1)
-                if any(fnmatch.fnmatchcase(candidate, class_pattern) for candidate in (name, full)) and any(
-                    fnmatch.fnmatchcase(method, method_pattern) for method in re.findall(r'\b(\w+)\s*\(', source)
-                ):
-                    return True
     return False
 
 
@@ -169,11 +264,11 @@ for rule_id, _, target_cell, test_cell, command_cell, evidence_cell in rows:
         errors['T3'].append(f'{rule_id}: Class#method가 없습니다')
     for test in tests:
         match = re.fullmatch(r'([\w.$]+)#([\w$]+)', test)
-        paths = sources.get(match[1].split('.')[-1], []) if match else []
-        if not match or len(paths) != 1:
+        owners = [item for item in classes if match and match[1] in item['aliases']]
+        if not match or len(owners) != 1:
             errors['T3'].append(f'{rule_id}: 테스트 클래스가 정확히 1개여야 합니다: {test}')
-        elif not re.search(r'\b' + re.escape(match[2]) + r'\s*\(', java_text(paths[0])):
-            errors['T3'].append(f'{rule_id}: 메서드가 없습니다: {test}')
+        elif match[2] not in owners[0]['methods']:
+            errors['T3'].append(f'{rule_id}: JUnit 테스트 메서드 선언이 없습니다: {test}')
     commands = codes(command_cell)
     command_count = 0
     for command in commands:
