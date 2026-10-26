@@ -2259,3 +2259,10 @@ Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `H
 | 실행기 전체 | 종료 0, 21건 통과, 종료 후 18080 LISTEN 0 |
 | 실행 중 실행기에 TERM | Playwright 중단(18 통과·1 미실행 시점), 20초 후 18080 LISTEN 0·백엔드 java 프로세스 0 |
 
+
+### PR·외부 CI·OCR 리뷰(T046~T048)
+
+- T046(orch): `feature/frontend-sdd-tdd-orchestration` push, Draft [PR #19](https://github.com/joypeb/limited-booking-test/pull/19)(develop 대상, head 6b84db1, 85파일).
+- 외부 CI: [verify run 40332245329](https://github.com/joypeb/limited-booking-test/actions/runs/40332245329)(pull_request, head 6b84db1) success, 5분 27초. 이 워크플로는 백엔드 `verifyContract`만 실행하며 프런트엔드 테스트는 포함하지 않는다(프런트엔드 CI는 사용자 결정 대기).
+- T047(reviewer): Alibaba Open Code Review v1.13.3 `ocr delegate preview --format json --from a71736b… --to 6b84db1…`·`ocr delegate rule --format json <선택·보충 파일>` 종료 0. `gh pr diff --name-only`와 로컬 diff 85파일 일치. OCR 선택 37개 + 자동 제외에서 복원한 테스트·E2E 21개 = 58개 리뷰, 문서·설정 25개 대조, `package-lock.json`·`favicon.ico` 내용 리뷰 제외. 외부 LLM `ocr review`·GitHub Actions 미사용. 후보(npx 부모 TERM 시 자식 잔존)는 재현으로 무효. **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5652882589 게시.
+- T048(orch): PR 리뷰 1건·라인 코멘트 0·이슈 코멘트 0을 `gh api`로 확인, 재할당할 수정 없음. Critical/High·실패 테스트·누락 요구 0. 병합은 사용자 승인 대기.

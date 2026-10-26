@@ -1,7 +1,7 @@
 # Tasks: 로컬 브라우저 예약 콘솔
 
 **입력**: [명세](spec.md), [계획](plan.md), [조사](research.md), [데이터 모델](data-model.md), [전달 계약](contracts/console-proxy.md), [화면 계약](contracts/console-ui.md), [실행 안내](quickstart.md)
-**상태**: 2026-10-26 T001~T042 완료(npm test 263건·E2E 16건·백엔드 Unit 308건, 근거 `docs/test-evidence.md` 14단계 절). T010·US2~US4 RED는 경로가 달라 앞 단계 GREEN과 병행했다. 로컬 리뷰(Critical/High 0, Medium·Low 반영·재확인)와 Converge(Explorer 독립 평가 발견 0, Converged) 완료. 남은 작업: T046 Draft PR~T048 PR 리뷰.
+**상태**: 2026-10-26 T001~T042 완료(npm test 263건·E2E 16건·백엔드 Unit 308건, 근거 `docs/test-evidence.md` 14단계 절). T010·US2~US4 RED는 경로가 달라 앞 단계 GREEN과 병행했다. 로컬 리뷰(Critical/High 0, Medium·Low 반영·재확인)와 Converge(Explorer 독립 평가 발견 0, Converged) 완료. Draft PR #19, verify run 40332245329 success, OCR delegate 리뷰 5652882589(유효 지적 0), 코멘트 0으로 T001~T048 완료. 병합은 사용자 승인 대기.
 
 ## 형식과 공통 실행 계약
 
@@ -104,9 +104,9 @@
 - [X] T043i (orch) 실행기로 E2E 전체·가드 실패 확인·기록, (rev) 재확인. — 선행: T043g, T043h
 - [X] T044 (orch) 리뷰 분류 → 해당 담당 재할당(테스트 누락 ta, 구현 impl, 문서 orch) → 재검증. Critical/High 0까지 반복. — 선행: T043
 - [X] T045 (orch) Spec Kit Analyze 재실행·Converge. Converged가 아니면 누락 작업 추가·분배. — 선행: T044
-- [ ] T046 (orch) push·Draft PR(develop 대상): 문제·변경 동작·실제 검증·미검증·읽을 파일. — 선행: T045
-- [ ] T047 (rev) PR 정확한 diff에 Codex의 Alibaba Open Code Review를 `ocr` delegate 방식으로 실행, 유효 지적만 GitHub PR Review API/`gh`로 파일·라인 코멘트 게시(Actions 사용 금지, 수정 금지). — 선행: T046
-- [ ] T048 (orch) PR 코멘트 조회·분류·재할당·수정·테스트·재리뷰. Critical/High·실패 테스트·누락 요구 0까지 반복. 병합은 사용자 승인 전 하지 않음. — 선행: T047
+- [X] T046 (orch) push·Draft PR(develop 대상): 문제·변경 동작·실제 검증·미검증·읽을 파일. — 선행: T045
+- [X] T047 (rev) PR 정확한 diff에 Codex의 Alibaba Open Code Review를 `ocr` delegate 방식으로 실행, 유효 지적만 GitHub PR Review API/`gh`로 파일·라인 코멘트 게시(Actions 사용 금지, 수정 금지). — 선행: T046
+- [X] T048 (orch) PR 코멘트 조회·분류·재할당·수정·테스트·재리뷰. Critical/High·실패 테스트·누락 요구 0까지 반복. 병합은 사용자 승인 전 하지 않음. — 선행: T047
 
 ## 의존 관계 요약
 
