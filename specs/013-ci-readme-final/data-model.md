@@ -20,7 +20,7 @@
 
 ## 최종 기준 커밋 B
 
-`SHA · 날짜 · 이후 허용 경로(README.md, docs/, specs/, knowledge/, 계획서, AGENTS.md) · 실행 목록(명령·종료 코드·수·결과 위치)`.
+`SHA · 날짜 · 이후 허용 경로(README.md, docs/, specs/, knowledge/, 계획서, AGENTS.md, scripts/check-*.sh) · 실행 목록(명령·종료 코드·수·결과 위치)`.
 
 ## 추적 행 (`docs/traceability.md`)
 
