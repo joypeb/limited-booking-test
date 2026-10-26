@@ -47,6 +47,7 @@ test-author와 implementer가 같은 이름을 쓰도록 접근 가능한 이름
 ## C2.3 결과 표시(`ResultView`)
 
 - 각 영역의 결과는 `role="status"`(`aria-live="polite"`) 컨테이너, 이름은 `<영역 이름> 결과`(예: `예약 대상 결과`).
+- `내 예약` 영역의 `대상 다시 조회` 결과는 예약 결과를 덮지 않도록 같은 영역 안의 별도 컨테이너 `내 예약 대상 결과`에 표시한다(2026-10-26 T030 구현 중 추가, 예약 결과와 대상 수량을 함께 관찰).
 - 항상 `HTTP <status>` 텍스트를 표시한다(클라이언트 실패는 `HTTP 0` 대신 `응답 없음`).
 - 성공: 응답 필드를 `<dl>`로 표시. `dt` 텍스트는 필드 이름 원문(`id`, `name`, `capacity`, `available`, `resourceId`, `status`, `createdAt`, `cancelledAt`), `dd`는 값 원문(`null`은 `null`). 시각 필드는 원문 뒤에 보조 로컬 시각을 괄호로 붙일 수 있다.
 - 보존 헤더가 있으면 같은 `<dl>`에 `Location`, `Idempotent-Replayed`, `Retry-After`, `X-Upstream-WWW-Authenticate`를 `dt`로 표시.
