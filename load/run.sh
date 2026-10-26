@@ -39,6 +39,9 @@ export ADMIN_PASSWORD USER_A_PASSWORD USER_B_PASSWORD
 for executable in docker k6 java git; do
   command -v "$executable" >/dev/null || { echo "필수 명령 없음: $executable" >&2; exit 2; }
 done
+# 결과 디렉터리·meta 자체가 미추적 변경으로 잡히지 않도록 생성 전에 시작 상태를 저장한다.
+git_dirty_at_start=false
+if [[ -n "$(git status --porcelain)" ]]; then git_dirty_at_start=true; fi
 result_dir="docs/performance-runs/$(date -u +%Y%m%d)-$scenario-$label"
 # Git이 빈 디렉터리를 보존하지 않으므로 부모 경로도 실행 시 준비한다.
 mkdir -p docs/performance-runs
@@ -48,7 +51,7 @@ meta="$result_dir/meta.txt"
 {
   printf 'started_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf 'git_commit=%s\n' "$(git rev-parse HEAD)"
-  if [[ -n "$(git status --porcelain)" ]]; then printf 'git_dirty=true\n'; else printf 'git_dirty=false\n'; fi
+  printf 'git_dirty=%s\n' "$git_dirty_at_start"
   printf 'scenario=%s\nlabel=%s\nrun_id=%s\nbase_url=%s\n' "$scenario" "$label" "$RUN_ID" "$BASE_URL"
   printf 'load_rate_limit_recorded=%s\nload_rate_window_recorded=%s\n' "$LOAD_RATE_LIMIT" "${LOAD_RATE_WINDOW:-60000ms}"
   printf 'expect_created=%s\nexpect_sold_out=%s\n' "${EXPECT_CREATED:-1000}" "${EXPECT_SOLD_OUT:-1000}"
