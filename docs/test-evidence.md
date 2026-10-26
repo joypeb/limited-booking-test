@@ -2244,7 +2244,8 @@ Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `H
 |---|---|---|
 | 실행기 전체 | `COMPOSE_PROJECT_NAME=lb-console-e2e npm run test:e2e`(환경 변수는 저장소 밖 파일에서 export) | 종료 0, 21건 통과(16.2s). 백엔드 로그 `Tomcat started on port 18080`, 종료 후 18080 LISTEN 0 |
 | DB 사용처 | 실행 전후 `psql` | `reservation_e2e` 대상 45→61(불변식 61/61), `reservation_local` public 테이블 0 |
-| 18080 점유 | 임의 HTTP 서버를 18080에 띄운 뒤 `npm run test:e2e` | 종료 1, `포트 18080에 이미 응답하는 백엔드가 있습니다` |
+| 18080 점유 | 임의 HTTP 서버를 18080에 띄운 뒤 `npm run test:e2e` | 1차(67f17c3): 종료 1이었으나 원인은 의도한 안내가 아니라 `$BACKEND_PORT에`의 한글 바이트가 변수 이름으로 해석된 `unbound variable` 오류였다(로그 재확인으로 발견, 기록 정정). 수정 후 재확인은 아래 행 |
+| 18080 점유(수정 후) | 문자열 안 변수 확장을 `${VAR}`로 바꾼 뒤 같은 조건을 기본 로케일·`LC_ALL=C`로 실행 | 둘 다 종료 1, `포트 18080에 이미 응답하는 백엔드가 있습니다` 1회, `unbound` 0회 |
 | 실행기 없이 직접 | `npx playwright test e2e/us4-history.spec.ts` | 종료 1, `E2E는 npm run test:e2e(실행기)로만 실행합니다` |
 | 필수 변수 누락 | 변수 없이 `npm run test:e2e` | 종료 1, 변수 이름만 출력(scaffolder 확인) |
 
