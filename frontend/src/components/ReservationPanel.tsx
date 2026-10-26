@@ -6,6 +6,7 @@ import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
 import { UuidInput } from "./UuidInput";
 import { useBackendRequest } from "./useBackendRequest";
+import { useHistoryLookup } from "./useHistoryLookup";
 import { primaryButtonClassName, secondaryButtonClassName } from "./control-styles";
 
 export function ReservationPanel() {
@@ -27,18 +28,23 @@ function ReservationPanelContent() {
     ? resultBody.resourceId
     : undefined;
 
-  function requestReservation(cancel: boolean) {
+  function requestReservation(cancel: boolean, id = reservationId) {
     if (requestsDisabled) return;
-    if (!isUuid(reservationId)) {
+    if (!isUuid(id)) {
       setInvalidId(true);
       return;
     }
     setInvalidId(false);
     return reservationRequest.send({
       method: cancel ? "POST" : "GET",
-      path: `reservations/${reservationId}${cancel ? "/cancel" : ""}`,
+      path: `reservations/${id}${cancel ? "/cancel" : ""}`,
     });
   }
+
+  useHistoryLookup("reservation", (id) => {
+    setReservationId(id);
+    void requestReservation(false, id);
+  });
 
   return (
     <section aria-label="내 예약" className="space-y-4 rounded-xl border border-slate-300 bg-white p-6">

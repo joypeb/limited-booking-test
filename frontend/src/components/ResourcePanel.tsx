@@ -6,6 +6,7 @@ import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
 import { UuidInput } from "./UuidInput";
 import { useBackendRequest } from "./useBackendRequest";
+import { useHistoryLookup } from "./useHistoryLookup";
 import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "./control-styles";
 
 export function ResourcePanel() {
@@ -29,6 +30,8 @@ function ResourcePanelContent() {
     setResourceId(id);
     return send({ method: "GET", path: `resources/${id}` });
   }
+
+  useHistoryLookup("resource", (id) => { void lookup(id); });
 
   function create() {
     if (!isJsonNumberLiteral(capacityText)) {
