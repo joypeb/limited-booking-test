@@ -88,7 +88,7 @@ HTTP로 직접 보려면 README Quick Start 7단계의 5단계(USER_B가 USER_A�
 
 | 구분 | 위치 | 확인할 것 |
 |---|---|---|
-| 설계 문구 | 계획서 2절·4절의 키 형식, 3절 스키마의 `idempotency_key varchar(64)` | `{1,64}`와 길이 설명 |
+| 설계 문구 | 계획서 2절·4.1의 키 형식, 5.1절 스키마의 `idempotency_key varchar(64)` | `{1,64}`와 길이 설명 |
 | 규칙 클래스 | `backend/src/main/java/com/limitedbooking/backend/reservation/IdempotencyKey.java`의 `VALID_KEY` | 정규식 `{1,32}` |
 | 계약 | `docs/openapi.yaml`의 `Idempotency-Key` 파라미터 `maxLength`와 `pattern` | 두 값 모두 변경 |
 | 단위 테스트 | `IdempotencyKeyTest`의 경계값(`"A".repeat(64)`)과 거부 사례 | 32자 통과·33자 거부 |
