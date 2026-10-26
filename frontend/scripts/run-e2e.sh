@@ -17,6 +17,10 @@ LOG_DIR="${FRONTEND_DIR}/e2e-logs"
 LOG_FILE="${LOG_DIR}/e2e-backend.log"
 JAR_PATH="${BACKEND_DIR}/build/libs/backend-0.0.1-SNAPSHOT.jar"
 
+CLEANED_UP=0
+BACKEND_PID=""
+PW_PID=""
+
 # (1) 필수 환경 변수: 값은 출력하지 않고 이름만 알린다.
 missing=()
 for name in POSTGRES_USER POSTGRES_PASSWORD ADMIN_PASSWORD USER_A_PASSWORD USER_B_PASSWORD; do
@@ -30,7 +34,8 @@ if [ "${#missing[@]}" -gt 0 ]; then
 fi
 
 # (2) 알 수 없는 백엔드를 쓰지 않도록 18080이 비어 있는지 확인한다.
-if curl -s -o /dev/null "${HEALTH_URL}" 2>/dev/null; then
+# 응답 없는 점유 서버에서 무한 대기하지 않도록 연결·전체 기한을 둔다.
+if curl -s --connect-timeout 2 --max-time 3 -o /dev/null "${HEALTH_URL}" 2>/dev/null; then
   echo "포트 ${BACKEND_PORT}에 이미 응답하는 백엔드가 있습니다. 알 수 없는 백엔드 사용 방지: E2E를 중단합니다." >&2
   exit 1
 fi
@@ -52,22 +57,59 @@ SERVER_PORT="${BACKEND_PORT}" \
   java -jar "${JAR_PATH}" --spring.profiles.active=local >"${LOG_FILE}" 2>&1 &
 BACKEND_PID=$!
 
-cleanup() {
-  # 정리 단계의 kill/wait 실패는 이미 종료된 프로세스일 수 있으므로 무시한다(실패 은폐 목적 아님).
-  kill "${BACKEND_PID}" 2>/dev/null || true
-  wait "${BACKEND_PID}" 2>/dev/null || true
+# 프로세스에 TERM을 보내고 최대 15초 기다린 뒤 남아 있으면 KILL한다.
+terminate() {
+  local pid="$1"
+  kill -TERM "${pid}" 2>/dev/null || true
+  for _ in $(seq 1 15); do
+    if ! kill -0 "${pid}" 2>/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  kill -KILL "${pid}" 2>/dev/null || true
+  return 0
 }
-trap cleanup EXIT INT TERM
+
+cleanup() {
+  if [ "${CLEANED_UP}" = "1" ]; then
+    return 0
+  fi
+  CLEANED_UP=1
+  # 정리 단계의 kill/wait 실패는 이미 종료된 프로세스일 수 있으므로 무시한다(실패 은폐 목적 아님).
+  if [ -n "${PW_PID}" ] && kill -0 "${PW_PID}" 2>/dev/null; then
+    terminate "${PW_PID}"
+    wait "${PW_PID}" 2>/dev/null || true
+  fi
+  if [ -n "${BACKEND_PID}" ] && kill -0 "${BACKEND_PID}" 2>/dev/null; then
+    terminate "${BACKEND_PID}"
+    wait "${BACKEND_PID}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
 # (5) health UP을 최대 180초 기다린다. 그 사이 프로세스가 죽으면 로그를 보여주고 실패한다.
 ready=0
 for _ in $(seq 1 180); do
   if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
     echo "E2E 백엔드가 기동 중 종료되었습니다. 로그 마지막 30줄:" >&2
-    tail -n 30 "${LOG_FILE}" >&2 || true
+    tail -n 30 "${LOG_FILE}" >&2
     exit 1
   fi
   if curl -fsS --max-time 2 "${HEALTH_URL}" 2>/dev/null | grep -q '"status":"UP"'; then
+    # health 응답만으로 판정하지 않고, 18080 LISTEN 소유 PID가 우리가 띄운 java인지 확인한다.
+    listener_pids=""
+    if command -v lsof >/dev/null 2>&1; then
+      if ! listener_pids="$(lsof -nP -iTCP:"${BACKEND_PORT}" -sTCP:LISTEN -t 2>/dev/null)"; then
+        listener_pids=""
+      fi
+      if ! printf '%s\n' "${listener_pids}" | grep -qx "${BACKEND_PID}"; then
+        echo "다른 프로세스가 ${BACKEND_PORT}을 점유하고 있습니다. 알 수 없는 백엔드 사용 방지: E2E를 중단합니다." >&2
+        exit 1
+      fi
+    fi
     ready=1
     break
   fi
@@ -75,10 +117,14 @@ for _ in $(seq 1 180); do
 done
 if [ "${ready}" -ne 1 ]; then
   echo "E2E 백엔드 health UP 대기 시간(180초)을 초과했습니다. 로그 마지막 30줄:" >&2
-  tail -n 30 "${LOG_FILE}" >&2 || true
+  tail -n 30 "${LOG_FILE}" >&2
   exit 1
 fi
 
-# (6) Playwright를 실행하고 그 종료 코드를 그대로 반환한다(set -e와 EXIT trap이 코드를 보존한다).
+# (6) Playwright를 실행하고 그 종료 코드를 그대로 반환한다. 신호 시 cleanup이 자식을 먼저 종료한다.
 cd "${FRONTEND_DIR}"
-E2E_ISOLATED_BACKEND=1 E2E_BACKEND_BASE_URL="${BACKEND_BASE_URL}" npx playwright test "$@"
+E2E_ISOLATED_BACKEND=1 E2E_BACKEND_BASE_URL="${BACKEND_BASE_URL}" npx playwright test "$@" &
+PW_PID=$!
+status=0
+wait "${PW_PID}" || status=$?
+exit "${status}"

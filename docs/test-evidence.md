@@ -2250,3 +2250,12 @@ Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `H
 | 필수 변수 누락 | 변수 없이 `npm run test:e2e` | 종료 1, 변수 이름만 출력(scaffolder 확인) |
 
 첫 실행에서 백엔드 로그가 사라지는 문제(Playwright가 시작 시 `test-results/`를 비움)를 발견해 로그를 `frontend/e2e-logs/`(gitignore)로 옮겼다.
+
+재확인(reviewer, ae68d2d): 변수 확장·plan.md Low 해소, M3 정상 경로 해소. 실행기 견고성 Medium 3건(포트 확인–기동 사이 경쟁, 첫 `curl` 무제한 대기, INT·TERM 후 실행 재개)을 보완했다: 첫 검사에 `--connect-timeout 2 --max-time 3`, health UP 시 18080 LISTEN 소유 PID가 실행기가 띄운 java인지 확인, INT→130·TERM→143 종료와 Playwright·백엔드 TERM 후 15초 상한 KILL 정리.
+
+| 확인 | 결과 |
+|---|---|
+| 응답 없는 점유 서버(연결만 수락) | 3초 만에 종료 1, 점유 안내(scaffolder 확인) |
+| 실행기 전체 | 종료 0, 21건 통과, 종료 후 18080 LISTEN 0 |
+| 실행 중 실행기에 TERM | Playwright 중단(18 통과·1 미실행 시점), 20초 후 18080 LISTEN 0·백엔드 java 프로세스 0 |
+
