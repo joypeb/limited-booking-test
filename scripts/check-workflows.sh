@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# C1 W1~W6 검사. Bash, Docker, Python 3 표준 라이브러리만 사용한다.
-# W1이 YAML/Actions 문법을 검사하고 W2~W6은 보수적인 정적 검사를 한다.
+# C1 W1~W7 검사. Bash, Docker, Python 3 표준 라이브러리만 사용한다.
+# W1이 YAML/Actions 문법을 검사하고 W2~W7은 보수적인 정적 검사를 한다.
 # 따옴표 밖 # 주석은 제거하며 따옴표 안 #은 값으로 보존한다. run 블록의
 # 셸 주석도 제거하지만 heredoc/여러 줄 셸 문자열/동적 표현식은 해석하지 않는다.
 # 구조 검사는 들여쓰기 기반 block mapping/sequence용이다. flow mapping,
-# anchor/alias/merge는 해석 누락으로 통과하지 않도록 W4~W6에서 거부한다.
+# anchor/alias/merge는 해석 누락으로 통과하지 않도록 W4~W7에서 거부한다.
 # 문자열 검사는 실행 의미를 증명하지 않는다(예: echo 안 금지 문자열도 탐지).
 set -euo pipefail
 
@@ -43,7 +43,7 @@ else
 fi
 
 if ! command -v python3 >/dev/null 2>&1; then
-    for id in W2 W3 W4 W5 W6; do
+    for id in W2 W3 W4 W5 W6 W7; do
         printf 'FAIL %s: 정적 검사에 필요한 python3가 없습니다\n' "$id"
     done
     exit 1
@@ -55,7 +55,7 @@ import re
 import sys
 
 directory = pathlib.Path(sys.argv[1])
-errors = {key: [] for key in ('W2', 'W3', 'W4', 'W5', 'W6')}
+errors = {key: [] for key in ('W2', 'W3', 'W4', 'W5', 'W6', 'W7')}
 
 
 def uncomment(line):
@@ -147,6 +147,8 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
     if unsupported:
         for key in ('W4', 'W5', 'W6'):
             fail(key, file, '구조 검사는 flow mapping/anchor/alias/merge를 지원하지 않음')
+        if file.name == 'deep-tests.yml':
+            fail('W7', file, '구조 검사는 flow mapping/anchor/alias/merge를 지원하지 않음')
     if 'continue-on-error' in text:
         fail('W2', file, 'continue-on-error 금지')
     if re.search(r'\|\|\s*(?:true\b|:(?=\s|$))|\bset\s+\+e\b|--exclude-task\b', text) or any(
@@ -174,6 +176,36 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
             timeout = job.child('timeout-minutes')
             if timeout is None or not scalar(timeout.value):
                 fail('W5', file, f'job {job.key}에 timeout-minutes 필요')
+    if file.name == 'deep-tests.yml':
+        triggers = root.child('on')
+        if triggers is None or triggers.value.strip() or [node.key for node in triggers.children] != ['workflow_dispatch']:
+            fail('W7', file, '트리거는 workflow_dispatch만 허용')
+        dispatch = triggers.child('workflow_dispatch') if triggers else None
+        inputs = dispatch.child('inputs') if dispatch else None
+        if inputs is None or inputs.child('qt_seed') is None:
+            fail('W7', file, 'workflow_dispatch.inputs.qt_seed 필요')
+        steps = [step for node in root.walk() if node.key == 'steps' for step in node.children]
+        runs = [scalar(node.value).lstrip('|>+-\n ') for step in steps for node in step.children if node.key == 'run']
+        if not any(re.search(r'(?m)^\s*\./gradlew --no-daemon propertyTest mutationSmoke\s*$', run) for run in runs):
+            fail('W7', file, './gradlew --no-daemon propertyTest mutationSmoke 실행 필요')
+        if not any(re.search(r'(?m)^\s*(?:bash\s+)?(?:\./)?\.github/scripts/property-summary\.sh(?:\s|$)', run) for run in runs):
+            fail('W7', file, '.github/scripts/property-summary.sh 호출 필요')
+        # D2는 Property/PIT artifact를 별도 단계로 올린다. always()인 업로드
+        # 단계들의 path만 합산하며 / 또는 /** 접미사를 같은 디렉터리로 본다.
+        uploaded = set()
+        for step in steps:
+            uses, condition, config = step.child('uses'), step.child('if'), step.child('with')
+            path = config.child('path') if config else None
+            if uses and scalar(uses.value).startswith('actions/upload-artifact@') and condition and scalar(condition.value) in ('always()', '${{ always() }}') and path:
+                for value in scalar(path.value).lstrip('|>+-\n ').splitlines():
+                    uploaded.add(re.sub(r'/\*\*$', '', value.strip()).rstrip('/'))
+        for required in ('backend/build/reports/pitest', 'backend/build/test-results/propertyTest'):
+            if required not in uploaded:
+                fail('W7', file, f'if: always() upload-artifact에 {required} 경로 필요')
+        concurrency = root.child('concurrency')
+        cancel = concurrency.child('cancel-in-progress') if concurrency else None
+        if cancel is None or scalar(cancel.value) != 'false':
+            fail('W7', file, 'concurrency.cancel-in-progress: false 필요')
     if file.name != 'verify.yml':
         continue
     triggers = root.child('on')
@@ -208,6 +240,8 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
 
 if not (directory / 'verify.yml').is_file():
     errors['W6'].append('verify.yml 파일이 없습니다')
+if not (directory / 'deep-tests.yml').is_file():
+    errors['W7'].append('deep-tests.yml 파일이 없습니다')
 for key, reasons in errors.items():
     if reasons:
         print(f'FAIL {key}: ' + '; '.join(reasons))
@@ -222,4 +256,4 @@ fi
 if [[ $failed -ne 0 ]]; then
     exit 1
 fi
-printf 'PASS 6 checks\n'
+printf 'PASS 7 checks\n'
