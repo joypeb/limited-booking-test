@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --reporter=default --reporter=json --outputFile=test-results/vitest.json && node scripts/assert-vitest-report.mjs test-results/vitest.json",
-    "test:e2e": "playwright test"
+    "test:e2e": "bash scripts/run-e2e.sh"
   },
   "dependencies": {
     "next": "16.4.3",

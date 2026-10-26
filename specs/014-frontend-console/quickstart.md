@@ -27,18 +27,16 @@ cd frontend && npm run dev      # http://127.0.0.1:3000
 
 시나리오(SC-001): ADMIN으로 수량 1 대상 생성 → USER_A로 예약 → 같은 키로 다시 보내기(재현 여부 예, 잔여 0 유지) → USER_B로 새 키 예약(409 SOLD_OUT) → USER_A 예약 조회·취소·재취소(같은 취소 시각) → 대상 다시 조회(잔여 1) → USER_B로 예약 조회(404) → 잘못된 비밀번호(401, 대화상자 없음).
 
-## 3. 종단 테스트(전용 DB `reservation_e2e`, Redis DB 1)
+## 3. 종단 테스트(전용 실행기, DB `reservation_e2e`, Redis DB 1, 백엔드 18080)
 
 ```sh
-docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d reservation_local -tAc "SELECT 1 FROM pg_database WHERE datname='"'"'reservation_e2e'"'"'" | grep -q 1 || createdb -U "$POSTGRES_USER" reservation_e2e'
-(cd backend && SERVER_PORT=18080 SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/reservation_e2e \
-  SPRING_DATA_REDIS_DATABASE=1 ./gradlew bootRun --args='--spring.profiles.active=local')
+# 저장소 루트에서 README 2단계 환경 변수를 export하고 Compose를 시작한 상태
 cd frontend
 npx playwright install chromium   # 최초 1회
 npm run test:e2e
 ```
 
-E2E 백엔드는 개발 백엔드(8080)와 겹치지 않게 18080에서 띄운다. Playwright는 `E2E_BACKEND_BASE_URL`(기본 `http://127.0.0.1:18080`)을 콘솔 서버의 `BACKEND_BASE_URL`로 넘기며, 포트 8080을 가리키면 개발 DB 보호를 위해 즉시 실패한다(2026-10-26 로컬 리뷰 M3).
+`npm run test:e2e`(= `bash scripts/run-e2e.sh`)는 (1) 필요한 환경 변수 확인, (2) 포트 18080이 비어 있지 않으면 실패, (3) Compose PostgreSQL에 `reservation_e2e`가 없으면 생성, (4) `backend`의 `bootJar`를 만들어 `SERVER_PORT=18080`·`SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/reservation_e2e`·`SPRING_DATA_REDIS_DATABASE=1`·`local` 프로필로 직접 기동, (5) health UP 대기, (6) `E2E_ISOLATED_BACKEND=1 E2E_BACKEND_BASE_URL=http://127.0.0.1:18080 playwright test`, (7) 종료 시 백엔드 종료를 수행한다. 백엔드 로그는 `frontend/e2e-logs/e2e-backend.log`(Playwright가 시작 시 `test-results/`를 비우므로 분리). 지원 코드는 실행기 표식이 없거나 백엔드가 8080이면 즉시 실패한다(개발 DB 보호).
 
 기대: 모든 시나리오 통과, 대화상자 0회, `reservation_local`에 변경 없음. 연속 재실행 시 요청 제한(20회/60초) 때문에 60초 이상 간격을 둔다.
 

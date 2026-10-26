@@ -2235,3 +2235,17 @@ Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `H
 | GREEN | `npm test`·`lint`·`typecheck` | 16파일 273건(`vitest gate: total=273 passed=273`)·0·0 |
 | E2E | 백엔드 `SERVER_PORT=18080 … bootRun` 후 `npm run test:e2e` | 21건 통과(US1 11·US2 2·US3 2·US4 1·경계 5) |
 | 가드 | `E2E_BACKEND_BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/us4-history.spec.ts` | 종료 1, `개발 DB 보호: E2E 백엔드 포트 8080은 사용할 수 없습니다` |
+
+### E2E 실행기(T043f~T043i, 2026-10-26)
+
+재리뷰: M1·M2·L1 해소, M3는 부분 해소(18080에 개발 DB 설정의 백엔드가 떠 있으면 통과 가능), plan.md 미갱신(Low). 이를 `npm run test:e2e` = `bash scripts/run-e2e.sh` 실행기로 해결했다. 실행기가 `reservation_e2e`를 준비하고 `bootJar` 산출물을 `SERVER_PORT=18080`·`reservation_e2e`·Redis DB 1로 직접 기동한 뒤 `E2E_ISOLATED_BACKEND=1`로 Playwright를 실행하고 종료 시 내린다.
+
+| 확인 | 명령 | 결과 |
+|---|---|---|
+| 실행기 전체 | `COMPOSE_PROJECT_NAME=lb-console-e2e npm run test:e2e`(환경 변수는 저장소 밖 파일에서 export) | 종료 0, 21건 통과(16.2s). 백엔드 로그 `Tomcat started on port 18080`, 종료 후 18080 LISTEN 0 |
+| DB 사용처 | 실행 전후 `psql` | `reservation_e2e` 대상 45→61(불변식 61/61), `reservation_local` public 테이블 0 |
+| 18080 점유 | 임의 HTTP 서버를 18080에 띄운 뒤 `npm run test:e2e` | 종료 1, `포트 18080에 이미 응답하는 백엔드가 있습니다` |
+| 실행기 없이 직접 | `npx playwright test e2e/us4-history.spec.ts` | 종료 1, `E2E는 npm run test:e2e(실행기)로만 실행합니다` |
+| 필수 변수 누락 | 변수 없이 `npm run test:e2e` | 종료 1, 변수 이름만 출력(scaffolder 확인) |
+
+첫 실행에서 백엔드 로그가 사라지는 문제(Playwright가 시작 시 `test-results/`를 비움)를 발견해 로그를 `frontend/e2e-logs/`(gitignore)로 옮겼다.

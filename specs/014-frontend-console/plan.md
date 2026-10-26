@@ -48,10 +48,10 @@ Phase 1 후 재확인: 아래 설계(D1~D8)는 위 판단을 바꾸지 않는다
 
 ### D1. 전달 계층(Route Handler) — FR-003~FR-006, FR-011
 
-- 위치: `frontend/src/app/api/backend/[...path]/route.ts`(GET·POST만 export). 판단 로직은 순수 모듈 `src/lib/proxy/`에 두고 Route Handler는 얇게 유지한다.
+- 위치: `frontend/src/app/api/backend/[...path]/route.ts`(GET·POST, 그리고 프레임워크 자동 응답을 막기 위한 OPTIONS·HEAD를 export — 2026-10-26 로컬 리뷰 L1). 판단 로직은 순수 모듈 `src/lib/proxy/`에 두고 Route Handler는 얇게 유지한다.
 - 허용 목록(`src/lib/proxy/routes.ts`): `POST resources`, `GET resources/{uuid}`, `POST reservations`, `GET reservations/{uuid}`, `POST reservations/{uuid}/cancel`. UUID는 8-4-4-4-12 16진수. 그 밖은 404 problem(`CONSOLE_ROUTE_NOT_ALLOWED`), 업스트림 호출 0회.
 - 출처 검사(`src/lib/proxy/guard.ts`): `<port>`는 서버 환경 변수 `CONSOLE_PORT`(기본 3000). `Host`가 허용 목록(`127.0.0.1:<port>`, `localhost:<port>`, `[::1]:<port>`)이 아니면 403 `CONSOLE_FORBIDDEN_ORIGIN`. `Origin`이 있으면 `http://` + 허용 Host 중 하나여야 한다. `Sec-Fetch-Site`가 있으면 `same-origin`이어야 한다(`none`도 허용: 주소창 직접 입력). 위반 시 업스트림 호출 0회.
-- 전달 헤더: 요청에서 `Authorization`·`Content-Type`·`Idempotency-Key`·`Accept`만 복사. 그 밖(쿠키, `X-User-Id` 등)은 전달하지 않는다. 본문은 `arrayBuffer()` 원바이트를 그대로 전달하며 1MiB 초과 시 자체 413 `CONSOLE_PAYLOAD_TOO_LARGE`(업스트림 호출 0회).
+- 전달 헤더: 요청에서 `Authorization`·`Content-Type`·`Idempotency-Key`·`Accept`만 복사. 그 밖(쿠키, `X-User-Id` 등)은 전달하지 않는다. 본문은 스트림으로 읽어 원바이트를 그대로 전달하며, `Content-Length` 또는 누적 바이트가 1MiB를 넘는 즉시 읽기를 중단하고 자체 413 `CONSOLE_PAYLOAD_TOO_LARGE`(업스트림 호출 0회, 로컬 리뷰 M2). 10초 기한은 본문 읽기부터 적용.
 - 응답: 상태·본문 바이트·`Content-Type`·`Location`·`Idempotent-Replayed`·`Retry-After`를 보존. `WWW-Authenticate`는 `X-Upstream-WWW-Authenticate`로 이름을 바꿔 전달. 그 밖의 업스트림 헤더는 전달하지 않는다. `Cache-Control: no-store` 추가.
 - 업스트림 실패: 연결 실패 502 `CONSOLE_UPSTREAM_UNREACHABLE`, 10초 초과 504 `CONSOLE_UPSTREAM_TIMEOUT`. 재시도 없음. 콘솔 자체 오류도 `application/problem+json`(`type`·`title`·`status`·`detail`·`code`), 내부 예외 메시지·스택 비노출.
 - 백엔드 주소: 서버 전용 환경 변수 `BACKEND_BASE_URL`(기본 `http://127.0.0.1:8080`). 호스트가 `127.0.0.1`·`localhost`·`[::1]`이 아니면 전달하지 않고 500 `CONSOLE_MISCONFIGURED`. `NEXT_PUBLIC_` 접두사를 쓰지 않는다.
@@ -98,7 +98,7 @@ Phase 1 후 재확인: 아래 설계(D1~D8)는 위 판단을 바꾸지 않는다
 
 - `npm test`: `vitest run` + JSON 보고서 → `scripts/assert-vitest-report.mjs`가 총 0건·skip·todo·실패를 거부(백엔드 게이트와 같은 원칙). `.only`는 `allowOnly: false`.
 - `npm run test:e2e`: Playwright. 비밀번호는 셸 환경 변수 `ADMIN_PASSWORD`·`USER_A_PASSWORD`·`USER_B_PASSWORD`에서 읽고 없으면 즉시 실패(skip 금지). 백엔드 health 사전 확인 실패 시 실패. `page.on('dialog')` 0회 단언. 요청 제한(20회/60초)을 넘지 않게 사용자·시나리오별 쓰기 수를 설계하고, 429 시나리오는 USER_B로 마지막에 1회 수행.
-- E2E 백엔드 격리: README 절차의 Compose를 사용하되 DB는 `reservation_e2e`(없으면 `createdb`), 백엔드는 `SPRING_DATASOURCE_URL`·`SPRING_DATA_REDIS_DATABASE=1` 환경 변수 덮어쓰기로 기동(백엔드 코드 무변경). 로컬 개발 DB `reservation_local`을 쓰지 않는다.
+- E2E 백엔드 격리: `npm run test:e2e`는 실행기 `frontend/scripts/run-e2e.sh`다. 실행기가 Compose PostgreSQL에 `reservation_e2e`를 준비하고, `bootJar` 산출물을 `SERVER_PORT=18080`·`SPRING_DATASOURCE_URL=…/reservation_e2e`·`SPRING_DATA_REDIS_DATABASE=1`로 직접 기동한 뒤 Playwright를 실행하고 종료 시 백엔드를 내린다. 18080이 이미 사용 중이면 알 수 없는 백엔드를 쓰지 않도록 실패한다. Playwright 지원 코드는 실행기 표식(`E2E_ISOLATED_BACKEND=1`)이 없거나 백엔드 주소가 8080이면 실패한다(로컬 리뷰 M3). 백엔드 코드 무변경, 로컬 개발 DB `reservation_local`을 쓰지 않는다.
 - `npm run lint`(eslint), `npm run typecheck`(`tsc --noEmit`), `npm run build`.
 
 ### D7. 문서·규칙 동기화 — FR-017, FR-018

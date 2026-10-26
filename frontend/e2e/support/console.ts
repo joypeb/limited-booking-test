@@ -19,6 +19,9 @@ export function passwords(): Record<Account, string> {
 }
 
 export function e2eBackendBaseUrl(): URL {
+  if (process.env.E2E_ISOLATED_BACKEND !== "1") {
+    throw new Error("E2E는 npm run test:e2e(실행기)로만 실행합니다: 전용 DB 백엔드를 보장하려면 실행기 표식 E2E_ISOLATED_BACKEND=1이 필요합니다.");
+  }
   let url: URL;
   try {
     url = new URL(process.env.E2E_BACKEND_BASE_URL ?? "http://127.0.0.1:18080");

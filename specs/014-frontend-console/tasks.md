@@ -97,7 +97,11 @@
 - [X] T043b (scaf) `playwright.config.ts` webServer `env.BACKEND_BASE_URL` = `E2E_BACKEND_BASE_URL ?? 'http://127.0.0.1:18080'`. — 선행: T043a
 - [X] T043c (ta) RED: 생성 키 차단(Component), 미종료·길이 미지정 스트림 상한 초과 즉시 413·본문 읽기 기한 504(Proxy), Route Handler OPTIONS·HEAD 출처 검사 후 404(Proxy), 실제 Next HTTP 경계의 OPTIONS·HEAD 404·DELETE 405(E2E), E2E 지원 코드의 백엔드 주소 가드(8080이면 실패, 기본 18080). — 선행: T043b
 - [X] T043d (impl) GREEN: ReservationCreatePanel 키 차단, forward 스트림 누적 상한·전체 기한, route.ts OPTIONS·HEAD export. — 선행: T043c
-- [ ] T043e (orch) 검증·기록·커밋, (rev) 재리뷰. — 선행: T043d
+- [X] T043e (orch) 검증·기록·커밋, (rev) 재리뷰. — 선행: T043d
+- [X] T043f (orch) 재리뷰 결과(M3 부분 해소, plan.md 미갱신 Low) 반영: plan D1·D6·quickstart §3·README를 실행기 방식으로 갱신. — 선행: T043e
+- [X] T043g (scaf) `frontend/scripts/run-e2e.sh` 실행기와 `test:e2e` 스크립트 교체(quickstart §3의 (1)~(7)). — 선행: T043f
+- [X] T043h (ta) `e2e/support/console.ts`가 `E2E_ISOLATED_BACKEND=1`이 없으면 실패. — 선행: T043f
+- [ ] T043i (orch) 실행기로 E2E 전체·가드 실패 확인·기록, (rev) 재확인. — 선행: T043g, T043h
 - [ ] T044 (orch) 리뷰 분류 → 해당 담당 재할당(테스트 누락 ta, 구현 impl, 문서 orch) → 재검증. Critical/High 0까지 반복. — 선행: T043
 - [ ] T045 (orch) Spec Kit Analyze 재실행·Converge. Converged가 아니면 누락 작업 추가·분배. — 선행: T044
 - [ ] T046 (orch) push·Draft PR(develop 대상): 문제·변경 동작·실제 검증·미검증·읽을 파일. — 선행: T045
