@@ -1,6 +1,6 @@
 # 한정 수량 예약 백엔드
 
-한정 수량 예약의 정합성(예약·취소·재시도·경쟁·의존성 장애)을 localhost에서 재현 가능하게 검증하는 Java 25·Spring Boot 4.1.1·Gradle 9.8.0 백엔드다. 0~11단계(도구·저장·규칙·인증·예약 생성/취소·경쟁·Redis 제한·계약·Property/PIT·부하/보안/장애 복구)를 완료했다. 12단계(CI·README·최종 검증)는 대부분 완료했고 deep-tests 외부 실행과 사용자 시연·작은 변경만 대기 중이다. 설계 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다.
+한정 수량 예약의 정합성(예약·취소·재시도·경쟁·의존성 장애)을 localhost에서 재현 가능하게 검증하는 Java 25·Spring Boot 4.1.1·Gradle 9.8.0 백엔드다. 0~11단계(도구·저장·규칙·인증·예약 생성/취소·경쟁·Redis 제한·계약·Property/PIT·부하/보안/장애 복구)를 완료했다. 12단계(CI·README·최종 검증)도 완료했고 사용자 시연·작은 변경·설명만 대기 중이다. 설계 기준은 [로컬 개발 계획](<한정 수량 예약 백엔드 로컬 개발 계획.md>)이다.
 
 ## Quick Start
 
@@ -185,7 +185,7 @@ PostgreSQL named volume은 보존한다. 볼륨 삭제 옵션은 기본 절차�
 | `.github/workflows/verify.yml` | `pull_request`·`push` (develop, main) | `./gradlew --no-daemon verifyContract` (Java 25 Corretto) | `verify-test-reports` |
 | `.github/workflows/deep-tests.yml` | `workflow_dispatch`만 (`qt_seed` 선택 입력) | `./gradlew --no-daemon propertyTest mutationSmoke` | `deep-property-reports`, `deep-pit-reports` |
 
-`deep-tests.yml`은 기본 브랜치에 반영된 뒤 수동 실행할 수 있고, Unit/IT/Contract 회귀는 `verify.yml`이 맡는다. 재현 정보 요약은 `.github/scripts/property-summary.sh`가 만든다. 외부 실행 결과: Draft PR #17의 [verify run 40269778342](https://github.com/joypeb/limited-booking-test/actions/runs/40269778342)(pull_request, head 4b692f3, 2026-10-26)이 success다. ubuntu-24.04·Corretto 25.0.5에서 `verifyContract` 6분 18초, Unit308·IT322·Contract102, 실패·skip 0이고 artifact `verify-test-reports`를 올렸다. `deep-tests.yml`은 기본 브랜치 반영 전이라 외부에서 실행하지 않았다(미실행). 외부에서 테스트 실패가 job 실패로 전파되는지는 검증하지 않았다.
+`deep-tests.yml`은 기본 브랜치에 반영된 뒤 수동 실행할 수 있고, Unit/IT/Contract 회귀는 `verify.yml`이 맡는다. 재현 정보 요약은 `.github/scripts/property-summary.sh`가 만든다. 외부 실행 결과: Draft PR #17의 [verify run 40269778342](https://github.com/joypeb/limited-booking-test/actions/runs/40269778342)(pull_request, head 4b692f3, 2026-10-26)이 success다. ubuntu-24.04·Corretto 25.0.5에서 `verifyContract` 6분 18초, Unit308·IT322·Contract102, 실패·skip 0이고 artifact `verify-test-reports`를 올렸다. 같은 날 develop push [verify run 40287542511](https://github.com/joypeb/limited-booking-test/actions/runs/40287542511)과 main push [verify run 40289671284](https://github.com/joypeb/limited-booking-test/actions/runs/40289671284)도 success다. main 반영 후 수동 실행한 [deep-tests run 40289776529](https://github.com/joypeb/limited-booking-test/actions/runs/40289776529)(workflow_dispatch, main 9e6a11b, 2026-10-26)도 success다. Corretto 25.0.5에서 propertyTest 4건(실패·skip 0), `attempts=149`·seed 20261023·`scenario-digest`가 로컬 arm64 실행과 같았고 PIT는 generated=23·killed=23이며 artifact `deep-property-reports`·`deep-pit-reports`를 올렸다. 외부에서 테스트 실패가 job 실패로 전파되는지는 검증하지 않았다.
 
 ## 부하 시험
 
@@ -213,7 +213,7 @@ PostgreSQL named volume은 보존한다. 볼륨 삭제 옵션은 기본 절차�
 - **9단계 계약 검증**: 고정 [OpenAPI 3.0.3](docs/openapi.yaml)을 기대값으로 실제 요청·응답 원문을 [검사기](backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)가 검사한다. 응답 사본 훼손 44종 거부와 DTO 타입 변이 탐지를 확인했다. [계약 의존성 시험](backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java).
 - **10단계 Property·PIT**: `ReservationPropertyIT`가 서비스 경로의 명령 1~30건을 독립 모델과 비교하고 고의 결함의 축소 사례를 `ReservationPropertyRegressionIT`에 고정했다. PIT는 순수 규칙 23/23 탐지다.
 - **11단계 부하·보안·장애 복구**: [SecurityIT](backend/src/test/java/com/limitedbooking/backend/security/SecurityIT.java)에 `X-User-Id` 위조 무시·로그 비밀 비노출을, [DependencyFailureIT](backend/src/test/java/com/limitedbooking/backend/reservation/DependencyFailureIT.java)에 DB 연결 중단·응답 정지(pause)·취소 잠금 시간 초과·커밋 후 응답 유실의 503·같은 키 복구 시험을 추가했다(Redis 장애는 8단계 [RedisFailureIT](backend/src/test/java/com/limitedbooking/backend/ratelimit/RedisFailureIT.java)). DB 정지 시 무한 대기를 pgjdbc `socketTimeout=7`로 막았다. [검증 계약](specs/012-load-security-recovery/contracts/verification-contract.md).
-- **12단계 CI·README·최종 검증**: CI 워크플로, README Quick Start(새 환경 재현), 최종 기준점 전체 재실행, 추적표, AI 결함 기록, 시연 자료를 완료했다. verify 외부 실행은 성공했고 deep-tests 외부 실행과 사용자 시연·작은 변경은 대기 중이다. [실행 근거](docs/test-evidence.md). [명세](specs/013-ci-readme-final/spec.md).
+- **12단계 CI·README·최종 검증**: CI 워크플로, README Quick Start(새 환경 재현), 최종 기준점 전체 재실행, 추적표, AI 결함 기록, 시연 자료를 완료했다. verify와 deep-tests의 외부 실행은 성공했고 사용자 시연·작은 변경·설명만 대기 중이다. [실행 근거](docs/test-evidence.md). [명세](specs/013-ci-readme-final/spec.md).
 
 ## PostgreSQL 보존 표식
 
