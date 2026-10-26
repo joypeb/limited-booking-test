@@ -14,7 +14,8 @@
 
 - `{uuid}`: `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`. 원문 그대로 전달(대소문자 변환 없음).
 - 쿼리 문자열은 전달하지 않는다.
-- 그 밖의 경로·메서드(예: `GET /api/backend/resources`, `DELETE ...`, `../`, 인코딩된 `%2F`) → 404 `CONSOLE_ROUTE_NOT_ALLOWED`. Route Handler가 export하지 않은 메서드는 프레임워크 405(업스트림 호출 없음).
+- 그 밖의 경로·메서드(예: `GET /api/backend/resources`, `../`, 인코딩된 `%2F`) → 404 `CONSOLE_ROUTE_NOT_ALLOWED`.
+- `OPTIONS`·`HEAD`는 프레임워크 자동 응답(OPTIONS 204+Allow 등)에 맡기지 않고 Route Handler가 명시적으로 받아 C1.2 출처 검사 후 404 `CONSOLE_ROUTE_NOT_ALLOWED`로 응답한다(2026-10-26 로컬 리뷰 L1). Route Handler가 export하지 않은 그 밖의 메서드(`PUT`·`PATCH`·`DELETE`)는 프레임워크 405. 모두 업스트림 호출 없음.
 
 ## C1.2 출처 검사(경로 검사보다 먼저)
 
@@ -25,7 +26,8 @@
 ## C1.3 요청 전달
 
 - 복사하는 요청 헤더: `Authorization`, `Content-Type`, `Idempotency-Key`, `Accept`. 값은 바꾸지 않는다. 그 밖은 전달하지 않는다(특히 `Cookie`, `X-User-Id`, `X-Forwarded-*`).
-- 본문: 수신 바이트를 그대로 전달. 0바이트면 본문 없이 전달. 1,048,576바이트 초과면 413 `CONSOLE_PAYLOAD_TOO_LARGE`(업스트림 호출 0회).
+- 본문: 수신 바이트를 그대로 전달. 0바이트면 본문 없이 전달. 1,048,576바이트 초과면 413 `CONSOLE_PAYLOAD_TOO_LARGE`(업스트림 호출 0회). `Content-Length`가 상한을 넘으면 읽기 전에, 길이가 없거나 틀린 스트림은 누적 중 상한을 넘는 즉시 읽기를 중단하고 413을 반환한다(스트림 종료를 기다리지 않음, 2026-10-26 로컬 리뷰 M2).
+- 시간 상한 10초는 요청 본문 읽기 시작부터 백엔드 응답 본문 수신까지 전체에 적용한다. 본문 읽기 중 초과도 같은 504 `CONSOLE_UPSTREAM_TIMEOUT`으로 응답한다(업스트림 호출 0회).
 - 재시도·리다이렉트 추종 없음(`redirect: 'manual'`).
 
 ## C1.4 응답 전달

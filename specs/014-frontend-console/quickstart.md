@@ -31,12 +31,14 @@ cd frontend && npm run dev      # http://127.0.0.1:3000
 
 ```sh
 docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d reservation_local -tAc "SELECT 1 FROM pg_database WHERE datname='"'"'reservation_e2e'"'"'" | grep -q 1 || createdb -U "$POSTGRES_USER" reservation_e2e'
-(cd backend && SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/reservation_e2e \
+(cd backend && SERVER_PORT=18080 SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/reservation_e2e \
   SPRING_DATA_REDIS_DATABASE=1 ./gradlew bootRun --args='--spring.profiles.active=local')
 cd frontend
 npx playwright install chromium   # 최초 1회
 npm run test:e2e
 ```
+
+E2E 백엔드는 개발 백엔드(8080)와 겹치지 않게 18080에서 띄운다. Playwright는 `E2E_BACKEND_BASE_URL`(기본 `http://127.0.0.1:18080`)을 콘솔 서버의 `BACKEND_BASE_URL`로 넘기며, 포트 8080을 가리키면 개발 DB 보호를 위해 즉시 실패한다(2026-10-26 로컬 리뷰 M3).
 
 기대: 모든 시나리오 통과, 대화상자 0회, `reservation_local`에 변경 없음. 연속 재실행 시 요청 제한(20회/60초) 때문에 60초 이상 간격을 둔다.
 
