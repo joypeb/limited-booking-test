@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { describeCode } from "@/lib/api/problem";
 import type { ApiResult } from "@/lib/api/types";
 
@@ -8,9 +8,10 @@ export type ResultViewProps = {
   title: string;
   result: ApiResult | null;
   idempotencyKey?: string;
+  children?: ReactNode;
 };
 
-export function ResultView({ title, result, idempotencyKey }: ResultViewProps) {
+export function ResultView({ title, result, idempotencyKey, children }: ResultViewProps) {
   if (!result) return null;
   const fields = result.ok && result.body !== null && typeof result.body === "object"
     ? Object.entries(result.body) : [];
@@ -47,6 +48,7 @@ export function ResultView({ title, result, idempotencyKey }: ResultViewProps) {
         {idempotencyKey !== undefined && <p>생성 키: {idempotencyKey}</p>}
         {result.headers.idempotentReplayed && <p>재현 응답은 최초 CONFIRMED 응답입니다. 현재 상태는 예약 조회로 확인하세요.</p>}
       </>}
+      {children}
     </div>
   );
 }
