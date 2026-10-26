@@ -147,4 +147,4 @@ T021~T023은실제7회HTTP시퀀스의첫생성baseline과각시점의Replay/상
 - CI: [verify](../.github/workflows/verify.yml)(PR·push, `verifyContract`)와 [deep-tests](../.github/workflows/deep-tests.yml)(수동, `propertyTest mutationSmoke`). 파일 작성·로컬 동등 실행과 외부 run 결과를 구분하며 외부 결과는 [실행 증거](../docs/test-evidence.md) 12단계 절을 따른다.
 - 정적 검사: `scripts/check-workflows.sh`·`scripts/check-readme.sh`·`scripts/check-traceability.sh`(RED→GREEN 판정 도구, 형식만 판정).
 - 새 문서: [추적표](../docs/traceability.md)(규칙 → 대상 → 테스트 → 명령 → 증거, 검증하지 않은 범위), [시연 자료](../docs/demo.md)(5분 시연·작은 변경 연습, 사용자 수행 대기).
-- README Quick Start를 새 clone·깨끗한 셸에서 재현했고, 최종 기준점 `3ddf007`(백엔드는 `c4585ed`)에서 심화 전체·PIT·원래 제한 IT·k6 네 시나리오를 실행했다. 실행 중 `load/run.sh`의 dirty 표기 결함을 발견해 수정했다. 규칙·계약·SQL 변경은 없다.
+- 외부 CI는 verify(PR·develop·main)와 deep-tests(main 반영 후 수동 1회) 모두 success다. README Quick Start를 새 clone·깨끗한 셸에서 재현했고, 최종 기준점 `3ddf007`(백엔드는 `c4585ed`)에서 심화 전체·PIT·원래 제한 IT·k6 네 시나리오를 실행했다. 실행 중 `load/run.sh`의 dirty 표기 결함을 발견해 수정했다. 규칙·계약·SQL 변경은 없다.
