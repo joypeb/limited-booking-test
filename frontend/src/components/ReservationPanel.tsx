@@ -4,7 +4,9 @@ import { useState } from "react";
 import { isUuid } from "@/lib/api/bodies";
 import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
+import { UuidInput } from "./UuidInput";
 import { useBackendRequest } from "./useBackendRequest";
+import { primaryButtonClassName, secondaryButtonClassName } from "./control-styles";
 
 export function ReservationPanel() {
   const { generation } = useConsole();
@@ -45,22 +47,19 @@ function ReservationPanelContent() {
         event.preventDefault();
         void requestReservation(false);
       }}>
-        <label className="grid gap-1">예약 식별자
-          <input
-            className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600"
-            value={reservationId}
-            aria-invalid={invalidId}
-            aria-describedby={invalidId ? "reservation-id-error" : undefined}
-            onChange={(event) => {
-              setReservationId(event.target.value);
-              setInvalidId(false);
-            }}
-          />
-        </label>
-        {invalidId && <p id="reservation-id-error" role="alert">식별자는 UUID 형식이어야 합니다</p>}
+        <UuidInput
+          label="예약 식별자"
+          value={reservationId}
+          invalid={invalidId}
+          errorId="reservation-id-error"
+          onChange={(value) => {
+            setReservationId(value);
+            setInvalidId(false);
+          }}
+        />
         <div className="flex flex-wrap gap-3">
-          <button type="submit" disabled={requestsDisabled} className="rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50">예약 조회</button>
-          <button type="button" disabled={requestsDisabled} className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50" onClick={() => { void requestReservation(true); }}>예약 취소</button>
+          <button type="submit" disabled={requestsDisabled} className={primaryButtonClassName}>예약 조회</button>
+          <button type="button" disabled={requestsDisabled} className={secondaryButtonClassName} onClick={() => { void requestReservation(true); }}>예약 취소</button>
         </div>
       </form>
       <ResultView title="내 예약" result={reservationRequest.result}>
@@ -68,7 +67,7 @@ function ReservationPanelContent() {
           <button
             type="button"
             disabled={requestsDisabled}
-            className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50"
+            className={secondaryButtonClassName}
             onClick={() => {
               if (!requestsDisabled && isUuid(resourceId)) {
                 void resourceRequest.send({ method: "GET", path: `resources/${resourceId}` });

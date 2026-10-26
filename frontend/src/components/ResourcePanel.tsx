@@ -4,10 +4,9 @@ import { useState } from "react";
 import { isJsonNumberLiteral, isUuid, resourceCreateBody } from "@/lib/api/bodies";
 import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
+import { UuidInput } from "./UuidInput";
 import { useBackendRequest } from "./useBackendRequest";
-
-const inputClassName = "w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600";
-const submitClassName = "rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50";
+import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "./control-styles";
 
 export function ResourcePanel() {
   const { generation } = useConsole();
@@ -73,27 +72,30 @@ function ResourcePanelContent() {
           />
         </label>
         {invalidCapacity && <p id="resource-capacity-error" role="alert">최초 수량은 숫자 표기여야 합니다</p>}
-        <button type="submit" disabled={requestsDisabled} className={submitClassName}>대상 생성</button>
+        <button type="submit" disabled={requestsDisabled} className={primaryButtonClassName}>대상 생성</button>
       </form>
       <form className="space-y-3" onSubmit={(event) => {
         event.preventDefault();
         void lookup();
       }}>
-        <label className="grid gap-1">대상 식별자
-          <input className={inputClassName} value={resourceId} aria-invalid={invalidId} aria-describedby={invalidId ? "resource-id-error" : undefined} onChange={(event) => {
-            setResourceId(event.target.value);
+        <UuidInput
+          label="대상 식별자"
+          value={resourceId}
+          invalid={invalidId}
+          errorId="resource-id-error"
+          onChange={(value) => {
+            setResourceId(value);
             setInvalidId(false);
-          }} />
-        </label>
-        {invalidId && <p id="resource-id-error" role="alert">식별자는 UUID 형식이어야 합니다</p>}
-        <button type="submit" disabled={requestsDisabled} className={submitClassName}>대상 조회</button>
+          }}
+        />
+        <button type="submit" disabled={requestsDisabled} className={primaryButtonClassName}>대상 조회</button>
       </form>
       <ResultView title="예약 대상" result={result}>
         {resultId !== undefined && (
           <button
             type="button"
             disabled={requestsDisabled}
-            className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50"
+            className={secondaryButtonClassName}
             onClick={() => { void lookup(resultId); }}
           >대상 다시 조회</button>
         )}

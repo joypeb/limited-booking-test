@@ -7,6 +7,7 @@ import { newIdempotencyKey } from "@/lib/idempotency";
 import { useConsole } from "./ConsoleProvider";
 import { ResultView } from "./ResultView";
 import { useBackendRequest } from "./useBackendRequest";
+import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "./control-styles";
 
 type ReservationAttempt = {
   resourceId: string;
@@ -50,15 +51,15 @@ function ReservationCreateContent() {
         if (account) void reserve({ resourceId, idempotencyKey, account, generation });
       }}>
         <label className="grid gap-1">예약할 대상 식별자
-          <input className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600" value={resourceId} onChange={(event) => setResourceId(event.target.value)} />
+          <input className={inputClassName} value={resourceId} onChange={(event) => setResourceId(event.target.value)} />
         </label>
         <label className="grid gap-1">생성 키
-          <input className="w-full rounded border p-2 focus-visible:ring-2 focus-visible:ring-blue-600" value={idempotencyKey} onChange={(event) => setIdempotencyKey(event.target.value)} />
+          <input className={inputClassName} value={idempotencyKey} onChange={(event) => setIdempotencyKey(event.target.value)} />
         </label>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600" onClick={() => setIdempotencyKey(newIdempotencyKey())}>새 키</button>
-          <button type="submit" disabled={requestsDisabled} className="rounded bg-blue-700 px-4 py-2 text-white focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50">예약</button>
-          <button type="button" disabled={replayDisabled} className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50" onClick={() => {
+          <button type="submit" disabled={requestsDisabled} className={primaryButtonClassName}>예약</button>
+          <button type="button" disabled={replayDisabled} className={secondaryButtonClassName} onClick={() => {
             if (!replayDisabled && lastAttempt) void reserve(lastAttempt);
           }}>같은 키로 다시 보내기</button>
         </div>
