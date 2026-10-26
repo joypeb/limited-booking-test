@@ -6,8 +6,8 @@
 # 구조 검사는 들여쓰기 기반 block mapping/sequence용이다. flow mapping,
 # anchor/alias/merge는 해석 누락으로 통과하지 않도록 W4~W7에서 거부한다.
 # 문자열 검사는 실행 의미를 증명하지 않는다(예: echo 안 금지 문자열도 탐지).
-# 실행 검사는 verify의 단일 명령, deep의 단일 명령 또는 현재 INPUT_QT_SEED
-# 검증 블록+마지막 명령만 허용한다. 임의 셸·heredoc·folded scalar는 거부한다.
+# 실행 검사는 verify의 단일 명령, deep의 현재 INPUT_QT_SEED 검증 블록+
+# 마지막 명령만 허용한다. 임의 셸·heredoc·folded scalar는 거부한다.
 # setup과 실행은 같은 job의 명시적 steps여야 하며 조건부 단계는 허용하지 않는다.
 set -euo pipefail
 
@@ -162,10 +162,11 @@ def check_execution(jobs, file, key, command, deep=False):
         'exit 1', 'fi', 'export QT_SEED="$INPUT_QT_SEED"', 'fi',
     ]
     found = False
+    executions = []
     for job in jobs.children if jobs else []:
         steps = job.child('steps')
         java_ready = gradle_ready = False
-        for step in steps.children if steps else []:
+        for index, step in enumerate(steps.children if steps else []):
             run = step.child('run')
             if run and './gradlew' in run.value:
                 found = True
@@ -178,8 +179,8 @@ def check_execution(jobs, file, key, command, deep=False):
                 if not (java_ready and gradle_ready):
                     reasons.append('같은 job의 setup-java(25)·setup-gradle 뒤에서 실행 필요')
                 actual = run_lines(run)
-                if actual != [command] and not (deep and actual == seed_prefix + [command]):
-                    reasons.append('지원하지 않는 run 형식: 지정 명령 단독 또는 허용된 seed 블록 필요')
+                if actual != (seed_prefix + [command] if deep else [command]):
+                    reasons.append('지원하지 않는 run 형식: ' + ('seed 전달 블록과 마지막 지정 명령 필요' if deep else '지정 명령 단독 실행 필요'))
                 if deep and actual == seed_prefix + [command]:
                     env = step.child('env')
                     seed = env.child('INPUT_QT_SEED') if env else None
@@ -187,6 +188,8 @@ def check_execution(jobs, file, key, command, deep=False):
                         reasons.append('INPUT_QT_SEED: ${{ inputs.qt_seed }} 필요')
                 if reasons:
                     fail(key, file, f'job {job.key}: ' + ', '.join(reasons))
+                else:
+                    executions.append((job, index))
             uses = step.child('uses')
             if uses and scalar(uses.value).startswith('actions/setup-java@'):
                 config = step.child('with')
@@ -196,6 +199,40 @@ def check_execution(jobs, file, key, command, deep=False):
                 gradle_ready = step.child('if') is None
     if not found:
         fail(key, file, f'{command} 실행 단계 필요')
+    return executions
+
+
+def always(step):
+    condition = step.child('if')
+    return condition is not None and scalar(condition.value) in ('always()', '${{ always() }}')
+
+
+def upload_paths(job, after):
+    uploads = []
+    steps = job.child('steps')
+    for step in steps.children[after + 1:]:
+        uses, config = step.child('uses'), step.child('with')
+        path = config.child('path') if config else None
+        if uses and scalar(uses.value).startswith('actions/upload-artifact@') and always(step) and path:
+            uploads.append({re.sub(r'/\*\*$', '', value.strip()).rstrip('/')
+                            for value in scalar(path.value).lstrip('|>+-\n ').splitlines()})
+    return uploads
+
+
+def document_count(lines):
+    count, active = 0, False
+    for line in lines:
+        if not line.strip() or line.startswith('%'):
+            continue
+        if line == '---':
+            count += 1
+            active = True
+        elif line == '...':
+            active = False
+        elif not active:
+            count += 1
+            active = True
+    return count
 
 
 def branch_names(node):
@@ -218,8 +255,8 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
         continue
     text = '\n'.join(lines)
     root = parse(lines)
-    if any(re.fullmatch(r'---\s*', line) for line in lines[1:]):
-        fail('W5', file, '첫 줄 이후 YAML 문서 구분자(---) 금지: 단일 문서만 지원')
+    if document_count(lines) != 1:
+        fail('W5', file, '다중/빈 YAML 문서 금지: 단일 문서만 지원')
     # 축약 매핑/별칭을 조용히 무시하면 uses/timeout 등의 누락이 PASS가 된다.
     # 표현식 ${{ ... }}와 branches/runs-on의 flow sequence는 이 제한과 무관하다.
     unsupported = any(re.search(
@@ -267,23 +304,23 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
         inputs = dispatch.child('inputs') if dispatch else None
         if inputs is None or inputs.child('qt_seed') is None:
             fail('W7', file, 'workflow_dispatch.inputs.qt_seed 필요')
-        steps = [step for node in root.walk() if node.key == 'steps' for step in node.children]
-        runs = [scalar(node.value).lstrip('|>+-\n ') for step in steps for node in step.children if node.key == 'run']
-        check_execution(jobs, file, 'W7', './gradlew --no-daemon propertyTest mutationSmoke', deep=True)
-        if not any(re.search(r'(?m)^\s*(?:bash\s+)?(?:\./)?\.github/scripts/property-summary\.sh(?:\s|$)', run) for run in runs):
-            fail('W7', file, '.github/scripts/property-summary.sh 호출 필요')
-        # D2는 Property/PIT artifact를 별도 단계로 올린다. always()인 업로드
-        # 단계들의 path만 합산하며 / 또는 /** 접미사를 같은 디렉터리로 본다.
-        uploaded = set()
-        for step in steps:
-            uses, condition, config = step.child('uses'), step.child('if'), step.child('with')
-            path = config.child('path') if config else None
-            if uses and scalar(uses.value).startswith('actions/upload-artifact@') and condition and scalar(condition.value) in ('always()', '${{ always() }}') and path:
-                for value in scalar(path.value).lstrip('|>+-\n ').splitlines():
-                    uploaded.add(re.sub(r'/\*\*$', '', value.strip()).rstrip('/'))
-        for required in ('backend/build/reports/pitest', 'backend/build/test-results/propertyTest'):
-            if required not in uploaded:
-                fail('W7', file, f'if: always() upload-artifact에 {required} 경로 필요')
+        executions = check_execution(jobs, file, 'W7', './gradlew --no-daemon propertyTest mutationSmoke', deep=True)
+        for job, after in executions:
+            summary = False
+            for step in job.child('steps').children[after + 1:]:
+                run = step.child('run')
+                actual = run_lines(run) if run else []
+                if always(step) and actual and re.fullmatch(
+                    r'(?:bash\s+)?(?:\./)?\.github/scripts/property-summary\.sh backend/build/test-results/propertyTest\s*>\s*property-summary\.txt', actual[0]
+                ):
+                    summary = True
+            if not summary:
+                fail('W7', file, f'job {job.key}: if: always() 요약 단계와 property-summary.txt 생성 필요')
+            # 다른 job의 작업 공간은 공유되지 않는다. 같은 실행 job의 경로만 합산.
+            uploaded = set().union(*upload_paths(job, after))
+            for required in ('backend/build/reports/pitest', 'backend/build/test-results/propertyTest', 'property-summary.txt'):
+                if required not in uploaded:
+                    fail('W7', file, f'job {job.key}: if: always() upload-artifact에 {required} 경로 필요')
         concurrency = root.child('concurrency')
         cancel = concurrency.child('cancel-in-progress') if concurrency else None
         if cancel is None or scalar(cancel.value) != 'false':
@@ -306,20 +343,11 @@ for file in sorted((*directory.glob('*.yml'), *directory.glob('*.yaml'))):
         fail('W6', file, 'java-version: 25 필요')
     if not any(node.key == 'uses' and scalar(node.value).startswith('gradle/actions/setup-gradle@') for node in root.walk()):
         fail('W6', file, 'gradle/actions/setup-gradle 단계 필요')
-    check_execution(jobs, file, 'W6', './gradlew --no-daemon verifyContract')
-    upload_found = False
-    for step in steps:
-        uses, condition, config = step.child('uses'), step.child('if'), step.child('with')
-        path = config.child('path') if config else None
-        if uses and scalar(uses.value).startswith('actions/upload-artifact@'):
-            paths = scalar(path.value).lstrip('|>+-\n ') if path else ''
-            if condition and scalar(condition.value) in ('always()', '${{ always() }}') and all(
-                re.search(r'(?m)^\s*' + re.escape(required) + r'(?:/\*\*)?\s*$', paths)
-                for required in ('backend/build/test-results', 'backend/build/reports/tests')
-            ):
-                upload_found = True
-    if not upload_found:
-        fail('W6', file, '동일 upload-artifact 단계에 if: always()와 두 보고서 경로 필요')
+    executions = check_execution(jobs, file, 'W6', './gradlew --no-daemon verifyContract')
+    for job, after in executions:
+        if not any({'backend/build/test-results', 'backend/build/reports/tests'}.issubset(paths)
+                   for paths in upload_paths(job, after)):
+            fail('W6', file, f'job {job.key}: 실행 후 동일 job의 always() upload-artifact에 두 보고서 경로 필요')
 
 if not (directory / 'verify.yml').is_file():
     errors['W6'].append('verify.yml 파일이 없습니다')

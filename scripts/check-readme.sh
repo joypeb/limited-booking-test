@@ -5,8 +5,9 @@
 # 들여쓰기 코드 블록, 복잡한 중첩/이스케이프 Markdown은 해석하지 않는다.
 # 셸은 shlex로 옵션 값/구분자/주석을 구분하되 변수·함수·동적 태스크는
 # 실행하지 않는다. 경로는 저장소 루트 기준의 리터럴 참조만 검사한다.
-# R6은 '테스트 실행'/'검증 명령' 절에 한정한다. README의 Unit308·일반IT316
-# 같은 표기를 지원하며 과거 기록 절의 다른 수치가 현재 표를 통과시키지 못한다.
+# R5는 Docker 전역/Compose/down 옵션의 알려진 리터럴 형식만 허용한다.
+# R6은 '## 테스트 실행' 절의 명령별 표 행을 검사하고 절 전체의 상충 수치도
+# 거부한다. 과거 기록 절의 다른 수치로 현재 표의 누락을 보충하지 않는다.
 set -euo pipefail
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
@@ -137,6 +138,57 @@ def tokens(source):
     return list(lexer)
 
 
+def check_down(args):
+    # down이 포함된 docker/compose 명령은 옵션을 이해한 경우에만 허용한다.
+    global_values = {'--context', '-c', '--host', '-H', '--config', '--log-level', '-l', '--tlscacert', '--tlscert', '--tlskey'}
+    global_flags = {'--debug', '-D', '--tls', '--tlsverify'}
+    compose_values = {'--file', '-f', '--project-name', '-p', '--project-directory', '--env-file', '--profile', '--parallel', '--progress', '--ansi'}
+    compose_flags = {'--compatibility', '--dry-run', '--all-resources'}
+    for index, argument in enumerate(args):
+        if argument != 'docker':
+            continue
+        segment = []
+        for token in args[index + 1:]:
+            if token in separators:
+                break
+            segment.append(token)
+        if not re.search(r'\bcompose\b.*\bdown\b', ' '.join(segment)):
+            continue
+        try:
+            cursor = 0
+            for stop, values, flags in [('compose', global_values, global_flags), ('down', compose_values, compose_flags)]:
+                while cursor < len(segment) and segment[cursor] != stop:
+                    option = segment[cursor]
+                    if option in values:
+                        if cursor + 1 >= len(segment) or segment[cursor + 1].startswith('-'):
+                            raise ValueError('옵션 값 누락')
+                        cursor += 2
+                    elif '=' in option and option.split('=', 1)[0] in values and option.split('=', 1)[1]:
+                        cursor += 1
+                    elif option in flags:
+                        cursor += 1
+                    else:
+                        raise ValueError(f'지원하지 않는 옵션/형식: {option}')
+                if cursor == len(segment):
+                    raise ValueError(f'{stop} 하위 명령을 찾을 수 없음')
+                cursor += 1
+            while cursor < len(segment):
+                option = segment[cursor]
+                if option.split('=', 1)[0] == '--volumes' or (option.startswith('-') and not option.startswith('--') and 'v' in option):
+                    raise ValueError('볼륨 삭제 옵션 금지')
+                if option in ('-t', '--timeout', '--rmi'):
+                    pattern = r'all|local' if option == '--rmi' else r'\d+'
+                    if cursor + 1 >= len(segment) or not re.fullmatch(pattern, segment[cursor + 1]):
+                        raise ValueError('down 옵션 값 해석 불가')
+                    cursor += 2
+                elif re.fullmatch(r'-t\d+|--timeout=\d+|--rmi=(?:all|local)', option) or option == '--remove-orphans':
+                    cursor += 1
+                else:
+                    raise ValueError(f'down 옵션/형식 해석 불가: {option}')
+        except ValueError as error:
+            errors['R5'].append(f'docker compose down: {error}')
+
+
 unknown = set()
 for kind, source in fragments:
     # 셸 명령은 줄 경계를 넘기지 않는다(명시적 역슬래시 연속 줄은 결합).
@@ -161,16 +213,7 @@ for kind, source in fragments:
                     unknown.add(argument)
                 cursor += 1
         if kind == 'block':
-            for index in range(len(args) - 1):
-                if args[index:index + 2] != ['docker', 'compose']:
-                    continue
-                command = []
-                for argument in args[index + 2:]:
-                    if argument in separators:
-                        break
-                    command.append(argument)
-                if 'down' in command and any(argument in ('-v', '--volumes') or argument.startswith('--volumes=') for argument in command):
-                    errors['R5'].append('코드 블록의 docker compose down에 볼륨 삭제 옵션이 있습니다')
+            check_down(args)
 if unknown:
     errors['R3'].append('정의되지 않은 Gradle 태스크: ' + ', '.join(sorted(unknown)))
 
@@ -184,12 +227,50 @@ for reference in references:
 if missing:
     errors['R4'].append('존재하지 않는 경로: ' + ', '.join(sorted(missing)))
 
-count_sections = [section(index, depth)[0] for index, depth, title in headings
-                  if depth in (2, 3) and ('테스트 실행' in title or '검증 명령' in title)]
+count_sections = [section(index, depth)[0] for index, depth, title in headings if depth == 2 and title == '테스트 실행']
 count_text = re.sub(r'[`*]', '', '\n'.join(count_sections))
-for label, count in zip(('Unit', 'IT', 'Contract', 'Property'), expected):
-    if not re.search(re.escape(label) + r'\s*' + re.escape(count) + r'(?!\d)', count_text):
-        errors['R6'].append(f'테스트 실행/검증 명령 절에 {label}{count} 표기가 필요합니다')
+expected_counts = dict(zip(('Unit', 'IT', 'Contract', 'Property'), map(int, expected)))
+# 일반IT는 허용하되 PIT 23/23의 IT 부분을 테스트 수로 읽지 않는다.
+for label, count in re.findall(r'(?<![A-Za-z])(Unit|IT|Contract|Property)\s*(\d+)', count_text):
+    if int(count) != expected_counts[label]:
+        errors['R6'].append(f'테스트 실행 절의 상충 수치: {label}{count}(기대 {expected_counts[label]})')
+requirements = {'test': ('Unit',), 'verify': ('Unit', 'IT'), 'verifyContract': ('Unit', 'IT', 'Contract'),
+                'verifyProperty': ('Unit', 'IT', 'Property'), 'deepTest': ('Unit', 'IT', 'Contract', 'Property')}
+command_rows = {task: [] for task in requirements}
+for content in count_sections:
+    for line in content.splitlines():
+        if not line.strip().startswith('|'):
+            continue
+        # 현재 표는 명령 셀 하나와 수치 셀 하나다. 셀 속 백틱 pipe는 유지한다.
+        parts = re.split(r'\|(?=(?:[^`]*`[^`]*`)*[^`]*$)', line.strip().strip('|'))
+        if len(parts) != 2:
+            continue
+        for command in re.findall(r'`([^`]+)`', parts[0]):
+            try:
+                args = tokens(command)
+            except ValueError:
+                continue
+            if not args or args[0] != './gradlew':
+                continue
+            tasks, cursor = [], 1
+            while cursor < len(args):
+                if args[cursor] in value_options:
+                    cursor += 2
+                    continue
+                if not args[cursor].startswith('-'):
+                    tasks.append(args[cursor].lstrip(':'))
+                cursor += 1
+            if len(tasks) == 1 and tasks[0] in command_rows:
+                command_rows[tasks[0]].append(re.sub(r'[`*]', '', parts[1]))
+for task, labels in requirements.items():
+    rows = command_rows[task]
+    if len(rows) != 1:
+        errors['R6'].append(f'테스트 실행 표에 ./gradlew {task} 행이 정확히 하나 필요합니다')
+        continue
+    for label in labels:
+        values = [int(value) for value in re.findall(r'(?<![A-Za-z])' + re.escape(label) + r'\s*(\d+)', rows[0])]
+        if not values or any(value != expected_counts[label] for value in values):
+            errors['R6'].append(f'./gradlew {task} 행에 {label}{expected_counts[label]} 필요')
 
 for key, reasons in errors.items():
     if reasons:

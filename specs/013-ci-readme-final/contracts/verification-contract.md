@@ -12,7 +12,7 @@
 | W4 | 전체 | 모든 `uses:`가 `owner/repo[/path]@<40자 16진 SHA>` 형식. `runs-on`에 `latest` 없음 |
 | W5 | 전체 | 모든 워크플로에 `permissions:`와 `contents: read`, 모든 job에 `timeout-minutes:` |
 | W6 | `verify.yml` | 존재. `pull_request`·`push` 트리거와 `develop`·`main` 브랜치, `schedule` 없음. `java-version: '25'`, `gradle/actions/setup-gradle`, `./gradlew --no-daemon verifyContract`, `actions/upload-artifact` 단계에 `if: always()`와 `backend/build/test-results`·`backend/build/reports/tests` 경로 |
-| W7 | `deep-tests.yml` | 존재. 트리거는 `workflow_dispatch`만(`push`·`pull_request`·`schedule` 없음), 입력 `qt_seed`. `./gradlew --no-daemon propertyTest mutationSmoke`, `.github/scripts/property-summary.sh` 호출, `if: always()` upload에 `backend/build/reports/pitest`와 `backend/build/test-results/propertyTest` 경로. `cancel-in-progress: false` |
+| W7 | `deep-tests.yml` | 존재. 업로드 단계는 Gradle 실행과 같은 job(W6도 동일). seed 전달 블록(`INPUT_QT_SEED` env → `QT_SEED` export), 요약 단계의 `if: always()`와 `property-summary.txt` 생성, 그 파일의 업로드 경로 포함. 트리거는 `workflow_dispatch`만(`push`·`pull_request`·`schedule` 없음), 입력 `qt_seed`. `./gradlew --no-daemon propertyTest mutationSmoke`, `.github/scripts/property-summary.sh` 호출, `if: always()` upload에 `backend/build/reports/pitest`와 `backend/build/test-results/propertyTest` 경로. `cancel-in-progress: false` |
 
 탐지력: orch가 임시 사본에 W1(문법 오류)·W2(`continue-on-error: true`)·W4(태그 `@v7`)·W6(명령을 `verify`로 변경)·W7(`push:` 추가) 결함을 각각 넣어 해당 ID FAIL·종료 1을 확인한다. 사본은 커밋하지 않는다.
 
@@ -24,8 +24,8 @@
 | R2 | 준비 대기·healthcheck·health·접속 URL 차이를 설명하는 절(`healthcheck`와 `/actuator/health`와 `127.0.0.1` 모두 포함) |
 | R3 | 문서의 모든 `./gradlew <task>`의 task가 `backend/build.gradle`에 정의되었거나 Gradle/Boot 기본 태스크(`test`·`build`·`bootRun`·`bootJar`·`clean`·`compileJava`·`compileTestJava`)다 |
 | R4 | 문서의 모든 `./load/<f>`·`load/<f>`·`scripts/<f>`·`.github/<path>` 경로가 실제 존재 |
-| R5 | 기본 절차의 `docker compose down`에 `-v`/`--volumes` 없음(“하지 않는다” 설명 문장 제외: 코드 블록만 검사) |
-| R6 | 검증 명령 표의 Unit·IT·Contract·Property 수치가 인자로 받은 기대값(기본: 308·322·102·4)과 일치하는 문자열을 포함 |
+| R5 | 코드 블록의 `docker [전역 옵션] compose [옵션] down` 명령에 볼륨 삭제 옵션이 없음: `-v`, `--volumes`, `-v`를 포함한 짧은 옵션 묶음(예: `-vt`). 해석할 수 없는 형식의 down 명령은 실패(“하지 않는다” 설명 문장은 코드 블록이 아니므로 제외) |
+| R6 | `## 테스트 실행` 절의 명령별 행에서 수치가 기대값(기본: 308·322·102·4)과 일치: `./gradlew test` 행의 Unit, `verify` 행의 Unit·IT, `verifyContract` 행의 Unit·IT·Contract, `verifyProperty` 행의 Unit·IT·Property, `deepTest` 행의 네 수. 같은 절에 기대값과 다른 `Unit<수>`·`IT<수>`·`Contract<수>`·`Property<수>`가 있으면 실패 |
 
 ## C3. `scripts/check-traceability.sh [file]` (기본 `docs/traceability.md`)
 
