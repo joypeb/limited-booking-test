@@ -148,3 +148,23 @@ T032와 PR #12 리뷰 보완 후 T042 `./gradlew build verifyContract verifyCont
 | actionlint(로컬 정적 검사) | `rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` | Docker로 실행, 현재 워크플로 오류 0 |
 
 CI 실제 JDK: run 40269778342에서 setup-java가 Amazon Corretto 25.0.5+0.9(linux-x64)를 설치했다(`java-version: '25'`는 최신 25 패치를 받는다). 로컬 25.0.4와 패치가 다르며 같은 결과(Unit308·IT322·Contract102, deep-tests의 Property4·digest 동일·PIT 23/23)를 확인했다. 패치 고정은 하지 않았다.
+
+## 2026-10-26 14단계 로컬 브라우저 콘솔(frontend)
+
+백엔드 의존성·버전 변경 없음. `frontend/`는 npm(`package-lock.json` 커밋), 모든 버전을 `^` 없이 고정했다. 실행 환경: Node.js v26.11.1, npm 11.20.0(macOS arm64, 로컬 확인).
+
+| 패키지 | 버전 | 근거·확인 |
+|---|---|---|
+| next / eslint-config-next | 16.4.3 | 사용자 지정, `npm view next dist-tags` latest=16.4.3 확인 |
+| tailwindcss / @tailwindcss/turbopack | 4.3.3 | 사용자 지정, latest=4.3.3 확인. Next 16.4.3 템플릿의 turbopack 로더 방식 |
+| react / react-dom / @types/react / @types/react-dom | 19.3.0 | create-next-app 16.4.3 템플릿 고정값(npm latest 19.3.1은 미채택) |
+| typescript | 5.9.3 | 템플릿 `^5`의 해석값(7.x 미채택) |
+| eslint | 9.39.5 | 템플릿 해석값(설치 시 deprecated 경고, 템플릿 조합 유지) |
+| @types/node | 26.6.5 | 템플릿 20.x는 vitest 5.0.5 peer(`^22 \|\| >=24`)와 충돌(ERESOLVE). `--force` 없이 런타임 Node 26에 맞춰 상향 |
+| vitest | 5.0.5 | Unit·Proxy·Component 실행기 |
+| @vitejs/plugin-react / vite-tsconfig-paths | 6.1.2 / 6.1.1 | Next 번들 문서(testing/vitest.md) 구성 |
+| jsdom | 30.1.3 | Component 환경 |
+| @testing-library/react / dom / user-event / jest-dom | 16.3.3 / 10.4.2 / 14.6.8 / 7.0.1 | Component 단언 |
+| @playwright/test | 1.64.1 | E2E(Chromium), Next peer `^1.51.1` 충족 |
+
+E2E 백엔드 격리: Compose 프로젝트 `lb-console-e2e`(새 named volume, 임의 생성 비밀번호를 저장소 밖 600 권한 파일에 보관), DB `reservation_e2e`, Redis DB 1. `SPRING_DATASOURCE_URL`·`SPRING_DATA_REDIS_DATABASE` 환경 변수 덮어쓰기로 Flyway V1이 `reservation_e2e`에만 적용되고 `reservation_local`에는 이력 테이블이 없음을 확인(2026-10-26).

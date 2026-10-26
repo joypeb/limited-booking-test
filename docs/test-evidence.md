@@ -2175,3 +2175,94 @@ README 실행 표·속성 설명, docs/versions.md·decisions.md, 계획서 상�
 - artifact를 내려받아 확인: `deep-property-reports`(25,355 bytes)의 `property-summary.txt` — 프로브 seed 20261013·generated-attempts 101, 업무 seed 20261023·attempts 149·scenario-digest `0a94346b9302de90bf0e4f7f08df3c9cdf71d422710d4c1c620a3abfc1f60bf7`, 합계 tests 4 실패/오류/skip 0. `deep-pit-reports`(11,452 bytes)의 `mutations.xml` 23건 모두 KILLED.
 - **플랫폼 간 seed 재현**: x86_64 runner의 digest가 로컬 arm64 실행(T012·T020)과 동일하다. 같은 seed가 같은 명령 열을 생성함을 두 아키텍처에서 확인했다.
 - 남은 미검증: 외부에서 테스트 실패가 job 실패로 전파되는지(실패 커밋 push 미승인). 사용자 수행 대기: AI 없는 시연·작은 변경·설명.
+
+## 2026-10-26 14단계 로컬 브라우저 콘솔 (specs/014-frontend-console)
+
+브랜치 `feature/frontend-sdd-tdd-orchestration`(develop a71736b 기준). 환경: macOS arm64, Node.js v26.11.1, npm 11.20.0, Docker 29.8.2, Playwright 1.64.1 Chromium Headless Shell 156.0.8078.4. 역할: orchestrator(Claude), test-author·implementer·reviewer(Codex), scaffolder(opencode), explorer·advisor(Antigravity). 각 단계 후 orchestrator가 `git status`로 역할 밖 수정이 없음을 확인했다.
+
+### E2E 격리 환경
+
+- Compose 프로젝트 `lb-console-e2e`(새 named volume, 저장소 밖 600 권한 파일의 임의 비밀번호), DB `reservation_e2e`, Redis DB 1. 백엔드는 `SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/reservation_e2e SPRING_DATA_REDIS_DATABASE=1 ./gradlew --no-daemon bootRun --args='--spring.profiles.active=local'`(백엔드 코드 무변경). Flyway V1이 `reservation_e2e`에만 적용되고 같은 컨테이너의 `reservation_local`은 public 테이블 0개임을 확인했다. 사용자의 기존 `limited-booking_postgres_data` 볼륨은 사용하지 않았다.
+
+### TDD 단계 기록(명령은 `frontend/`)
+
+| 작업 | 명령 | 결과 |
+|---|---|---|
+| T003 골격 | `npm ci`·`lint`·`typecheck`·`build` / `npm test` | 0·0·0·0 / 1(테스트 0건 거부, 의도). 게이트 단독: 0건 입력 종료 1 |
+| T007 RED | `npx vitest run --project unit --project proxy` | 8파일 171건 모두 실패, 원인 전부 `NOT_IMPLEMENTED`, 수집 오류 0 |
+| T009 GREEN | 같은 명령 + typecheck·lint·build | 171건 통과, 0·0·0 |
+| T011 RED | `npx vitest run --project component` | 3파일 33건 실패(요소 없음 단언) |
+| T013 GREEN | unit+proxy+component | 11파일 204건 통과 |
+| T017 RED | component resource-panel / `playwright test e2e/us1-resource.spec.ts` | 14 실패·2 통과 / 7 실패·4 통과(이미 구현된 401 인증창 없음·404·UUID 차단·비밀번호 비영속은 실제 백엔드로 통과) |
+| T019 GREEN | vitest / E2E us1 | 12파일 220건 / 11건 통과 |
+| T023 RED | component / E2E us2 | 15 실패 / 2 실패(예약 생성 영역 없음) |
+| T025 GREEN | vitest / E2E us1+us2 | 13파일 235건 / 13건 통과 |
+| T029 RED | component / E2E us3(429 시나리오는 `-g "최대 21회"` 단독 실행) | 10 실패 / 2 실패(내 예약 영역 없음) |
+| T031 GREEN | vitest / E2E us1~us3 | 14파일 245건 / 15건 통과 |
+| T035 RED | unit history+component recent-history / E2E us4 | 9(`NOT_IMPLEMENTED`)+9 실패 / 1 실패 |
+| T037 GREEN | `npm test` / `npm run test:e2e` | 16파일 263건, `vitest gate: total=263 passed=263` / 16건 통과 |
+| T038 VERIFY | `npm test`·`lint`·`typecheck`·60초 대기 후 `npm run test:e2e` | 0·0·0·0, 263건 / 16건 통과(16.1s) |
+
+REFACTOR(T014·T020·T026/T032·T038)마다 같은 범위를 다시 실행해 통과를 확인했다.
+
+### 최종 상태(커밋 98e3bbc)
+
+- `npm test` 종료 0: Unit 7파일·Proxy 2파일·Component 7파일, 16파일 263건, 실패·skip·todo 0(게이트 출력 `total=263 passed=263`).
+- `npm run test:e2e` 종료 0: 16건(US1 11, US2 2, US3 2, US4 1), retries 0, workers 1, 브라우저 대화상자 0회 단언 포함.
+- E2E 후 `reservation_e2e` 불변식: 대상 45개 모두 `available + CONFIRMED 수 = capacity`·`0 ≤ available ≤ capacity`(45/45), 예약 CONFIRMED 12·CANCELLED 4.
+- 백엔드 회귀: `git diff --stat develop -- backend docs/openapi.yaml` 0줄, `cd backend && ./gradlew test` 종료 0, JUnit 308건(실패·오류·skip 0).
+
+### 확인한 계약(대표)
+
+- 실제 백엔드: 401에서 인증창 0회·`X-Upstream-WWW-Authenticate: Basic …` 표시, 같은 키 재전송 시 같은 id·createdAt과 `Idempotent-Replayed: true`, 잔여 불변, `SOLD_OUT`·`IDEMPOTENCY_CONFLICT`(충돌 대상 수량 보존), 취소 시 잔여 1 복구·재취소 같은 `cancelledAt`, USER_B·ADMIN 404, 취소 후 생성 재현, USER_B 21회 안 429·`Retry-After` 표시, 새로고침 후 자격 증명 초기화·기록 유지, 콘솔 응답 보안 헤더 4종.
+- 가짜 업스트림(Proxy): 허용 헤더 4개만 전달, 원바이트(중복 키 JSON·8193바이트), 1MiB 초과 413·호출 0회, 출처·경로·비루프백 거부 시 호출 0회, 502·504·재시도 없음, 302 비추종, `Set-Cookie` 미전달.
+
+### 미검증·한계
+
+- 백엔드 503(DB·Redis 장애)의 화면 표시는 Component 테스트로만 확인했다(실제 장애 주입 E2E 미실행).
+- chunked 요청의 413은 브라우저 `fetch`로 재현할 수 없어 백엔드 기존 테스트가 담당한다.
+- 프런트엔드 테스트의 CI 실행은 추가하지 않았다(사용자 결정 대기). 외부 실행 결과 없음.
+- 스크립트 CSP는 적용하지 않았다(decisions 14단계).
+
+### 로컬 리뷰 반영(T043a~T043e, 2026-10-26)
+
+Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `Headers`에서 조용히 제거됨, 길이 미지정 스트림에서 1MiB 상한이 전체 수신 후 적용, E2E가 개발 백엔드로 실행될 수 있음), Low 1(Next 자동 OPTIONS 204). 모두 유효로 분류해 계약(3c4d97d) → RED(6c4b345) → GREEN 순서로 반영했다.
+
+| 단계 | 명령 | 결과 |
+|---|---|---|
+| RED | `npx vitest run --project proxy --project component` / `playwright test e2e/proxy-boundary.spec.ts` | 신규 10 실패·기존 125 통과 / OPTIONS 1 실패(실제 Next가 204 응답, L1 재현)·HEAD 404·DELETE 405·목록 404·조작 Host 403은 4 통과 |
+| 계약 정정 | HEAD 테스트 2건이 빈 본문을 JSON으로 파싱 | HTTP 의미상 HEAD는 본문 없음 → C1.1에 명시, 테스트를 상태·Content-Type·빈 본문·업스트림 0회 단언으로 정정 |
+| GREEN | `npm test`·`lint`·`typecheck` | 16파일 273건(`vitest gate: total=273 passed=273`)·0·0 |
+| E2E | 백엔드 `SERVER_PORT=18080 … bootRun` 후 `npm run test:e2e` | 21건 통과(US1 11·US2 2·US3 2·US4 1·경계 5) |
+| 가드 | `E2E_BACKEND_BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/us4-history.spec.ts` | 종료 1, `개발 DB 보호: E2E 백엔드 포트 8080은 사용할 수 없습니다` |
+
+### E2E 실행기(T043f~T043i, 2026-10-26)
+
+재리뷰: M1·M2·L1 해소, M3는 부분 해소(18080에 개발 DB 설정의 백엔드가 떠 있으면 통과 가능), plan.md 미갱신(Low). 이를 `npm run test:e2e` = `bash scripts/run-e2e.sh` 실행기로 해결했다. 실행기가 `reservation_e2e`를 준비하고 `bootJar` 산출물을 `SERVER_PORT=18080`·`reservation_e2e`·Redis DB 1로 직접 기동한 뒤 `E2E_ISOLATED_BACKEND=1`로 Playwright를 실행하고 종료 시 내린다.
+
+| 확인 | 명령 | 결과 |
+|---|---|---|
+| 실행기 전체 | `COMPOSE_PROJECT_NAME=lb-console-e2e npm run test:e2e`(환경 변수는 저장소 밖 파일에서 export) | 종료 0, 21건 통과(16.2s). 백엔드 로그 `Tomcat started on port 18080`, 종료 후 18080 LISTEN 0 |
+| DB 사용처 | 실행 전후 `psql` | `reservation_e2e` 대상 45→61(불변식 61/61), `reservation_local` public 테이블 0 |
+| 18080 점유 | 임의 HTTP 서버를 18080에 띄운 뒤 `npm run test:e2e` | 1차(67f17c3): 종료 1이었으나 원인은 의도한 안내가 아니라 `$BACKEND_PORT에`의 한글 바이트가 변수 이름으로 해석된 `unbound variable` 오류였다(로그 재확인으로 발견, 기록 정정). 수정 후 재확인은 아래 행 |
+| 18080 점유(수정 후) | 문자열 안 변수 확장을 `${VAR}`로 바꾼 뒤 같은 조건을 기본 로케일·`LC_ALL=C`로 실행 | 둘 다 종료 1, `포트 18080에 이미 응답하는 백엔드가 있습니다` 1회, `unbound` 0회 |
+| 실행기 없이 직접 | `npx playwright test e2e/us4-history.spec.ts` | 종료 1, `E2E는 npm run test:e2e(실행기)로만 실행합니다` |
+| 필수 변수 누락 | 변수 없이 `npm run test:e2e` | 종료 1, 변수 이름만 출력(scaffolder 확인) |
+
+첫 실행에서 백엔드 로그가 사라지는 문제(Playwright가 시작 시 `test-results/`를 비움)를 발견해 로그를 `frontend/e2e-logs/`(gitignore)로 옮겼다.
+
+재확인(reviewer, ae68d2d): 변수 확장·plan.md Low 해소, M3 정상 경로 해소. 실행기 견고성 Medium 3건(포트 확인–기동 사이 경쟁, 첫 `curl` 무제한 대기, INT·TERM 후 실행 재개)을 보완했다: 첫 검사에 `--connect-timeout 2 --max-time 3`, health UP 시 18080 LISTEN 소유 PID가 실행기가 띄운 java인지 확인, INT→130·TERM→143 종료와 Playwright·백엔드 TERM 후 15초 상한 KILL 정리.
+
+| 확인 | 결과 |
+|---|---|
+| 응답 없는 점유 서버(연결만 수락) | 3초 만에 종료 1, 점유 안내(scaffolder 확인) |
+| 실행기 전체 | 종료 0, 21건 통과, 종료 후 18080 LISTEN 0 |
+| 실행 중 실행기에 TERM | Playwright 중단(18 통과·1 미실행 시점), 20초 후 18080 LISTEN 0·백엔드 java 프로세스 0 |
+
+
+### PR·외부 CI·OCR 리뷰(T046~T048)
+
+- T046(orch): `feature/frontend-sdd-tdd-orchestration` push, Draft [PR #19](https://github.com/joypeb/limited-booking-test/pull/19)(develop 대상, head 6b84db1, 85파일).
+- 외부 CI: [verify run 40332245329](https://github.com/joypeb/limited-booking-test/actions/runs/40332245329)(pull_request, head 6b84db1) success, 5분 27초. 이 워크플로는 백엔드 `verifyContract`만 실행하며 프런트엔드 테스트는 포함하지 않는다(프런트엔드 CI는 사용자 결정 대기).
+- T047(reviewer): Alibaba Open Code Review v1.13.3 `ocr delegate preview --format json --from a71736b… --to 6b84db1…`·`ocr delegate rule --format json <선택·보충 파일>` 종료 0. `gh pr diff --name-only`와 로컬 diff 85파일 일치. OCR 선택 37개 + 자동 제외에서 복원한 테스트·E2E 21개 = 58개 리뷰, 문서·설정 25개 대조, `package-lock.json`·`favicon.ico` 내용 리뷰 제외. 외부 LLM `ocr review`·GitHub Actions 미사용. 후보(npx 부모 TERM 시 자식 잔존)는 재현으로 무효. **유효 지적 0** → 라인 코멘트 없이 COMMENT 리뷰 5652882589 게시.
+- T048(orch): PR 리뷰 1건·라인 코멘트 0·이슈 코멘트 0을 `gh api`로 확인, 재할당할 수정 없음. Critical/High·실패 테스트·누락 요구 0. 병합은 사용자 승인 대기.
