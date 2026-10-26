@@ -26,3 +26,18 @@ export async function POST(
   const { path } = await params;
   return forward(request, path, options());
 }
+
+export async function OPTIONS(
+  request: Request,
+  context: BackendRouteContext,
+): Promise<Response> {
+  return GET(request, context);
+}
+
+export async function HEAD(
+  request: Request,
+  context: BackendRouteContext,
+): Promise<Response> {
+  const response = await GET(request, context);
+  return new Response(null, { status: response.status, headers: response.headers });
+}

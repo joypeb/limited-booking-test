@@ -36,18 +36,48 @@ export async function forward(request: Request, segments: string[], options: For
   if (contentLength !== null && /^\d+$/.test(contentLength) && Number(contentLength) > maxBodyBytes) {
     return failure(413, "CONSOLE_PAYLOAD_TOO_LARGE");
   }
-  const body = await request.arrayBuffer();
-  if (body.byteLength > maxBodyBytes) {
-    return failure(413, "CONSOLE_PAYLOAD_TOO_LARGE");
-  }
-  const headers = new Headers();
-  for (const name of ["Authorization", "Content-Type", "Idempotency-Key", "Accept"]) {
-    const value = request.headers.get(name);
-    if (value !== null) headers.set(name, value);
-  }
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 10_000);
+  const reader = request.body?.getReader();
+  let readingBody = reader !== undefined;
+  const cancelBody = () => {
+    if (reader && readingBody) void reader.cancel().catch(() => {});
+  };
+  const timer = setTimeout(() => {
+    controller.abort();
+    cancelBody();
+  }, options.timeoutMs ?? 10_000);
   try {
+    const chunks: Uint8Array[] = [];
+    let bodyBytes = 0;
+    if (reader) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (controller.signal.aborted) return failure(504, "CONSOLE_UPSTREAM_TIMEOUT");
+          if (done) break;
+          bodyBytes += value.byteLength;
+          if (bodyBytes > maxBodyBytes) {
+            cancelBody();
+            return failure(413, "CONSOLE_PAYLOAD_TOO_LARGE");
+          }
+          chunks.push(value);
+        }
+      } finally {
+        readingBody = false;
+        reader.releaseLock();
+      }
+    }
+    const body = new Uint8Array(bodyBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      body.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    const headers = new Headers();
+    for (const name of ["Authorization", "Content-Type", "Idempotency-Key", "Accept"]) {
+      const value = request.headers.get(name);
+      if (value !== null) headers.set(name, value);
+    }
     const upstream = await (options.fetchImpl ?? fetch)(new URL(route.upstreamPath, base), {
       method: route.method,
       headers,

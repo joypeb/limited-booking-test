@@ -129,7 +129,13 @@ describe("OPTIONS·HEAD의 명시적 출처 검사와 경로 거부", () => {
     expect(typeof handler, `${method} Route Handler를 명시적으로 export해야 한다`).toBe("function");
     if (typeof handler !== "function") return;
     const response: Response = await handler(consoleRequest(method, path, { headers: { host } }), context(path));
-    await expectProblem(response, status, code, server.baseUrl);
+    if (method === "HEAD") {
+      expect(response.status).toBe(status);
+      expect(response.headers.get("content-type")).toMatch(/^application\/problem\+json(?:;|$)/);
+      expect(await response.text()).toBe("");
+    } else {
+      await expectProblem(response, status, code, server.baseUrl);
+    }
     expect(server.received).toHaveLength(0);
   });
 });

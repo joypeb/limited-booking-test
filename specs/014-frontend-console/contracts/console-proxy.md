@@ -15,7 +15,7 @@
 - `{uuid}`: `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`. 원문 그대로 전달(대소문자 변환 없음).
 - 쿼리 문자열은 전달하지 않는다.
 - 그 밖의 경로·메서드(예: `GET /api/backend/resources`, `../`, 인코딩된 `%2F`) → 404 `CONSOLE_ROUTE_NOT_ALLOWED`.
-- `OPTIONS`·`HEAD`는 프레임워크 자동 응답(OPTIONS 204+Allow 등)에 맡기지 않고 Route Handler가 명시적으로 받아 C1.2 출처 검사 후 404 `CONSOLE_ROUTE_NOT_ALLOWED`로 응답한다(2026-10-26 로컬 리뷰 L1). Route Handler가 export하지 않은 그 밖의 메서드(`PUT`·`PATCH`·`DELETE`)는 프레임워크 405. 모두 업스트림 호출 없음.
+- `OPTIONS`·`HEAD`는 프레임워크 자동 응답(OPTIONS 204+Allow 등)에 맡기지 않고 Route Handler가 명시적으로 받아 C1.2 출처 검사 후 404 `CONSOLE_ROUTE_NOT_ALLOWED`로 응답한다(2026-10-26 로컬 리뷰 L1). HEAD 응답은 HTTP 의미에 따라 본문이 없으므로 상태(출처 위반 403, 그 밖 404)와 `Content-Type: application/problem+json` 헤더만 관찰 대상이다. Route Handler가 export하지 않은 그 밖의 메서드(`PUT`·`PATCH`·`DELETE`)는 프레임워크 405. 모두 업스트림 호출 없음.
 
 ## C1.2 출처 검사(경로 검사보다 먼저)
 

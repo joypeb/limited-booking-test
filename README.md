@@ -198,7 +198,7 @@ npm run dev
 | `npm run lint` / `npm run typecheck` / `npm run build` | ESLint / `next typegen` + `tsc` / 프로덕션 빌드 |
 | `npm run test:e2e` | Playwright, 실제 백엔드 대상(아래 격리 절차) |
 
-E2E는 로컬 개발 DB를 쓰지 않는다. 같은 Compose의 `reservation_e2e` DB와 Redis DB 1을 백엔드 환경 변수로 지정하고, 비밀번호는 셸 환경 변수(`ADMIN_PASSWORD` 등)로 준다. 절차는 [실행 안내](specs/014-frontend-console/quickstart.md) 3절이며, 요청 제한(20회/60초) 때문에 연속 실행 사이에 60초 이상 둔다. 실행 근거는 [실행 증거](docs/test-evidence.md) 14단계 절이다.
+E2E는 로컬 개발 DB를 쓰지 않는다. E2E 백엔드를 포트 18080으로 따로 띄우고(`SERVER_PORT=18080`) 같은 Compose의 `reservation_e2e` DB와 Redis DB 1을 백엔드 환경 변수로 지정한다. Playwright는 `E2E_BACKEND_BASE_URL`(기본 `http://127.0.0.1:18080`)을 쓰고 8080을 가리키면 즉시 실패한다. 비밀번호는 셸 환경 변수(`ADMIN_PASSWORD` 등)로 준다. 절차는 [실행 안내](specs/014-frontend-console/quickstart.md) 3절이며, 요청 제한(20회/60초) 때문에 연속 실행 사이에 60초 이상 둔다. 실행 근거는 [실행 증거](docs/test-evidence.md) 14단계 절이다.
 
 ## CI
 

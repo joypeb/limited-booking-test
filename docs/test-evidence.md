@@ -2223,3 +2223,15 @@ REFACTOR(T014·T020·T026/T032·T038)마다 같은 범위를 다시 실행해 �
 - chunked 요청의 413은 브라우저 `fetch`로 재현할 수 없어 백엔드 기존 테스트가 담당한다.
 - 프런트엔드 테스트의 CI 실행은 추가하지 않았다(사용자 결정 대기). 외부 실행 결과 없음.
 - 스크립트 CSP는 적용하지 않았다(decisions 14단계).
+
+### 로컬 리뷰 반영(T043a~T043e, 2026-10-26)
+
+Reviewer 로컬 리뷰: Critical/High 0, Medium 3(생성 키 앞뒤 공백이 `Headers`에서 조용히 제거됨, 길이 미지정 스트림에서 1MiB 상한이 전체 수신 후 적용, E2E가 개발 백엔드로 실행될 수 있음), Low 1(Next 자동 OPTIONS 204). 모두 유효로 분류해 계약(3c4d97d) → RED(6c4b345) → GREEN 순서로 반영했다.
+
+| 단계 | 명령 | 결과 |
+|---|---|---|
+| RED | `npx vitest run --project proxy --project component` / `playwright test e2e/proxy-boundary.spec.ts` | 신규 10 실패·기존 125 통과 / OPTIONS 1 실패(실제 Next가 204 응답, L1 재현)·HEAD 404·DELETE 405·목록 404·조작 Host 403은 4 통과 |
+| 계약 정정 | HEAD 테스트 2건이 빈 본문을 JSON으로 파싱 | HTTP 의미상 HEAD는 본문 없음 → C1.1에 명시, 테스트를 상태·Content-Type·빈 본문·업스트림 0회 단언으로 정정 |
+| GREEN | `npm test`·`lint`·`typecheck` | 16파일 273건(`vitest gate: total=273 passed=273`)·0·0 |
+| E2E | 백엔드 `SERVER_PORT=18080 … bootRun` 후 `npm run test:e2e` | 21건 통과(US1 11·US2 2·US3 2·US4 1·경계 5) |
+| 가드 | `E2E_BACKEND_BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/us4-history.spec.ts` | 종료 1, `개발 DB 보호: E2E 백엔드 포트 8080은 사용할 수 없습니다` |

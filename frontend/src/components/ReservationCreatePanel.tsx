@@ -26,6 +26,7 @@ function ReservationCreateContent() {
   const { result, pending, requestsDisabled, send } = useBackendRequest();
   const [resourceId, setResourceId] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const [invalidKey, setInvalidKey] = useState(false);
   const [lastAttempt, setLastAttempt] = useState<ReservationAttempt | null>(null);
   const [resultKey, setResultKey] = useState<string>();
   const replayDisabled = requestsDisabled || !lastAttempt
@@ -48,16 +49,28 @@ function ReservationCreateContent() {
       <h2 className="text-xl font-semibold">예약 생성</h2>
       <form className="space-y-3" onSubmit={(event) => {
         event.preventDefault();
+        if (idempotencyKey !== "" && (/^[ \t]|[ \t]$/.test(idempotencyKey) || /[^\x20-\x7E]/.test(idempotencyKey))) {
+          setInvalidKey(true);
+          return;
+        }
+        setInvalidKey(false);
         if (account) void reserve({ resourceId, idempotencyKey, account, generation });
       }}>
         <label className="grid gap-1">예약할 대상 식별자
           <input className={inputClassName} value={resourceId} onChange={(event) => setResourceId(event.target.value)} />
         </label>
         <label className="grid gap-1">생성 키
-          <input className={inputClassName} value={idempotencyKey} onChange={(event) => setIdempotencyKey(event.target.value)} />
+          <input className={inputClassName} value={idempotencyKey} aria-invalid={invalidKey} aria-describedby={invalidKey ? "idempotency-key-error" : undefined} onChange={(event) => {
+            setIdempotencyKey(event.target.value);
+            setInvalidKey(false);
+          }} />
         </label>
+        {invalidKey && <p id="idempotency-key-error" role="alert">생성 키는 앞뒤 공백 없이 HTTP 헤더로 보낼 수 있는 ASCII 문자여야 합니다</p>}
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600" onClick={() => setIdempotencyKey(newIdempotencyKey())}>새 키</button>
+          <button type="button" className="rounded border px-4 py-2 focus-visible:ring-2 focus-visible:ring-blue-600" onClick={() => {
+            setIdempotencyKey(newIdempotencyKey());
+            setInvalidKey(false);
+          }}>새 키</button>
           <button type="submit" disabled={requestsDisabled} className={primaryButtonClassName}>예약</button>
           <button type="button" disabled={replayDisabled} className={secondaryButtonClassName} onClick={() => {
             if (!replayDisabled && lastAttempt) void reserve(lastAttempt);
