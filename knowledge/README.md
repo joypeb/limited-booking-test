@@ -139,3 +139,12 @@ T021~T023은실제7회HTTP시퀀스의첫생성baseline과각시점의Replay/상
 ## 9단계 계약 검증 최종 인수 (2026-10-23)
 
 [010 작업](../specs/010-openapi-contract/tasks.md) T001~T042 구현·실행 인수를 완료했다(PR #12 리뷰 보완 포함). `./gradlew build verifyContract verifyContractDependencies` 종료0, Unit298·일반IT315(경쟁110회·종료 fixture5 포함)·Contract102(업무96+프로브6), 실패/오류/skip0이다(T042). T032 당시 Unit294·IT312·Contract96은 historical 값이다. 고정 [OpenAPI](../docs/openapi.yaml)를 기대값으로 [검사기](../backend/src/test/java/com/limitedbooking/backend/support/ApiContractValidator.java)·[계약 HTTP 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractIT.java)·[의존성 계약 시험](../backend/src/test/java/com/limitedbooking/backend/common/ApiContractDependencyIT.java)이 적용표 전체, 응답 사본 훼손44종, 실제 DTO 타입 변이 RED→원복 GREEN을 검증했다. 위 9단계 진행 절들의 미완료 표시는 당시 기록이다. 제품 변경은 PR #12 리뷰 보완의 `ResourceController` 엄격 UUID binder 1건이며 SQL·Gradle·OpenAPI·정책 변경은 없다. Qodana는 사용자 지시로 건너뛴 미실행 후속이다. 근거는 [실행 증거](../docs/test-evidence.md)와 [110회 기록](../docs/concurrency-runs.json)을 따른다.
+
+
+## 12단계 CI·README·최종 검증 (2026-10-26)
+
+- [013 명세](../specs/013-ci-readme-final/spec.md)·[계획](../specs/013-ci-readme-final/plan.md)·[검증 계약](../specs/013-ci-readme-final/contracts/verification-contract.md)·[작업](../specs/013-ci-readme-final/tasks.md).
+- CI: [verify](../.github/workflows/verify.yml)(PR·push, `verifyContract`)와 [deep-tests](../.github/workflows/deep-tests.yml)(수동, `propertyTest mutationSmoke`). 파일 작성·로컬 동등 실행과 외부 run 결과를 구분하며 외부 결과는 [실행 증거](../docs/test-evidence.md) 12단계 절을 따른다.
+- 정적 검사: `scripts/check-workflows.sh`·`scripts/check-readme.sh`·`scripts/check-traceability.sh`(RED→GREEN 판정 도구, 형식만 판정).
+- 새 문서: [추적표](../docs/traceability.md)(규칙 → 대상 → 테스트 → 명령 → 증거, 검증하지 않은 범위), [시연 자료](../docs/demo.md)(5분 시연·작은 변경 연습, 사용자 수행 대기).
+- README Quick Start를 새 clone·깨끗한 셸에서 재현했고, 최종 기준점 `3ddf007`(백엔드는 `c4585ed`)에서 심화 전체·PIT·원래 제한 IT·k6 네 시나리오를 실행했다. 실행 중 `load/run.sh`의 dirty 표기 결함을 발견해 수정했다. 규칙·계약·SQL 변경은 없다.
