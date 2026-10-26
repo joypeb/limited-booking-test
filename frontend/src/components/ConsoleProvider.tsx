@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Account, Credentials, HistoryEntry } from "@/lib/api/types";
 
@@ -29,20 +29,21 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [generation, setGeneration] = useState(0);
   const currentGeneration = useRef(0);
-  function changeCredentials(next: Credentials | null) {
+  const changeCredentials = useCallback((next: Credentials | null) => {
     currentGeneration.current += 1;
     setGeneration(currentGeneration.current);
     setCredentials(next);
-  }
-  return (
-    <ConsoleContext.Provider value={{
-      credentials, account: credentials?.account ?? null, generation,
-      getGeneration: () => currentGeneration.current,
-      history: [], refreshHistory: () => {},
-      applyCredentials: (next) => changeCredentials({ ...next }),
-      clearCredentials: () => changeCredentials(null),
-    }}>
-      {children}
-    </ConsoleContext.Provider>
-  );
+  }, []);
+  const value = useMemo<ConsoleContextValue>(() => ({
+    credentials,
+    account: credentials?.account ?? null,
+    generation,
+    getGeneration: () => currentGeneration.current,
+    history: [],
+    refreshHistory: () => {},
+    applyCredentials: (next) => changeCredentials({ ...next }),
+    clearCredentials: () => changeCredentials(null),
+  }), [credentials, generation, changeCredentials]);
+
+  return <ConsoleContext.Provider value={value}>{children}</ConsoleContext.Provider>;
 }

@@ -25,7 +25,10 @@ export function ResultView({ title, result, idempotencyKey }: ResultViewProps) {
       <p className="font-semibold">{result.status === 0 ? "응답 없음" : `HTTP ${result.status}`}</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 break-all">
         {[...fields, ...headers].map(([name, value]) => (
-          <Fragment key={String(name)}><dt className="font-medium">{name}</dt><dd>{String(value)}</dd></Fragment>
+          <Fragment key={String(name)}>
+            <dt className="font-medium">{name}</dt>
+            <dd>{String(value)}</dd>
+          </Fragment>
         ))}
       </dl>
       {result.problem && <>
@@ -35,7 +38,10 @@ export function ResultView({ title, result, idempotencyKey }: ResultViewProps) {
         <p>{describeCode(result.problem.code)}</p>
       </>}
       {result.status === 429 && result.headers.retryAfter !== undefined && <p>{result.headers.retryAfter}초 후 다시 시도할 수 있습니다</p>}
-      {result.rawText !== undefined && <><p>알 수 없는 응답 형식</p><pre className="whitespace-pre-wrap break-all">{result.rawText}</pre></>}
+      {result.rawText !== undefined && <>
+        <p>알 수 없는 응답 형식</p>
+        <pre className="whitespace-pre-wrap break-all">{result.rawText}</pre>
+      </>}
       {result.ok && result.headers.idempotentReplayed !== undefined && <>
         <p>재현 여부: {result.headers.idempotentReplayed ? "예" : "아니오"}</p>
         {idempotencyKey !== undefined && <p>생성 키: {idempotencyKey}</p>}
