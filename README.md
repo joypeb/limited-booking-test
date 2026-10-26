@@ -72,7 +72,7 @@ java -jar build/libs/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
 curl --connect-timeout 3 --max-time 10 --fail http://127.0.0.1:8080/actuator/health
 ```
 
-`{"status":"UP"}`이 나와야 한다. health만 노출하며 상세값은 숨긴다.
+`status`가 `UP`이어야 한다(실제 응답 예: `{"groups":["liveness","readiness"],"status":"UP"}`). health만 노출하며 상세값은 숨긴다.
 
 ### 7. API 전체 흐름
 
@@ -80,7 +80,7 @@ curl --connect-timeout 3 --max-time 10 --fail http://127.0.0.1:8080/actuator/hea
 
 ```sh
 BASE=http://127.0.0.1:8080
-api() { curl --connect-timeout 3 --max-time 10 -sS "$@"; }
+api() { curl --connect-timeout 3 --max-time 10 -sS -w '\n' "$@"; }
 loc() { awk 'tolower($1)=="location:"{print $2}' | tr -d '\r' | sed 's#.*/##'; }
 K1="readme-$(date +%s)"
 
