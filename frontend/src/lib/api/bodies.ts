@@ -1,20 +1,16 @@
 export function isJsonNumberLiteral(text: string): boolean {
-  void text;
-  throw new Error("NOT_IMPLEMENTED");
+  return /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(text);
 }
 
 export function isUuid(text: string): boolean {
-  void text;
-  throw new Error("NOT_IMPLEMENTED");
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(text);
 }
 
 export function resourceCreateBody(name: string, capacityText: string): string {
-  void name;
-  void capacityText;
-  throw new Error("NOT_IMPLEMENTED");
+  if (!isJsonNumberLiteral(capacityText)) throw new Error("최초 수량은 숫자 표기여야 합니다");
+  return `{"name":${JSON.stringify(name)},"capacity":${capacityText}}`;
 }
 
 export function reservationCreateBody(resourceId: string): string {
-  void resourceId;
-  throw new Error("NOT_IMPLEMENTED");
+  return JSON.stringify({ resourceId });
 }

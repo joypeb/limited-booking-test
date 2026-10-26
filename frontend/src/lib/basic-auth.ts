@@ -1,5 +1,4 @@
 export function basicAuthHeader(account: string, password: string): string {
-  void account;
-  void password;
-  throw new Error("NOT_IMPLEMENTED");
+  const bytes = new TextEncoder().encode(`${account}:${password}`);
+  return `Basic ${btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""))}`;
 }
